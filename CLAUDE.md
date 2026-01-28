@@ -3,11 +3,24 @@
 ## Project Overview
 A Next.js 16 todo/task productivity app with Prisma, PostgreSQL, and Tailwind CSS.
 
-## Git Commit Rules
+## Git Configuration
 
+### Repository Details
+- **Repository:** git@github-personal:cxkw-dev/ai-focus.git
+- **Remote uses:** `github-personal` SSH host (configured in ~/.ssh/config)
+- **Git user (local to this repo):**
+  - Email: cxkw.dev@gmail.com
+  - Name: cxkw.dev
+
+### Commit Rules
 - **All commit messages MUST be lowercase**
 - **Never include "Co-authored-by" or AI attribution in commits**
 - Keep messages concise and descriptive
+
+### Important Notes
+- This repo uses the **personal SSH key** (`github-personal` host), not the work key
+- Git user is configured locally (not globally) to avoid conflicts with other repos
+- The `.env` file is ignored and contains sensitive database credentials
 
 ## Local Development
 
