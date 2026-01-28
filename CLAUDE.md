@@ -1,0 +1,163 @@
+# AI Focus - Claude Instructions
+
+## Project Overview
+A Next.js 16 todo/task productivity app with Prisma, PostgreSQL, and Tailwind CSS.
+
+## Git Commit Rules
+
+- **All commit messages MUST be lowercase**
+- **Never include "Co-authored-by" or AI attribution in commits**
+- Keep messages concise and descriptive
+
+## Local Development
+
+### Prerequisites
+- PostgreSQL running via Homebrew on port 5433 (`brew services start postgresql@17`)
+
+### Development Workflow
+**The user runs `npm run dev` locally and sees changes live via hot reload.**
+Do NOT rebuild or redeploy Docker after code changes - the local dev server handles this automatically.
+
+### Docker Commands (only when explicitly needed)
+Docker is used for production-like testing, not daily development.
+
+```bash
+# Rebuild and redeploy (rarely needed)
+docker-compose down && docker-compose build --no-cache && docker-compose up -d
+
+# View logs
+docker-compose logs -f app
+
+# Stop
+docker-compose down
+```
+
+## Deployment Details
+
+- **Container name:** ai-focus-app (always use `container_name` in docker-compose.yml)
+- **Port:** 4444 (http://localhost:4444)
+- **Database:** Homebrew PostgreSQL on host machine (accessed via `host.docker.internal:5433` from Docker)
+- **Database name:** aidashboard
+- **Database user:** aidashboard
+
+### Docker Compose Rules
+- Always specify `container_name: ai-focus-app` in docker-compose.yml
+- This ensures consistent container naming for easier management
+
+### Database Architecture
+- PostgreSQL runs on the **host machine** via Homebrew (not in a container)
+- The Docker app connects to it using `host.docker.internal:5433`
+- Local dev (outside Docker) connects via `localhost:5433`
+
+## Tech Stack
+
+- **Framework:** Next.js 16 with App Router
+- **Styling:** Tailwind CSS v4 with CSS custom properties
+- **Database:** PostgreSQL with Prisma ORM
+- **UI Components:** Radix UI primitives
+- **Animations:** Framer Motion
+- **Theme:** next-themes for dark mode
+
+## Color Scheme
+
+The app uses a warm Anthropic-inspired palette with purple accents:
+
+- **Primary:** Orange/amber (Anthropic brand)
+- **Accent:** Purple (for interactive elements, focus states, hover effects)
+- **Ring/Focus:** Purple
+- **Secondary:** Soft purple tones
+
+Key color files:
+- `src/app/globals.css` - CSS custom properties and theme variables
+- `tailwind.config.ts` - Tailwind color extensions
+
+## Key Directories
+
+```
+src/
+├── app/              # Next.js app router pages
+├── components/
+│   ├── layout/       # Sidebar, Header, DashboardLayout
+│   ├── todos/        # Todo components (TodoItem, TodoForm, etc.)
+│   ├── ui/           # Base UI components (Button, Input, etc.)
+│   └── providers/    # Theme provider
+├── lib/              # Utilities and Prisma client
+└── types/            # TypeScript types
+prisma/
+└── schema.prisma     # Database schema
+```
+
+## Database Commands (Prisma 7)
+
+This project uses Prisma 7, which requires the `--config` flag for all CLI commands.
+
+**Sync schema to database (recommended for dev):**
+```bash
+npx prisma db push --config prisma/prisma.config.ts
+```
+
+**Run migrations (requires DB create permission):**
+```bash
+npx prisma migrate dev --name <migration_name> --config prisma/prisma.config.ts
+```
+
+**Generate Prisma client:**
+```bash
+npx prisma generate --config prisma/prisma.config.ts
+```
+
+**Open Prisma Studio:**
+```bash
+npx prisma studio --config prisma/prisma.config.ts
+```
+
+### Prisma 7 Notes
+- The `datasource.url` is configured in `prisma/prisma.config.ts`, not in `schema.prisma`
+- Use `db push` for quick schema sync (no shadow database needed)
+- Use `migrate dev` for production-ready migrations (requires DB user to have CREATE DATABASE permission)
+
+## Icon Management
+
+The app uses a **pixel art SVG** as the source of truth for all icons and favicons.
+
+### Icon Files
+- **Source:** `public/icon.svg` - The master pixel art SVG (16x16 grid)
+- **Generated PNGs:** All PNG/ICO files are auto-generated from the SVG
+  - `icon-192.png` - PWA icon (192x192)
+  - `icon-512.png` - PWA icon (512x512)
+  - `apple-touch-icon.png` - iOS home screen icon (180x180)
+  - `favicon-48.png` - Browser favicon (48x48)
+  - `favicon.png` - Browser favicon (32x32)
+  - `favicon.ico` - Legacy favicon (32x32)
+
+### Updating Icons
+
+**When you modify `icon.svg`, you MUST regenerate all PNG files:**
+
+```bash
+node scripts/generate-icons.js
+```
+
+This script uses Sharp to convert the SVG to all required PNG sizes while preserving the pixel-perfect art (using `kernel: 'nearest'` for no blur).
+
+### PWA Manifest Cache Busting
+
+After regenerating icons:
+
+1. **Update version in `public/manifest.json`:**
+   - Change `?v=3` to `?v=4` (or next number) on all icon URLs
+   - Also update `start_url` version parameter
+
+2. **Rebuild Docker (if using Docker):**
+   ```bash
+   docker-compose down && docker-compose build --no-cache && docker-compose up -d
+   ```
+
+3. **Force Chrome PWA to update:**
+   - Uninstall PWA: `chrome://apps` → Remove app
+   - Clear site data: DevTools → Application → Clear site data
+   - Hard refresh: Cmd+Shift+R (Mac) or Ctrl+Shift+R (Windows)
+   - Reinstall PWA from browser
+
+### Why This Matters
+Chrome **aggressively caches** PWA icons and manifests. Simply updating the files won't work - you need cache-busting query parameters (`?v=X`) to force browsers to fetch new icons.

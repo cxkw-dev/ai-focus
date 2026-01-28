@@ -1,0 +1,104 @@
+/* CodePen-style fire animation */
+/* Adapted from https://codepen.io/z-/pen/JXVpgp */
+
+.fire-icon {
+  position: relative;
+  overflow: visible;
+}
+
+.fire-flames {
+  position: absolute;
+  bottom: 15%;
+  left: 50%;
+  width: 70%;
+  height: 70%;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.fire-flame {
+  position: absolute;
+  right: 0%;
+  bottom: 0%;
+  width: 0%;
+  height: 0%;
+  background-color: #FFDC01;
+  border-radius: 2px;
+}
+
+.fire-flame:nth-child(2n+1) {
+  animation: flameodd 1s ease-in infinite;
+}
+
+.fire-flame:nth-child(2n) {
+  animation: flameeven 1s ease-in infinite;
+}
+
+.fire-flame:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.fire-flame:nth-child(2) {
+  animation-delay: 0.25s;
+}
+
+.fire-flame:nth-child(3) {
+  animation-delay: 0.5s;
+}
+
+.fire-flame:nth-child(4) {
+  animation-delay: 0.75s;
+}
+
+@keyframes flameodd {
+  0%, 100% {
+    width: 0%;
+    height: 0%;
+    background-color: #FFDC01;
+    z-index: 1000000;
+    right: 0%;
+    bottom: 0%;
+  }
+  25% {
+    width: 100%;
+    height: 100%;
+    right: 1%;
+    bottom: 2%;
+  }
+  40% {
+    background-color: #FDAC01;
+    z-index: 1000000;
+  }
+  100% {
+    background-color: #F73B01;
+    z-index: -10;
+    right: 150%;
+    bottom: 170%;
+  }
+}
+
+@keyframes flameeven {
+  0%, 100% {
+    width: 0%;
+    height: 0%;
+    background-color: #FFDC01;
+    z-index: 1000000;
+    right: 0%;
+    bottom: 0%;
+  }
+  25% {
+    width: 100%;
+    height: 100%;
+    right: 2%;
+    bottom: 1%;
+  }
+  40% {
+    background-color: #FDAC01;
+    z-index: 1000000;
+  }
+  100% {
+    background-color: #F73B01;
+    z-index: -10;
+    right: 170%;
+    bottom: 150%;
+  }
+}

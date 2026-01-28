@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "Bash(docker:*)",
+      "Bash(colima status:*)",
+      "Bash(/usr/local/bin/node:*)",
+      "Bash(/opt/homebrew/bin/node:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker-compose:*)",
+      "Bash(chmod:*)",
+      "Bash(npx prisma generate)",
+      "Bash(npx prisma db push:*)",
+      "Bash(npx tsc:*)",
+      "Bash(tree:*)",
+      "Bash(npm install:*)",
+      "Bash(brew services:*)",
+      "Bash(psql:*)",
+      "Bash(/opt/homebrew/opt/postgresql@16/bin/psql:*)",
+      "Bash(lsof:*)",
+      "Bash(curl:*)",
+      "Bash(npm update:*)",
+      "Bash(npm outdated:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npx svg2png-cli:*)",
+      "Bash(npx @aspect-build/rules_svg:*)",
+      "Bash(node -e:*)",
+      "WebFetch(domain:codepen.io)"
+    ]
+  }
+}

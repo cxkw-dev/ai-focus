@@ -1,0 +1,16 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ai-focus:latest
+    container_name: ai-focus-app
+    restart: unless-stopped
+    ports:
+      - "4444:4444"
+    environment:
+      DATABASE_URL: postgresql://aidashboard:aidashboard_secret_2024@host.docker.internal:5433/aidashboard
+      NEXTAUTH_URL: http://localhost:4444
+      NODE_ENV: production
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

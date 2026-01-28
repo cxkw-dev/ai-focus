@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <!-- Head -->
+  <rect x="4" y="2" width="8" height="1" fill="#E39A7B" />
+  <rect x="3" y="3" width="10" height="1" fill="#E39A7B" />
+  <rect x="2" y="4" width="12" height="2" fill="#E39A7B" />
+  
+  <!-- Eyes Row 1 -->
+  <rect x="2" y="6" width="2" height="1" fill="#E39A7B" />
+  <rect x="4" y="6" width="2" height="1" fill="#FFFFFF" />
+  <rect x="6" y="6" width="4" height="1" fill="#E39A7B" />
+  <rect x="10" y="6" width="2" height="1" fill="#FFFFFF" />
+  <rect x="12" y="6" width="2" height="1" fill="#E39A7B" />
+
+  <!-- Eyes Row 2 -->
+  <rect x="2" y="7" width="2" height="1" fill="#E39A7B" />
+  <rect x="4" y="7" width="1" height="1" fill="#FFFFFF" />
+  <rect x="5" y="7" width="1" height="1" fill="#121214" />
+  <rect x="6" y="7" width="4" height="1" fill="#E39A7B" />
+  <rect x="10" y="7" width="1" height="1" fill="#FFFFFF" />
+  <rect x="11" y="7" width="1" height="1" fill="#121214" />
+  <rect x="12" y="7" width="2" height="1" fill="#E39A7B" />
+
+  <!-- Eyes Row 3 -->
+  <rect x="2" y="8" width="2" height="1" fill="#E39A7B" />
+  <rect x="4" y="8" width="1" height="1" fill="#FFFFFF" />
+  <rect x="5" y="8" width="1" height="1" fill="#121214" />
+  <rect x="6" y="8" width="4" height="1" fill="#E39A7B" />
+  <rect x="10" y="8" width="1" height="1" fill="#FFFFFF" />
+  <rect x="11" y="8" width="1" height="1" fill="#121214" />
+  <rect x="12" y="8" width="2" height="1" fill="#E39A7B" />
+
+  <!-- Body -->
+  <rect x="2" y="9" width="12" height="4" fill="#E39A7B" />
+
+  <!-- Feet Row 1 -->
+  <rect x="2" y="13" width="3" height="1" fill="#E39A7B" />
+  <rect x="7" y="13" width="2" height="1" fill="#E39A7B" />
+  <rect x="11" y="13" width="3" height="1" fill="#E39A7B" />
+
+  <!-- Feet Row 2 -->
+  <rect x="2" y="14" width="2" height="1" fill="#E39A7B" />
+  <rect x="7" y="14" width="2" height="1" fill="#E39A7B" />
+  <rect x="12" y="14" width="2" height="1" fill="#E39A7B" />
+</svg>
