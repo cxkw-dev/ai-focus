@@ -6,11 +6,8 @@ import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   CheckSquare,
-  Settings,
   ChevronLeft,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
 import {
   Tooltip,
   TooltipContent,
@@ -29,11 +26,6 @@ const navItems = [
     href: '/todos',
     icon: CheckSquare,
   },
-  {
-    title: 'Settings',
-    href: '/settings',
-    icon: Settings,
-  },
 ]
 
 export function Sidebar({ collapsed, onCollapse }: SidebarProps) {
@@ -45,34 +37,24 @@ export function Sidebar({ collapsed, onCollapse }: SidebarProps) {
         initial={false}
         animate={{ width: collapsed ? 72 : 256 }}
         transition={{ duration: 0.2, ease: 'easeInOut' }}
-        className="fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-sidebar-border bg-sidebar"
+        className="fixed left-0 top-0 z-40 flex h-screen flex-col border-r"
+        style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-color)' }}
       >
         {/* Logo */}
-        <div className="flex h-16 items-center border-b border-sidebar-border px-4">
-          <Link href="/" className="flex items-center gap-2 group">
-            <AnimatePresence mode="wait">
-              {collapsed ? (
-                <motion.span
-                  key="collapsed"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="font-mono text-sm text-sidebar-foreground/30 tracking-tighter"
-                >
-                  X
-                </motion.span>
-              ) : (
-                 <motion.span
-                  key="expanded"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="font-mono text-sm text-sidebar-foreground/30 tracking-tighter hover:text-sidebar-foreground/50 transition-colors"
-                >
-                  AI-FOCUS
-                </motion.span>
-              )}
-            </AnimatePresence>
+        <div className="flex h-16 items-center border-b px-4" style={{ borderColor: 'var(--border-color)' }}>
+          <Link href="/" className="flex items-center group">
+            <span
+              className="text-3xl font-bold uppercase"
+              style={{
+                fontFamily: '"Pixelify Sans", sans-serif',
+                background: 'linear-gradient(135deg, var(--primary), var(--accent), var(--status-done))',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              Focus
+            </span>
           </Link>
         </div>
 
@@ -86,12 +68,14 @@ export function Sidebar({ collapsed, onCollapse }: SidebarProps) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
-                  isActive
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-sm shadow-[#E39A7B]/20'
-                    : 'text-sidebar-foreground/70 hover:bg-[#E39A7B]/10 hover:text-sidebar-foreground'
-                )}
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200"
+                style={isActive ? {
+                  backgroundColor: 'color-mix(in srgb, var(--primary) 15%, transparent)',
+                  color: 'var(--primary)',
+                  boxShadow: '0 1px 3px color-mix(in srgb, var(--primary) 20%, transparent)',
+                } : {
+                  color: 'var(--text-muted)',
+                }}
               >
                 <Icon className="h-5 w-5 shrink-0" />
                 <AnimatePresence mode="wait">
@@ -130,8 +114,13 @@ export function Sidebar({ collapsed, onCollapse }: SidebarProps) {
           <TooltipTrigger asChild>
             <motion.button
               onClick={() => onCollapse(!collapsed)}
-              className="absolute top-1/2 -right-3 z-50 flex h-6 w-6 items-center justify-center rounded-full border border-sidebar-border bg-sidebar shadow-lg shadow-black/10 text-sidebar-foreground/60 hover:text-[#E39A7B] hover:border-[#E39A7B]/50 transition-colors"
-              style={{ translateY: '-50%' }}
+              className="absolute top-1/2 -right-3 z-50 flex h-6 w-6 items-center justify-center rounded-full border shadow-lg shadow-black/20 transition-colors"
+              style={{
+                transform: 'translateY(-50%)',
+                backgroundColor: 'var(--surface)',
+                borderColor: 'var(--border-color)',
+                color: 'var(--text-muted)',
+              }}
               whileHover={{ scale: 1.15 }}
               whileTap={{ scale: 0.9 }}
             >

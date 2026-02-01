@@ -6,7 +6,7 @@ import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { TodoList } from '@/components/todos/todo-list'
 import { TodoForm, InlineTodoForm } from '@/components/todos/todo-form'
 import { useToast } from '@/components/ui/use-toast'
-import type { Todo, Category, CreateTodoInput, UpdateTodoInput } from '@/types/todo'
+import type { Todo, Category, CreateTodoInput, UpdateTodoInput, Status, Priority } from '@/types/todo'
 import type { Note } from '@/types/note'
 
 export default function TodosPage() {
@@ -135,25 +135,62 @@ export default function TodosPage() {
     }
   }
 
-  const handleToggle = async (id: string, completed: boolean) => {
+  const handleStatusChange = async (id: string, status: Status) => {
+    // Find original status for rollback
+    const originalTodo = todos.find((t) => t.id === id)
+    const originalStatus = originalTodo?.status
+
     // Optimistic update
     setTodos((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, completed } : t))
+      prev.map((t) => (t.id === id ? { ...t, status } : t))
     )
 
     try {
       const res = await fetch(`/api/todos/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ completed }),
+        body: JSON.stringify({ status }),
       })
 
       if (!res.ok) {
         // Revert on failure
         setTodos((prev) =>
-          prev.map((t) => (t.id === id ? { ...t, completed: !completed } : t))
+          prev.map((t) => (t.id === id ? { ...t, status: originalStatus! } : t))
         )
-        throw new Error('Failed to toggle todo')
+        throw new Error('Failed to update todo status')
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update todo. Please try again.',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const handlePriorityChange = async (id: string, priority: Priority) => {
+    // Find original priority for rollback
+    const originalTodo = todos.find((t) => t.id === id)
+    const originalPriority = originalTodo?.priority
+
+    // Optimistic update
+    setTodos((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, priority } : t))
+    )
+
+    try {
+      const res = await fetch(`/api/todos/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priority }),
+      })
+
+      if (!res.ok) {
+        // Revert on failure
+        setTodos((prev) =>
+          prev.map((t) => (t.id === id ? { ...t, priority: originalPriority! } : t))
+        )
+        throw new Error('Failed to update todo priority')
       }
     } catch (error) {
       toast({
@@ -379,8 +416,12 @@ export default function TodosPage() {
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-[240px_320px_1fr] gap-4 min-h-0">
           {/* Left Column - Create Form */}
           <div className="flex flex-col min-h-0">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">New Task</h2>
+            <div className="flex items-center gap-2 mb-2">
+              <div
+                className="w-1 h-4 rounded-full"
+                style={{ backgroundColor: 'var(--accent)' }}
+              />
+              <h2 className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--accent)' }}>New Task</h2>
             </div>
             <InlineTodoForm
               onSubmit={handleCreate}
@@ -394,7 +435,8 @@ export default function TodosPage() {
             <TodoList
               todos={todos}
               archivedTodos={archivedTodos}
-              onToggle={handleToggle}
+              onStatusChange={handleStatusChange}
+              onPriorityChange={handlePriorityChange}
               onDelete={handleDelete}
               onPermanentDelete={handlePermanentDelete}
               onEdit={handleEdit}
@@ -407,19 +449,63 @@ export default function TodosPage() {
           {/* Scratch Pad - takes remaining space, fixed to viewport */}
           <div className="flex flex-col min-h-0">
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Scratch Pad</h2>
-              <span className="text-[10px] text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-1 h-4 rounded-full"
+                  style={{ backgroundColor: 'var(--status-waiting)' }}
+                />
+                <h2 className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--status-waiting)' }}>Scratch Pad</h2>
+              </div>
+              <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
                 {noteStatus === 'saving' ? 'Saving...' : noteStatus === 'error' ? 'Error' : 'Auto-saves'}
               </span>
             </div>
-            <div className="flex-1 min-h-0">
-              <textarea
-                className="w-full h-full resize-none rounded-xl border bg-card px-4 py-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 shadow-sm"
-                placeholder="Jot down quick notes..."
-                value={note?.content ?? ''}
-                onChange={(e) => handleNoteChange(e.target.value)}
-                disabled={isNoteLoading}
+            <div className="group/pad flex-1 min-h-0 relative">
+              {/* Glow effect on focus */}
+              <div
+                className="absolute -inset-px rounded-lg opacity-0 blur-sm transition-opacity duration-300 group-focus-within/pad:opacity-100"
+                style={{
+                  background: `linear-gradient(135deg, color-mix(in srgb, var(--primary) 40%, transparent), color-mix(in srgb, var(--accent) 30%, transparent))`,
+                }}
               />
+
+              {/* Main container with dot pattern */}
+              <div
+                className="relative h-full rounded-lg overflow-hidden transition-all duration-300"
+                style={{
+                  backgroundColor: 'var(--surface)',
+                }}
+              >
+                {/* Dot grid pattern overlay */}
+                <div
+                  className="absolute inset-0 pointer-events-none opacity-[0.03]"
+                  style={{
+                    backgroundImage: `radial-gradient(circle, var(--text-primary) 1px, transparent 1px)`,
+                    backgroundSize: '16px 16px',
+                    backgroundPosition: '8px 8px',
+                  }}
+                />
+
+                {/* Subtle gradient fade at edges */}
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: `linear-gradient(180deg, transparent 0%, transparent 85%, var(--surface) 100%)`,
+                  }}
+                />
+
+                <textarea
+                  className="relative w-full h-full resize-none bg-transparent px-4 py-3 text-xs outline-none leading-relaxed"
+                  style={{
+                    color: 'var(--text-primary)',
+                    caretColor: 'var(--primary)',
+                  }}
+                  placeholder="Jot down quick notes..."
+                  value={note?.content ?? ''}
+                  onChange={(e) => handleNoteChange(e.target.value)}
+                  disabled={isNoteLoading}
+                />
+              </div>
             </div>
           </div>
         </div>

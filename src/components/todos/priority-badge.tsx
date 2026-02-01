@@ -14,37 +14,27 @@ interface PriorityBadgeProps {
 const priorityConfig: Record<Priority, {
   label: string
   icon: React.ElementType
-  bgClass: string
-  textClass: string
-  borderClass: string
+  colorVar: string
 }> = {
   URGENT: {
     label: 'Urgent',
     icon: Circle,
-    bgClass: 'bg-red-500/10',
-    textClass: 'text-red-500',
-    borderClass: 'border-red-500/25',
+    colorVar: 'var(--priority-urgent)',
   },
   HIGH: {
     label: 'High',
     icon: AlertTriangle,
-    bgClass: 'bg-[#E39A7B]/10',
-    textClass: 'text-[#E39A7B]',
-    borderClass: 'border-[#E39A7B]/25',
+    colorVar: 'var(--priority-high)',
   },
   MEDIUM: {
     label: 'Medium',
     icon: Circle,
-    bgClass: 'bg-[#DBB06B]/10',
-    textClass: 'text-[#DBB06B]',
-    borderClass: 'border-[#DBB06B]/25',
+    colorVar: 'var(--priority-medium)',
   },
   LOW: {
     label: 'Low',
     icon: ArrowDown,
-    bgClass: 'bg-slate-500/10',
-    textClass: 'text-slate-400',
-    borderClass: 'border-slate-500/20',
+    colorVar: 'var(--priority-low)',
   },
 }
 
@@ -72,21 +62,25 @@ export function PriorityBadge({ priority, size = 'sm' }: PriorityBadgeProps) {
     <div
       className={cn(
         'inline-flex items-center gap-1.5 rounded-full border',
-        config.bgClass,
-        config.borderClass,
         size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm'
       )}
+      style={{
+        backgroundColor: `color-mix(in srgb, ${config.colorVar} 10%, transparent)`,
+        borderColor: `color-mix(in srgb, ${config.colorVar} 25%, transparent)`,
+        color: config.colorVar,
+      }}
     >
       {priority === 'URGENT' ? (
         <FireIcon size={size} />
       ) : (
-        <Icon className={cn(
-          config.textClass,
-          size === 'sm' ? 'h-3 w-3' : 'h-4 w-4',
-          priority === 'MEDIUM' && 'fill-current'
-        )} />
+        <Icon
+          className={cn(
+            size === 'sm' ? 'h-3 w-3' : 'h-4 w-4',
+            priority === 'MEDIUM' && 'fill-current'
+          )}
+        />
       )}
-      <span className={cn('font-medium', config.textClass)}>
+      <span className="font-medium">
         {config.label}
       </span>
     </div>
@@ -95,15 +89,12 @@ export function PriorityBadge({ priority, size = 'sm' }: PriorityBadgeProps) {
 
 // Compact version for inline use
 export function PriorityDot({ priority }: { priority: Priority }) {
+  const config = priorityConfig[priority]
+
   return (
     <div
-      className={cn(
-        'h-2.5 w-2.5 rounded-full',
-        priority === 'URGENT' && 'bg-red-500',
-        priority === 'HIGH' && 'bg-[#E39A7B]',
-        priority === 'MEDIUM' && 'bg-[#DBB06B]',
-        priority === 'LOW' && 'bg-slate-400'
-      )}
+      className="h-2.5 w-2.5 rounded-full"
+      style={{ backgroundColor: config.colorVar }}
     />
   )
 }

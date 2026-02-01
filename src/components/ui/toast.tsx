@@ -28,9 +28,8 @@ const toastVariants = cva(
   {
     variants: {
       variant: {
-        default: 'border-border/50 bg-card/95 text-foreground',
-        destructive:
-          'destructive group border-destructive/50 bg-destructive/95 text-destructive-foreground',
+        default: '',
+        destructive: 'destructive group',
       },
     },
     defaultVariants: {
@@ -39,15 +38,29 @@ const toastVariants = cva(
   }
 )
 
+const toastStyles: Record<string, React.CSSProperties> = {
+  default: {
+    backgroundColor: 'color-mix(in srgb, var(--surface) 95%, transparent)',
+    borderColor: 'color-mix(in srgb, var(--border-color) 50%, transparent)',
+    color: 'var(--text-primary)',
+  },
+  destructive: {
+    backgroundColor: 'color-mix(in srgb, var(--destructive) 95%, transparent)',
+    borderColor: 'color-mix(in srgb, var(--destructive) 50%, transparent)',
+    color: 'var(--destructive-foreground)',
+  },
+}
+
 const Toast = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Root>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Root> &
     VariantProps<typeof toastVariants>
->(({ className, variant, ...props }, ref) => {
+>(({ className, variant = 'default', ...props }, ref) => {
   return (
     <ToastPrimitives.Root
       ref={ref}
       className={cn(toastVariants({ variant }), className)}
+      style={toastStyles[variant || 'default']}
       {...props}
     />
   )
@@ -61,9 +74,13 @@ const ToastAction = React.forwardRef<
   <ToastPrimitives.Action
     ref={ref}
     className={cn(
-      'inline-flex h-8 shrink-0 items-center justify-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground ring-offset-background transition-all hover:bg-primary/90 active:scale-95 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 group-[.destructive]:bg-destructive-foreground group-[.destructive]:text-destructive group-[.destructive]:hover:bg-destructive-foreground/90',
+      'inline-flex h-8 shrink-0 items-center justify-center rounded-lg px-3 text-sm font-medium transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
       className
     )}
+    style={{
+      backgroundColor: 'var(--primary)',
+      color: 'var(--primary-foreground)',
+    }}
     {...props}
   />
 ))
@@ -76,9 +93,10 @@ const ToastClose = React.forwardRef<
   <ToastPrimitives.Close
     ref={ref}
     className={cn(
-      'shrink-0 rounded-full p-1.5 text-foreground/40 hover:text-foreground hover:bg-foreground/10 transition-all focus:outline-none focus:ring-2 focus:ring-ring group-[.destructive]:text-destructive-foreground/60 group-[.destructive]:hover:text-destructive-foreground group-[.destructive]:hover:bg-destructive-foreground/10',
+      'shrink-0 rounded-full p-1.5 transition-all focus:outline-none focus:ring-2',
       className
     )}
+    style={{ color: 'color-mix(in srgb, var(--text-primary) 40%, transparent)' }}
     toast-close=""
     {...props}
   >
@@ -105,7 +123,8 @@ const ToastDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitives.Description
     ref={ref}
-    className={cn('text-sm text-muted-foreground truncate max-w-[200px]', className)}
+    className={cn('text-sm truncate max-w-[200px]', className)}
+    style={{ color: 'var(--text-muted)' }}
     {...props}
   />
 ))

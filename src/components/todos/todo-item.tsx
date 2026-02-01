@@ -10,13 +10,43 @@ import {
   Edit2,
   GripVertical,
   RotateCcw,
-  Check,
-  Undo2,
+  Circle,
+  Play,
+  Clock,
+  Pause,
+  CheckCircle2,
+  ChevronDown,
+  AlertTriangle,
+  Flame,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatRelativeDate } from '@/lib/utils'
-import { PriorityBadge } from './priority-badge'
-import type { Todo } from '@/types/todo'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import type { Todo, Status, Priority } from '@/types/todo'
+
+// Unified chip styling - all elements in the bottom row share this base
+const CHIP_BASE = 'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors'
+
+// Uses CSS variables from globals.css for easy theme switching
+const STATUS_CONFIG: Record<Status, { label: string; icon: React.ElementType; colorVar: string; bgVar: string }> = {
+  TODO: { label: 'To Do', icon: Circle, colorVar: 'var(--status-todo)', bgVar: 'var(--status-todo)' },
+  IN_PROGRESS: { label: 'In Progress', icon: Play, colorVar: 'var(--status-in-progress)', bgVar: 'var(--status-in-progress)' },
+  WAITING: { label: 'Waiting', icon: Clock, colorVar: 'var(--status-waiting)', bgVar: 'var(--status-waiting)' },
+  ON_HOLD: { label: 'On Hold', icon: Pause, colorVar: 'var(--status-on-hold)', bgVar: 'var(--status-on-hold)' },
+  COMPLETED: { label: 'Done', icon: CheckCircle2, colorVar: 'var(--status-done)', bgVar: 'var(--status-done)' },
+}
+
+const PRIORITY_CONFIG: Record<Priority, { label: string; colorVar: string; bgVar: string; icon?: React.ElementType; pulse?: boolean }> = {
+  LOW: { label: 'Low', colorVar: 'var(--priority-low)', bgVar: 'var(--priority-low)' },
+  MEDIUM: { label: 'Med', colorVar: 'var(--priority-medium)', bgVar: 'var(--priority-medium)' },
+  HIGH: { label: 'High', colorVar: 'var(--priority-high)', bgVar: 'var(--priority-high)', icon: AlertTriangle },
+  URGENT: { label: 'Urgent', colorVar: 'var(--priority-urgent)', bgVar: 'var(--priority-urgent)', icon: Flame, pulse: true },
+}
 
 const URL_SPLIT_REGEX = /(https?:\/\/[^\s]+)/g
 const URL_MATCH_REGEX = /^https?:\/\/[^\s]+$/
@@ -45,7 +75,8 @@ function renderTextWithLinks(text: string) {
 
 interface TodoItemProps {
   todo: Todo
-  onToggle: (id: string, completed: boolean) => void
+  onStatusChange: (id: string, status: Status) => void
+  onPriorityChange: (id: string, priority: Priority) => void
   onDelete: (id: string) => void
   onEdit: (todo: Todo) => void
   onRestore?: (id: string) => void
@@ -53,108 +84,281 @@ interface TodoItemProps {
   isArchiveView?: boolean
 }
 
+function StatusDropdown({ todo, onStatusChange }: { todo: Todo; onStatusChange: (id: string, status: Status) => void }) {
+  const config = STATUS_CONFIG[todo.status]
+  const Icon = config.icon
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          className={cn(CHIP_BASE, 'hover:brightness-110 cursor-pointer')}
+          style={{
+            backgroundColor: `color-mix(in srgb, ${config.bgVar} 15%, transparent)`,
+            color: config.colorVar,
+          }}
+        >
+          <Icon className="h-3 w-3" />
+          <span className="hidden sm:inline">{config.label}</span>
+          <ChevronDown className="h-2.5 w-2.5 opacity-50" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="start"
+        className="min-w-[150px] p-1 border-border/50"
+        style={{ backgroundColor: 'var(--surface-2)' }}
+      >
+        {(Object.keys(STATUS_CONFIG) as Status[]).map((status) => {
+          const statusConfig = STATUS_CONFIG[status]
+          const StatusIcon = statusConfig.icon
+          const isActive = todo.status === status
+          return (
+            <DropdownMenuItem
+              key={status}
+              onClick={() => onStatusChange(todo.id, status)}
+              className={cn(
+                'flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs cursor-pointer transition-colors',
+                isActive ? 'font-medium' : 'hover:bg-white/5'
+              )}
+              style={isActive ? {
+                backgroundColor: `color-mix(in srgb, ${statusConfig.bgVar} 15%, transparent)`,
+                color: statusConfig.colorVar,
+              } : { color: 'var(--text-muted)' }}
+            >
+              <StatusIcon className="h-3.5 w-3.5" style={{ color: statusConfig.colorVar }} />
+              <span>{statusConfig.label}</span>
+              {isActive && (
+                <span className="ml-auto text-[10px] opacity-60">✓</span>
+              )}
+            </DropdownMenuItem>
+          )
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+function PriorityDropdown({ todo, onPriorityChange }: { todo: Todo; onPriorityChange: (id: string, priority: Priority) => void }) {
+  const config = PRIORITY_CONFIG[todo.priority]
+  const Icon = config.icon
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          className={cn(
+            CHIP_BASE,
+            config.pulse && 'animate-pulse',
+            'hover:brightness-110 cursor-pointer'
+          )}
+          style={{
+            backgroundColor: `color-mix(in srgb, ${config.bgVar} 15%, transparent)`,
+            color: config.colorVar,
+          }}
+        >
+          {Icon && <Icon className="h-3 w-3" />}
+          <span>{config.label}</span>
+          <ChevronDown className="h-2.5 w-2.5 opacity-50" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="start"
+        className="min-w-[130px] p-1 border-border/50"
+        style={{ backgroundColor: 'var(--surface-2)' }}
+      >
+        {(Object.keys(PRIORITY_CONFIG) as Priority[]).map((priority) => {
+          const priorityConfig = PRIORITY_CONFIG[priority]
+          const PriorityIcon = priorityConfig.icon
+          const isActive = todo.priority === priority
+          return (
+            <DropdownMenuItem
+              key={priority}
+              onClick={() => onPriorityChange(todo.id, priority)}
+              className={cn(
+                'flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs cursor-pointer transition-colors',
+                isActive ? 'font-medium' : 'hover:bg-white/5'
+              )}
+              style={isActive ? {
+                backgroundColor: `color-mix(in srgb, ${priorityConfig.bgVar} 15%, transparent)`,
+                color: priorityConfig.colorVar,
+              } : { color: 'var(--text-muted)' }}
+            >
+              {PriorityIcon ? (
+                <PriorityIcon className="h-3.5 w-3.5" style={{ color: priorityConfig.colorVar }} />
+              ) : (
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: priorityConfig.colorVar }} />
+              )}
+              <span>{priorityConfig.label}</span>
+              {isActive && (
+                <span className="ml-auto text-[10px] opacity-60">✓</span>
+              )}
+            </DropdownMenuItem>
+          )
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 function TodoItemContent({
   todo,
-  onToggle,
+  onStatusChange,
+  onPriorityChange,
   onDelete,
   onEdit,
   onRestore,
   isDragging,
   isArchiveView,
 }: TodoItemProps) {
+  const isCompleted = todo.status === 'COMPLETED'
+
   return (
-    <div className="flex flex-col gap-1.5 w-full min-w-0">
+    <div className="flex flex-col gap-2 w-full min-w-0">
       {/* Main row: content */}
       <div className="flex items-start gap-2">
-        {/* Content */}
         <div className="flex-1 min-w-0">
-          <h3
-            className={cn(
-              'text-[13px] font-medium text-foreground break-words leading-snug',
-              todo.completed && 'line-through text-muted-foreground'
+          <div className="flex items-center gap-2">
+            <h3
+              className={cn(
+                'text-[13px] font-medium break-words leading-snug',
+                isCompleted && 'line-through'
+              )}
+              style={{ color: isCompleted ? 'var(--text-muted)' : 'var(--text-primary)' }}
+            >
+              {renderTextWithLinks(todo.title)}
+            </h3>
+            {todo.dueDate && (
+              <span
+                className="text-[10px] inline-flex items-center gap-1 flex-shrink-0"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                <Calendar className="h-2.5 w-2.5" />
+                {formatRelativeDate(todo.dueDate)}
+              </span>
             )}
-          >
-            {renderTextWithLinks(todo.title)}
-          </h3>
+          </div>
 
           {todo.description && (
-            <p className="mt-0.5 text-[11px] text-muted-foreground break-words leading-snug">
+            <p
+              className="mt-0.5 text-[11px] break-words leading-snug"
+              style={{ color: 'var(--text-muted)' }}
+            >
               {renderTextWithLinks(todo.description)}
             </p>
           )}
         </div>
       </div>
 
-      {/* Bottom row: chips left, actions right */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <PriorityBadge priority={todo.priority} size="sm" />
+      {/* Bottom row: actions aligned */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1">
+          {!isArchiveView && (
+            <StatusDropdown todo={todo} onStatusChange={onStatusChange} />
+          )}
+          {!isArchiveView ? (
+            <PriorityDropdown todo={todo} onPriorityChange={onPriorityChange} />
+          ) : (
+            <span
+              className={cn(CHIP_BASE)}
+              style={{
+                backgroundColor: `color-mix(in srgb, ${PRIORITY_CONFIG[todo.priority].bgVar} 15%, transparent)`,
+                color: PRIORITY_CONFIG[todo.priority].colorVar,
+              }}
+            >
+              {PRIORITY_CONFIG[todo.priority].label}
+            </span>
+          )}
           {todo.category && (
             <span
-              className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium"
-              style={{ backgroundColor: `${todo.category.color}15`, color: todo.category.color }}
+              className={cn(CHIP_BASE)}
+              style={{
+                backgroundColor: `${todo.category.color}15`,
+                color: todo.category.color
+              }}
             >
               {todo.category.name}
             </span>
           )}
-          {todo.dueDate && (
-            <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
-              <Calendar className="h-2.5 w-2.5" />
-              {formatRelativeDate(todo.dueDate)}
-            </span>
-          )}
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-0.5 flex-shrink-0">
+        {/* Actions - same height as chips */}
+        <div className="flex items-center gap-1 flex-shrink-0">
           {isArchiveView ? (
             <>
               <button
                 onClick={() => onRestore?.(todo.id)}
-                className="p-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 active:scale-95 transition-all duration-150"
+                className={cn(CHIP_BASE, 'transition-colors')}
+                style={{
+                  backgroundColor: 'color-mix(in srgb, var(--primary) 15%, transparent)',
+                  color: 'var(--primary)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--primary) 25%, transparent)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--primary) 15%, transparent)'
+                }}
                 title="Restore"
               >
-                <RotateCcw className="h-3.5 w-3.5" strokeWidth={2} />
+                <RotateCcw className="h-3 w-3" />
               </button>
               <button
                 onClick={() => onDelete(todo.id)}
-                className="p-1.5 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 active:scale-95 transition-all duration-150"
+                className={cn(CHIP_BASE, 'transition-colors')}
+                style={{
+                  backgroundColor: 'color-mix(in srgb, var(--destructive) 15%, transparent)',
+                  color: 'var(--destructive)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--destructive) 25%, transparent)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--destructive) 15%, transparent)'
+                }}
                 title="Delete permanently"
               >
-                <Trash2 className="h-3.5 w-3.5" strokeWidth={2} />
+                <Trash2 className="h-3 w-3" />
               </button>
             </>
           ) : (
             <>
               <button
-                onClick={() => onToggle(todo.id, !todo.completed)}
-                className={cn(
-                  'p-1.5 rounded-full active:scale-95 transition-all duration-150',
-                  todo.completed
-                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25'
-                    : 'bg-accent/50 text-accent-foreground hover:bg-accent'
-                )}
-                title={todo.completed ? 'Mark incomplete' : 'Mark complete'}
-              >
-                {todo.completed ? (
-                  <Undo2 className="h-3.5 w-3.5" strokeWidth={2} />
-                ) : (
-                  <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
-                )}
-              </button>
-              <button
                 onClick={() => onEdit(todo)}
-                className="p-1.5 rounded-full bg-[#E39A7B]/15 text-[#E39A7B] hover:bg-[#E39A7B]/25 active:scale-95 transition-all duration-150"
+                className={cn(CHIP_BASE, 'transition-colors')}
+                style={{
+                  backgroundColor: 'var(--surface-2)',
+                  color: 'var(--text-muted)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--primary) 20%, transparent)'
+                  e.currentTarget.style.color = 'var(--primary)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--surface-2)'
+                  e.currentTarget.style.color = 'var(--text-muted)'
+                }}
                 title="Edit"
               >
-                <Edit2 className="h-3.5 w-3.5" strokeWidth={2} />
+                <Edit2 className="h-3 w-3" />
               </button>
               <button
                 onClick={() => onDelete(todo.id)}
-                className="p-1.5 rounded-full bg-destructive/10 text-destructive hover:bg-destructive/20 active:scale-95 transition-all duration-150"
+                className={cn(CHIP_BASE, 'transition-colors')}
+                style={{
+                  backgroundColor: 'var(--surface-2)',
+                  color: 'var(--text-muted)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--destructive) 15%, transparent)'
+                  e.currentTarget.style.color = 'var(--destructive)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--surface-2)'
+                  e.currentTarget.style.color = 'var(--text-muted)'
+                }}
                 title="Delete"
               >
-                <Trash2 className="h-3.5 w-3.5" strokeWidth={2} />
+                <Trash2 className="h-3 w-3" />
               </button>
             </>
           )}
@@ -164,7 +368,7 @@ function TodoItemContent({
   )
 }
 
-export function TodoItem({ todo, onToggle, onDelete, onEdit, onRestore, isDragging: isOverlay, isArchiveView }: TodoItemProps) {
+export function TodoItem({ todo, onStatusChange, onPriorityChange, onDelete, onEdit, onRestore, isDragging: isOverlay, isArchiveView }: TodoItemProps) {
   const {
     attributes,
     listeners,
@@ -180,6 +384,7 @@ export function TodoItem({ todo, onToggle, onDelete, onEdit, onRestore, isDraggi
   }
 
   const dragging = isOverlay || isDragging
+  const isCompleted = todo.status === 'COMPLETED'
 
   return (
     <motion.div
@@ -191,15 +396,22 @@ export function TodoItem({ todo, onToggle, onDelete, onEdit, onRestore, isDraggi
       exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
       className="flex items-center gap-0.5"
     >
-      {/* Drag Handle - outside card, centered */}
+      {/* Drag Handle */}
       {!isArchiveView && (
         <button
           {...attributes}
           {...listeners}
           className={cn(
-            'flex-shrink-0 cursor-grab touch-none p-0.5 rounded text-muted-foreground/40 hover:text-muted-foreground transition-colors self-center',
+            'flex-shrink-0 cursor-grab touch-none p-0.5 rounded transition-colors self-center',
             dragging && 'cursor-grabbing'
           )}
+          style={{ color: 'color-mix(in srgb, var(--text-muted) 40%, transparent)' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--text-muted)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'color-mix(in srgb, var(--text-muted) 40%, transparent)'
+          }}
         >
           <GripVertical className="h-3.5 w-3.5" />
         </button>
@@ -208,15 +420,19 @@ export function TodoItem({ todo, onToggle, onDelete, onEdit, onRestore, isDraggi
       {/* Card */}
       <div
         className={cn(
-          'group flex-1 rounded-lg border bg-card px-3 py-2 transition-all hover:shadow-sm',
-          todo.completed && 'opacity-60 bg-muted/30',
-          dragging && 'shadow-lg ring-2 ring-[#E39A7B]/30 z-50',
-          isArchiveView && 'opacity-70'
+          'group flex-1 rounded-lg px-3 py-2.5 transition-all',
+          dragging && 'shadow-lg z-50',
+          (isCompleted || isArchiveView) && 'opacity-50'
         )}
+        style={{
+          backgroundColor: 'var(--surface-2)',
+          ...(dragging ? { boxShadow: '0 0 0 2px color-mix(in srgb, var(--primary) 30%, transparent)' } : {}),
+        }}
       >
         <TodoItemContent
           todo={todo}
-          onToggle={onToggle}
+          onStatusChange={onStatusChange}
+          onPriorityChange={onPriorityChange}
           onDelete={onDelete}
           onEdit={onEdit}
           onRestore={onRestore}
@@ -228,26 +444,32 @@ export function TodoItem({ todo, onToggle, onDelete, onEdit, onRestore, isDraggi
   )
 }
 
+export function TodoItemOverlay({ todo, onStatusChange, onPriorityChange, onDelete, onEdit }: Omit<TodoItemProps, 'isDragging' | 'isArchiveView'>) {
+  const isCompleted = todo.status === 'COMPLETED'
 
-
-export function TodoItemOverlay({ todo, onToggle, onDelete, onEdit }: Omit<TodoItemProps, 'isDragging' | 'isArchiveView'>) {
   return (
     <div className="flex items-center gap-0.5">
-      {/* Drag Handle placeholder for overlay */}
-      <div className="flex-shrink-0 p-0.5 text-muted-foreground/40">
+      <div
+        className="flex-shrink-0 p-0.5"
+        style={{ color: 'color-mix(in srgb, var(--text-muted) 40%, transparent)' }}
+      >
         <GripVertical className="h-3.5 w-3.5" />
       </div>
 
-      {/* Card */}
       <div
         className={cn(
-          'group flex-1 rounded-lg border bg-card px-3 py-2 shadow-2xl ring-2 ring-[#E39A7B]/30',
-          todo.completed && 'opacity-60'
+          'group flex-1 rounded-lg px-3 py-2.5 shadow-2xl',
+          isCompleted && 'opacity-50'
         )}
+        style={{
+          backgroundColor: 'var(--surface-2)',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 2px color-mix(in srgb, var(--primary) 30%, transparent)',
+        }}
       >
         <TodoItemContent
           todo={todo}
-          onToggle={onToggle}
+          onStatusChange={onStatusChange}
+          onPriorityChange={onPriorityChange}
           onDelete={onDelete}
           onEdit={onEdit}
           isDragging={true}

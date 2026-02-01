@@ -42,7 +42,7 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--background)' }}>
       {/* Desktop Sidebar */}
       {!isMobile && (
         <Sidebar collapsed={collapsed} onCollapse={handleCollapse} />

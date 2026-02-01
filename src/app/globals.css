@@ -1,50 +1,24 @@
 @import "tailwindcss";
 
-@theme {
-  /* Fresh Peach brand colors */
-  --color-peach-light: #FFD3AC;
-  --color-peach-blush: #FFB5AB;
-  --color-peach-warm: #E39A7B;
-  --color-peach-gold: #DBB06B;
-  
-  /* Dark theme base */
-  --color-dark-950: #0A0A0B;
-  --color-dark-900: #121214;
-  --color-dark-800: #1A1A1D;
-  --color-dark-700: #242428;
-  --color-dark-600: #2E2E33;
-  --color-dark-500: #3D3D44;
+/*
+ * Midnight Peach Theme
+ *
+ * To change colors, update the CSS variables below.
+ * See src/lib/themes.ts for theme configuration reference.
+ */
 
-  /* Semantic colors - Light mode (kept for compatibility) */
-  --color-background: hsl(30 20% 98%);
-  --color-foreground: hsl(0 0% 10%);
-  --color-card: hsl(30 15% 95%);
-  --color-card-foreground: hsl(0 0% 10%);
-  --color-popover: hsl(30 20% 98%);
-  --color-popover-foreground: hsl(0 0% 10%);
-  --color-primary: #E39A7B;
-  --color-primary-foreground: hsl(0 0% 10%);
-  --color-secondary: hsl(25 30% 92%);
-  --color-secondary-foreground: hsl(25 40% 30%);
-  --color-muted: hsl(30 15% 92%);
-  --color-muted-foreground: hsl(0 0% 45%);
-  --color-accent: #E39A7B;
-  --color-accent-foreground: hsl(0 0% 10%);
-  --color-destructive: hsl(0 84% 60%);
-  --color-destructive-foreground: hsl(0 0% 100%);
-  --color-border: hsl(30 15% 88%);
-  --color-input: hsl(30 15% 88%);
-  --color-ring: #E39A7B;
-  --color-sidebar: hsl(30 15% 95%);
-  --color-sidebar-foreground: hsl(0 0% 10%);
-  --color-sidebar-border: hsl(30 15% 88%);
-  --color-sidebar-accent: #E39A7B;
-  --color-sidebar-accent-foreground: hsl(0 0% 10%);
+@theme {
+  /* Theme colors as Tailwind variables */
+  --color-theme-background: var(--background);
+  --color-theme-surface: var(--surface);
+  --color-theme-surface-2: var(--surface-2);
+  --color-theme-primary: var(--primary);
+  --color-theme-accent: var(--accent);
 
   /* Border radius */
-  --radius-lg: 0.75rem;
-  --radius-md: calc(0.75rem - 2px);
-  --radius-sm: calc(0.75rem - 4px);
+  --radius-lg: 0.5rem;
+  --radius-md: 0.375rem;
+  --radius-sm: 0.25rem;
 
   /* Fonts */
   --font-sans: var(--font-geist-sans), system-ui, sans-serif;
@@ -75,82 +49,57 @@
 }
 
 :root {
-  --background: 30 20% 98%;
-  --foreground: 0 0% 10%;
-  --card: 30 15% 95%;
-  --card-foreground: 0 0% 10%;
-  --popover: 30 20% 98%;
-  --popover-foreground: 0 0% 10%;
-  --primary: 18 70% 69%;
-  --primary-foreground: 0 0% 10%;
-  --secondary: 25 30% 92%;
-  --secondary-foreground: 25 40% 30%;
-  --muted: 30 15% 92%;
-  --muted-foreground: 0 0% 45%;
-  --accent: 18 70% 69%;
-  --accent-foreground: 0 0% 10%;
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 30 15% 88%;
-  --input: 30 15% 88%;
-  --ring: 18 70% 69%;
-  --sidebar: 30 15% 95%;
-  --sidebar-foreground: 0 0% 10%;
-  --sidebar-border: 30 15% 88%;
-  --sidebar-accent: 18 70% 69%;
-  --sidebar-accent-foreground: 0 0% 10%;
+  /* ========================================
+   * MIDNIGHT PEACH THEME
+   * ======================================== */
+
+  /* Backgrounds */
+  --background: #0F0B0A;
+  --surface: #171110;
+  --surface-2: #221817;
+
+  /* Text */
+  --text-primary: #F6E9E3;
+  --text-muted: #C9B6AE;
+
+  /* Borders */
+  --border-color: #2F2320;
+
+  /* Primary (peach) */
+  --primary: #FFB199;
+  --primary-hover: #FF9A7A;
+  --primary-pressed: #FF8660;
+  --primary-foreground: #0F0B0A;
+
+  /* Accent (coral pink) */
+  --accent: #FF7D8C;
+  --accent-foreground: #0F0B0A;
+
+  /* Link */
+  --link: #FFC3AD;
+
+  /* Destructive */
+  --destructive: #FF6B6B;
+  --destructive-foreground: #0F0B0A;
+
+  /* Status colors */
+  --status-todo: #C9B6AE;
+  --status-in-progress: #FFB199;
+  --status-waiting: #FFCB8E;
+  --status-on-hold: #FF7D8C;
+  --status-done: #7DD3A8;
+
+  /* Priority colors */
+  --priority-low: #C9B6AE;
+  --priority-medium: #FFCB8E;
+  --priority-high: #FFB199;
+  --priority-urgent: #FF6B6B;
+
 }
 
+/* Force dark mode since Midnight Peach is a dark theme */
 .dark {
-  --background: 240 6% 6%;
-  --foreground: 30 20% 95%;
-  --card: 240 5% 10%;
-  --card-foreground: 30 20% 95%;
-  --popover: 240 5% 8%;
-  --popover-foreground: 30 20% 95%;
-  --primary: 18 70% 69%;
-  --primary-foreground: 240 6% 6%;
-  --secondary: 240 5% 15%;
-  --secondary-foreground: 30 50% 80%;
-  --muted: 240 5% 14%;
-  --muted-foreground: 0 0% 55%;
-  --accent: 18 70% 69%;
-  --accent-foreground: 240 6% 6%;
-  --destructive: 0 70% 55%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 240 5% 18%;
-  --input: 240 5% 18%;
-  --ring: 18 70% 69%;
-  --sidebar: 240 5% 8%;
-  --sidebar-foreground: 30 20% 95%;
-  --sidebar-border: 240 5% 15%;
-  --sidebar-accent: 18 70% 69%;
-  --sidebar-accent-foreground: 240 6% 6%;
-
-  --color-background: hsl(240 6% 6%);
-  --color-foreground: hsl(30 20% 95%);
-  --color-card: hsl(240 5% 10%);
-  --color-card-foreground: hsl(30 20% 95%);
-  --color-popover: hsl(240 5% 8%);
-  --color-popover-foreground: hsl(30 20% 95%);
-  --color-primary: #E39A7B;
-  --color-primary-foreground: hsl(240 6% 6%);
-  --color-secondary: hsl(240 5% 15%);
-  --color-secondary-foreground: hsl(30 50% 80%);
-  --color-muted: hsl(240 5% 14%);
-  --color-muted-foreground: hsl(0 0% 55%);
-  --color-accent: #E39A7B;
-  --color-accent-foreground: hsl(240 6% 6%);
-  --color-destructive: hsl(0 70% 55%);
-  --color-destructive-foreground: hsl(0 0% 100%);
-  --color-border: hsl(240 5% 18%);
-  --color-input: hsl(240 5% 18%);
-  --color-ring: #E39A7B;
-  --color-sidebar: hsl(240 5% 8%);
-  --color-sidebar-foreground: hsl(30 20% 95%);
-  --color-sidebar-border: hsl(240 5% 15%);
-  --color-sidebar-accent: #E39A7B;
-  --color-sidebar-accent-foreground: hsl(240 6% 6%);
+  /* Same as root - this is a dark-only theme */
 }
 
 * {
@@ -163,6 +112,12 @@ body {
   font-feature-settings: "rlig" 1, "calt" 1;
 }
 
+/* Selection */
+::selection {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
@@ -170,34 +125,41 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background-color: hsl(var(--muted) / 0.3);
+  background-color: var(--surface);
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: hsl(var(--muted-foreground) / 0.2);
+  background-color: var(--border-color);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: hsl(var(--muted-foreground) / 0.3);
+  background-color: var(--text-muted);
 }
 
+/* Utilities */
 @utility text-balance {
   text-wrap: balance;
 }
 
 @utility glass {
-  background-color: hsl(var(--card) / 0.8);
+  background-color: color-mix(in srgb, var(--surface) 80%, transparent);
   backdrop-filter: blur(16px);
 }
 
 @utility gradient-text {
-  background-image: linear-gradient(to right, #FFD3AC, #E39A7B, #DBB06B);
+  background-image: linear-gradient(to right, var(--primary), var(--accent));
   background-clip: text;
   color: transparent;
 }
 
-/* Flame animations */
+/* Focus ring */
+@utility focus-ring {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Flame animations for urgent priority */
 @keyframes flame-center {
   0%, 100% {
     transform: scaleY(1) scaleX(1) translateY(0);
@@ -288,3 +250,4 @@ body {
 .animate-flame-glow {
   animation: flame-glow 0.6s ease-in-out infinite;
 }
+

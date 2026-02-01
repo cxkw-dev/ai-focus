@@ -28,7 +28,8 @@ export async function GET(request: NextRequest) {
     }
 
     if (completed !== null) {
-      where.completed = completed === 'true'
+      // For backwards compatibility, map completed=true to COMPLETED status
+      where.status = completed === 'true' ? 'COMPLETED' : { not: 'COMPLETED' }
     }
 
     if (priority) {

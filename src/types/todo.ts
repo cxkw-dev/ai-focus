@@ -1,5 +1,7 @@
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
 
+export type Status = 'TODO' | 'IN_PROGRESS' | 'WAITING' | 'ON_HOLD' | 'COMPLETED'
+
 export interface Category {
   id: string
   name: string
@@ -13,7 +15,7 @@ export interface Todo {
   id: string
   title: string
   description: string | null
-  completed: boolean
+  status: Status
   archived: boolean
   priority: Priority
   dueDate: string | null
@@ -28,6 +30,7 @@ export interface CreateTodoInput {
   title: string
   description?: string
   priority?: Priority
+  status?: Status
   dueDate?: string | null
   categoryId?: string | null
 }
@@ -35,7 +38,7 @@ export interface CreateTodoInput {
 export interface UpdateTodoInput {
   title?: string
   description?: string | null
-  completed?: boolean
+  status?: Status
   priority?: Priority
   dueDate?: string | null
   categoryId?: string | null

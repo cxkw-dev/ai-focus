@@ -71,18 +71,45 @@ docker-compose down
 - **Animations:** Framer Motion
 - **Theme:** next-themes for dark mode
 
-## Color Scheme
+## Theme System
 
-The app uses a warm Anthropic-inspired palette with purple accents:
+The app uses a **dynamic theme switcher** with multiple color themes. Users can switch themes via the dropdown in the header.
 
-- **Primary:** Orange/amber (Anthropic brand)
-- **Accent:** Purple (for interactive elements, focus states, hover effects)
-- **Ring/Focus:** Purple
-- **Secondary:** Soft purple tones
+### Available Themes
 
-Key color files:
-- `src/app/globals.css` - CSS custom properties and theme variables
-- `tailwind.config.ts` - Tailwind color extensions
+| Theme | Primary | Description |
+|-------|---------|-------------|
+| Midnight Peach | Peach/coral | Warm peach tones on dark (default) |
+| Discord | Blurple | Classic Discord look |
+| Anthropic | Terracotta | Warm coral/earth tones |
+| Atom One Dark | Blue | Classic developer editor theme |
+
+### Theme Architecture
+
+- **Theme definitions:** `src/lib/themes.ts` - All theme colors defined here
+- **Theme provider:** `src/components/providers/theme-provider.tsx` - Context + localStorage persistence
+- **Theme switcher:** `src/components/layout/header.tsx` - Dropdown UI
+- **CSS variables:** Applied dynamically via `applyTheme()` function
+
+### Adding a New Theme
+
+1. Add theme object to `themes` array in `src/lib/themes.ts`
+2. Include all required color properties (background, surface, primary, accent, status colors, etc.)
+3. Theme will automatically appear in the dropdown
+
+### CSS Variables Used
+
+| Variable | Purpose |
+|----------|---------|
+| `--background` | Page background |
+| `--surface` | Cards, sidebar |
+| `--surface-2` | Modals, dropdowns |
+| `--primary` | Primary actions, buttons |
+| `--accent` | Secondary accent color |
+| `--text-primary` | Main text |
+| `--text-muted` | Secondary text |
+| `--status-*` | Todo status colors |
+| `--priority-*` | Priority level colors |
 
 ## Key Directories
 

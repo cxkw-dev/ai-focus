@@ -1,16 +1,16 @@
 'use client'
 
 import * as React from 'react'
-import { 
-  CalendarDays, 
-  ChevronUp, 
-  Flame, 
-  Loader2, 
-  Minus, 
-  Sparkles, 
-  Tag, 
-  TrendingUp, 
-  Zap 
+import {
+  CalendarDays,
+  ChevronUp,
+  Flame,
+  Loader2,
+  Minus,
+  Plus,
+  Tag,
+  TrendingUp,
+  Zap
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -32,7 +32,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { PrioritySelector } from './priority-selector'
-import type { Todo, CreateTodoInput, UpdateTodoInput, Priority, Category } from '@/types/todo'
+import type { Todo, CreateTodoInput, UpdateTodoInput, Priority, Status, Category } from '@/types/todo'
 
 interface TodoFormProps {
   open: boolean
@@ -54,6 +54,7 @@ export function TodoForm({
   const [title, setTitle] = React.useState('')
   const [description, setDescription] = React.useState('')
   const [priority, setPriority] = React.useState<Priority>('MEDIUM')
+  const [status, setStatus] = React.useState<Status>('TODO')
   const [dueDate, setDueDate] = React.useState('')
   const [categoryId, setCategoryId] = React.useState<string>('')
 
@@ -64,12 +65,14 @@ export function TodoForm({
       setTitle(todo.title)
       setDescription(todo.description || '')
       setPriority(todo.priority)
+      setStatus(todo.status)
       setDueDate(todo.dueDate ? todo.dueDate.split('T')[0] : '')
       setCategoryId(todo.categoryId || '')
     } else {
       setTitle('')
       setDescription('')
       setPriority('MEDIUM')
+      setStatus('TODO')
       setDueDate('')
       setCategoryId('')
     }
@@ -83,6 +86,7 @@ export function TodoForm({
       title: title.trim(),
       description: description.trim() || undefined,
       priority,
+      ...(isEditing && { status }),
       dueDate: dueDate ? new Date(dueDate).toISOString() : null,
       categoryId: categoryId || null,
     })
@@ -131,6 +135,24 @@ export function TodoForm({
                 disabled={isLoading}
               />
             </div>
+
+            {isEditing && (
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select value={status} onValueChange={(v) => setStatus(v as Status)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="TODO">To Do</SelectItem>
+                    <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                    <SelectItem value="WAITING">Waiting</SelectItem>
+                    <SelectItem value="ON_HOLD">On Hold</SelectItem>
+                    <SelectItem value="COMPLETED">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="dueDate">Due Date (optional)</Label>
@@ -199,6 +221,7 @@ export function InlineTodoForm({ onSubmit, categories, isLoading }: InlineTodoFo
   const [dueDate, setDueDate] = React.useState('')
   const [categoryId, setCategoryId] = React.useState<string>('')
   const [isExpanded, setIsExpanded] = React.useState(false)
+  const [isButtonHovered, setIsButtonHovered] = React.useState(false)
 
   const resetForm = () => {
     setTitle('')
@@ -227,18 +250,27 @@ export function InlineTodoForm({ onSubmit, categories, isLoading }: InlineTodoFo
   }
 
   const priorityConfig = {
-    LOW: { icon: Minus, color: 'text-slate-400', bg: 'bg-slate-400/10', label: 'Low' },
-    MEDIUM: { icon: TrendingUp, color: 'text-[#DBB06B]', bg: 'bg-[#DBB06B]/10', label: 'Med' },
-    HIGH: { icon: Flame, color: 'text-[#E39A7B]', bg: 'bg-[#E39A7B]/10', label: 'High' },
-    URGENT: { icon: Zap, color: 'text-red-500', bg: 'bg-red-500/10', label: 'Urgent' },
+    LOW: { icon: Minus, colorVar: 'var(--priority-low)', label: 'Low' },
+    MEDIUM: { icon: TrendingUp, colorVar: 'var(--priority-medium)', label: 'Med' },
+    HIGH: { icon: Flame, colorVar: 'var(--priority-high)', label: 'High' },
+    URGENT: { icon: Zap, colorVar: 'var(--priority-urgent)', label: 'Urgent' },
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       {/* Main input card */}
       <div className="group relative">
-        <div className="absolute -inset-0.5 bg-gradient-to-r from-[#E39A7B]/20 to-[#DBB06B]/20 rounded-xl blur opacity-0 group-focus-within:opacity-100 transition-opacity" />
-        <div className="relative rounded-xl border bg-card/80 backdrop-blur-sm overflow-hidden">
+        <div
+          className="absolute -inset-0.5 rounded-lg blur opacity-0 group-focus-within:opacity-100 transition-opacity"
+          style={{ background: `linear-gradient(to right, color-mix(in srgb, var(--primary) 20%, transparent), color-mix(in srgb, var(--accent) 20%, transparent))` }}
+        />
+        <div
+          className="relative rounded-lg border backdrop-blur-sm overflow-hidden"
+          style={{
+            backgroundColor: 'color-mix(in srgb, var(--surface) 80%, transparent)',
+            borderColor: 'var(--border-color)',
+          }}
+        >
           {/* Title input */}
           <input
             type="text"
@@ -247,12 +279,13 @@ export function InlineTodoForm({ onSubmit, categories, isLoading }: InlineTodoFo
             onFocus={() => setIsExpanded(true)}
             placeholder="Add a task..."
             disabled={isLoading}
-            className="w-full bg-transparent px-4 py-3 text-sm placeholder:text-muted-foreground/50 focus:outline-none"
+            className="w-full bg-transparent px-4 py-3 text-sm focus:outline-none placeholder:text-[var(--text-muted)]"
+            style={{ color: 'var(--text-primary)', caretColor: 'var(--accent)' }}
           />
           
           {/* Expanded options */}
           {isExpanded && (
-            <div className="border-t border-border/50">
+            <div style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 50%, transparent)' }}>
               {/* Description */}
               <input
                 type="text"
@@ -260,11 +293,15 @@ export function InlineTodoForm({ onSubmit, categories, isLoading }: InlineTodoFo
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Notes (optional)"
                 disabled={isLoading}
-                className="w-full bg-transparent px-4 py-2.5 text-xs text-muted-foreground placeholder:text-muted-foreground/40 focus:outline-none"
+                className="w-full bg-transparent px-4 py-2.5 text-xs focus:outline-none"
+                style={{ color: 'var(--text-muted)' }}
               />
               
               {/* Quick options row */}
-              <div className="flex items-center gap-1 px-3 py-2 border-t border-border/30">
+              <div
+                className="flex items-center gap-1 px-3 py-2"
+                style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 30%, transparent)' }}
+              >
                 {/* Date picker */}
                 <button
                   type="button"
@@ -272,12 +309,11 @@ export function InlineTodoForm({ onSubmit, categories, isLoading }: InlineTodoFo
                     const input = document.getElementById('inline-date-input') as HTMLInputElement
                     input?.showPicker?.()
                   }}
-                  className={cn(
-                    'flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] transition-colors',
-                    dueDate 
-                      ? 'bg-[#E39A7B]/15 text-[#E39A7B]' 
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  )}
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] transition-colors"
+                  style={dueDate ? {
+                    backgroundColor: 'color-mix(in srgb, var(--primary) 15%, transparent)',
+                    color: 'var(--primary)',
+                  } : { color: 'var(--text-muted)' }}
                 >
                   <CalendarDays className="h-3 w-3" />
                   {dueDate ? new Date(dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Date'}
@@ -320,7 +356,14 @@ export function InlineTodoForm({ onSubmit, categories, isLoading }: InlineTodoFo
                 <button
                   type="button"
                   onClick={() => setIsExpanded(false)}
-                  className="p-1 rounded text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                  className="p-1 rounded transition-colors"
+                  style={{ color: 'color-mix(in srgb, var(--text-muted) 50%, transparent)' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = 'var(--text-muted)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = 'color-mix(in srgb, var(--text-muted) 50%, transparent)'
+                  }}
                 >
                   <ChevronUp className="h-3 w-3" />
                 </button>
@@ -336,7 +379,7 @@ export function InlineTodoForm({ onSubmit, categories, isLoading }: InlineTodoFo
           const config = priorityConfig[p]
           const Icon = config.icon
           const isSelected = priority === p
-          
+
           return (
             <button
               key={p}
@@ -345,10 +388,12 @@ export function InlineTodoForm({ onSubmit, categories, isLoading }: InlineTodoFo
               disabled={isLoading}
               className={cn(
                 'flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium transition-all',
-                isSelected
-                  ? cn(config.bg, config.color)
-                  : 'text-muted-foreground/60 hover:text-muted-foreground hover:bg-muted/50'
+                !isSelected && 'hover:bg-white/5'
               )}
+              style={isSelected ? {
+                backgroundColor: `color-mix(in srgb, ${config.colorVar} 15%, transparent)`,
+                color: config.colorVar,
+              } : { color: 'var(--text-muted)' }}
             >
               <Icon className={cn('h-2.5 w-2.5', isSelected && p === 'URGENT' && 'animate-pulse')} />
               {config.label}
@@ -362,24 +407,33 @@ export function InlineTodoForm({ onSubmit, categories, isLoading }: InlineTodoFo
         type="submit"
         disabled={!title.trim() || isLoading}
         className={cn(
-          'w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-medium transition-all',
-          'bg-gradient-to-r from-[#E39A7B] to-[#DBB06B] text-[#0A0A0B]',
-          'hover:from-[#FFB5AB] hover:to-[#E39A7B] hover:shadow-lg hover:shadow-[#E39A7B]/25',
-          'active:scale-[0.98]',
-          'disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none'
+          'group flex items-center justify-center gap-2 w-full py-2.5 rounded-md transition-all duration-200',
+          'hover:opacity-90 active:scale-[0.98]',
+          'disabled:opacity-30 disabled:cursor-not-allowed'
         )}
+        style={{
+          backgroundColor: 'var(--primary)',
+          color: 'var(--primary-foreground)',
+        }}
       >
         {isLoading ? (
-          <>
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            Adding...
-          </>
+          <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
-          <>
-            <Sparkles className="h-3.5 w-3.5" />
-            Add Task
-          </>
+          <svg
+            className="w-4 h-4 transition-transform duration-200 group-hover:rotate-90"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+          >
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
         )}
+        <span className="text-xs font-semibold">
+          {isLoading ? 'Creating...' : 'Create'}
+        </span>
       </button>
     </form>
   )
