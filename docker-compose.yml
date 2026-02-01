@@ -9,7 +9,7 @@ services:
     ports:
       - "4444:4444"
     environment:
-      DATABASE_URL: postgresql://aidashboard:aidashboard_secret_2024@host.docker.internal:5433/aidashboard
+      DATABASE_URL: postgresql://aidashboard:aidashboard_secret_2024@host.docker.internal:5432/aidashboard
       NEXTAUTH_URL: http://localhost:4444
       NODE_ENV: production
     extra_hosts:

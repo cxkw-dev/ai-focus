@@ -25,7 +25,7 @@ A Next.js 16 todo/task productivity app with Prisma, PostgreSQL, and Tailwind CS
 ## Local Development
 
 ### Prerequisites
-- PostgreSQL running via Homebrew on port 5433 (`brew services start postgresql@17`)
+- PostgreSQL running via Homebrew on port 5432 (`brew services start postgresql@17`)
 
 ### Development Workflow
 **The user runs `npm run dev` locally and sees changes live via hot reload.**
@@ -49,7 +49,7 @@ docker-compose down
 
 - **Container name:** ai-focus-app (always use `container_name` in docker-compose.yml)
 - **Port:** 4444 (http://localhost:4444)
-- **Database:** Homebrew PostgreSQL on host machine (accessed via `host.docker.internal:5433` from Docker)
+- **Database:** Homebrew PostgreSQL on host machine (accessed via `host.docker.internal:5432` from Docker)
 - **Database name:** aidashboard
 - **Database user:** aidashboard
 
@@ -59,8 +59,8 @@ docker-compose down
 
 ### Database Architecture
 - PostgreSQL runs on the **host machine** via Homebrew (not in a container)
-- The Docker app connects to it using `host.docker.internal:5433`
-- Local dev (outside Docker) connects via `localhost:5433`
+- The Docker app connects to it using `host.docker.internal:5432`
+- Local dev (outside Docker) connects via `localhost:5432`
 
 ## Tech Stack
 
