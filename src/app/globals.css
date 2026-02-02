@@ -251,3 +251,42 @@ body {
   animation: flame-glow 0.6s ease-in-out infinite;
 }
 
+/* Markdown preview styles in scratch pad */
+.scratch-pad-markdown {
+  /* Make checkboxes look nice */
+  input[type="checkbox"] {
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid var(--text-muted);
+    border-radius: 3px;
+    margin-right: 6px;
+    vertical-align: middle;
+    position: relative;
+    cursor: default;
+  }
+
+  input[type="checkbox"]:checked {
+    background-color: var(--primary);
+    border-color: var(--primary);
+  }
+
+  input[type="checkbox"]:checked::after {
+    content: "";
+    position: absolute;
+    left: 3px;
+    top: 0px;
+    width: 5px;
+    height: 9px;
+    border: solid var(--primary-foreground);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+
+  /* Task list items */
+  li:has(input[type="checkbox"]) {
+    list-style: none;
+    margin-left: -1.25rem;
+  }
+}
+

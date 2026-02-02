@@ -1,10 +1,12 @@
 'use client'
 
 import * as React from 'react'
-import { Undo2 } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import { FileText, List, Pencil, Plus, Undo2 } from 'lucide-react'
+import { IoLogoMarkdown } from 'react-icons/io'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { TodoList } from '@/components/todos/todo-list'
-import { TodoForm, InlineTodoForm } from '@/components/todos/todo-form'
+import { TodoForm, InlineTodoForm, CreateTodoModal } from '@/components/todos/todo-form'
 import { useToast } from '@/components/ui/use-toast'
 import type { Todo, Category, CreateTodoInput, UpdateTodoInput, Status, Priority } from '@/types/todo'
 import type { Note } from '@/types/note'
@@ -20,6 +22,10 @@ export default function TodosPage() {
   const [note, setNote] = React.useState<Note | null>(null)
   const [isNoteLoading, setIsNoteLoading] = React.useState(true)
   const [noteStatus, setNoteStatus] = React.useState<'idle' | 'saving' | 'error'>('idle')
+  // Responsive state
+  const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false)
+  const [mobileView, setMobileView] = React.useState<'notes' | 'tasks'>('notes')
+  const [isMarkdownPreview, setIsMarkdownPreview] = React.useState(false)
   const { toast, dismiss } = useToast()
   const latestNoteContentRef = React.useRef<string>('')
   const noteSavingRef = React.useRef(false)
@@ -409,11 +415,247 @@ export default function TodosPage() {
     void persistNote(value)
   }
 
+  // Scratch Pad Component
+  const ScratchPad = ({ className = '' }: { className?: string }) => (
+    <div className={`flex flex-col min-h-0 ${className}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <div
+            className="w-1 h-4 rounded-full"
+            style={{ backgroundColor: 'var(--status-waiting)' }}
+          />
+          <h2 className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--status-waiting)' }}>Scratch Pad</h2>
+        </div>
+        <div className="flex items-center gap-3">
+          {/* Segmented Control: Edit / Preview */}
+          <div
+            className="flex rounded-md p-0.5"
+            style={{ backgroundColor: 'var(--surface-2)' }}
+          >
+            <button
+              type="button"
+              onClick={() => setIsMarkdownPreview(false)}
+              className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-medium transition-colors"
+              style={{
+                backgroundColor: !isMarkdownPreview ? 'var(--primary)' : 'transparent',
+                color: !isMarkdownPreview ? 'var(--primary-foreground)' : 'var(--text-muted)',
+              }}
+            >
+              <Pencil className="h-3 w-3" />
+              Edit
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsMarkdownPreview(true)}
+              className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-medium transition-colors"
+              style={{
+                backgroundColor: isMarkdownPreview ? 'var(--primary)' : 'transparent',
+                color: isMarkdownPreview ? 'var(--primary-foreground)' : 'var(--text-muted)',
+              }}
+            >
+              <IoLogoMarkdown className="h-3.5 w-3.5" />
+              Preview
+            </button>
+          </div>
+          <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+            {noteStatus === 'saving' ? 'Saving...' : noteStatus === 'error' ? 'Error' : 'Auto-saves'}
+          </span>
+        </div>
+      </div>
+      <div className="group/pad flex-1 min-h-0 relative">
+        {/* Glow effect on focus */}
+        <div
+          className="absolute -inset-px rounded-lg opacity-0 blur-sm transition-opacity duration-300 group-focus-within/pad:opacity-100"
+          style={{
+            background: `linear-gradient(135deg, color-mix(in srgb, var(--primary) 40%, transparent), color-mix(in srgb, var(--accent) 30%, transparent))`,
+          }}
+        />
+
+        {/* Main container with dot pattern */}
+        <div
+          className="relative h-full rounded-lg overflow-hidden transition-all duration-300"
+          style={{
+            backgroundColor: 'var(--surface)',
+          }}
+        >
+          {/* Dot grid pattern overlay */}
+          <div
+            className="absolute inset-0 pointer-events-none opacity-[0.03]"
+            style={{
+              backgroundImage: `radial-gradient(circle, var(--text-primary) 1px, transparent 1px)`,
+              backgroundSize: '16px 16px',
+              backgroundPosition: '8px 8px',
+            }}
+          />
+
+          {/* Subtle gradient fade at edges */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: `linear-gradient(180deg, transparent 0%, transparent 85%, var(--surface) 100%)`,
+            }}
+          />
+
+          {isMarkdownPreview ? (
+            <div
+              className="scratch-pad-markdown relative w-full h-full overflow-auto px-4 py-3 text-xs leading-relaxed max-w-none"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              <ReactMarkdown
+                components={{
+                  h1: ({ children }) => <h1 className="text-lg font-bold mb-2 mt-0" style={{ color: 'var(--text-primary)' }}>{children}</h1>,
+                  h2: ({ children }) => <h2 className="text-base font-bold mb-2 mt-3" style={{ color: 'var(--text-primary)' }}>{children}</h2>,
+                  h3: ({ children }) => <h3 className="text-sm font-bold mb-1 mt-2" style={{ color: 'var(--text-primary)' }}>{children}</h3>,
+                  p: ({ children }) => <p className="mb-2" style={{ color: 'var(--text-primary)' }}>{children}</p>,
+                  ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-0.5">{children}</ul>,
+                  ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-0.5">{children}</ol>,
+                  li: ({ children }) => <li style={{ color: 'var(--text-primary)' }}>{children}</li>,
+                  code: ({ children }) => (
+                    <code
+                      className="px-1 py-0.5 rounded text-[11px]"
+                      style={{ backgroundColor: 'var(--surface-2)', color: 'var(--primary)' }}
+                    >
+                      {children}
+                    </code>
+                  ),
+                  pre: ({ children }) => (
+                    <pre
+                      className="p-2 rounded-md overflow-x-auto mb-2"
+                      style={{ backgroundColor: 'var(--surface-2)' }}
+                    >
+                      {children}
+                    </pre>
+                  ),
+                  blockquote: ({ children }) => (
+                    <blockquote
+                      className="border-l-2 pl-3 my-2 italic"
+                      style={{ borderColor: 'var(--primary)', color: 'var(--text-muted)' }}
+                    >
+                      {children}
+                    </blockquote>
+                  ),
+                  a: ({ href, children }) => (
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline"
+                      style={{ color: 'var(--primary)' }}
+                    >
+                      {children}
+                    </a>
+                  ),
+                  hr: () => <hr className="my-3 border-0 h-px" style={{ backgroundColor: 'var(--border-color)' }} />,
+                  strong: ({ children }) => <strong className="font-bold" style={{ color: 'var(--text-primary)' }}>{children}</strong>,
+                  em: ({ children }) => <em style={{ color: 'var(--text-primary)' }}>{children}</em>,
+                }}
+              >
+                {note?.content || '*No notes yet...*'}
+              </ReactMarkdown>
+            </div>
+          ) : (
+            <textarea
+              className="relative w-full h-full resize-none bg-transparent px-4 py-3 text-xs outline-none leading-relaxed"
+              style={{
+                color: 'var(--text-primary)',
+                caretColor: 'var(--primary)',
+              }}
+              placeholder="Jot down quick notes... (supports markdown)"
+              value={note?.content ?? ''}
+              onChange={(e) => handleNoteChange(e.target.value)}
+              disabled={isNoteLoading}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  )
+
+  // Todo List Section Component
+  const TodoListSection = ({ className = '' }: { className?: string }) => (
+    <div className={`flex flex-col min-h-0 ${className}`}>
+      <TodoList
+        todos={todos}
+        archivedTodos={archivedTodos}
+        onStatusChange={handleStatusChange}
+        onPriorityChange={handlePriorityChange}
+        onDelete={handleDelete}
+        onPermanentDelete={handlePermanentDelete}
+        onEdit={handleEdit}
+        onReorder={handleReorder}
+        onRestore={handleRestore}
+        isLoading={isLoading}
+      />
+    </div>
+  )
+
   return (
     <DashboardLayout title="Todos">
       <div className="h-[calc(100vh-120px)] flex flex-col">
-        {/* Three Column Layout - scratch pad takes majority */}
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-[240px_320px_1fr] gap-4 min-h-0">
+        {/* Mobile/Narrow View: Tab-based layout (< 1024px) */}
+        <div className="flex flex-col h-full xl:hidden">
+          {/* Mobile Tab Switcher */}
+          <div className="flex items-center gap-1 mb-3 p-1 rounded-lg" style={{ backgroundColor: 'var(--surface)' }}>
+            <button
+              type="button"
+              onClick={() => setMobileView('notes')}
+              className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-xs font-medium transition-all"
+              style={{
+                backgroundColor: mobileView === 'notes' ? 'var(--primary)' : 'transparent',
+                color: mobileView === 'notes' ? 'var(--primary-foreground)' : 'var(--text-muted)',
+              }}
+            >
+              <FileText className="h-3.5 w-3.5" />
+              Notes
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileView('tasks')}
+              className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-xs font-medium transition-all relative"
+              style={{
+                backgroundColor: mobileView === 'tasks' ? 'var(--primary)' : 'transparent',
+                color: mobileView === 'tasks' ? 'var(--primary-foreground)' : 'var(--text-muted)',
+              }}
+            >
+              <List className="h-3.5 w-3.5" />
+              Tasks
+              {todos.length > 0 && (
+                <span
+                  className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold"
+                  style={{ backgroundColor: 'var(--accent)', color: 'var(--background)' }}
+                >
+                  {todos.length}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* Mobile Content */}
+          <div className="flex-1 min-h-0">
+            {mobileView === 'notes' ? (
+              <ScratchPad className="h-full" />
+            ) : (
+              <TodoListSection className="h-full" />
+            )}
+          </div>
+
+          {/* Floating Action Button for Mobile */}
+          <button
+            type="button"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-105 active:scale-95 z-50"
+            style={{
+              backgroundColor: 'var(--primary)',
+              color: 'var(--primary-foreground)',
+              boxShadow: '0 4px 20px color-mix(in srgb, var(--primary) 40%, transparent)',
+            }}
+          >
+            <Plus className="h-6 w-6" strokeWidth={2.5} />
+          </button>
+        </div>
+
+        {/* Desktop View: Three Column Layout (>= 1280px) */}
+        <div className="hidden xl:grid xl:grid-cols-[240px_320px_1fr] gap-4 flex-1 min-h-0">
           {/* Left Column - Create Form */}
           <div className="flex flex-col min-h-0">
             <div className="flex items-center gap-2 mb-2">
@@ -430,84 +672,11 @@ export default function TodosPage() {
             />
           </div>
 
-          {/* Center Column - Todo List (narrow) */}
-          <div className="flex flex-col min-h-0">
-            <TodoList
-              todos={todos}
-              archivedTodos={archivedTodos}
-              onStatusChange={handleStatusChange}
-              onPriorityChange={handlePriorityChange}
-              onDelete={handleDelete}
-              onPermanentDelete={handlePermanentDelete}
-              onEdit={handleEdit}
-              onReorder={handleReorder}
-              onRestore={handleRestore}
-              isLoading={isLoading}
-            />
-          </div>
+          {/* Center Column - Todo List */}
+          <TodoListSection />
 
-          {/* Scratch Pad - takes remaining space, fixed to viewport */}
-          <div className="flex flex-col min-h-0">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <div
-                  className="w-1 h-4 rounded-full"
-                  style={{ backgroundColor: 'var(--status-waiting)' }}
-                />
-                <h2 className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--status-waiting)' }}>Scratch Pad</h2>
-              </div>
-              <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                {noteStatus === 'saving' ? 'Saving...' : noteStatus === 'error' ? 'Error' : 'Auto-saves'}
-              </span>
-            </div>
-            <div className="group/pad flex-1 min-h-0 relative">
-              {/* Glow effect on focus */}
-              <div
-                className="absolute -inset-px rounded-lg opacity-0 blur-sm transition-opacity duration-300 group-focus-within/pad:opacity-100"
-                style={{
-                  background: `linear-gradient(135deg, color-mix(in srgb, var(--primary) 40%, transparent), color-mix(in srgb, var(--accent) 30%, transparent))`,
-                }}
-              />
-
-              {/* Main container with dot pattern */}
-              <div
-                className="relative h-full rounded-lg overflow-hidden transition-all duration-300"
-                style={{
-                  backgroundColor: 'var(--surface)',
-                }}
-              >
-                {/* Dot grid pattern overlay */}
-                <div
-                  className="absolute inset-0 pointer-events-none opacity-[0.03]"
-                  style={{
-                    backgroundImage: `radial-gradient(circle, var(--text-primary) 1px, transparent 1px)`,
-                    backgroundSize: '16px 16px',
-                    backgroundPosition: '8px 8px',
-                  }}
-                />
-
-                {/* Subtle gradient fade at edges */}
-                <div
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                    background: `linear-gradient(180deg, transparent 0%, transparent 85%, var(--surface) 100%)`,
-                  }}
-                />
-
-                <textarea
-                  className="relative w-full h-full resize-none bg-transparent px-4 py-3 text-xs outline-none leading-relaxed"
-                  style={{
-                    color: 'var(--text-primary)',
-                    caretColor: 'var(--primary)',
-                  }}
-                  placeholder="Jot down quick notes..."
-                  value={note?.content ?? ''}
-                  onChange={(e) => handleNoteChange(e.target.value)}
-                  disabled={isNoteLoading}
-                />
-              </div>
-            </div>
-          </div>
+          {/* Right Column - Scratch Pad */}
+          <ScratchPad />
         </div>
 
         {/* Edit Dialog */}
@@ -516,6 +685,15 @@ export default function TodosPage() {
           onOpenChange={handleFormClose}
           onSubmit={handleUpdate}
           todo={editingTodo}
+          categories={categories}
+          isLoading={isSaving}
+        />
+
+        {/* Create Task Modal (for mobile/narrow screens) */}
+        <CreateTodoModal
+          open={isCreateModalOpen}
+          onOpenChange={setIsCreateModalOpen}
+          onSubmit={handleCreate}
           categories={categories}
           isLoading={isSaving}
         />

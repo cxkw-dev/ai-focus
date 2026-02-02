@@ -34,6 +34,154 @@ import {
 import { PrioritySelector } from './priority-selector'
 import type { Todo, CreateTodoInput, UpdateTodoInput, Priority, Status, Category } from '@/types/todo'
 
+interface CreateTodoModalProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSubmit: (data: CreateTodoInput) => Promise<boolean>
+  categories: Category[]
+  isLoading?: boolean
+}
+
+export function CreateTodoModal({
+  open,
+  onOpenChange,
+  onSubmit,
+  categories,
+  isLoading,
+}: CreateTodoModalProps) {
+  const [title, setTitle] = React.useState('')
+  const [description, setDescription] = React.useState('')
+  const [priority, setPriority] = React.useState<Priority>('MEDIUM')
+  const [dueDate, setDueDate] = React.useState('')
+  const [categoryId, setCategoryId] = React.useState<string>('')
+
+  const resetForm = () => {
+    setTitle('')
+    setDescription('')
+    setPriority('MEDIUM')
+    setDueDate('')
+    setCategoryId('')
+  }
+
+  React.useEffect(() => {
+    if (!open) {
+      resetForm()
+    }
+  }, [open])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!title.trim()) return
+
+    const success = await onSubmit({
+      title: title.trim(),
+      description: description.trim() || undefined,
+      priority,
+      dueDate: dueDate ? new Date(dueDate).toISOString() : null,
+      categoryId: categoryId || null,
+    })
+
+    if (success) {
+      onOpenChange(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
+        <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>New Task</DialogTitle>
+            <DialogDescription>
+              Add a new task to your list.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="create-title">Title</Label>
+              <Input
+                id="create-title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="What needs to be done?"
+                autoFocus
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="create-description">Description (optional)</Label>
+              <Input
+                id="create-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Add more details..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Priority</Label>
+              <PrioritySelector
+                value={priority}
+                onChange={setPriority}
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="create-dueDate">Due Date (optional)</Label>
+              <Input
+                id="create-dueDate"
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
+            </div>
+
+            {categories.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="create-category">Category (optional)</Label>
+                <Select value={categoryId} onValueChange={setCategoryId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        <span className="flex items-center gap-2">
+                          <span
+                            className="h-2 w-2 rounded-full"
+                            style={{ backgroundColor: cat.color }}
+                          />
+                          {cat.name}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={!title.trim() || isLoading}>
+              {isLoading ? 'Creating...' : 'Create Task'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 interface TodoFormProps {
   open: boolean
   onOpenChange: (open: boolean) => void
