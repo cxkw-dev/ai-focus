@@ -26,7 +26,11 @@
       "Bash(npx svg2png-cli:*)",
       "Bash(npx @aspect-build/rules_svg:*)",
       "Bash(node -e:*)",
-      "WebFetch(domain:codepen.io)"
+      "WebFetch(domain:codepen.io)",
+      "Bash(git add:*)",
+      "Bash(git restore:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)"
     ]
   }
 }
