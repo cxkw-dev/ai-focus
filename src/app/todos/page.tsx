@@ -415,8 +415,8 @@ export default function TodosPage() {
     void persistNote(value)
   }
 
-  // Scratch Pad Component
-  const ScratchPad = ({ className = '' }: { className?: string }) => (
+  // Scratch Pad render helper (not a component — avoids remounting on parent re-render)
+  const renderScratchPad = (className = '') => (
     <div className={`flex flex-col min-h-0 ${className}`}>
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
@@ -571,8 +571,8 @@ export default function TodosPage() {
     </div>
   )
 
-  // Todo List Section Component
-  const TodoListSection = ({ className = '' }: { className?: string }) => (
+  // Todo List Section render helper (not a component — avoids remounting on parent re-render)
+  const renderTodoListSection = (className = '') => (
     <div className={`flex flex-col min-h-0 ${className}`}>
       <TodoList
         todos={todos}
@@ -632,11 +632,10 @@ export default function TodosPage() {
 
           {/* Mobile Content */}
           <div className="flex-1 min-h-0">
-            {mobileView === 'notes' ? (
-              <ScratchPad className="h-full" />
-            ) : (
-              <TodoListSection className="h-full" />
-            )}
+            {mobileView === 'notes'
+              ? renderScratchPad("h-full")
+              : renderTodoListSection("h-full")
+            }
           </div>
 
           {/* Floating Action Button for Mobile */}
@@ -673,10 +672,10 @@ export default function TodosPage() {
           </div>
 
           {/* Center Column - Todo List */}
-          <TodoListSection />
+          {renderTodoListSection()}
 
           {/* Right Column - Scratch Pad */}
-          <ScratchPad />
+          {renderScratchPad()}
         </div>
 
         {/* Edit Dialog */}
