@@ -106,7 +106,7 @@ A modern, minimal productivity app built with Next.js, PostgreSQL, and Anthropic
 The `.env` file is already configured for local development:
 
 ```env
-DATABASE_URL="postgresql://aidashboard:aidashboard_secret_2024@localhost:5433/aidashboard"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5433/aifocus"
 ```
 
 ## Ports

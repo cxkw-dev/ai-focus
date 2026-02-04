@@ -50,8 +50,8 @@ docker-compose down
 - **Container name:** ai-focus-app (always use `container_name` in docker-compose.yml)
 - **Port:** 4444 (http://localhost:4444)
 - **Database:** Homebrew PostgreSQL on host machine (accessed via `host.docker.internal:5432` from Docker)
-- **Database name:** aidashboard
-- **Database user:** aidashboard
+- **Database name:** aifocus
+- **Database user:** postgres
 
 ### Docker Compose Rules
 - Always specify `container_name: ai-focus-app` in docker-compose.yml
@@ -126,6 +126,30 @@ src/
 prisma/
 └── schema.prisma     # Database schema
 ```
+
+## Responsive Layout Architecture
+
+The app has **separate UI components for desktop and mobile**, not just CSS breakpoints. When making changes, you must identify and update the correct component for each viewport.
+
+### Task Creation
+
+| Viewport | Component | File | Style |
+|----------|-----------|------|-------|
+| Desktop (>= 1280px) | `InlineTodoForm` | `src/components/todos/todo-form.tsx` | Compact inline card with toolbar rows. Priority/Date/Category/Labels use small trigger buttons and dropdowns. |
+| Mobile (< 1280px) | `CreateTodoModal` | `src/components/todos/todo-form.tsx` | Full dialog modal triggered by FAB. Fields are stacked vertically with more room. |
+
+### Task Editing
+
+| Viewport | Component | File | Style |
+|----------|-----------|------|-------|
+| All sizes | `TodoForm` | `src/components/todos/todo-form.tsx` | Dialog modal. Two-column on `md+` (content left, meta right). Single-column stacked on mobile. |
+
+### Layout Rules
+
+- **InlineTodoForm (desktop):** Keep controls compact. Use dropdowns/popovers for selectors, not inline lists. Everything should fit in tight toolbar rows.
+- **CreateTodoModal (mobile):** More vertical space available. Fields can be stacked full-width. Dropdowns are preferred over inline quick-pick lists to conserve scroll height.
+- **TodoForm (edit):** Two-column at `md+` breakpoint. Left: title + description. Right: status, priority, due date, category, labels (with border-left separator).
+- The main page layout is in `src/app/todos/page.tsx` — desktop shows `InlineTodoForm` + todo list + scratch pad in columns; mobile shows tabs + FAB.
 
 ## Database Commands (Prisma 7)
 

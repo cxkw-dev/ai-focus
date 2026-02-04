@@ -50,8 +50,8 @@ docker-compose down
 - **Container name:** ai-focus-app (always use `container_name` in docker-compose.yml)
 - **Port:** 4444 (http://localhost:4444)
 - **Database:** Homebrew PostgreSQL on host machine (accessed via `host.docker.internal:5432` from Docker)
-- **Database name:** aidashboard
-- **Database user:** aidashboard
+- **Database name:** aifocus
+- **Database user:** postgres
 
 ### Docker Compose Rules
 - Always specify `container_name: ai-focus-app` in docker-compose.yml
