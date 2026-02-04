@@ -7,21 +7,20 @@ datasource db {
   provider = "postgresql"
 }
 
-// Todo feature
 model Todo {
   id          String    @id @default(cuid())
   title       String
   description String?
-  status      Status    @default(TODO)
-  archived    Boolean   @default(false)
   priority    Priority  @default(MEDIUM)
   dueDate     DateTime?
-  order       Int       @default(0)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   categoryId  String?
-  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  labels      Label[]
+  order       Int       @default(0)
+  archived    Boolean   @default(false)
+  status      Status    @default(TODO)
+  category    Category? @relation(fields: [categoryId], references: [id])
+  labels      Label[]   @relation("LabelToTodo")
 
   @@index([status])
   @@index([archived])
@@ -36,18 +35,18 @@ model Category {
   name      String   @unique
   color     String   @default("#6366f1")
   icon      String?
-  todos     Todo[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  todos     Todo[]
 }
 
 model Label {
   id        String   @id @default(cuid())
   name      String   @unique
   color     String   @default("#22c55e")
-  todos     Todo[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  todos     Todo[]   @relation("LabelToTodo")
 }
 
 model Note {

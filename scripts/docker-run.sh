@@ -4,10 +4,10 @@
 
 set -e
 
-CONTAINER_NAME="ai-dashboard-db"
-POSTGRES_USER="aidashboard"
-POSTGRES_PASSWORD="aidashboard_secret_2024"
-POSTGRES_DB="aidashboard"
+CONTAINER_NAME="ai-focus-db"
+POSTGRES_USER="postgres"
+POSTGRES_PASSWORD="postgres"
+POSTGRES_DB="aifocus"
 PORT="5433"
 
 # Check if container exists
