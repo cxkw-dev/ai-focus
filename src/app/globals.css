@@ -370,6 +370,37 @@ body {
   text-decoration: underline;
 }
 
+/* Round color input swatches */
+.color-swatch {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.color-swatch::-webkit-color-swatch-wrapper {
+  padding: 0;
+  border-radius: 9999px;
+}
+
+.color-swatch::-webkit-color-swatch {
+  border: none;
+  border-radius: 9999px;
+}
+
+.color-swatch::-moz-color-swatch {
+  border: none;
+  border-radius: 9999px;
+}
+
+/* Ensure long URLs wrap inside the rich text editor */
+.ProseMirror {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.ProseMirror a {
+  word-break: break-all;
+}
+
 /* Markdown preview styles in scratch pad */
 .scratch-pad-markdown {
   /* Make checkboxes look nice */
@@ -408,4 +439,3 @@ body {
     margin-left: -1.25rem;
   }
 }
-

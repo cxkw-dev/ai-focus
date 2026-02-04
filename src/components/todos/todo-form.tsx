@@ -8,7 +8,10 @@ import {
   Loader2,
   Minus,
   Plus,
+  Save,
   Tag,
+  Tags,
+  Trash2,
   TrendingUp,
   Zap
 } from 'lucide-react'
@@ -32,14 +35,534 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { PrioritySelector } from './priority-selector'
-import type { Todo, CreateTodoInput, UpdateTodoInput, Priority, Status, Category } from '@/types/todo'
+import type { Todo, CreateTodoInput, UpdateTodoInput, Priority, Status, Category, Label as TodoLabel } from '@/types/todo'
+
+interface LabelManagerDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  labels: TodoLabel[]
+  onCreateLabel: (data: Pick<TodoLabel, 'name' | 'color'>) => Promise<boolean>
+  onUpdateLabel: (id: string, data: Partial<Pick<TodoLabel, 'name' | 'color'>>) => Promise<boolean>
+  onDeleteLabel: (id: string) => Promise<boolean>
+  disabled?: boolean
+}
+
+function LabelManagerDialog({
+  open,
+  onOpenChange,
+  labels,
+  onCreateLabel,
+  onUpdateLabel,
+  onDeleteLabel,
+  disabled,
+}: LabelManagerDialogProps) {
+  const [newName, setNewName] = React.useState('')
+  const [newColor, setNewColor] = React.useState('#22c55e')
+  const [presetColors, setPresetColors] = React.useState<Array<{ varName: string; value: string }>>([])
+  const [drafts, setDrafts] = React.useState<Record<string, { name: string; color: string }>>({})
+  const [isSaving, setIsSaving] = React.useState(false)
+  const isCompact = labels.length > 6
+
+  React.useEffect(() => {
+    if (!open) return
+    const nextDrafts: Record<string, { name: string; color: string }> = {}
+    labels.forEach((label) => {
+      nextDrafts[label.id] = { name: label.name, color: label.color }
+    })
+    setDrafts(nextDrafts)
+  }, [labels, open])
+
+  React.useEffect(() => {
+    if (!open) return
+    const rootStyles = getComputedStyle(document.documentElement)
+    const presetVars = [
+      '--primary',
+      '--accent',
+      '--status-in-progress',
+      '--status-waiting',
+      '--status-on-hold',
+      '--status-done',
+      '--priority-high',
+      '--priority-urgent',
+    ]
+
+    const toHex = (value: string) => {
+      const trimmed = value.trim()
+      if (trimmed.startsWith('#')) return trimmed.toLowerCase()
+      const match = trimmed.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/i)
+      if (!match) return '#22c55e'
+      const [, r, g, b] = match
+      const toHexPart = (v: string) => Number(v).toString(16).padStart(2, '0')
+      return `#${toHexPart(r)}${toHexPart(g)}${toHexPart(b)}`
+    }
+
+    setPresetColors(
+      presetVars.map((varName) => ({
+        varName,
+        value: toHex(rootStyles.getPropertyValue(varName)),
+      }))
+    )
+  }, [open])
+
+  const handleCreate = async () => {
+    if (!newName.trim()) return
+    setIsSaving(true)
+    const success = await onCreateLabel({ name: newName.trim(), color: newColor })
+    setIsSaving(false)
+    if (success) {
+      setNewName('')
+      setNewColor('#22c55e')
+    }
+  }
+
+  const handleUpdate = async (id: string, original: TodoLabel) => {
+    const draft = drafts[id]
+    if (!draft) return
+    const nextName = draft.name.trim()
+    if (!nextName) return
+    const updates: Partial<Pick<TodoLabel, 'name' | 'color'>> = {}
+    if (nextName !== original.name) updates.name = nextName
+    if (draft.color !== original.color) updates.color = draft.color
+    if (Object.keys(updates).length === 0) return
+    setIsSaving(true)
+    await onUpdateLabel(id, updates)
+    setIsSaving(false)
+  }
+
+  const handleDelete = async (id: string) => {
+    setIsSaving(true)
+    await onDeleteLabel(id)
+    setIsSaving(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[640px] p-0 overflow-hidden">
+        <div
+          className="px-6 py-5 border-b"
+          style={{
+            borderColor: 'var(--border-color)',
+            background:
+              'linear-gradient(135deg, color-mix(in srgb, var(--primary) 18%, transparent), color-mix(in srgb, var(--accent) 18%, transparent))',
+          }}
+        >
+          <DialogHeader className="space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <DialogTitle className="text-lg font-semibold">Label Studio</DialogTitle>
+              <div
+                className="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide"
+                style={{
+                  backgroundColor: 'color-mix(in srgb, var(--surface-2) 70%, transparent)',
+                  color: 'var(--text-muted)',
+                }}
+              >
+                {labels.length} total
+              </div>
+            </div>
+            <DialogDescription>
+              Craft reusable labels for your tasks. Colors show up as chips on the card.
+            </DialogDescription>
+          </DialogHeader>
+        </div>
+
+        <div className="p-6 space-y-5">
+          <div
+            className="rounded-xl border p-4 space-y-3"
+            style={{
+              borderColor: 'var(--border-color)',
+              backgroundColor: 'color-mix(in srgb, var(--surface) 60%, transparent)',
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                Create Label
+              </div>
+              <span
+                className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
+                style={{
+                  backgroundColor: `${newColor}22`,
+                  color: newColor,
+                }}
+              >
+                {newName.trim() ? newName.trim() : 'Preview'}
+              </span>
+            </div>
+
+            <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto] items-center">
+              <Input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Label name"
+                disabled={disabled || isSaving}
+                className="text-sm"
+              />
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                  Color
+                </span>
+                <input
+                  type="color"
+                  value={newColor}
+                  onChange={(e) => setNewColor(e.target.value)}
+                  disabled={disabled || isSaving}
+                  className="color-swatch h-9 w-9 rounded-full border-2 bg-transparent p-0"
+                  style={{
+                    borderColor: 'color-mix(in srgb, var(--border-color) 70%, transparent)',
+                    boxShadow: `0 0 0 2px ${newColor}22`,
+                  }}
+                  aria-label="Label color"
+                />
+              </div>
+              <Button
+                type="button"
+                onClick={handleCreate}
+                disabled={!newName.trim() || disabled || isSaving}
+              >
+                Add label
+              </Button>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {presetColors.map((preset) => (
+                <button
+                  key={preset.varName}
+                  type="button"
+                  onClick={() => setNewColor(preset.value)}
+                  className="h-7 w-7 rounded-full border-2 transition-transform hover:scale-105"
+                  style={{
+                    backgroundColor: preset.value,
+                    borderColor: newColor === preset.value ? 'var(--text-primary)' : 'color-mix(in srgb, var(--border-color) 70%, transparent)',
+                    boxShadow: newColor === preset.value ? `0 0 0 2px ${preset.value}55` : 'none',
+                  }}
+                  aria-label={`Select ${preset.varName}`}
+                />
+              ))}
+              <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                Quick picks
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                Existing Labels
+              </div>
+              <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                Tap save to apply changes
+              </div>
+            </div>
+
+            {labels.length === 0 && (
+              <div
+                className="rounded-xl border p-4 text-xs"
+                style={{
+                  borderColor: 'var(--border-color)',
+                  backgroundColor: 'color-mix(in srgb, var(--surface) 70%, transparent)',
+                  color: 'var(--text-muted)',
+                }}
+              >
+                No labels yet. Create your first label above.
+              </div>
+            )}
+
+            {labels.map((label) => {
+              const draft = drafts[label.id] ?? { name: label.name, color: label.color }
+              const isDirty = draft.name.trim() !== label.name || draft.color !== label.color
+
+              return (
+                <div
+                  key={label.id}
+                  className={cn(
+                    'flex flex-col gap-3 rounded-xl border',
+                    isCompact ? 'p-2' : 'p-3'
+                  )}
+                  style={{
+                    borderColor: 'var(--border-color)',
+                    backgroundColor: 'color-mix(in srgb, var(--surface-2) 80%, transparent)',
+                  }}
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                      style={{
+                        backgroundColor: `${draft.color}22`,
+                        color: draft.color,
+                      }}
+                    >
+                      {draft.name.trim() || 'Untitled'}
+                    </span>
+                    <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                      Preview
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex-1 min-w-[220px]">
+                      <Input
+                        value={draft.name}
+                        onChange={(e) =>
+                          setDrafts((prev) => ({
+                            ...prev,
+                            [label.id]: { ...draft, name: e.target.value },
+                          }))
+                        }
+                        disabled={disabled || isSaving}
+                        className="text-sm w-full"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                        Color
+                      </span>
+                      <input
+                        type="color"
+                        value={draft.color}
+                        onChange={(e) =>
+                          setDrafts((prev) => ({
+                            ...prev,
+                            [label.id]: { ...draft, color: e.target.value },
+                          }))
+                        }
+                        disabled={disabled || isSaving}
+                        className="color-swatch h-8 w-8 rounded-full border-2 bg-transparent p-0"
+                        style={{
+                          borderColor: 'color-mix(in srgb, var(--border-color) 70%, transparent)',
+                          boxShadow: `0 0 0 2px ${draft.color}22`,
+                        }}
+                        aria-label="Label color"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2 sm:ml-auto">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => handleUpdate(label.id, label)}
+                        disabled={!draft.name.trim() || !isDirty || disabled || isSaving}
+                        className="h-9 w-9 p-0"
+                        aria-label="Save label"
+                        title="Save label"
+                      >
+                        <Save className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => handleDelete(label.id)}
+                        disabled={disabled || isSaving}
+                        className="h-9 w-9 p-0 border-destructive/40 text-destructive hover:bg-destructive/10"
+                        aria-label="Delete label"
+                        title="Delete label"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    {presetColors.map((preset) => (
+                      <button
+                        key={`${label.id}-${preset.varName}`}
+                        type="button"
+                        onClick={() =>
+                          setDrafts((prev) => ({
+                            ...prev,
+                            [label.id]: { ...draft, color: preset.value },
+                          }))
+                        }
+                        className={cn(
+                          'h-6 w-6 rounded-full border-2 transition-transform hover:scale-105',
+                          isCompact && 'h-5 w-5'
+                        )}
+                        style={{
+                          backgroundColor: preset.value,
+                          borderColor: draft.color === preset.value
+                            ? 'var(--text-primary)'
+                            : 'color-mix(in srgb, var(--border-color) 70%, transparent)',
+                          boxShadow: draft.color === preset.value ? `0 0 0 2px ${preset.value}55` : 'none',
+                        }}
+                        aria-label={`Select ${preset.varName}`}
+                        title="Apply theme color"
+                      />
+                    ))}
+                    <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                      Theme picks
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+interface LabelMultiSelectProps {
+  labels: TodoLabel[]
+  value: string[]
+  onChange: (value: string[]) => void
+  onManage: () => void
+  disabled?: boolean
+  showChips?: boolean
+  showQuickPick?: boolean
+}
+
+function LabelMultiSelect({
+  labels,
+  value,
+  onChange,
+  onManage,
+  disabled,
+  showChips = true,
+  showQuickPick = false,
+}: LabelMultiSelectProps) {
+  const selected = new Set(value)
+  const selectedLabels = labels.filter((label) => selected.has(label.id))
+
+  const toggleLabel = (id: string) => {
+    const next = new Set(value)
+    if (next.has(id)) {
+      next.delete(id)
+    } else {
+      next.add(id)
+    }
+    onChange(Array.from(next))
+  }
+
+  return (
+    <div className="space-y-2">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            disabled={disabled}
+            className={cn(
+              'flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] transition-colors',
+              disabled && 'opacity-50 cursor-not-allowed'
+            )}
+            style={{
+              backgroundColor: selectedLabels.length
+                ? 'color-mix(in srgb, var(--primary) 12%, transparent)'
+                : 'transparent',
+              color: selectedLabels.length ? 'var(--primary)' : 'var(--text-muted)',
+            }}
+          >
+            <Tags className="h-3 w-3" />
+            Labels
+            {selectedLabels.length > 0 && (
+              <span
+                className="ml-1 rounded-full px-1.5 py-0.5 text-[9px] font-semibold"
+                style={{ backgroundColor: 'var(--primary)', color: 'var(--primary-foreground)' }}
+              >
+                {selectedLabels.length}
+              </span>
+            )}
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="min-w-[220px]">
+          {labels.length === 0 && (
+            <div className="px-2 py-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+              No labels yet.
+            </div>
+          )}
+          {labels.map((label) => (
+            <DropdownMenuCheckboxItem
+              key={label.id}
+              checked={selected.has(label.id)}
+              onCheckedChange={() => toggleLabel(label.id)}
+              className="gap-2 text-xs"
+            >
+              <span
+                className="h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: label.color }}
+              />
+              {label.name}
+            </DropdownMenuCheckboxItem>
+          ))}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onSelect={onManage}
+            className="text-xs"
+          >
+            Manage labels
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {showChips && selectedLabels.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {selectedLabels.map((label) => (
+            <span
+              key={label.id}
+              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
+              style={{
+                backgroundColor: `${label.color}22`,
+                color: label.color,
+              }}
+            >
+              {label.name}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {showQuickPick && labels.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {labels.map((label) => {
+            const isSelected = selected.has(label.id)
+            return (
+              <button
+                key={label.id}
+                type="button"
+                onClick={() => toggleLabel(label.id)}
+                disabled={disabled}
+                aria-pressed={isSelected}
+                className={cn(
+                  'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium transition-all',
+                  disabled && 'opacity-50 cursor-not-allowed'
+                )}
+                style={isSelected ? {
+                  backgroundColor: `${label.color}22`,
+                  color: label.color,
+                  boxShadow: `0 0 0 1px ${label.color}55`,
+                } : {
+                  backgroundColor: 'color-mix(in srgb, var(--surface-2) 60%, transparent)',
+                  color: 'var(--text-muted)',
+                }}
+                title={isSelected ? 'Remove label' : 'Add label'}
+              >
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: label.color }} />
+                {label.name}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
 
 interface CreateTodoModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSubmit: (data: CreateTodoInput) => Promise<boolean>
   categories: Category[]
+  labels: TodoLabel[]
+  onCreateLabel: (data: Pick<TodoLabel, 'name' | 'color'>) => Promise<boolean>
+  onUpdateLabel: (id: string, data: Partial<Pick<TodoLabel, 'name' | 'color'>>) => Promise<boolean>
+  onDeleteLabel: (id: string) => Promise<boolean>
   isLoading?: boolean
 }
 
@@ -48,6 +571,10 @@ export function CreateTodoModal({
   onOpenChange,
   onSubmit,
   categories,
+  labels,
+  onCreateLabel,
+  onUpdateLabel,
+  onDeleteLabel,
   isLoading,
 }: CreateTodoModalProps) {
   const [title, setTitle] = React.useState('')
@@ -55,6 +582,8 @@ export function CreateTodoModal({
   const [priority, setPriority] = React.useState<Priority>('MEDIUM')
   const [dueDate, setDueDate] = React.useState('')
   const [categoryId, setCategoryId] = React.useState<string>('')
+  const [labelIds, setLabelIds] = React.useState<string[]>([])
+  const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
 
   const resetForm = () => {
     setTitle('')
@@ -62,6 +591,7 @@ export function CreateTodoModal({
     setPriority('MEDIUM')
     setDueDate('')
     setCategoryId('')
+    setLabelIds([])
   }
 
   React.useEffect(() => {
@@ -80,6 +610,7 @@ export function CreateTodoModal({
       priority,
       dueDate: dueDate ? new Date(dueDate).toISOString() : null,
       categoryId: categoryId || null,
+      labelIds,
     })
 
     if (success) {
@@ -89,8 +620,8 @@ export function CreateTodoModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[560px]">
-        <form onSubmit={handleSubmit}>
+      <DialogContent className="sm:max-w-[560px] max-h-[85vh] overflow-hidden">
+        <form onSubmit={handleSubmit} className="max-h-[80vh] overflow-y-auto overflow-x-hidden pr-1">
           <DialogHeader>
             <DialogTitle>New Task</DialogTitle>
             <DialogDescription>
@@ -107,6 +638,7 @@ export function CreateTodoModal({
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="What needs to be done?"
                 autoFocus
+                className="focus-visible:ring-0 focus-visible:shadow-[inset_0_0_0_2px_var(--primary)] focus-visible:border-[var(--primary)]"
               />
             </div>
 
@@ -164,6 +696,28 @@ export function CreateTodoModal({
                 </Select>
               </div>
             )}
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Labels (optional)</Label>
+                <button
+                  type="button"
+                  onClick={() => setIsLabelManagerOpen(true)}
+                  className="text-[11px] underline"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  Manage
+                </button>
+              </div>
+              <LabelMultiSelect
+                labels={labels}
+                value={labelIds}
+                onChange={setLabelIds}
+                onManage={() => setIsLabelManagerOpen(true)}
+                disabled={isLoading}
+                showQuickPick
+              />
+            </div>
           </div>
 
           <DialogFooter>
@@ -180,6 +734,15 @@ export function CreateTodoModal({
           </DialogFooter>
         </form>
       </DialogContent>
+      <LabelManagerDialog
+        open={isLabelManagerOpen}
+        onOpenChange={setIsLabelManagerOpen}
+        labels={labels}
+        onCreateLabel={onCreateLabel}
+        onUpdateLabel={onUpdateLabel}
+        onDeleteLabel={onDeleteLabel}
+        disabled={isLoading}
+      />
     </Dialog>
   )
 }
@@ -190,6 +753,10 @@ interface TodoFormProps {
   onSubmit: (data: CreateTodoInput | UpdateTodoInput) => void
   todo?: Todo | null
   categories: Category[]
+  labels: TodoLabel[]
+  onCreateLabel: (data: Pick<TodoLabel, 'name' | 'color'>) => Promise<boolean>
+  onUpdateLabel: (id: string, data: Partial<Pick<TodoLabel, 'name' | 'color'>>) => Promise<boolean>
+  onDeleteLabel: (id: string) => Promise<boolean>
   isLoading?: boolean
 }
 
@@ -199,6 +766,10 @@ export function TodoForm({
   onSubmit,
   todo,
   categories,
+  labels,
+  onCreateLabel,
+  onUpdateLabel,
+  onDeleteLabel,
   isLoading,
 }: TodoFormProps) {
   const [title, setTitle] = React.useState('')
@@ -207,6 +778,8 @@ export function TodoForm({
   const [status, setStatus] = React.useState<Status>('TODO')
   const [dueDate, setDueDate] = React.useState('')
   const [categoryId, setCategoryId] = React.useState<string>('')
+  const [labelIds, setLabelIds] = React.useState<string[]>([])
+  const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
 
   const isEditing = !!todo
 
@@ -218,6 +791,7 @@ export function TodoForm({
       setStatus(todo.status)
       setDueDate(todo.dueDate ? todo.dueDate.split('T')[0] : '')
       setCategoryId(todo.categoryId || '')
+      setLabelIds(todo.labels?.map((label) => label.id) ?? [])
     } else {
       setTitle('')
       setDescription('')
@@ -225,6 +799,7 @@ export function TodoForm({
       setStatus('TODO')
       setDueDate('')
       setCategoryId('')
+      setLabelIds([])
     }
   }, [todo, open])
 
@@ -239,13 +814,14 @@ export function TodoForm({
       ...(isEditing && { status }),
       dueDate: dueDate ? new Date(dueDate).toISOString() : null,
       categoryId: categoryId || null,
+      labelIds,
     })
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[560px]">
-        <form onSubmit={handleSubmit}>
+      <DialogContent className="sm:max-w-[560px] max-h-[85vh] overflow-hidden">
+        <form onSubmit={handleSubmit} className="max-h-[80vh] overflow-y-auto overflow-x-hidden pr-1">
           <DialogHeader>
             <DialogTitle>{isEditing ? 'Edit Todo' : 'Create Todo'}</DialogTitle>
             <DialogDescription>
@@ -264,6 +840,7 @@ export function TodoForm({
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="What needs to be done?"
                 autoFocus
+                className="focus-visible:ring-0 focus-visible:shadow-[inset_0_0_0_2px_var(--primary)] focus-visible:border-[var(--primary)]"
               />
             </div>
 
@@ -338,6 +915,28 @@ export function TodoForm({
                 </Select>
               </div>
             )}
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Labels (optional)</Label>
+                <button
+                  type="button"
+                  onClick={() => setIsLabelManagerOpen(true)}
+                  className="text-[11px] underline"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  Manage
+                </button>
+              </div>
+              <LabelMultiSelect
+                labels={labels}
+                value={labelIds}
+                onChange={setLabelIds}
+                onManage={() => setIsLabelManagerOpen(true)}
+                disabled={isLoading}
+                showQuickPick
+              />
+            </div>
           </div>
 
           <DialogFooter>
@@ -354,6 +953,15 @@ export function TodoForm({
           </DialogFooter>
         </form>
       </DialogContent>
+      <LabelManagerDialog
+        open={isLabelManagerOpen}
+        onOpenChange={setIsLabelManagerOpen}
+        labels={labels}
+        onCreateLabel={onCreateLabel}
+        onUpdateLabel={onUpdateLabel}
+        onDeleteLabel={onDeleteLabel}
+        disabled={isLoading}
+      />
     </Dialog>
   )
 }
@@ -361,17 +969,31 @@ export function TodoForm({
 interface InlineTodoFormProps {
   onSubmit: (data: CreateTodoInput) => Promise<boolean>
   categories: Category[]
+  labels: TodoLabel[]
+  onCreateLabel: (data: Pick<TodoLabel, 'name' | 'color'>) => Promise<boolean>
+  onUpdateLabel: (id: string, data: Partial<Pick<TodoLabel, 'name' | 'color'>>) => Promise<boolean>
+  onDeleteLabel: (id: string) => Promise<boolean>
   isLoading?: boolean
 }
 
-export function InlineTodoForm({ onSubmit, categories, isLoading }: InlineTodoFormProps) {
+export function InlineTodoForm({
+  onSubmit,
+  categories,
+  labels,
+  onCreateLabel,
+  onUpdateLabel,
+  onDeleteLabel,
+  isLoading,
+}: InlineTodoFormProps) {
   const [title, setTitle] = React.useState('')
   const [description, setDescription] = React.useState('')
   const [priority, setPriority] = React.useState<Priority>('MEDIUM')
   const [dueDate, setDueDate] = React.useState('')
   const [categoryId, setCategoryId] = React.useState<string>('')
+  const [labelIds, setLabelIds] = React.useState<string[]>([])
   const [isExpanded, setIsExpanded] = React.useState(false)
   const [isButtonHovered, setIsButtonHovered] = React.useState(false)
+  const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
 
   const resetForm = () => {
     setTitle('')
@@ -379,6 +1001,7 @@ export function InlineTodoForm({ onSubmit, categories, isLoading }: InlineTodoFo
     setPriority('MEDIUM')
     setDueDate('')
     setCategoryId('')
+    setLabelIds([])
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -391,6 +1014,7 @@ export function InlineTodoForm({ onSubmit, categories, isLoading }: InlineTodoFo
       priority,
       dueDate: dueDate ? new Date(dueDate).toISOString() : null,
       categoryId: categoryId || null,
+      labelIds,
     })
 
     if (success) {
@@ -506,6 +1130,17 @@ export function InlineTodoForm({ onSubmit, categories, isLoading }: InlineTodoFo
                   </Select>
                 )}
 
+                {/* Labels */}
+                <LabelMultiSelect
+                  labels={labels}
+                  value={labelIds}
+                  onChange={setLabelIds}
+                  onManage={() => setIsLabelManagerOpen(true)}
+                  disabled={isLoading}
+                  showChips={false}
+                  showQuickPick
+                />
+
                 <div className="flex-1" />
 
                 {/* Collapse button */}
@@ -522,6 +1157,36 @@ export function InlineTodoForm({ onSubmit, categories, isLoading }: InlineTodoFo
                   }}
                 >
                   <ChevronUp className="h-3 w-3" />
+                </button>
+              </div>
+
+              {labelIds.length > 0 && (
+                <div className="px-3 pb-2 flex flex-wrap gap-1">
+                  {labels
+                    .filter((label) => labelIds.includes(label.id))
+                    .map((label) => (
+                      <span
+                        key={label.id}
+                        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
+                        style={{
+                          backgroundColor: `${label.color}22`,
+                          color: label.color,
+                        }}
+                      >
+                        {label.name}
+                      </span>
+                    ))}
+                </div>
+              )}
+
+              <div className="px-3 pb-2">
+                <button
+                  type="button"
+                  onClick={() => setIsLabelManagerOpen(true)}
+                  className="text-[11px] underline"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  Manage labels
                 </button>
               </div>
             </div>
@@ -591,6 +1256,16 @@ export function InlineTodoForm({ onSubmit, categories, isLoading }: InlineTodoFo
           {isLoading ? 'Creating...' : 'Create'}
         </span>
       </button>
+
+      <LabelManagerDialog
+        open={isLabelManagerOpen}
+        onOpenChange={setIsLabelManagerOpen}
+        labels={labels}
+        onCreateLabel={onCreateLabel}
+        onUpdateLabel={onUpdateLabel}
+        onDeleteLabel={onDeleteLabel}
+        disabled={isLoading}
+      />
     </form>
   )
 }

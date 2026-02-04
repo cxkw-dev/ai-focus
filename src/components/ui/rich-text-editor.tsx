@@ -89,7 +89,7 @@ export function RichTextEditor({
     editorProps: {
       attributes: {
         class: cn(
-          'prose prose-sm prose-invert max-w-none focus:outline-none',
+          'prose prose-sm prose-invert max-w-none focus:outline-none break-words',
           compact ? 'min-h-[60px] max-h-[120px]' : 'min-h-[100px] max-h-[250px]',
           'overflow-y-auto px-3 py-2'
         ),
@@ -150,7 +150,7 @@ export function RichTextEditor({
     <div
       className={cn(
         'rounded-md border overflow-hidden',
-        editorState?.isFocused && 'ring-1 ring-[var(--primary)]'
+        editorState?.isFocused && 'border-[var(--primary)] shadow-[inset_0_0_0_2px_var(--primary)]'
       )}
       style={{
         backgroundColor: 'var(--background)',

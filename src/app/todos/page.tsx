@@ -8,13 +8,14 @@ import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { TodoList } from '@/components/todos/todo-list'
 import { TodoForm, InlineTodoForm, CreateTodoModal } from '@/components/todos/todo-form'
 import { useToast } from '@/components/ui/use-toast'
-import type { Todo, Category, CreateTodoInput, UpdateTodoInput, Status, Priority } from '@/types/todo'
+import type { Todo, Category, Label, CreateTodoInput, UpdateTodoInput, Status, Priority } from '@/types/todo'
 import type { Note } from '@/types/note'
 
 export default function TodosPage() {
   const [todos, setTodos] = React.useState<Todo[]>([])
   const [archivedTodos, setArchivedTodos] = React.useState<Todo[]>([])
   const [categories, setCategories] = React.useState<Category[]>([])
+  const [labels, setLabels] = React.useState<Label[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [isFormOpen, setIsFormOpen] = React.useState(false)
   const [editingTodo, setEditingTodo] = React.useState<Todo | null>(null)
@@ -38,10 +39,11 @@ export default function TodosPage() {
     setIsLoading(true)
     setIsNoteLoading(true)
     try {
-      const [todosRes, archivedRes, categoriesRes, noteRes] = await Promise.all([
+      const [todosRes, archivedRes, categoriesRes, labelsRes, noteRes] = await Promise.all([
         fetch('/api/todos'),
         fetch('/api/todos?archived=true'),
         fetch('/api/categories'),
+        fetch('/api/labels'),
         fetch('/api/note'),
       ])
 
@@ -53,6 +55,9 @@ export default function TodosPage() {
       }
       if (categoriesRes.ok) {
         setCategories(await categoriesRes.json())
+      }
+      if (labelsRes.ok) {
+        setLabels(await labelsRes.json())
       }
       if (noteRes.ok) {
         const noteData: Note = await noteRes.json()
@@ -70,6 +75,115 @@ export default function TodosPage() {
     } finally {
       setIsLoading(false)
       setIsNoteLoading(false)
+    }
+  }
+
+  const handleCreateLabel = async (data: Pick<Label, 'name' | 'color'>) => {
+    try {
+      const res = await fetch('/api/labels', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+
+      if (res.ok) {
+        const newLabel = await res.json()
+        setLabels((prev) => [...prev, newLabel].sort((a, b) => a.name.localeCompare(b.name)))
+        toast({
+          title: 'Label created',
+          description: newLabel.name,
+        })
+        return true
+      }
+      throw new Error('Failed to create label')
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to create label. Please try again.',
+        variant: 'destructive',
+      })
+      return false
+    }
+  }
+
+  const handleUpdateLabel = async (id: string, data: Partial<Pick<Label, 'name' | 'color'>>) => {
+    try {
+      const res = await fetch(`/api/labels/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+
+      if (res.ok) {
+        const updatedLabel = await res.json()
+        setLabels((prev) =>
+          prev
+            .map((label) => (label.id === updatedLabel.id ? updatedLabel : label))
+            .sort((a, b) => a.name.localeCompare(b.name))
+        )
+        setTodos((prev) =>
+          prev.map((todo) => ({
+            ...todo,
+            labels: todo.labels.map((label) =>
+              label.id === updatedLabel.id ? updatedLabel : label
+            ),
+          }))
+        )
+        setArchivedTodos((prev) =>
+          prev.map((todo) => ({
+            ...todo,
+            labels: todo.labels.map((label) =>
+              label.id === updatedLabel.id ? updatedLabel : label
+            ),
+          }))
+        )
+        toast({
+          title: 'Label updated',
+          description: updatedLabel.name,
+        })
+        return true
+      }
+      throw new Error('Failed to update label')
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update label. Please try again.',
+        variant: 'destructive',
+      })
+      return false
+    }
+  }
+
+  const handleDeleteLabel = async (id: string) => {
+    try {
+      const res = await fetch(`/api/labels/${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        setLabels((prev) => prev.filter((label) => label.id !== id))
+        setTodos((prev) =>
+          prev.map((todo) => ({
+            ...todo,
+            labels: todo.labels.filter((label) => label.id !== id),
+          }))
+        )
+        setArchivedTodos((prev) =>
+          prev.map((todo) => ({
+            ...todo,
+            labels: todo.labels.filter((label) => label.id !== id),
+          }))
+        )
+        toast({
+          title: 'Label deleted',
+        })
+        return true
+      }
+      throw new Error('Failed to delete label')
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete label. Please try again.',
+        variant: 'destructive',
+      })
+      return false
     }
   }
 
@@ -667,6 +781,10 @@ export default function TodosPage() {
             <InlineTodoForm
               onSubmit={handleCreate}
               categories={categories}
+              labels={labels}
+              onCreateLabel={handleCreateLabel}
+              onUpdateLabel={handleUpdateLabel}
+              onDeleteLabel={handleDeleteLabel}
               isLoading={isSaving}
             />
           </div>
@@ -685,6 +803,10 @@ export default function TodosPage() {
           onSubmit={handleUpdate}
           todo={editingTodo}
           categories={categories}
+          labels={labels}
+          onCreateLabel={handleCreateLabel}
+          onUpdateLabel={handleUpdateLabel}
+          onDeleteLabel={handleDeleteLabel}
           isLoading={isSaving}
         />
 
@@ -694,6 +816,10 @@ export default function TodosPage() {
           onOpenChange={setIsCreateModalOpen}
           onSubmit={handleCreate}
           categories={categories}
+          labels={labels}
+          onCreateLabel={handleCreateLabel}
+          onUpdateLabel={handleUpdateLabel}
+          onDeleteLabel={handleDeleteLabel}
           isLoading={isSaving}
         />
       </div>

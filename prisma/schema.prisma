@@ -21,6 +21,7 @@ model Todo {
   updatedAt   DateTime  @updatedAt
   categoryId  String?
   category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  labels      Label[]
 
   @@index([status])
   @@index([archived])
@@ -35,6 +36,15 @@ model Category {
   name      String   @unique
   color     String   @default("#6366f1")
   icon      String?
+  todos     Todo[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Label {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  color     String   @default("#22c55e")
   todos     Todo[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

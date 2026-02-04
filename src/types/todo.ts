@@ -11,6 +11,14 @@ export interface Category {
   updatedAt: string
 }
 
+export interface Label {
+  id: string
+  name: string
+  color: string
+  createdAt: string
+  updatedAt: string
+}
+
 export interface Todo {
   id: string
   title: string
@@ -24,6 +32,7 @@ export interface Todo {
   updatedAt: string
   categoryId: string | null
   category: Category | null
+  labels: Label[]
 }
 
 export interface CreateTodoInput {
@@ -33,6 +42,7 @@ export interface CreateTodoInput {
   status?: Status
   dueDate?: string | null
   categoryId?: string | null
+  labelIds?: string[]
 }
 
 export interface UpdateTodoInput {
@@ -42,4 +52,5 @@ export interface UpdateTodoInput {
   priority?: Priority
   dueDate?: string | null
   categoryId?: string | null
+  labelIds?: string[]
 }

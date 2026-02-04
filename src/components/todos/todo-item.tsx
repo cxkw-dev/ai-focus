@@ -215,8 +215,24 @@ function TodoItemContent({
   return (
     <div className="flex flex-col gap-2 w-full min-w-0">
       {/* Main row: content */}
-      <div className="flex items-start gap-2">
+      <div className="flex items-start gap-2 min-w-0">
         <div className="flex-1 min-w-0">
+          {todo.labels?.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-1">
+              {todo.labels.map((label) => (
+                <span
+                  key={label.id}
+                  className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium"
+                  style={{
+                    backgroundColor: `${label.color}22`,
+                    color: label.color,
+                  }}
+                >
+                  {label.name}
+                </span>
+              ))}
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <h3
               className={cn(
@@ -257,8 +273,8 @@ function TodoItemContent({
       </div>
 
       {/* Bottom row: actions aligned */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1">
+      <div className="flex items-start gap-2 justify-between min-w-0">
+        <div className="flex flex-1 flex-wrap items-center gap-1 min-w-0">
           {!isArchiveView && (
             <StatusDropdown todo={todo} onStatusChange={onStatusChange} />
           )}
@@ -289,7 +305,7 @@ function TodoItemContent({
         </div>
 
         {/* Actions - same height as chips */}
-        <div className="flex items-center gap-1 flex-shrink-0">
+        <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
           {isArchiveView ? (
             <>
               <button
@@ -394,15 +410,15 @@ export function TodoItem({ todo, onStatusChange, onPriorityChange, onDelete, onE
   const isCompleted = todo.status === 'COMPLETED'
 
   return (
-    <motion.div
-      ref={setNodeRef}
-      style={style}
-      layout={!dragging}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: dragging ? 0.5 : 1, y: 0 }}
-      exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
-      className="flex items-center gap-0.5"
-    >
+      <motion.div
+        ref={setNodeRef}
+        style={style}
+        layout={!dragging}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: dragging ? 0.5 : 1, y: 0 }}
+        exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
+        className="flex items-center gap-0.5 min-w-0"
+      >
       {/* Drag Handle */}
       {!isArchiveView && (
         <button
@@ -427,7 +443,7 @@ export function TodoItem({ todo, onStatusChange, onPriorityChange, onDelete, onE
       {/* Card */}
       <div
         className={cn(
-          'group flex-1 rounded-lg px-3 py-2.5 transition-all',
+          'group flex-1 min-w-0 rounded-lg px-3 py-2.5 transition-all',
           dragging && 'shadow-lg z-50',
           (isCompleted || isArchiveView) && 'opacity-50'
         )}

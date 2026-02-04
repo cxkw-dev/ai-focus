@@ -8,6 +8,7 @@ const createTodoSchema = z.object({
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
   dueDate: z.string().datetime().optional().nullable(),
   categoryId: z.string().optional().nullable(),
+  labelIds: z.array(z.string()).optional(),
 })
 
 export async function GET(request: NextRequest) {
@@ -44,6 +45,7 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         category: true,
+        labels: { orderBy: { name: 'asc' } },
       },
       orderBy: [
         { order: 'asc' },
@@ -65,6 +67,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const validatedData = createTodoSchema.parse(body)
+    const { labelIds, categoryId, ...todoData } = validatedData
 
     // Get the minimum order value to place new todo at the top
     const minOrderTodo = await db.todo.findFirst({
@@ -75,15 +78,20 @@ export async function POST(request: NextRequest) {
 
     const todo = await db.todo.create({
       data: {
-        title: validatedData.title,
-        description: validatedData.description,
+        ...todoData,
         priority: validatedData.priority || 'MEDIUM',
         dueDate: validatedData.dueDate ? new Date(validatedData.dueDate) : null,
-        categoryId: validatedData.categoryId || null,
+        ...(categoryId
+          ? { category: { connect: { id: categoryId } } }
+          : {}),
+        labels: labelIds?.length
+          ? { connect: labelIds.map((id) => ({ id })) }
+          : undefined,
         order: newOrder,
       },
       include: {
         category: true,
+        labels: { orderBy: { name: 'asc' } },
       },
     })
 

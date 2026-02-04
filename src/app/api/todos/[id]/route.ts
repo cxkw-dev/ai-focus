@@ -10,6 +10,7 @@ const updateTodoSchema = z.object({
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
   dueDate: z.string().datetime().optional().nullable(),
   categoryId: z.string().optional().nullable(),
+  labelIds: z.array(z.string()).optional(),
 })
 
 export async function GET(
@@ -20,7 +21,7 @@ export async function GET(
     const { id } = await params
     const todo = await db.todo.findUnique({
       where: { id },
-      include: { category: true },
+      include: { category: true, labels: { orderBy: { name: 'asc' } } },
     })
 
     if (!todo) {
@@ -45,18 +46,27 @@ export async function PATCH(
     const { id } = await params
     const body = await request.json()
     const validatedData = updateTodoSchema.parse(body)
+    const { labelIds, categoryId, ...todoData } = validatedData
 
     const todo = await db.todo.update({
       where: { id },
       data: {
-        ...validatedData,
+        ...todoData,
+        ...(categoryId !== undefined
+          ? categoryId === null
+            ? { category: { disconnect: true } }
+            : { category: { connect: { id: categoryId } } }
+          : {}),
+        ...(labelIds
+          ? { labels: { set: labelIds.map((labelId) => ({ id: labelId })) } }
+          : {}),
         dueDate: validatedData.dueDate
           ? new Date(validatedData.dueDate)
           : validatedData.dueDate === null
           ? null
           : undefined,
       },
-      include: { category: true },
+      include: { category: true, labels: { orderBy: { name: 'asc' } } },
     })
 
     return NextResponse.json(todo)
