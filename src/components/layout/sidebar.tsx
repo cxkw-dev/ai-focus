@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   CheckSquare,
   ChevronLeft,
+  Settings,
 } from 'lucide-react'
 import {
   Tooltip,
@@ -26,6 +27,11 @@ const navItems = [
     title: 'Todos',
     href: '/todos',
     icon: CheckSquare,
+  },
+  {
+    title: 'Settings',
+    href: '/settings',
+    icon: Settings,
   },
 ]
 
