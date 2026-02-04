@@ -1,15 +1,13 @@
 'use client'
 
 import * as React from 'react'
-import ReactMarkdown from 'react-markdown'
-import { FileText, List, Pencil, Plus, Undo2 } from 'lucide-react'
-import { IoLogoMarkdown } from 'react-icons/io'
+import { FileText, List, Plus, Undo2 } from 'lucide-react'
 import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { TodoList } from '@/components/todos/todo-list'
 import { TodoForm, InlineTodoForm, CreateTodoModal } from '@/components/todos/todo-form'
+import { ScratchPad } from '@/components/todos/scratch-pad'
 import { useToast } from '@/components/ui/use-toast'
 import type { Todo, Category, Label, CreateTodoInput, UpdateTodoInput, Status, Priority } from '@/types/todo'
-import type { Note } from '@/types/note'
 
 export default function TodosPage() {
   const [todos, setTodos] = React.useState<Todo[]>([])
@@ -20,16 +18,10 @@ export default function TodosPage() {
   const [isFormOpen, setIsFormOpen] = React.useState(false)
   const [editingTodo, setEditingTodo] = React.useState<Todo | null>(null)
   const [isSaving, setIsSaving] = React.useState(false)
-  const [note, setNote] = React.useState<Note | null>(null)
-  const [isNoteLoading, setIsNoteLoading] = React.useState(true)
-  const [noteStatus, setNoteStatus] = React.useState<'idle' | 'saving' | 'error'>('idle')
   // Responsive state
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false)
   const [mobileView, setMobileView] = React.useState<'notes' | 'tasks'>('notes')
-  const [isMarkdownPreview, setIsMarkdownPreview] = React.useState(false)
   const { toast, dismiss } = useToast()
-  const latestNoteContentRef = React.useRef<string>('')
-  const noteSavingRef = React.useRef(false)
 
   React.useEffect(() => {
     fetchData()
@@ -37,14 +29,12 @@ export default function TodosPage() {
 
   const fetchData = async () => {
     setIsLoading(true)
-    setIsNoteLoading(true)
     try {
-      const [todosRes, archivedRes, categoriesRes, labelsRes, noteRes] = await Promise.all([
+      const [todosRes, archivedRes, categoriesRes, labelsRes] = await Promise.all([
         fetch('/api/todos'),
         fetch('/api/todos?archived=true'),
         fetch('/api/categories'),
         fetch('/api/labels'),
-        fetch('/api/note'),
       ])
 
       if (todosRes.ok) {
@@ -59,13 +49,6 @@ export default function TodosPage() {
       if (labelsRes.ok) {
         setLabels(await labelsRes.json())
       }
-      if (noteRes.ok) {
-        const noteData: Note = await noteRes.json()
-        setNote(noteData)
-        latestNoteContentRef.current = noteData.content
-      } else {
-        setNote({ id: 'default', content: '', updatedAt: null })
-      }
     } catch (error) {
       toast({
         title: 'Error',
@@ -74,7 +57,6 @@ export default function TodosPage() {
       })
     } finally {
       setIsLoading(false)
-      setIsNoteLoading(false)
     }
   }
 
@@ -187,7 +169,10 @@ export default function TodosPage() {
     }
   }
 
-  const handleCreate = async (data: CreateTodoInput) => {
+  const handleCreate = async (
+    data: CreateTodoInput,
+    _options?: { silent?: boolean; close?: boolean }
+  ) => {
     setIsSaving(true)
     try {
       const res = await fetch('/api/todos', {
@@ -219,7 +204,10 @@ export default function TodosPage() {
     }
   }
 
-  const handleUpdate = async (data: UpdateTodoInput) => {
+  const handleUpdate = async (
+    data: UpdateTodoInput,
+    options?: { silent?: boolean; close?: boolean }
+  ) => {
     if (!editingTodo) return
 
     setIsSaving(true)
@@ -235,12 +223,16 @@ export default function TodosPage() {
         setTodos((prev) =>
           prev.map((t) => (t.id === updatedTodo.id ? updatedTodo : t))
         )
-        setEditingTodo(null)
-        setIsFormOpen(false)
-        toast({
-          title: 'Updated',
-          description: 'Changes saved.',
-        })
+        if (options?.close !== false) {
+          setEditingTodo(null)
+          setIsFormOpen(false)
+        }
+        if (!options?.silent) {
+          toast({
+            title: 'Updated',
+            description: 'Changes saved.',
+          })
+        }
       } else {
         throw new Error('Failed to update todo')
       }
@@ -484,207 +476,6 @@ export default function TodosPage() {
     }
   }
 
-  const persistNote = async (content: string) => {
-    latestNoteContentRef.current = content
-    if (noteSavingRef.current) return
-
-    noteSavingRef.current = true
-    while (true) {
-      const currentContent = latestNoteContentRef.current
-      setNoteStatus('saving')
-      try {
-        const res = await fetch('/api/note', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content: currentContent }),
-        })
-        if (!res.ok) {
-          throw new Error('Failed to save note')
-        }
-        const saved: Note = await res.json()
-        setNote(saved)
-        setNoteStatus('idle')
-      } catch (error) {
-        setNoteStatus('error')
-        toast({
-          title: 'Error',
-          description: 'Failed to save note. Changes may be unsaved.',
-          variant: 'destructive',
-        })
-      }
-
-      if (latestNoteContentRef.current === currentContent) {
-        noteSavingRef.current = false
-        break
-      }
-    }
-  }
-
-  const handleNoteChange = (value: string) => {
-    setNote((prev) =>
-      prev
-        ? { ...prev, content: value }
-        : { id: 'default', content: value, updatedAt: null }
-    )
-    void persistNote(value)
-  }
-
-  // Scratch Pad render helper (not a component — avoids remounting on parent re-render)
-  const renderScratchPad = (className = '') => (
-    <div className={`flex flex-col min-h-0 ${className}`}>
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <div
-            className="w-1 h-4 rounded-full"
-            style={{ backgroundColor: 'var(--status-waiting)' }}
-          />
-          <h2 className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--status-waiting)' }}>Scratch Pad</h2>
-        </div>
-        <div className="flex items-center gap-3">
-          {/* Segmented Control: Edit / Preview */}
-          <div
-            className="flex rounded-md p-0.5"
-            style={{ backgroundColor: 'var(--surface-2)' }}
-          >
-            <button
-              type="button"
-              onClick={() => setIsMarkdownPreview(false)}
-              className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-medium transition-colors"
-              style={{
-                backgroundColor: !isMarkdownPreview ? 'var(--primary)' : 'transparent',
-                color: !isMarkdownPreview ? 'var(--primary-foreground)' : 'var(--text-muted)',
-              }}
-            >
-              <Pencil className="h-3 w-3" />
-              Edit
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsMarkdownPreview(true)}
-              className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-medium transition-colors"
-              style={{
-                backgroundColor: isMarkdownPreview ? 'var(--primary)' : 'transparent',
-                color: isMarkdownPreview ? 'var(--primary-foreground)' : 'var(--text-muted)',
-              }}
-            >
-              <IoLogoMarkdown className="h-3.5 w-3.5" />
-              Preview
-            </button>
-          </div>
-          <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-            {noteStatus === 'saving' ? 'Saving...' : noteStatus === 'error' ? 'Error' : 'Auto-saves'}
-          </span>
-        </div>
-      </div>
-      <div className="group/pad flex-1 min-h-0 relative">
-        {/* Glow effect on focus */}
-        <div
-          className="absolute -inset-px rounded-lg opacity-0 blur-sm transition-opacity duration-300 group-focus-within/pad:opacity-100"
-          style={{
-            background: `linear-gradient(135deg, color-mix(in srgb, var(--primary) 40%, transparent), color-mix(in srgb, var(--accent) 30%, transparent))`,
-          }}
-        />
-
-        {/* Main container with dot pattern */}
-        <div
-          className="relative h-full rounded-lg overflow-hidden transition-all duration-300"
-          style={{
-            backgroundColor: 'var(--surface)',
-          }}
-        >
-          {/* Dot grid pattern overlay */}
-          <div
-            className="absolute inset-0 pointer-events-none opacity-[0.03]"
-            style={{
-              backgroundImage: `radial-gradient(circle, var(--text-primary) 1px, transparent 1px)`,
-              backgroundSize: '16px 16px',
-              backgroundPosition: '8px 8px',
-            }}
-          />
-
-          {/* Subtle gradient fade at edges */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: `linear-gradient(180deg, transparent 0%, transparent 85%, var(--surface) 100%)`,
-            }}
-          />
-
-          {isMarkdownPreview ? (
-            <div
-              className="scratch-pad-markdown relative w-full h-full overflow-auto px-4 py-3 text-xs leading-relaxed max-w-none"
-              style={{ color: 'var(--text-primary)' }}
-            >
-              <ReactMarkdown
-                components={{
-                  h1: ({ children }) => <h1 className="text-lg font-bold mb-2 mt-0" style={{ color: 'var(--text-primary)' }}>{children}</h1>,
-                  h2: ({ children }) => <h2 className="text-base font-bold mb-2 mt-3" style={{ color: 'var(--text-primary)' }}>{children}</h2>,
-                  h3: ({ children }) => <h3 className="text-sm font-bold mb-1 mt-2" style={{ color: 'var(--text-primary)' }}>{children}</h3>,
-                  p: ({ children }) => <p className="mb-2" style={{ color: 'var(--text-primary)' }}>{children}</p>,
-                  ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-0.5">{children}</ul>,
-                  ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-0.5">{children}</ol>,
-                  li: ({ children }) => <li style={{ color: 'var(--text-primary)' }}>{children}</li>,
-                  code: ({ children }) => (
-                    <code
-                      className="px-1 py-0.5 rounded text-[11px]"
-                      style={{ backgroundColor: 'var(--surface-2)', color: 'var(--primary)' }}
-                    >
-                      {children}
-                    </code>
-                  ),
-                  pre: ({ children }) => (
-                    <pre
-                      className="p-2 rounded-md overflow-x-auto mb-2"
-                      style={{ backgroundColor: 'var(--surface-2)' }}
-                    >
-                      {children}
-                    </pre>
-                  ),
-                  blockquote: ({ children }) => (
-                    <blockquote
-                      className="border-l-2 pl-3 my-2 italic"
-                      style={{ borderColor: 'var(--primary)', color: 'var(--text-muted)' }}
-                    >
-                      {children}
-                    </blockquote>
-                  ),
-                  a: ({ href, children }) => (
-                    <a
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline"
-                      style={{ color: 'var(--primary)' }}
-                    >
-                      {children}
-                    </a>
-                  ),
-                  hr: () => <hr className="my-3 border-0 h-px" style={{ backgroundColor: 'var(--border-color)' }} />,
-                  strong: ({ children }) => <strong className="font-bold" style={{ color: 'var(--text-primary)' }}>{children}</strong>,
-                  em: ({ children }) => <em style={{ color: 'var(--text-primary)' }}>{children}</em>,
-                }}
-              >
-                {note?.content || '*No notes yet...*'}
-              </ReactMarkdown>
-            </div>
-          ) : (
-            <textarea
-              className="relative w-full h-full resize-none bg-transparent px-4 py-3 text-xs outline-none leading-relaxed"
-              style={{
-                color: 'var(--text-primary)',
-                caretColor: 'var(--primary)',
-              }}
-              placeholder="Jot down quick notes... (supports markdown)"
-              value={note?.content ?? ''}
-              onChange={(e) => handleNoteChange(e.target.value)}
-              disabled={isNoteLoading}
-            />
-          )}
-        </div>
-      </div>
-    </div>
-  )
-
   // Todo List Section render helper (not a component — avoids remounting on parent re-render)
   const renderTodoListSection = (className = '') => (
     <div className={`flex flex-col min-h-0 ${className}`}>
@@ -747,7 +538,7 @@ export default function TodosPage() {
           {/* Mobile Content */}
           <div className="flex-1 min-h-0">
             {mobileView === 'notes'
-              ? renderScratchPad("h-full")
+              ? <ScratchPad className="h-full" />
               : renderTodoListSection("h-full")
             }
           </div>
@@ -767,17 +558,10 @@ export default function TodosPage() {
           </button>
         </div>
 
-        {/* Desktop View: Three Column Layout (>= 1280px) */}
-        <div className="hidden xl:grid xl:grid-cols-[240px_320px_1fr] gap-4 flex-1 min-h-0">
-          {/* Left Column - Create Form */}
-          <div className="flex flex-col min-h-0">
-            <div className="flex items-center gap-2 mb-2">
-              <div
-                className="w-1 h-4 rounded-full"
-                style={{ backgroundColor: 'var(--accent)' }}
-              />
-              <h2 className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--accent)' }}>New Task</h2>
-            </div>
+        {/* Desktop View: Two Column Layout (>= 1280px) */}
+        <div className="hidden xl:grid xl:grid-cols-[480px_1fr] gap-8 flex-1 min-h-0">
+          {/* Left Column - Create Form & Todo List */}
+          <div className="flex flex-col min-h-0 gap-6">
             <InlineTodoForm
               onSubmit={handleCreate}
               categories={categories}
@@ -787,13 +571,11 @@ export default function TodosPage() {
               onDeleteLabel={handleDeleteLabel}
               isLoading={isSaving}
             />
+            {renderTodoListSection("flex-1")}
           </div>
 
-          {/* Center Column - Todo List */}
-          {renderTodoListSection()}
-
           {/* Right Column - Scratch Pad */}
-          {renderScratchPad()}
+          <ScratchPad className="xl:-mr-4" />
         </div>
 
         {/* Edit Dialog */}
