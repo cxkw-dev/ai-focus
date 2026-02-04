@@ -4,6 +4,7 @@ import * as React from 'react'
 import { useEditor, useEditorState, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
+import Link from '@tiptap/extension-link'
 import {
   Bold,
   Italic,
@@ -11,6 +12,7 @@ import {
   List,
   ListOrdered,
   Heading2,
+  Link as LinkIcon,
   Undo,
   Redo,
   RemoveFormatting,
@@ -23,6 +25,7 @@ interface RichTextEditorProps {
   placeholder?: string
   disabled?: boolean
   compact?: boolean
+  fullHeight?: boolean
 }
 
 function ToolbarButton({
@@ -64,6 +67,7 @@ export function RichTextEditor({
   placeholder = 'Add more details...',
   disabled = false,
   compact = false,
+  fullHeight = false,
 }: RichTextEditorProps) {
   const isInternalUpdate = React.useRef(false)
 
@@ -73,6 +77,15 @@ export function RichTextEditor({
       StarterKit.configure({
         heading: {
           levels: [2, 3],
+        },
+      }),
+      Link.configure({
+        openOnClick: true,
+        autolink: true,
+        linkOnPaste: true,
+        HTMLAttributes: {
+          rel: 'noopener noreferrer',
+          target: '_blank',
         },
       }),
       Placeholder.configure({
@@ -91,6 +104,7 @@ export function RichTextEditor({
         class: cn(
           'prose prose-sm prose-invert max-w-none focus:outline-none break-words',
           compact ? 'min-h-[60px] max-h-[120px]' : 'min-h-[100px] max-h-[250px]',
+          fullHeight && 'min-h-full max-h-none h-full',
           'overflow-y-auto px-3 py-2'
         ),
       },
@@ -108,23 +122,25 @@ export function RichTextEditor({
           isHeading2: false,
           isBulletList: false,
           isOrderedList: false,
+          isLink: false,
           canUndo: false,
           canRedo: false,
           isFocused: false,
         }
       }
 
-      return {
-        isBold: editorInstance.isActive('bold'),
-        isItalic: editorInstance.isActive('italic'),
-        isStrike: editorInstance.isActive('strike'),
-        isHeading2: editorInstance.isActive('heading', { level: 2 }),
-        isBulletList: editorInstance.isActive('bulletList'),
-        isOrderedList: editorInstance.isActive('orderedList'),
-        canUndo: editorInstance.can().undo(),
-        canRedo: editorInstance.can().redo(),
-        isFocused: editorInstance.isFocused,
-      }
+        return {
+          isBold: editorInstance.isActive('bold'),
+          isItalic: editorInstance.isActive('italic'),
+          isStrike: editorInstance.isActive('strike'),
+          isHeading2: editorInstance.isActive('heading', { level: 2 }),
+          isBulletList: editorInstance.isActive('bulletList'),
+          isOrderedList: editorInstance.isActive('orderedList'),
+          isLink: editorInstance.isActive('link'),
+          canUndo: editorInstance.can().undo(),
+          canRedo: editorInstance.can().redo(),
+          isFocused: editorInstance.isFocused,
+        }
     },
   })
 
@@ -135,7 +151,7 @@ export function RichTextEditor({
       isInternalUpdate.current = false
       return
     }
-    editor.commands.setContent(value || '')
+    editor.commands.setContent(value || '', { emitUpdate: false })
   }, [value, editor])
 
   React.useEffect(() => {
@@ -149,18 +165,19 @@ export function RichTextEditor({
   return (
     <div
       className={cn(
-        'rounded-md border overflow-hidden',
-        editorState?.isFocused && 'border-[var(--primary)] shadow-[inset_0_0_0_2px_var(--primary)]'
+        'rounded-md border overflow-hidden transition-colors duration-150',
+        fullHeight && 'flex h-full w-full flex-col',
       )}
       style={{
         backgroundColor: 'var(--background)',
-        borderColor: 'var(--border-color)',
+        borderColor: editorState?.isFocused ? 'var(--primary)' : 'var(--border-color)',
+        boxShadow: editorState?.isFocused ? '0 0 0 1px var(--primary)' : 'none',
       }}
     >
       {/* Toolbar */}
       <div
-        className="flex items-center gap-0.5 px-2 py-1 border-b flex-wrap"
-        style={{ borderColor: 'var(--border-color)', backgroundColor: 'color-mix(in srgb, var(--surface) 50%, transparent)' }}
+        className="flex items-center gap-0.5 px-2 py-1 border-b flex-wrap transition-colors duration-150"
+        style={{ borderColor: editorState?.isFocused ? 'color-mix(in srgb, var(--primary) 40%, transparent)' : 'var(--border-color)', backgroundColor: 'color-mix(in srgb, var(--surface) 50%, transparent)' }}
       >
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBold().run()}
@@ -214,6 +231,24 @@ export function RichTextEditor({
           <ListOrdered className="h-3.5 w-3.5" />
         </ToolbarButton>
 
+        <ToolbarButton
+          onClick={() => {
+            const previousUrl = editor.getAttributes('link').href as string | undefined
+            const url = window.prompt('Enter link URL', previousUrl || '')
+            if (url === null) return
+            if (url.trim() === '') {
+              editor.chain().focus().extendMarkRange('link').unsetLink().run()
+              return
+            }
+            editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+          }}
+          isActive={editorState?.isLink}
+          disabled={disabled}
+          title="Insert Link"
+        >
+          <LinkIcon className="h-3.5 w-3.5" />
+        </ToolbarButton>
+
         <div className="w-px h-4 mx-1" style={{ backgroundColor: 'var(--border-color)' }} />
 
         <ToolbarButton
@@ -240,7 +275,7 @@ export function RichTextEditor({
       </div>
 
       {/* Editor content */}
-      <EditorContent editor={editor} />
+      <EditorContent editor={editor} className={cn(fullHeight && 'flex-1')} />
     </div>
   )
 }
