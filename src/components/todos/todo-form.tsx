@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import {
   Select,
   SelectContent,
@@ -88,7 +89,7 @@ export function CreateTodoModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[560px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>New Task</DialogTitle>
@@ -110,12 +111,13 @@ export function CreateTodoModal({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="create-description">Description (optional)</Label>
-              <Input
-                id="create-description"
+              <Label>Description (optional)</Label>
+              <RichTextEditor
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={setDescription}
                 placeholder="Add more details..."
+                disabled={isLoading}
+                compact
               />
             </div>
 
@@ -242,7 +244,7 @@ export function TodoForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[560px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>{isEditing ? 'Edit Todo' : 'Create Todo'}</DialogTitle>
@@ -266,12 +268,12 @@ export function TodoForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description (optional)</Label>
-              <Input
-                id="description"
+              <Label>Description (optional)</Label>
+              <RichTextEditor
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={setDescription}
                 placeholder="Add more details..."
+                disabled={isLoading}
               />
             </div>
 
@@ -435,13 +437,19 @@ export function InlineTodoForm({ onSubmit, categories, isLoading }: InlineTodoFo
           {isExpanded && (
             <div style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 50%, transparent)' }}>
               {/* Description */}
-              <input
-                type="text"
+              <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Notes (optional)"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    handleSubmit(e as unknown as React.FormEvent)
+                  }
+                }}
+                placeholder="Notes (optional) — Shift+Enter for new line"
                 disabled={isLoading}
-                className="w-full bg-transparent px-4 py-2.5 text-xs focus:outline-none"
+                rows={2}
+                className="w-full bg-transparent px-4 py-2.5 text-xs focus:outline-none resize-none"
                 style={{ color: 'var(--text-muted)' }}
               />
               

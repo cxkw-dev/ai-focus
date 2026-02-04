@@ -251,6 +251,125 @@ body {
   animation: flame-glow 0.6s ease-in-out infinite;
 }
 
+/* Tiptap rich text editor styles */
+.tiptap {
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.tiptap p {
+  margin: 0.25em 0;
+}
+
+.tiptap h2 {
+  font-size: 1.1em;
+  font-weight: 600;
+  margin: 0.5em 0 0.25em;
+  color: var(--text-primary);
+}
+
+.tiptap h3 {
+  font-size: 1em;
+  font-weight: 600;
+  margin: 0.4em 0 0.2em;
+  color: var(--text-primary);
+}
+
+.tiptap ul,
+.tiptap ol {
+  padding-left: 1.25em;
+  margin: 0.25em 0;
+}
+
+.tiptap ul {
+  list-style-type: disc;
+}
+
+.tiptap ol {
+  list-style-type: decimal;
+}
+
+.tiptap li {
+  margin: 0.1em 0;
+}
+
+.tiptap s {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.tiptap strong {
+  font-weight: 600;
+}
+
+.tiptap em {
+  font-style: italic;
+}
+
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--text-muted);
+  opacity: 0.5;
+  pointer-events: none;
+  height: 0;
+}
+
+/* Rendered rich text in todo items */
+.rich-text-display {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.rich-text-display p {
+  margin: 0.1em 0;
+}
+
+.rich-text-display h2 {
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0.3em 0 0.1em;
+}
+
+.rich-text-display h3 {
+  font-size: 11px;
+  font-weight: 600;
+  margin: 0.2em 0 0.1em;
+}
+
+.rich-text-display ul,
+.rich-text-display ol {
+  padding-left: 1.25em;
+  margin: 0.1em 0;
+}
+
+.rich-text-display ul {
+  list-style-type: disc;
+}
+
+.rich-text-display ol {
+  list-style-type: decimal;
+}
+
+.rich-text-display li {
+  margin: 0;
+}
+
+.rich-text-display s {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.rich-text-display a {
+  color: var(--primary);
+}
+
+.rich-text-display a:hover {
+  text-decoration: underline;
+}
+
 /* Markdown preview styles in scratch pad */
 .scratch-pad-markdown {
   /* Make checkboxes look nice */

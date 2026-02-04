@@ -239,12 +239,19 @@ function TodoItemContent({
           </div>
 
           {todo.description && (
-            <p
-              className="mt-0.5 text-[11px] break-words leading-snug"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              {renderTextWithLinks(todo.description)}
-            </p>
+            todo.description.startsWith('<') ? (
+              <div
+                className="mt-0.5 break-words rich-text-display"
+                dangerouslySetInnerHTML={{ __html: todo.description }}
+              />
+            ) : (
+              <p
+                className="mt-0.5 text-[11px] break-words leading-snug whitespace-pre-wrap"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                {renderTextWithLinks(todo.description)}
+              </p>
+            )
           )}
         </div>
       </div>
