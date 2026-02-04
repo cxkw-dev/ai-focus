@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -41,25 +42,42 @@ export function Sidebar({ collapsed, onCollapse }: SidebarProps) {
         style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-color)' }}
       >
         {/* Logo */}
-        <div className="flex h-16 items-center border-b px-4" style={{ borderColor: 'var(--border-color)' }}>
-          <Link href="/" className="flex items-center group">
-            <span
-              className="text-3xl font-bold uppercase"
-              style={{
-                fontFamily: '"Pixelify Sans", sans-serif',
-                background: 'linear-gradient(135deg, var(--primary), var(--accent), var(--status-done))',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}
-            >
-              Focus
-            </span>
+        <div className={`flex h-16 items-center border-b overflow-hidden ${collapsed ? 'justify-center px-0' : 'px-4'}`} style={{ borderColor: 'var(--border-color)' }}>
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <Image
+              src="/icon.svg"
+              alt="Focus"
+              width={32}
+              height={32}
+              className="shrink-0"
+              style={{ imageRendering: 'pixelated' }}
+            />
+            <AnimatePresence mode="wait">
+              {!collapsed && (
+                <motion.span
+                  key="expanded"
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: 'auto' }}
+                  exit={{ opacity: 0, width: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="text-3xl font-bold uppercase whitespace-nowrap overflow-hidden"
+                  style={{
+                    fontFamily: '"Pixelify Sans", sans-serif',
+                    background: 'linear-gradient(135deg, var(--primary), var(--accent), var(--status-done))',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}
+                >
+                  Focus
+                </motion.span>
+              )}
+            </AnimatePresence>
           </Link>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 space-y-1 p-3">
+        <nav className={`flex-1 space-y-1 ${collapsed ? 'px-2 py-3' : 'p-3'}`}>
           {navItems.map((item) => {
             const isActive = pathname === item.href
             const Icon = item.icon
@@ -68,7 +86,7 @@ export function Sidebar({ collapsed, onCollapse }: SidebarProps) {
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200"
+                className={`flex items-center rounded-lg py-2.5 text-sm font-medium transition-all duration-200 ${collapsed ? 'justify-center px-0' : 'gap-3 px-3'}`}
                 style={isActive ? {
                   backgroundColor: 'color-mix(in srgb, var(--primary) 15%, transparent)',
                   color: 'var(--primary)',
