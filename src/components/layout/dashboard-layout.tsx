@@ -11,7 +11,17 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children, title }: DashboardLayoutProps) {
-  const [collapsed, setCollapsed] = React.useState(false)
+  const [collapsed, setCollapsed] = React.useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('sidebar-collapsed')
+        return saved ? JSON.parse(saved) : false
+      } catch {
+        return false
+      }
+    }
+    return false
+  })
   const [isMobile, setIsMobile] = React.useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
 
@@ -26,14 +36,6 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
     checkMobile()
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
-  }, [])
-
-  React.useEffect(() => {
-    // Load collapsed state from localStorage
-    const savedCollapsed = localStorage.getItem('sidebar-collapsed')
-    if (savedCollapsed !== null) {
-      setCollapsed(JSON.parse(savedCollapsed))
-    }
   }, [])
 
   const handleCollapse = (newCollapsed: boolean) => {

@@ -20,46 +20,35 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CheckCircle2, Circle, Archive, Inbox } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { TodoItem, TodoItemOverlay } from './todo-item'
-import { Button } from '@/components/ui/button'
-import type { Todo, Status, Priority } from '@/types/todo'
-
-interface TodoListProps {
-  todos: Todo[]
-  archivedTodos: Todo[]
-  onStatusChange: (id: string, status: Status) => void
-  onPriorityChange: (id: string, priority: Priority) => void
-  onDelete: (id: string) => void
-  onPermanentDelete?: (id: string) => void
-  onEdit: (todo: Todo) => void
-  onReorder: (todos: Todo[]) => void
-  onRestore: (id: string) => void
-  isLoading?: boolean
-}
+import { useTodos } from '@/hooks/use-todos'
+import type { Todo } from '@/types/todo'
 
 type Filter = 'all' | 'active' | 'completed' | 'archived'
 
-export function TodoList({
-  todos,
-  archivedTodos,
-  onStatusChange,
-  onPriorityChange,
-  onDelete,
-  onPermanentDelete,
-  onEdit,
-  onReorder,
-  onRestore,
-  isLoading,
-}: TodoListProps) {
+interface TodoListProps {
+  onEdit: (todo: Todo) => void
+}
+
+export function TodoList({ onEdit }: TodoListProps) {
+  const {
+    todos,
+    archivedTodos,
+    isLoading,
+    updateStatus,
+    updatePriority,
+    archive,
+    permanentDelete,
+    restore,
+    reorder,
+  } = useTodos()
+
   const [filter, setFilter] = React.useState<Filter>('all')
   const [activeId, setActiveId] = React.useState<string | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
+      activationConstraint: { distance: 8 },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
@@ -67,9 +56,7 @@ export function TodoList({
   )
 
   const filteredTodos = React.useMemo(() => {
-    if (filter === 'archived') {
-      return archivedTodos
-    }
+    if (filter === 'archived') return archivedTodos
     switch (filter) {
       case 'active':
         return todos.filter((t) => t.status !== 'COMPLETED')
@@ -97,14 +84,38 @@ export function TodoList({
     if (over && active.id !== over.id) {
       const oldIndex = todos.findIndex((t) => t.id === active.id)
       const newIndex = todos.findIndex((t) => t.id === over.id)
-      const newTodos = arrayMove(todos, oldIndex, newIndex)
-      onReorder(newTodos)
+      reorder.mutate(arrayMove(todos, oldIndex, newIndex))
     }
   }
 
   const handleDragCancel = () => {
     setActiveId(null)
   }
+
+  const handleStatusChange = React.useCallback(
+    (id: string, status: Todo['status']) => updateStatus.mutate({ id, status }),
+    [updateStatus]
+  )
+
+  const handlePriorityChange = React.useCallback(
+    (id: string, priority: Todo['priority']) => updatePriority.mutate({ id, priority }),
+    [updatePriority]
+  )
+
+  const handleDelete = React.useCallback(
+    (id: string) => archive.mutate(id),
+    [archive]
+  )
+
+  const handlePermanentDelete = React.useCallback(
+    (id: string) => permanentDelete.mutate(id),
+    [permanentDelete]
+  )
+
+  const handleRestore = React.useCallback(
+    (id: string) => restore.mutate(id),
+    [restore]
+  )
 
   const activeTodo = activeId ? todos.find((t) => t.id === activeId) : null
   const isArchiveView = filter === 'archived'
@@ -125,7 +136,7 @@ export function TodoList({
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      {/* Header with filters - compact to align better with side columns */}
+      {/* Header with filters */}
       <div className="flex items-center justify-between mb-2 flex-shrink-0">
         <div className="flex items-center gap-2">
           <div
@@ -144,13 +155,15 @@ export function TodoList({
             <button
               key={tab.value}
               onClick={() => setFilter(tab.value as Filter)}
-              className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] font-medium transition-colors"
+              className="todo-filter-btn flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] font-medium transition-colors"
               style={filter === tab.value ? {
                 backgroundColor: `color-mix(in srgb, ${tab.color} 15%, transparent)`,
                 color: tab.color,
               } : {
                 color: 'var(--text-muted)',
               }}
+              data-color={tab.color}
+              data-active={filter === tab.value ? 'true' : undefined}
               onMouseEnter={(e) => {
                 if (filter !== tab.value) {
                   e.currentTarget.style.color = tab.color
@@ -173,7 +186,7 @@ export function TodoList({
         </div>
       </div>
 
-      {/* Todo Items with Drag and Drop - scrollable */}
+      {/* Todo Items with Drag and Drop */}
       <div className="flex-1 overflow-y-auto min-h-0">
         <DndContext
           sensors={sensors}
@@ -223,11 +236,11 @@ export function TodoList({
                     <TodoItem
                       key={todo.id}
                       todo={todo}
-                      onStatusChange={onStatusChange}
-                      onPriorityChange={onPriorityChange}
-                      onDelete={isArchiveView && onPermanentDelete ? onPermanentDelete : onDelete}
+                      onStatusChange={handleStatusChange}
+                      onPriorityChange={handlePriorityChange}
+                      onDelete={isArchiveView ? handlePermanentDelete : handleDelete}
                       onEdit={onEdit}
-                      onRestore={onRestore}
+                      onRestore={handleRestore}
                       isArchiveView={isArchiveView}
                     />
                   ))
@@ -236,7 +249,6 @@ export function TodoList({
             </div>
           </SortableContext>
 
-          {/* Drag Overlay */}
           <DragOverlay>
             {activeTodo ? (
               <TodoItemOverlay

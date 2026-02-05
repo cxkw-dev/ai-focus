@@ -29,10 +29,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import type { Todo, Status, Priority } from '@/types/todo'
 
-// Unified chip styling - all elements in the bottom row share this base
 const CHIP_BASE = 'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors'
 
-// Uses CSS variables from globals.css for easy theme switching
 const STATUS_CONFIG: Record<Status, { label: string; icon: React.ElementType; colorVar: string; bgVar: string }> = {
   TODO: { label: 'To Do', icon: Circle, colorVar: 'var(--status-todo)', bgVar: 'var(--status-todo)' },
   IN_PROGRESS: { label: 'In Progress', icon: Play, colorVar: 'var(--status-in-progress)', bgVar: 'var(--status-in-progress)' },
@@ -128,7 +126,7 @@ function StatusDropdown({ todo, onStatusChange }: { todo: Todo; onStatusChange: 
               <StatusIcon className="h-3.5 w-3.5" style={{ color: statusConfig.colorVar }} />
               <span>{statusConfig.label}</span>
               {isActive && (
-                <span className="ml-auto text-[10px] opacity-60">✓</span>
+                <span className="ml-auto text-[10px] opacity-60">&check;</span>
               )}
             </DropdownMenuItem>
           )
@@ -190,7 +188,7 @@ function PriorityDropdown({ todo, onPriorityChange }: { todo: Todo; onPriorityCh
               )}
               <span>{priorityConfig.label}</span>
               {isActive && (
-                <span className="ml-auto text-[10px] opacity-60">✓</span>
+                <span className="ml-auto text-[10px] opacity-60">&check;</span>
               )}
             </DropdownMenuItem>
           )
@@ -214,7 +212,6 @@ function TodoItemContent({
 
   return (
     <div className="flex flex-col gap-2 w-full min-w-0">
-      {/* Main row: content */}
       <div className="flex items-start gap-2 min-w-0">
         <div className="flex-1 min-w-0">
           {todo.labels?.length > 0 && (
@@ -272,7 +269,7 @@ function TodoItemContent({
         </div>
       </div>
 
-      {/* Bottom row: actions aligned */}
+      {/* Bottom row */}
       <div className="flex items-start gap-2 justify-between min-w-0">
         <div className="flex flex-1 flex-wrap items-center gap-1 min-w-0">
           {!isArchiveView && (
@@ -304,40 +301,20 @@ function TodoItemContent({
           )}
         </div>
 
-        {/* Actions - same height as chips */}
+        {/* Actions — CSS hover classes instead of JS handlers */}
         <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
           {isArchiveView ? (
             <>
               <button
                 onClick={() => onRestore?.(todo.id)}
-                className={cn(CHIP_BASE, 'transition-colors')}
-                style={{
-                  backgroundColor: 'color-mix(in srgb, var(--primary) 15%, transparent)',
-                  color: 'var(--primary)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--primary) 25%, transparent)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--primary) 15%, transparent)'
-                }}
+                className={cn(CHIP_BASE, 'todo-action-restore')}
                 title="Restore"
               >
                 <RotateCcw className="h-3 w-3" />
               </button>
               <button
                 onClick={() => onDelete(todo.id)}
-                className={cn(CHIP_BASE, 'transition-colors')}
-                style={{
-                  backgroundColor: 'color-mix(in srgb, var(--destructive) 15%, transparent)',
-                  color: 'var(--destructive)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--destructive) 25%, transparent)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--destructive) 15%, transparent)'
-                }}
+                className={cn(CHIP_BASE, 'todo-action-destroy')}
                 title="Delete permanently"
               >
                 <Trash2 className="h-3 w-3" />
@@ -347,38 +324,14 @@ function TodoItemContent({
             <>
               <button
                 onClick={() => onEdit(todo)}
-                className={cn(CHIP_BASE, 'transition-colors')}
-                style={{
-                  backgroundColor: 'var(--surface-2)',
-                  color: 'var(--text-muted)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--primary) 20%, transparent)'
-                  e.currentTarget.style.color = 'var(--primary)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--surface-2)'
-                  e.currentTarget.style.color = 'var(--text-muted)'
-                }}
+                className={cn(CHIP_BASE, 'todo-action-edit')}
                 title="Edit"
               >
                 <Edit2 className="h-3 w-3" />
               </button>
               <button
                 onClick={() => onDelete(todo.id)}
-                className={cn(CHIP_BASE, 'transition-colors')}
-                style={{
-                  backgroundColor: 'var(--surface-2)',
-                  color: 'var(--text-muted)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--destructive) 15%, transparent)'
-                  e.currentTarget.style.color = 'var(--destructive)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--surface-2)'
-                  e.currentTarget.style.color = 'var(--text-muted)'
-                }}
+                className={cn(CHIP_BASE, 'todo-action-delete')}
                 title="Delete"
               >
                 <Trash2 className="h-3 w-3" />
@@ -419,22 +372,15 @@ export function TodoItem({ todo, onStatusChange, onPriorityChange, onDelete, onE
         exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
         className="flex items-center gap-0.5 min-w-0"
       >
-      {/* Drag Handle */}
+      {/* Drag Handle — CSS hover class */}
       {!isArchiveView && (
         <button
           {...attributes}
           {...listeners}
           className={cn(
-            'flex-shrink-0 cursor-grab touch-none p-0.5 rounded transition-colors self-center',
+            'todo-drag-handle flex-shrink-0 cursor-grab touch-none p-0.5 rounded transition-colors self-center',
             dragging && 'cursor-grabbing'
           )}
-          style={{ color: 'color-mix(in srgb, var(--text-muted) 40%, transparent)' }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = 'var(--text-muted)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = 'color-mix(in srgb, var(--text-muted) 40%, transparent)'
-          }}
         >
           <GripVertical className="h-3.5 w-3.5" />
         </button>
@@ -473,8 +419,7 @@ export function TodoItemOverlay({ todo, onStatusChange, onPriorityChange, onDele
   return (
     <div className="flex items-center gap-0.5">
       <div
-        className="flex-shrink-0 p-0.5"
-        style={{ color: 'color-mix(in srgb, var(--text-muted) 40%, transparent)' }}
+        className="flex-shrink-0 p-0.5 todo-drag-handle"
       >
         <GripVertical className="h-3.5 w-3.5" />
       </div>

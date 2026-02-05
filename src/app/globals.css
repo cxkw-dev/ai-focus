@@ -400,3 +400,45 @@ body {
 .ProseMirror a {
   word-break: break-all;
 }
+
+/* Todo item action buttons */
+.todo-action-edit {
+  background-color: var(--surface-2);
+  color: var(--text-muted);
+}
+.todo-action-edit:hover {
+  background-color: color-mix(in srgb, var(--primary) 20%, transparent);
+  color: var(--primary);
+}
+
+.todo-action-delete {
+  background-color: var(--surface-2);
+  color: var(--text-muted);
+}
+.todo-action-delete:hover {
+  background-color: color-mix(in srgb, var(--destructive) 15%, transparent);
+  color: var(--destructive);
+}
+
+.todo-action-restore {
+  background-color: color-mix(in srgb, var(--primary) 15%, transparent);
+  color: var(--primary);
+}
+.todo-action-restore:hover {
+  background-color: color-mix(in srgb, var(--primary) 25%, transparent);
+}
+
+.todo-action-destroy {
+  background-color: color-mix(in srgb, var(--destructive) 15%, transparent);
+  color: var(--destructive);
+}
+.todo-action-destroy:hover {
+  background-color: color-mix(in srgb, var(--destructive) 25%, transparent);
+}
+
+.todo-drag-handle {
+  color: color-mix(in srgb, var(--text-muted) 40%, transparent);
+}
+.todo-drag-handle:hover {
+  color: var(--text-muted);
+}
