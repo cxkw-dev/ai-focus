@@ -35,9 +35,10 @@ export function CategoryChart({ data, colors }: CategoryChartProps) {
 
   return (
     <div
-      className="rounded-xl border border-t-[3px] p-5"
-      style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-color)', borderTopColor: 'var(--status-in-progress)' }}
+      className="rounded-xl border p-5 relative overflow-hidden"
+      style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-color)' }}
     >
+      <div className="absolute top-0 left-3 right-3 h-[3px] rounded-b-full" style={{ backgroundColor: 'var(--status-in-progress)' }} />
       <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
         Category Breakdown
       </h3>

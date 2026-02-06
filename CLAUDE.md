@@ -151,6 +151,29 @@ The app has **separate UI components for desktop and mobile**, not just CSS brea
 - **TodoForm (edit):** Two-column at `md+` breakpoint. Left: title + description. Right: status, priority, due date, category, labels (with border-left separator).
 - The main page layout is in `src/app/todos/page.tsx` — desktop shows `InlineTodoForm` + todo list + scratch pad in columns; mobile shows tabs + FAB.
 
+## Design Rules
+
+### Accent borders on rounded cards
+**Never use `border-t-[Xpx]`, `border-l-[Xpx]`, etc. on elements with `rounded-*` classes.** Mixing a thicker border on one side with border-radius creates ugly uneven corners.
+
+Instead, use an **absolute-positioned inner bar**:
+```tsx
+{/* Top accent bar */}
+<div className="rounded-xl border p-5 relative overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+  <div className="absolute top-0 left-3 right-3 h-[3px] rounded-b-full" style={{ backgroundColor: 'var(--primary)' }} />
+  ...
+</div>
+
+{/* Left accent bar */}
+<div className="rounded-xl border p-4 relative overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+  <div className="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full" style={{ backgroundColor: card.color }} />
+  ...
+</div>
+```
+
+### Nested interactive elements
+**Never nest `<button>` inside `<button>`.** This is invalid HTML and causes React hydration errors. If an item is clickable and contains a delete/action button, use `<div role="button" tabIndex={0}>` for the outer element with keyboard event handling.
+
 ## Database Commands (Prisma 7)
 
 This project uses Prisma 7, which requires the `--config` flag for all CLI commands.
