@@ -49,11 +49,17 @@ export interface ThemeColors {
   priorityUrgent: string
 }
 
+export interface ThemeFonts {
+  heading?: string
+  body?: string
+}
+
 export interface Theme {
   id: string
   name: string
   description: string
   colors: ThemeColors
+  fonts?: ThemeFonts
 }
 
 export const themes: Theme[] = [
@@ -157,6 +163,10 @@ export const themes: Theme[] = [
     id: 'anthropic',
     name: 'Anthropic',
     description: 'Warm terracotta tones',
+    fonts: {
+      heading: '"Lora"',
+      body: '"DM Sans"',
+    },
     colors: {
       // Backgrounds - Warm dark
       background: '#191919',
@@ -249,6 +259,57 @@ export const themes: Theme[] = [
       priorityUrgent: '#E06C75',
     },
   },
+  {
+    id: 'tron-legacy',
+    name: 'Tron Legacy',
+    description: 'The Grid awaits',
+    fonts: {
+      body: '"Inconsolata"',
+    },
+    colors: {
+      // Backgrounds - near-pure black like the Grid
+      background: '#050507',
+      surface: '#0A0B0F',
+      surface2: '#101218',
+
+      // Text - cool white with blue cast
+      textPrimary: '#D4E4F7',
+      textMuted: '#6B7A8D',
+
+      // Borders - subtle blue-gray lines
+      border: '#1E2538',
+
+      // Primary - Tron cyan/blue glow
+      primary: '#6FC3DF',
+      primaryHover: '#8DD3E8',
+      primaryPressed: '#5BB0CF',
+      primaryForeground: '#0A0A0F',
+
+      // Accent - Tron orange (Rinzler / CLU)
+      accent: '#DF740C',
+      accentForeground: '#0A0A0F',
+
+      // Links
+      link: '#7FD4EF',
+
+      // Semantic colors
+      destructive: '#DF3B57',
+      destructiveForeground: '#FFFFFF',
+
+      // Status colors
+      statusTodo: '#6B7A8D',
+      statusInProgress: '#6FC3DF',
+      statusWaiting: '#DF740C',
+      statusOnHold: '#9A5CCF',
+      statusDone: '#7AD4A0',
+
+      // Priority colors
+      priorityLow: '#6B7A8D',
+      priorityMedium: '#DF740C',
+      priorityHigh: '#E8A54B',
+      priorityUrgent: '#DF3B57',
+    },
+  },
 ]
 
 export const defaultTheme = themes[0]
@@ -285,4 +346,17 @@ export function applyTheme(theme: Theme): void {
   root.style.setProperty('--priority-medium', colors.priorityMedium)
   root.style.setProperty('--priority-high', colors.priorityHigh)
   root.style.setProperty('--priority-urgent', colors.priorityUrgent)
+
+  // Fonts — override --font-sans (used by Tailwind's font-sans class on body)
+  // and --font-heading (used by h1-h6 rule in globals.css)
+  if (theme.fonts?.body) {
+    root.style.setProperty('--font-sans', `${theme.fonts.body}, system-ui, sans-serif`)
+  } else {
+    root.style.removeProperty('--font-sans')
+  }
+  if (theme.fonts?.heading) {
+    root.style.setProperty('--font-heading', `${theme.fonts.heading}, system-ui, sans-serif`)
+  } else {
+    root.style.removeProperty('--font-heading')
+  }
 }
