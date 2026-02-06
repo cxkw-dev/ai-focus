@@ -20,6 +20,7 @@ import {
 interface SidebarProps {
   collapsed: boolean
   onCollapse: (collapsed: boolean) => void
+  transition?: { duration: number; ease?: 'easeInOut' | 'easeIn' | 'easeOut' | 'linear' }
 }
 
 const navItems = [
@@ -35,7 +36,7 @@ const navItems = [
   },
 ]
 
-export function Sidebar({ collapsed, onCollapse }: SidebarProps) {
+export function Sidebar({ collapsed, onCollapse, transition = { duration: 0.2, ease: 'easeInOut' } }: SidebarProps) {
   const pathname = usePathname()
 
   return (
@@ -43,7 +44,7 @@ export function Sidebar({ collapsed, onCollapse }: SidebarProps) {
       <motion.aside
         initial={false}
         animate={{ width: collapsed ? 72 : 256 }}
-        transition={{ duration: 0.2, ease: 'easeInOut' }}
+        transition={transition}
         className="fixed left-0 top-0 z-40 flex h-screen flex-col border-r"
         style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-color)' }}
       >

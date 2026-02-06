@@ -11,19 +11,20 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children, title }: DashboardLayoutProps) {
-  const [collapsed, setCollapsed] = React.useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('sidebar-collapsed')
-        return saved ? JSON.parse(saved) : false
-      } catch {
-        return false
-      }
-    }
-    return false
-  })
+  const [collapsed, setCollapsed] = React.useState(false)
   const [isMobile, setIsMobile] = React.useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
+  const [isReady, setIsReady] = React.useState(false)
+
+  // Read localStorage after mount to avoid SSR hydration mismatch
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem('sidebar-collapsed')
+      if (saved) setCollapsed(JSON.parse(saved))
+    } catch {}
+    // Enable animations after the initial state applies
+    requestAnimationFrame(() => setIsReady(true))
+  }, [])
 
   React.useEffect(() => {
     const checkMobile = () => {
@@ -43,11 +44,15 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
     localStorage.setItem('sidebar-collapsed', JSON.stringify(newCollapsed))
   }
 
+  const transition = isReady
+    ? { duration: 0.2, ease: 'easeInOut' as const }
+    : { duration: 0 }
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--background)' }}>
       {/* Desktop Sidebar */}
       {!isMobile && (
-        <Sidebar collapsed={collapsed} onCollapse={handleCollapse} />
+        <Sidebar collapsed={collapsed} onCollapse={handleCollapse} transition={transition} />
       )}
 
       {/* Mobile Sidebar Overlay */}
@@ -67,7 +72,7 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
         animate={{
           marginLeft: isMobile ? 0 : collapsed ? 72 : 256,
         }}
-        transition={{ duration: 0.2, ease: 'easeInOut' }}
+        transition={transition}
         className="flex flex-col min-h-screen"
       >
         <Header
