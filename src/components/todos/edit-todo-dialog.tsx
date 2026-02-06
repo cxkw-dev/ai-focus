@@ -4,7 +4,6 @@ import * as React from 'react'
 import {
   CalendarDays,
   Flame,
-  Loader2,
   Tag,
   Tags,
   TrendingUp,
@@ -57,14 +56,14 @@ export function EditTodoDialog({
   const { categories } = useCategories()
   const form = useTodoForm(todo)
   const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
-  const previousSnapshot = React.useRef<string>('')
 
   const isEditing = !!todo
 
-  // Snapshot for auto-save change detection
-  React.useEffect(() => {
-    if (todo && open) {
-      previousSnapshot.current = JSON.stringify({
+  // Save changes when dialog closes (escape, overlay click, close button)
+  const handleClose = React.useCallback(() => {
+    if (isEditing && todo && form.title.trim()) {
+      const payload = form.toPayload()
+      const original = JSON.stringify({
         title: todo.title.trim(),
         description: todo.description?.trim() || undefined,
         priority: todo.priority,
@@ -73,33 +72,26 @@ export function EditTodoDialog({
         categoryId: todo.categoryId || null,
         labelIds: todo.labels?.map(l => l.id) ?? [],
       })
-    } else {
-      previousSnapshot.current = ''
+      if (JSON.stringify(payload) !== original) {
+        onSubmit(payload)
+        return
+      }
     }
-  }, [todo, open])
+    onOpenChange(false)
+  }, [isEditing, todo, form, onSubmit, onOpenChange])
 
-  const maybeAutoSave = React.useCallback(() => {
-    if (!isEditing || !todo) return
-    if (!form.title.trim()) return
-
-    const payload = form.toPayload()
-    const snapshot = JSON.stringify(payload)
-    if (snapshot === previousSnapshot.current) return
-    previousSnapshot.current = snapshot
-    onSubmit(payload, { close: false, silent: true })
-  }, [isEditing, todo, form, onSubmit])
-
-  React.useEffect(() => {
-    if (!isEditing || !open) return
-    maybeAutoSave()
-  }, [maybeAutoSave, isEditing, open])
+  const handleOpenChange = React.useCallback((nextOpen: boolean) => {
+    if (!nextOpen) {
+      handleClose()
+    }
+  }, [handleClose])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="w-[96vw] max-w-[1040px] max-h-[90vh] overflow-hidden p-0">
         <form onSubmit={handleSubmit} className="flex flex-col h-full">
           {/* Header */}
@@ -113,7 +105,7 @@ export function EditTodoDialog({
             <DialogHeader className="space-y-1.5">
               <DialogTitle className="text-xl">Edit Task</DialogTitle>
               <DialogDescription className="text-sm">
-                Changes are saved automatically
+                Changes are saved when you close this dialog
               </DialogDescription>
             </DialogHeader>
           </div>
@@ -183,10 +175,7 @@ export function EditTodoDialog({
                   </Label>
                   <PrioritySelector
                     value={form.priority}
-                    onChange={(next) => {
-                      form.setPriority(next)
-                      requestAnimationFrame(() => maybeAutoSave())
-                    }}
+                    onChange={(next) => form.setPriority(next)}
                     disabled={isLoading}
                   />
                 </div>
@@ -273,7 +262,7 @@ export function EditTodoDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={handleClose}
                 className="h-10 px-5"
               >
                 Close
