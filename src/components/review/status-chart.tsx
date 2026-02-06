@@ -56,13 +56,13 @@ export function StatusChart({ data, colors }: StatusChartProps) {
 
   return (
     <div
-      className="rounded-xl border p-5 relative overflow-hidden"
+      className="rounded-xl border p-5"
       style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-color)' }}
     >
-      <div className="absolute top-0 left-3 right-3 h-[3px] rounded-b-full" style={{ backgroundColor: 'var(--accent)' }} />
-      <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
-        Status Distribution
-      </h3>
+      <div className="flex items-center gap-2 mb-4">
+        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--accent)' }} />
+        <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Status Distribution</h3>
+      </div>
       <ResponsiveContainer width="100%" height={260}>
         <PieChart>
           <Pie

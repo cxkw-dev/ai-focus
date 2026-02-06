@@ -153,20 +153,16 @@ The app has **separate UI components for desktop and mobile**, not just CSS brea
 
 ## Design Rules
 
-### Accent borders on rounded cards
-**Never use `border-t-[Xpx]`, `border-l-[Xpx]`, etc. on elements with `rounded-*` classes.** Mixing a thicker border on one side with border-radius creates ugly uneven corners.
+### Accent colors on cards
+**Never use `border-t-[Xpx]`, `border-l-[Xpx]`, etc. on elements with `rounded-*` classes.** Mixing a thicker border on one side with border-radius creates ugly uneven corners. Absolute-positioned inner bars also look off.
 
-Instead, use an **absolute-positioned inner bar**:
+Instead, use a **small colored dot next to the heading** inside the card:
 ```tsx
-{/* Top accent bar */}
-<div className="rounded-xl border p-5 relative overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
-  <div className="absolute top-0 left-3 right-3 h-[3px] rounded-b-full" style={{ backgroundColor: 'var(--primary)' }} />
-  ...
-</div>
-
-{/* Left accent bar */}
-<div className="rounded-xl border p-4 relative overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
-  <div className="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full" style={{ backgroundColor: card.color }} />
+<div className="rounded-xl border p-5" style={{ borderColor: 'var(--border-color)' }}>
+  <div className="flex items-center gap-2 mb-4">
+    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--primary)' }} />
+    <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Section Title</h3>
+  </div>
   ...
 </div>
 ```
