@@ -46,29 +46,60 @@ const PRIORITY_CONFIG: Record<Priority, { label: string; colorVar: string; bgVar
   URGENT: { label: 'Urgent', colorVar: 'var(--priority-urgent)', bgVar: 'var(--priority-urgent)', icon: Flame, pulse: true },
 }
 
-const URL_SPLIT_REGEX = /(https?:\/\/[^\s]+)/g
-const URL_MATCH_REGEX = /^https?:\/\/[^\s]+$/
+const URL_SPLIT_REGEX = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi
+const URL_MATCH_REGEX = /^(https?:\/\/[^\s]+|www\.[^\s]+)$/i
+
+function cleanUrlEnd(url: string): [string, string] {
+  const trailing = /[.,;:!?)]+$/
+  const match = url.match(trailing)
+  if (match) {
+    return [url.slice(0, -match[0].length), match[0]]
+  }
+  return [url, '']
+}
+
+function ensureProtocol(url: string): string {
+  return url.startsWith('http') ? url : `https://${url}`
+}
 
 function renderTextWithLinks(text: string) {
   const parts = text.split(URL_SPLIT_REGEX)
 
   return parts.map((part, index) => {
     if (URL_MATCH_REGEX.test(part)) {
+      const [cleanUrl, trailing] = cleanUrlEnd(part)
       return (
-        <a
-          key={index}
-          href={part}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary hover:underline break-all"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {part}
-        </a>
+        <React.Fragment key={index}>
+          <a
+            href={ensureProtocol(cleanUrl)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:underline break-all"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {cleanUrl}
+          </a>
+          {trailing}
+        </React.Fragment>
       )
     }
     return part
   })
+}
+
+function linkifyHtml(html: string): string {
+  const parts = html.split(/(<a\s[^>]*>[\s\S]*?<\/a>)/gi)
+  return parts.map(part => {
+    if (/^<a\s/i.test(part)) return part
+    return part.replace(
+      /(https?:\/\/[^\s<]+|www\.[^\s<]+)/gi,
+      (match) => {
+        const [cleanUrl, trailing] = cleanUrlEnd(match)
+        const href = ensureProtocol(cleanUrl)
+        return `<a href="${href}" target="_blank" rel="noopener noreferrer">${cleanUrl}</a>${trailing}`
+      }
+    )
+  }).join('')
 }
 
 interface TodoItemProps {
@@ -255,7 +286,7 @@ function TodoItemContent({
             todo.description.startsWith('<') ? (
               <div
                 className="mt-0.5 break-words rich-text-display"
-                dangerouslySetInnerHTML={{ __html: todo.description }}
+                dangerouslySetInnerHTML={{ __html: linkifyHtml(todo.description) }}
               />
             ) : (
               <p
