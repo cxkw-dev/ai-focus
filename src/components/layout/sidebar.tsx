@@ -9,6 +9,7 @@ import {
   BarChart3,
   CheckSquare,
   ChevronLeft,
+  FileText,
   Settings,
 } from 'lucide-react'
 import {
@@ -29,6 +30,11 @@ const navItems = [
     title: 'Todos',
     href: '/todos',
     icon: CheckSquare,
+  },
+  {
+    title: 'Notes',
+    href: '/notes',
+    icon: FileText,
   },
   {
     title: 'Review',

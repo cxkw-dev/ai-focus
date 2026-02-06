@@ -1,5 +1,6 @@
 import type { Todo, CreateTodoInput, UpdateTodoInput, Label, Category } from '@/types/todo'
 import type { YearStats } from '@/types/stats'
+import type { NotebookNote, CreateNotebookNoteInput, UpdateNotebookNoteInput } from '@/types/notebook'
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) throw new Error(`API error: ${res.status}`)
@@ -66,6 +67,35 @@ export const labelsApi = {
 export const categoriesApi = {
   list: (): Promise<Category[]> =>
     fetch('/api/categories').then(r => json(r)),
+}
+
+export const notebookApi = {
+  list: (params?: { search?: string }): Promise<NotebookNote[]> => {
+    const sp = new URLSearchParams()
+    if (params?.search) sp.set('search', params.search)
+    const q = sp.toString()
+    return fetch(`/api/notebook${q ? `?${q}` : ''}`).then(r => json(r))
+  },
+
+  get: (id: string): Promise<NotebookNote> =>
+    fetch(`/api/notebook/${id}`).then(r => json(r)),
+
+  create: (data?: CreateNotebookNoteInput): Promise<NotebookNote> =>
+    fetch('/api/notebook', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data ?? {}),
+    }).then(r => json(r)),
+
+  update: (id: string, data: UpdateNotebookNoteInput): Promise<NotebookNote> =>
+    fetch(`/api/notebook/${id}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify(data),
+    }).then(r => json(r)),
+
+  delete: (id: string): Promise<{ success: boolean }> =>
+    fetch(`/api/notebook/${id}`, { method: 'DELETE' }).then(r => json(r)),
 }
 
 export const statsApi = {

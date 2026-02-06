@@ -258,32 +258,54 @@ h1, h2, h3, h4, h5, h6 {
 /* Tiptap rich text editor styles */
 .tiptap {
   color: var(--text-primary);
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.tiptap > * + * {
+  margin-top: 0.6em;
 }
 
 .tiptap p {
-  margin: 0.25em 0;
+  margin: 0.4em 0;
 }
 
 .tiptap h2 {
-  font-size: 1.1em;
-  font-weight: 600;
-  margin: 0.5em 0 0.25em;
+  font-size: 1.3em;
+  font-weight: 700;
+  margin: 1.4em 0 0.4em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--border-color);
   color: var(--text-primary);
 }
 
+.tiptap h2:first-child {
+  margin-top: 0;
+}
+
 .tiptap h3 {
-  font-size: 1em;
+  font-size: 1.1em;
   font-weight: 600;
-  margin: 0.4em 0 0.2em;
+  margin: 1.1em 0 0.3em;
   color: var(--text-primary);
+}
+
+.tiptap a {
+  color: var(--link);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--link) 40%, transparent);
+  text-underline-offset: 2px;
+  transition: text-decoration-color 0.15s;
+}
+
+.tiptap a:hover {
+  text-decoration-color: var(--link);
 }
 
 .tiptap ul,
 .tiptap ol {
-  padding-left: 1.25em;
-  margin: 0.25em 0;
+  padding-left: 1.5em;
+  margin: 0.5em 0;
 }
 
 .tiptap ul {
@@ -295,7 +317,25 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .tiptap li {
+  margin: 0.2em 0;
+}
+
+.tiptap li p {
   margin: 0.1em 0;
+}
+
+.tiptap blockquote {
+  border-left: 3px solid var(--primary);
+  padding-left: 1em;
+  margin: 0.75em 0;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.tiptap hr {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: 1.5em 0;
 }
 
 .tiptap s {
@@ -305,6 +345,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .tiptap strong {
   font-weight: 600;
+  color: var(--text-primary);
 }
 
 .tiptap em {
@@ -445,4 +486,94 @@ h1, h2, h3, h4, h5, h6 {
 }
 .todo-drag-handle:hover {
   color: var(--text-muted);
+}
+
+/* TipTap code block syntax highlighting */
+.tiptap pre {
+  background-color: color-mix(in srgb, var(--background) 80%, black);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  padding: 0.875rem 1rem;
+  margin: 0.75em 0;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  line-height: 1.6;
+}
+
+.tiptap pre code {
+  background: none;
+  padding: 0;
+  border: none;
+  font-size: inherit;
+  color: var(--text-primary);
+}
+
+.tiptap code {
+  background-color: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--primary);
+  border-radius: 0.25rem;
+  padding: 0.15em 0.35em;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+
+/* highlight.js token colors mapped to theme variables */
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-built_in,
+.hljs-name {
+  color: var(--accent);
+}
+
+.hljs-string,
+.hljs-attr,
+.hljs-addition {
+  color: var(--status-done);
+}
+
+.hljs-number,
+.hljs-literal,
+.hljs-variable,
+.hljs-template-variable {
+  color: var(--status-waiting);
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.hljs-title,
+.hljs-section {
+  color: var(--primary);
+}
+
+.hljs-type,
+.hljs-class .hljs-title {
+  color: var(--status-in-progress);
+}
+
+.hljs-meta,
+.hljs-meta .hljs-keyword {
+  color: var(--text-muted);
+}
+
+.hljs-deletion {
+  color: var(--destructive);
+}
+
+.hljs-symbol,
+.hljs-bullet,
+.hljs-link {
+  color: var(--primary);
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: bold;
 }

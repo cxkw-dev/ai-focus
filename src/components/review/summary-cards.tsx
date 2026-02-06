@@ -61,8 +61,12 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
         return (
           <div
             key={card.label}
-            className="rounded-xl border p-4"
-            style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-color)' }}
+            className="rounded-xl border-l-[3px] border p-4"
+            style={{
+              backgroundColor: 'var(--surface)',
+              borderColor: 'var(--border-color)',
+              borderLeftColor: card.color,
+            }}
           >
             <div className="flex items-center gap-2 mb-2">
               <Icon className="h-4 w-4" style={{ color: card.color }} />

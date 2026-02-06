@@ -34,8 +34,8 @@ export function LabelsChart({ data, colors }: LabelsChartProps) {
 
   return (
     <div
-      className="rounded-xl border p-5"
-      style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-color)' }}
+      className="rounded-xl border border-t-[3px] p-5"
+      style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-color)', borderTopColor: 'var(--status-done)' }}
     >
       <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
         Top Labels

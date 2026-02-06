@@ -56,8 +56,8 @@ export function StatusChart({ data, colors }: StatusChartProps) {
 
   return (
     <div
-      className="rounded-xl border p-5"
-      style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-color)' }}
+      className="rounded-xl border border-t-[3px] p-5"
+      style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-color)', borderTopColor: 'var(--accent)' }}
     >
       <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
         Status Distribution
