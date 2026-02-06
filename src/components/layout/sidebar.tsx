@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
+  BarChart3,
   CheckSquare,
   ChevronLeft,
   Settings,
@@ -28,6 +29,11 @@ const navItems = [
     title: 'Todos',
     href: '/todos',
     icon: CheckSquare,
+  },
+  {
+    title: 'Review',
+    href: '/review',
+    icon: BarChart3,
   },
   {
     title: 'Settings',

@@ -1,4 +1,5 @@
 import type { Todo, CreateTodoInput, UpdateTodoInput, Label, Category } from '@/types/todo'
+import type { YearStats } from '@/types/stats'
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) throw new Error(`API error: ${res.status}`)
@@ -65,4 +66,9 @@ export const labelsApi = {
 export const categoriesApi = {
   list: (): Promise<Category[]> =>
     fetch('/api/categories').then(r => json(r)),
+}
+
+export const statsApi = {
+  yearReview: (year: number): Promise<YearStats> =>
+    fetch(`/api/stats/year?year=${year}`).then(r => json(r)),
 }
