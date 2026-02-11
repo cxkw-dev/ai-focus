@@ -262,6 +262,12 @@ function TodoItemContent({
             </div>
           )}
           <div className="flex items-center gap-2">
+            <span
+              className="text-[10px] font-mono flex-shrink-0"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              #{todo.taskNumber}
+            </span>
             <h3
               className={cn(
                 'text-[13px] font-medium break-words leading-snug',

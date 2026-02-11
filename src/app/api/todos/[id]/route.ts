@@ -13,6 +13,15 @@ const updateTodoSchema = z.object({
   labelIds: z.array(z.string()).optional(),
 })
 
+// Resolve an id param that could be a cuid or a task number (e.g. "7")
+function todoWhere(id: string) {
+  const num = Number(id)
+  if (Number.isInteger(num) && num > 0) {
+    return { taskNumber: num }
+  }
+  return { id }
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -20,7 +29,7 @@ export async function GET(
   try {
     const { id } = await params
     const todo = await db.todo.findUnique({
-      where: { id },
+      where: todoWhere(id),
       include: { category: true, labels: { orderBy: { name: 'asc' } } },
     })
 
@@ -49,7 +58,7 @@ export async function PATCH(
     const { labelIds, categoryId, ...todoData } = validatedData
 
     const todo = await db.todo.update({
-      where: { id },
+      where: todoWhere(id),
       data: {
         ...todoData,
         ...(categoryId !== undefined
@@ -93,7 +102,7 @@ export async function DELETE(
   try {
     const { id } = await params
     await db.todo.delete({
-      where: { id },
+      where: todoWhere(id),
     })
 
     return NextResponse.json({ success: true })

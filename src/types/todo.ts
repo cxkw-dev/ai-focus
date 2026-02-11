@@ -21,6 +21,7 @@ export interface Label {
 
 export interface Todo {
   id: string
+  taskNumber: number
   title: string
   description: string | null
   status: Status

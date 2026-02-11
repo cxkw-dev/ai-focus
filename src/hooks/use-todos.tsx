@@ -14,11 +14,13 @@ export function useTodos() {
   const todosQuery = useQuery({
     queryKey: ['todos'],
     queryFn: () => todosApi.list(),
+    refetchInterval: 3000,
   })
 
   const archivedQuery = useQuery({
     queryKey: ['todos', 'archived'],
     queryFn: () => todosApi.list({ archived: true }),
+    refetchInterval: 3000,
   })
 
   const create = useMutation({

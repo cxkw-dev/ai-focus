@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const completed = searchParams.get('completed')
+    const status = searchParams.get('status')
     const priority = searchParams.get('priority')
     const categoryId = searchParams.get('categoryId')
     const archived = searchParams.get('archived')
@@ -28,7 +29,9 @@ export async function GET(request: NextRequest) {
       where.archived = false
     }
 
-    if (completed !== null) {
+    if (status) {
+      where.status = status
+    } else if (completed !== null) {
       // For backwards compatibility, map completed=true to COMPLETED status
       where.status = completed === 'true' ? 'COMPLETED' : { not: 'COMPLETED' }
     }
