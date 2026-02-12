@@ -1,7 +1,7 @@
 # AI Focus - Claude Instructions
 
 ## Project Overview
-A Next.js 16 todo/task productivity app with Prisma, PostgreSQL, and Tailwind CSS.
+A Next.js 16 productivity app with todos, notebook, and year-in-review stats. Built with Prisma 7, PostgreSQL, React 19, and Tailwind CSS v4.
 
 ## Git Configuration
 
@@ -64,12 +64,123 @@ docker-compose down
 
 ## Tech Stack
 
-- **Framework:** Next.js 16 with App Router
+- **Framework:** Next.js 16.1.6 with App Router (React 19)
 - **Styling:** Tailwind CSS v4 with CSS custom properties
-- **Database:** PostgreSQL with Prisma ORM
+- **Database:** PostgreSQL with Prisma 7 ORM
+- **State Management:** React Query (@tanstack/react-query)
+- **Rich Text:** TipTap v3 with lowlight syntax highlighting
+- **Charts:** Recharts (year review page)
+- **Drag & Drop:** @dnd-kit (todo reordering)
 - **UI Components:** Radix UI primitives
 - **Animations:** Framer Motion
-- **Theme:** next-themes for dark mode
+- **Validation:** Zod v4
+- **Linting:** ESLint 9 (flat config - `eslint.config.mjs`)
+
+## Key Directories
+
+```
+src/
+├── app/
+│   ├── (dashboard)/        # Route group — all main pages
+│   │   ├── layout.tsx      # Dashboard layout (sidebar + header)
+│   │   ├── todos/          # Todo list page
+│   │   ├── notes/          # Notebook page (rich text editor)
+│   │   ├── review/         # Year-in-review stats page
+│   │   └── settings/       # Label management
+│   ├── api/                # API routes
+│   │   ├── todos/          # CRUD + reorder + subtask toggle
+│   │   ├── labels/         # CRUD
+│   │   ├── notebook/       # Notebook notes CRUD
+│   │   ├── note/           # Scratch pad GET/PATCH
+│   │   ├── stats/year/     # Year review statistics
+│   │   └── events/         # SSE stream for real-time updates
+│   ├── layout.tsx          # Root layout (fonts, providers)
+│   └── page.tsx            # Redirects to /todos
+├── components/
+│   ├── layout/             # Sidebar, Header, DashboardLayout
+│   ├── todos/              # TodoItem, TodoList, forms, label picker, scratch pad
+│   ├── notes/              # NoteEditor, NotesSidebar
+│   ├── review/             # Chart components (monthly, status, priority, labels, highlights)
+│   ├── settings/           # LabelManager
+│   ├── ui/                 # Base UI (Button, Dialog, RichTextEditor, etc.)
+│   └── providers/          # ThemeProvider, QueryProvider
+├── hooks/
+│   ├── use-todos.tsx       # Todo queries + mutations (optimistic updates)
+│   ├── use-labels.ts       # Label CRUD
+│   ├── use-notebook.ts     # Notebook notes CRUD
+│   ├── use-todo-form.ts    # Shared form state for all 3 todo form variants
+│   ├── use-sse.ts          # SSE client for real-time cache invalidation
+│   ├── use-year-stats.ts   # Year review stats query
+│   └── use-chart-colors.ts # Dynamic chart colors from CSS variables
+├── lib/
+│   ├── api.ts              # Typed API client (todosApi, labelsApi, notebookApi, statsApi)
+│   ├── db.ts               # Prisma client singleton
+│   ├── events.ts           # In-memory event emitter for SSE
+│   ├── themes.ts           # Theme definitions + applyTheme()
+│   └── utils.ts            # cn() helper
+└── types/
+    ├── todo.ts             # Todo, Subtask, Label, Priority, Status
+    ├── notebook.ts         # NotebookNote
+    ├── note.ts             # Note (scratch pad)
+    └── stats.ts            # YearStats
+prisma/
+├── schema.prisma           # Database schema
+└── prisma.config.ts        # Datasource URL config
+mcp-server/                 # MCP server for Claude Code integration
+```
+
+## Database Schema
+
+### Models
+- **Todo** — id, taskNumber (auto-increment), title, description, priority, dueDate, status, order, archived, labels[], subtasks[]
+- **Subtask** — id, title, completed, order, todoId (cascade delete)
+- **Label** — id, name (unique), color, todos[]
+- **Note** — Single scratch pad record (id defaults to "default")
+- **NotebookNote** — id, title, content (HTML), pinned, createdAt, updatedAt
+
+### Enums
+- **Status:** TODO, IN_PROGRESS, WAITING, ON_HOLD, COMPLETED
+- **Priority:** LOW, MEDIUM, HIGH, URGENT
+
+## State Management
+
+React Query is the single source of truth for all server data. Custom hooks in `src/hooks/` wrap React Query:
+
+- **`useTodos`** — Queries + mutations with optimistic updates and rollback. Toast with undo for archive.
+- **`useLabels`** — CRUD mutations that also invalidate `['todos']` queries for consistency.
+- **`useNotebook`** — Notebook notes CRUD with silent save and conflict resolution.
+- **`useTodoForm`** — Shared form state deduplicating logic across InlineTodoForm, CreateTodoModal, and EditTodoDialog.
+
+### Real-Time Updates (SSE)
+- `src/lib/events.ts` — In-memory pub/sub event emitter
+- `src/app/api/events/route.ts` — SSE endpoint that streams entity changes
+- `src/hooks/use-sse.ts` — Client hook that invalidates React Query cache on events
+- API mutation endpoints call `emit('todos')` etc. after DB writes
+- Clients get instant updates across tabs/devices without polling
+
+## Responsive Layout Architecture
+
+The app has **separate UI components for desktop and mobile**, not just CSS breakpoints. When making changes, you must identify and update the correct component for each viewport.
+
+### Task Creation
+
+| Viewport | Component | File |
+|----------|-----------|------|
+| Desktop (>= 1280px) | `InlineTodoForm` | `src/components/todos/inline-todo-form.tsx` |
+| Mobile (< 1280px) | `CreateTodoModal` | `src/components/todos/create-todo-modal.tsx` |
+
+### Task Editing
+
+| Viewport | Component | File |
+|----------|-----------|------|
+| All sizes | `EditTodoDialog` | `src/components/todos/edit-todo-dialog.tsx` |
+
+### Layout Rules
+
+- **InlineTodoForm (desktop):** Keep controls compact. Use dropdowns/popovers for selectors, not inline lists. Everything should fit in tight toolbar rows.
+- **CreateTodoModal (mobile):** More vertical space available. Fields can be stacked full-width. Dropdowns preferred over inline lists.
+- **EditTodoDialog:** Two-column at `md+` breakpoint. Left: title + description. Right: status, priority, due date, labels.
+- The main page layout is in `src/app/(dashboard)/todos/page.tsx` — desktop shows InlineTodoForm + todo list + scratch pad in columns; mobile shows tabs + FAB.
 
 ## Theme System
 
@@ -77,25 +188,35 @@ The app uses a **dynamic theme switcher** with multiple color themes. Users can 
 
 ### Available Themes
 
-| Theme | Primary | Description |
-|-------|---------|-------------|
-| Midnight Peach | Peach/coral | Warm peach tones on dark (default) |
-| Discord | Blurple | Classic Discord look |
-| Anthropic | Terracotta | Warm coral/earth tones |
-| Atom One Dark | Blue | Classic developer editor theme |
+| Theme | Description | Custom Fonts |
+|-------|-------------|--------------|
+| Midnight Peach | Warm peach tones on dark (default) | — |
+| Discord | Classic Discord blurple | — |
+| Anthropic | Warm terracotta tones | Lora (headings), DM Sans (body) |
+| Atom One Dark | Classic developer editor theme | — |
+| Tron Legacy | The Grid — near-black with cyan/orange | Inconsolata (body) |
 
 ### Theme Architecture
 
-- **Theme definitions:** `src/lib/themes.ts` - All theme colors defined here
-- **Theme provider:** `src/components/providers/theme-provider.tsx` - Context + localStorage persistence
-- **Theme switcher:** `src/components/layout/header.tsx` - Dropdown UI
+- **Theme definitions:** `src/lib/themes.ts` — All theme colors + optional fonts
+- **Theme provider:** `src/components/providers/theme-provider.tsx` — Context + localStorage persistence
+- **Theme switcher:** `src/components/layout/header.tsx` — Dropdown UI
 - **CSS variables:** Applied dynamically via `applyTheme()` function
+
+### Font System
+
+Fonts are loaded via `next/font/google` in `src/app/layout.tsx` and set as CSS variables on `<body>`:
+- `--font-geist-sans` (default body), `--font-geist-mono`, `--font-pixelify`, `--font-inconsolata`, `--font-lora`, `--font-dm-sans`
+
+Theme font values reference these variables (e.g. `var(--font-lora)`). The `applyTheme()` function resolves them to actual font family names via `getComputedStyle` before setting `--font-sans` and `--font-heading` on `<html>`.
 
 ### Adding a New Theme
 
 1. Add theme object to `themes` array in `src/lib/themes.ts`
-2. Include all required color properties (background, surface, primary, accent, status colors, etc.)
-3. Theme will automatically appear in the dropdown
+2. Include all required color properties (28 colors: background, surface, primary, accent, status, priority, etc.)
+3. Optionally add `fonts: { heading?, body? }` with `var(--font-xxx)` references
+4. If adding a new font, import it in `src/app/layout.tsx` via `next/font/google` and add the variable class to `<body>`
+5. Theme will automatically appear in the dropdown
 
 ### CSS Variables Used
 
@@ -108,48 +229,13 @@ The app uses a **dynamic theme switcher** with multiple color themes. Users can 
 | `--accent` | Secondary accent color |
 | `--text-primary` | Main text |
 | `--text-muted` | Secondary text |
-| `--status-*` | Todo status colors |
-| `--priority-*` | Priority level colors |
-
-## Key Directories
-
-```
-src/
-├── app/              # Next.js app router pages
-├── components/
-│   ├── layout/       # Sidebar, Header, DashboardLayout
-│   ├── todos/        # Todo components (TodoItem, TodoForm, etc.)
-│   ├── ui/           # Base UI components (Button, Input, etc.)
-│   └── providers/    # Theme provider
-├── lib/              # Utilities and Prisma client
-└── types/            # TypeScript types
-prisma/
-└── schema.prisma     # Database schema
-```
-
-## Responsive Layout Architecture
-
-The app has **separate UI components for desktop and mobile**, not just CSS breakpoints. When making changes, you must identify and update the correct component for each viewport.
-
-### Task Creation
-
-| Viewport | Component | File | Style |
-|----------|-----------|------|-------|
-| Desktop (>= 1280px) | `InlineTodoForm` | `src/components/todos/todo-form.tsx` | Compact inline card with toolbar rows. Priority/Date/Category/Labels use small trigger buttons and dropdowns. |
-| Mobile (< 1280px) | `CreateTodoModal` | `src/components/todos/todo-form.tsx` | Full dialog modal triggered by FAB. Fields are stacked vertically with more room. |
-
-### Task Editing
-
-| Viewport | Component | File | Style |
-|----------|-----------|------|-------|
-| All sizes | `TodoForm` | `src/components/todos/todo-form.tsx` | Dialog modal. Two-column on `md+` (content left, meta right). Single-column stacked on mobile. |
-
-### Layout Rules
-
-- **InlineTodoForm (desktop):** Keep controls compact. Use dropdowns/popovers for selectors, not inline lists. Everything should fit in tight toolbar rows.
-- **CreateTodoModal (mobile):** More vertical space available. Fields can be stacked full-width. Dropdowns are preferred over inline quick-pick lists to conserve scroll height.
-- **TodoForm (edit):** Two-column at `md+` breakpoint. Left: title + description. Right: status, priority, due date, category, labels (with border-left separator).
-- The main page layout is in `src/app/todos/page.tsx` — desktop shows `InlineTodoForm` + todo list + scratch pad in columns; mobile shows tabs + FAB.
+| `--border-color` | Borders |
+| `--link` | Link color |
+| `--destructive` | Destructive actions |
+| `--status-*` | Todo status colors (todo, in-progress, waiting, on-hold, done) |
+| `--priority-*` | Priority level colors (low, medium, high, urgent) |
+| `--font-sans` | Body font (overridden by themes) |
+| `--font-heading` | Heading font (overridden by themes) |
 
 ## Design Rules
 
@@ -170,32 +256,43 @@ Instead, use a **small colored dot next to the heading** inside the card:
 ### Nested interactive elements
 **Never nest `<button>` inside `<button>`.** This is invalid HTML and causes React hydration errors. If an item is clickable and contains a delete/action button, use `<div role="button" tabIndex={0}>` for the outer element with keyboard event handling.
 
+## MCP Server
+
+The `mcp-server/` directory contains a Model Context Protocol server for Claude Code integration.
+
+- **Transport:** StdioServerTransport
+- **API Base:** `AI_FOCUS_API_URL` env var (defaults to `http://localhost:4444`)
+- **Features:** Full CRUD for todos/labels/notebook/notes, subtask management, year stats
+- **taskNumber system:** Todos have auto-increment `taskNumber` for easy CLI reference (e.g. "complete task 7")
+- **Rich text:** Converts plain text to HTML for TipTap editor (bold, italic, lists)
+
+### Building
+```bash
+cd mcp-server && npm run build
+```
+
 ## Database Commands (Prisma 7)
 
-This project uses Prisma 7, which requires the `--config` flag for all CLI commands.
+This project uses Prisma 7, which requires the `--config` flag for all CLI commands. npm scripts are provided:
 
-**Sync schema to database (recommended for dev):**
+```bash
+npm run db:push        # Sync schema to DB (recommended for dev)
+npm run db:migrate     # Run migrations (requires CREATE DATABASE permission)
+npm run db:generate    # Generate Prisma client
+npm run db:studio      # Open Prisma Studio
+```
+
+Or manually:
 ```bash
 npx prisma db push --config prisma/prisma.config.ts
-```
-
-**Run migrations (requires DB create permission):**
-```bash
-npx prisma migrate dev --name <migration_name> --config prisma/prisma.config.ts
-```
-
-**Generate Prisma client:**
-```bash
+npx prisma migrate dev --name <name> --config prisma/prisma.config.ts
 npx prisma generate --config prisma/prisma.config.ts
-```
-
-**Open Prisma Studio:**
-```bash
 npx prisma studio --config prisma/prisma.config.ts
 ```
 
 ### Prisma 7 Notes
 - The `datasource.url` is configured in `prisma/prisma.config.ts`, not in `schema.prisma`
+- Binary targets: `native` + `linux-musl-arm64-openssl-3.0.x` (for Docker ARM64)
 - Use `db push` for quick schema sync (no shadow database needed)
 - Use `migrate dev` for production-ready migrations (requires DB user to have CREATE DATABASE permission)
 
