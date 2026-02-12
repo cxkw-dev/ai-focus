@@ -164,8 +164,8 @@ export const themes: Theme[] = [
     name: 'Anthropic',
     description: 'Warm terracotta tones',
     fonts: {
-      heading: '"Lora"',
-      body: '"DM Sans"',
+      heading: 'var(--font-lora)',
+      body: 'var(--font-dm-sans)',
     },
     colors: {
       // Backgrounds - Warm dark
@@ -264,7 +264,7 @@ export const themes: Theme[] = [
     name: 'Tron Legacy',
     description: 'The Grid awaits',
     fonts: {
-      body: '"Inconsolata"',
+      body: 'var(--font-inconsolata)',
     },
     colors: {
       // Backgrounds - near-pure black like the Grid

@@ -98,7 +98,7 @@ export function useTodos() {
           [archivedTodo, ...prev]
         )
 
-        const { id: toastId } = toast({
+        toast({
           title: 'Deleted',
           description: todoToArchive.title,
           action: (
@@ -108,7 +108,7 @@ export function useTodos() {
                 e.preventDefault()
                 e.stopPropagation()
                 restore.mutate(id)
-                dismiss(toastId)
+                dismiss()
               }}
               className="inline-flex h-8 shrink-0 items-center justify-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground ring-offset-background transition-all hover:bg-primary/90 active:scale-95 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             >

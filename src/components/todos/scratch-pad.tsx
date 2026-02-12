@@ -10,12 +10,18 @@ interface ScratchPadProps {
   className?: string
 }
 
+function pickNewestNote(current: Note, incoming: Note) {
+  const currentUpdatedAt = current.updatedAt ? new Date(current.updatedAt).getTime() : 0
+  const incomingUpdatedAt = incoming.updatedAt ? new Date(incoming.updatedAt).getTime() : 0
+  return incomingUpdatedAt >= currentUpdatedAt ? incoming : current
+}
+
 function useScratchPadLogic(initialContent: string) {
   const [content, setContent] = React.useState(initialContent)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState(false)
   const queryClient = useQueryClient()
-  
   const { toast } = useToast()
-  const saveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
+  const saveTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
   const latestContentRef = React.useRef(initialContent)
   const hasUnsavedChangesRef = React.useRef(false)
 
@@ -29,11 +35,15 @@ function useScratchPadLogic(initialContent: string) {
         keepalive: true,
       })
       if (!res.ok) throw new Error('Failed to save')
-      return res.json()
+      return res.json() as Promise<Note>
     },
     onSuccess: (savedNote) => {
-      queryClient.setQueryData(['note'], savedNote)
+      queryClient.setQueryData<Note>(['note'], (previous) => {
+        if (!previous) return savedNote
+        return pickNewestNote(previous, savedNote)
+      })
       hasUnsavedChangesRef.current = false
+      setHasUnsavedChanges(false)
     },
     onError: (error) => {
       console.error('Save error:', error)
@@ -46,11 +56,12 @@ function useScratchPadLogic(initialContent: string) {
   })
 
   // 4. Handle Change (Debounced Save)
-  const handleChange = (newContent: string) => {
+  const handleChange = React.useCallback((newContent: string) => {
     // Update local state immediately
     setContent(newContent)
     latestContentRef.current = newContent
     hasUnsavedChangesRef.current = true
+    setHasUnsavedChanges(true)
 
     // Debounce save
     if (saveTimeoutRef.current) {
@@ -60,7 +71,7 @@ function useScratchPadLogic(initialContent: string) {
     saveTimeoutRef.current = setTimeout(() => {
       mutation.mutate(newContent)
     }, 1000) // 1s debounce
-  }
+  }, [mutation])
 
   // 5. Save on Unmount (if dirty)
   React.useEffect(() => {
@@ -85,9 +96,9 @@ function useScratchPadLogic(initialContent: string) {
     handleChange,
     status: {
       isSaving: mutation.status === 'pending',
-      hasUnsavedChanges: hasUnsavedChangesRef.current,
-      saveError: mutation.status === 'error'
-    }
+      hasUnsavedChanges,
+      saveError: mutation.status === 'error',
+    },
   }
 }
 

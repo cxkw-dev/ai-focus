@@ -31,6 +31,10 @@ function textResult(data: unknown) {
   };
 }
 
+function isApiError(data: unknown): data is { _error: true; message: string; status?: number; details?: string } {
+  return Boolean(data && typeof data === "object" && "_error" in data);
+}
+
 // Convert plain text to HTML paragraphs for the rich text editor.
 // Supports basic markdown-like syntax: **bold**, *italic*, - bullet lists.
 function toHtml(text: string): string {
@@ -133,6 +137,7 @@ server.tool(
     if (params.archived) query.set("archived", "true");
     const qs = query.toString();
     const data = await apiFetch(`/api/todos${qs ? `?${qs}` : ""}`);
+    if (isApiError(data)) return textResult(data);
     if (params.verbose) return textResult(data);
     return {
       content: [{ type: "text" as const, text: formatTodoSummary(data as TodoResponse[]) }],
@@ -482,6 +487,7 @@ server.tool(
   },
   async ({ query }) => {
     const data = await apiFetch("/api/todos");
+    if (isApiError(data)) return textResult(data);
     const q = query.toLowerCase();
     const filtered = (data as TodoResponse[]).filter(
       (t) =>

@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
 import { z } from 'zod'
+
+const statusSchema = z.enum(['TODO', 'IN_PROGRESS', 'WAITING', 'ON_HOLD', 'COMPLETED'])
+const prioritySchema = z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT'])
 
 const subtaskSchema = z.object({
   id: z.string().optional(),
@@ -13,38 +17,46 @@ const subtaskSchema = z.object({
 const createTodoSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
   description: z.string().max(1000).optional(),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
+  priority: prioritySchema.optional(),
   dueDate: z.string().datetime().optional().nullable(),
   labelIds: z.array(z.string()).optional(),
   subtasks: z.array(subtaskSchema).optional(),
 })
 
+const listTodosQuerySchema = z.object({
+  completed: z.enum(['true', 'false']).optional(),
+  status: statusSchema.optional(),
+  priority: prioritySchema.optional(),
+  archived: z.enum(['true', 'false']).optional(),
+})
+
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams
-    const completed = searchParams.get('completed')
-    const status = searchParams.get('status')
-    const priority = searchParams.get('priority')
-    const archived = searchParams.get('archived')
+    const validatedQuery = listTodosQuerySchema.parse({
+      completed: request.nextUrl.searchParams.get('completed') ?? undefined,
+      status: request.nextUrl.searchParams.get('status') ?? undefined,
+      priority: request.nextUrl.searchParams.get('priority') ?? undefined,
+      archived: request.nextUrl.searchParams.get('archived') ?? undefined,
+    })
 
-    const where: Record<string, unknown> = {}
+    const where: Prisma.TodoWhereInput = {}
 
     // By default, don't show archived todos unless explicitly requested
-    if (archived !== null) {
-      where.archived = archived === 'true'
+    if (validatedQuery.archived !== undefined) {
+      where.archived = validatedQuery.archived === 'true'
     } else {
       where.archived = false
     }
 
-    if (status) {
-      where.status = status
-    } else if (completed !== null) {
+    if (validatedQuery.status) {
+      where.status = validatedQuery.status
+    } else if (validatedQuery.completed !== undefined) {
       // For backwards compatibility, map completed=true to COMPLETED status
-      where.status = completed === 'true' ? 'COMPLETED' : { not: 'COMPLETED' }
+      where.status = validatedQuery.completed === 'true' ? 'COMPLETED' : { not: 'COMPLETED' }
     }
 
-    if (priority) {
-      where.priority = priority
+    if (validatedQuery.priority) {
+      where.priority = validatedQuery.priority
     }
 
     const todos = await db.todo.findMany({
@@ -61,6 +73,13 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(todos)
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: error.issues },
+        { status: 400 }
+      )
+    }
+
     console.error('Error fetching todos:', error)
     return NextResponse.json(
       { error: 'Failed to fetch todos' },

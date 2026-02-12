@@ -3,14 +3,22 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        NODE_IMAGE: ${NODE_IMAGE:-node:22-alpine}
     image: ai-focus:latest
     container_name: ai-focus-app
     restart: unless-stopped
     ports:
       - "4444:4444"
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@host.docker.internal:5432/aifocus
-      NEXTAUTH_URL: http://localhost:4444
+      DATABASE_URL: ${DOCKER_DATABASE_URL:-postgresql://postgres@host.docker.internal:5432/aifocus}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:4444}
       NODE_ENV: production
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:4444/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s

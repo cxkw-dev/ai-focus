@@ -36,10 +36,11 @@ export function CreateTodoModal({
   const form = useTodoForm()
   const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
+  const resetForm = form.reset
 
   React.useEffect(() => {
-    if (!open) form.reset()
-  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (!open) resetForm()
+  }, [open, resetForm])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

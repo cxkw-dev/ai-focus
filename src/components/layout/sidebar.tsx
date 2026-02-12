@@ -81,7 +81,7 @@ export function Sidebar({ collapsed, onCollapse, transition = { duration: 0.2, e
                   transition={{ duration: 0.15 }}
                   className="text-3xl font-bold uppercase whitespace-nowrap overflow-hidden"
                   style={{
-                    fontFamily: '"Pixelify Sans", sans-serif',
+                    fontFamily: 'var(--font-pixelify), sans-serif',
                     background: 'linear-gradient(135deg, var(--primary), var(--accent), var(--status-done))',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',

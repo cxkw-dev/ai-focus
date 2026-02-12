@@ -38,29 +38,36 @@ export function InlineTodoForm({
   const [isExpanded, setIsExpanded] = React.useState(false)
   const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
+  const resetForm = form.reset
+
+  const submitCurrentTodo = React.useCallback(async () => {
+    if (!form.title.trim()) return false
+
+    const success = await onSubmit(form.toPayload())
+    if (success) {
+      resetForm()
+      setNewSubtaskTitle('')
+      setIsExpanded(false)
+    }
+
+    return success
+  }, [form, onSubmit, resetForm])
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isExpanded) {
         setIsExpanded(false)
-        form.reset()
+        resetForm()
         setNewSubtaskTitle('')
       }
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [isExpanded, form])
+  }, [isExpanded, resetForm])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.title.trim()) return
-
-    const success = await onSubmit(form.toPayload())
-    if (success) {
-      form.reset()
-      setNewSubtaskTitle('')
-      setIsExpanded(false)
-    }
+    await submitCurrentTodo()
   }
 
   return (
@@ -86,7 +93,7 @@ export function InlineTodoForm({
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault()
-                handleSubmit(e as unknown as React.FormEvent)
+                void submitCurrentTodo()
               }
             }}
             placeholder="Add a task..."
@@ -104,7 +111,7 @@ export function InlineTodoForm({
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault()
-                    handleSubmit(e as unknown as React.FormEvent)
+                    void submitCurrentTodo()
                   }
                 }}
                 placeholder="Notes (optional) — Shift+Enter for new line"
@@ -272,7 +279,7 @@ export function InlineTodoForm({
                   type="button"
                   onClick={() => {
                     setIsExpanded(false)
-                    form.reset()
+                    resetForm()
                   }}
                   className="px-3 py-1.5 text-xs font-medium rounded-md transition-colors hover:bg-white/5"
                   style={{ color: 'var(--text-muted)' }}

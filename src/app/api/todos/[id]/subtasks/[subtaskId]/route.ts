@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
 import { z } from 'zod'
@@ -15,6 +16,10 @@ function todoWhere(id: string) {
   return { id }
 }
 
+function isNotFoundError(error: unknown) {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025'
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; subtaskId: string }> }
@@ -24,14 +29,36 @@ export async function PATCH(
     const body = await request.json()
     const { completed } = toggleSchema.parse(body)
 
-    await db.subtask.update({
-      where: { id: subtaskId },
+    const todo = await db.todo.findUnique({
+      where: todoWhere(id),
+      select: { id: true },
+    })
+
+    if (!todo) {
+      return NextResponse.json(
+        { error: 'Todo not found' },
+        { status: 404 }
+      )
+    }
+
+    const updated = await db.subtask.updateMany({
+      where: {
+        id: subtaskId,
+        todoId: todo.id,
+      },
       data: { completed },
     })
 
+    if (updated.count === 0) {
+      return NextResponse.json(
+        { error: 'Subtask not found for this todo' },
+        { status: 404 }
+      )
+    }
+
     // Return the full parent todo for cache update
-    const todo = await db.todo.findUniqueOrThrow({
-      where: todoWhere(id),
+    const updatedTodo = await db.todo.findUniqueOrThrow({
+      where: { id: todo.id },
       include: {
         labels: { orderBy: { name: 'asc' } },
         subtasks: { orderBy: { order: 'asc' } },
@@ -39,12 +66,19 @@ export async function PATCH(
     })
 
     emit('todos')
-    return NextResponse.json(todo)
+    return NextResponse.json(updatedTodo)
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation failed', details: error.issues },
         { status: 400 }
+      )
+    }
+
+    if (isNotFoundError(error)) {
+      return NextResponse.json(
+        { error: 'Todo not found' },
+        { status: 404 }
       )
     }
 

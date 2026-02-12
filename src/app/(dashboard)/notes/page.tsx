@@ -25,9 +25,13 @@ export default function NotesPage() {
   }, [notes, selectedId])
 
   const handleCreate = React.useCallback(async () => {
-    const newNote = await create.mutateAsync()
-    setSelectedId(newNote.id)
-    setMobileShowEditor(true)
+    try {
+      const newNote = await create.mutateAsync()
+      setSelectedId(newNote.id)
+      setMobileShowEditor(true)
+    } catch {
+      // Error toast is handled in the mutation.
+    }
   }, [create])
 
   const handleSelect = React.useCallback((id: string) => {

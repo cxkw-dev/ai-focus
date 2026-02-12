@@ -1,21 +1,21 @@
 # AI Focus
 
-A modern, minimal productivity app built with Next.js, PostgreSQL, and Anthropic-themed styling.
+A modern, minimal productivity app built with Next.js, PostgreSQL, and dynamic multi-theme styling.
 
 ## Features
 
 - **Todo List** - Full CRUD operations with priorities, categories, and due dates
 - **Responsive Design** - Works on desktop and mobile
-- **Dark/Light Theme** - Toggle between themes with Anthropic branding colors
+- **Dynamic Themes** - Switch between multiple curated color themes
 - **Dockerized** - Run anywhere with Docker
 - **PWA Ready** - Install as a Chrome desktop app
 
 ## Tech Stack
 
-- Next.js 14 (App Router)
+- Next.js 16 (App Router)
 - TypeScript
 - PostgreSQL with Prisma ORM
-- Tailwind CSS
+- Tailwind CSS v4
 - Radix UI Components
 - Framer Motion
 - Docker
@@ -86,10 +86,10 @@ A modern, minimal productivity app built with Next.js, PostgreSQL, and Anthropic
 | `npm run dev` | Start development server on port 4444 |
 | `npm run build` | Build for production |
 | `npm run start` | Start production server |
-| `npm run db:generate` | Generate Prisma client |
-| `npm run db:push` | Push schema to database |
-| `npm run db:migrate` | Run migrations |
-| `npm run db:studio` | Open Prisma Studio |
+| `npm run db:generate` | Generate Prisma client (Prisma 7 config-aware) |
+| `npm run db:push` | Push schema to database (Prisma 7 config-aware) |
+| `npm run db:migrate` | Run migrations (Prisma 7 config-aware) |
+| `npm run db:studio` | Open Prisma Studio (Prisma 7 config-aware) |
 | `npm run docker:up` | Start Docker containers |
 | `npm run docker:down` | Stop Docker containers |
 | `npm run docker:build` | Build Docker image |
@@ -106,13 +106,13 @@ A modern, minimal productivity app built with Next.js, PostgreSQL, and Anthropic
 The `.env` file is already configured for local development:
 
 ```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5433/aifocus"
+DATABASE_URL="postgresql://postgres@localhost:5432/aifocus"
 ```
 
 ## Ports
 
 - **App**: 4444 (chosen to avoid conflicts with common ports)
-- **PostgreSQL**: 5433 (external) / 5432 (internal)
+- **PostgreSQL**: 5432
 
 ## Project Structure
 

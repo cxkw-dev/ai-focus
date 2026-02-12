@@ -5,6 +5,12 @@ import { useToast } from '@/components/ui/use-toast'
 import { notebookApi } from '@/lib/api'
 import type { NotebookNote, CreateNotebookNoteInput, UpdateNotebookNoteInput } from '@/types/notebook'
 
+function pickNewestNote(current: NotebookNote, incoming: NotebookNote) {
+  return new Date(incoming.updatedAt).getTime() >= new Date(current.updatedAt).getTime()
+    ? incoming
+    : current
+}
+
 export function useNotebook() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
@@ -18,7 +24,7 @@ export function useNotebook() {
     mutationFn: (data: CreateNotebookNoteInput | void) => notebookApi.create(data ?? undefined),
     onSuccess: (newNote) => {
       queryClient.setQueryData<NotebookNote[]>(['notebook'], (prev = []) =>
-        [newNote, ...prev]
+        [newNote, ...prev.filter(note => note.id !== newNote.id)]
       )
     },
     onError: () => {
@@ -31,7 +37,10 @@ export function useNotebook() {
       notebookApi.update(id, data),
     onSuccess: (updatedNote) => {
       queryClient.setQueryData<NotebookNote[]>(['notebook'], (prev = []) =>
-        prev.map(n => (n.id === updatedNote.id ? updatedNote : n))
+        prev.map(note => {
+          if (note.id !== updatedNote.id) return note
+          return pickNewestNote(note, updatedNote)
+        })
       )
     },
     onError: () => {
@@ -45,7 +54,10 @@ export function useNotebook() {
       notebookApi.update(id, { content }),
     onSuccess: (updatedNote) => {
       queryClient.setQueryData<NotebookNote[]>(['notebook'], (prev = []) =>
-        prev.map(n => (n.id === updatedNote.id ? updatedNote : n))
+        prev.map(note => {
+          if (note.id !== updatedNote.id) return note
+          return pickNewestNote(note, updatedNote)
+        })
       )
     },
   })

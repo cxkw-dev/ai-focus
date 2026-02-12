@@ -7,10 +7,12 @@ export function useSSE() {
   const queryClient = useQueryClient()
 
   useEffect(() => {
+    let isDisposed = false
     let es: EventSource | null = null
-    let retryTimeout: NodeJS.Timeout
+    let retryTimeout: ReturnType<typeof setTimeout> | null = null
 
     function connect() {
+      if (isDisposed) return
       es = new EventSource('/api/events')
 
       es.onmessage = (event) => {
@@ -24,18 +26,35 @@ export function useSSE() {
         }
       }
 
+      es.onopen = () => {
+        if (retryTimeout) {
+          clearTimeout(retryTimeout)
+          retryTimeout = null
+        }
+      }
+
       es.onerror = () => {
+        if (isDisposed) return
         es?.close()
-        // Reconnect after 5s on error
-        retryTimeout = setTimeout(connect, 5_000)
+        // Reconnect after 5s on error (single scheduled retry only).
+        if (!retryTimeout) {
+          retryTimeout = setTimeout(() => {
+            retryTimeout = null
+            connect()
+          }, 5_000)
+        }
       }
     }
 
     connect()
 
     return () => {
+      isDisposed = true
       es?.close()
-      clearTimeout(retryTimeout)
+      if (retryTimeout) {
+        clearTimeout(retryTimeout)
+        retryTimeout = null
+      }
     }
   }, [queryClient])
 }
