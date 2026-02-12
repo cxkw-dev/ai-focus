@@ -2,8 +2,8 @@
 
 import * as React from 'react'
 import { motion } from 'framer-motion'
-import { Zap, TrendingUp, Minus, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { PRIORITIES } from '@/lib/priority'
 import type { Priority } from '@/types/todo'
 
 interface PrioritySelectorProps {
@@ -12,45 +12,13 @@ interface PrioritySelectorProps {
   disabled?: boolean
 }
 
-const priorities: {
-  value: Priority
-  label: string
-  icon: React.ElementType
-  colorVar: string
-}[] = [
-  {
-    value: 'LOW',
-    label: 'Low',
-    icon: ChevronDown,
-    colorVar: 'var(--priority-low)',
-  },
-  {
-    value: 'MEDIUM',
-    label: 'Medium',
-    icon: Minus,
-    colorVar: 'var(--priority-medium)',
-  },
-  {
-    value: 'HIGH',
-    label: 'High',
-    icon: TrendingUp,
-    colorVar: 'var(--priority-high)',
-  },
-  {
-    value: 'URGENT',
-    label: 'Urgent',
-    icon: Zap,
-    colorVar: 'var(--priority-urgent)',
-  },
-]
-
 export function PrioritySelector({ value, onChange, disabled }: PrioritySelectorProps) {
   return (
     <div
       className="inline-flex w-full items-center rounded-full border p-1"
       style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--surface-2)' }}
     >
-      {priorities.map((priority) => {
+      {PRIORITIES.map((priority) => {
         const isSelected = value === priority.value
 
         return (

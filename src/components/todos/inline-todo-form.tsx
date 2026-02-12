@@ -3,26 +3,16 @@
 import * as React from 'react'
 import {
   CalendarDays,
-  Flame,
   Loader2,
-  Minus,
   Plus,
-  TrendingUp,
-  Zap,
   X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { PRIORITIES, PRIORITY_MAP } from '@/lib/priority'
 import { LabelMultiSelect, LabelManagerDialog } from './label-multi-select'
 import { useLabels } from '@/hooks/use-labels'
 import { useTodoForm } from '@/hooks/use-todo-form'
 import type { CreateTodoInput, Priority } from '@/types/todo'
-
-const priorityConfig = {
-  LOW: { icon: Minus, colorVar: 'var(--priority-low)', label: 'Low' },
-  MEDIUM: { icon: TrendingUp, colorVar: 'var(--priority-medium)', label: 'Med' },
-  HIGH: { icon: Flame, colorVar: 'var(--priority-high)', label: 'High' },
-  URGENT: { icon: Zap, colorVar: 'var(--priority-urgent)', label: 'Urgent' },
-} as const
 
 interface InlineTodoFormProps {
   onSubmit: (data: CreateTodoInput) => Promise<boolean>
@@ -128,8 +118,9 @@ export function InlineTodoForm({
               >
                 <div className="flex items-center gap-1.5">
                   <span className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: 'var(--text-muted)' }}>Priority</span>
-                  {(['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as Priority[]).map((p) => {
-                    const config = priorityConfig[p]
+                  {PRIORITIES.map((pConfig) => {
+                    const p = pConfig.value
+                    const config = pConfig
                     const Icon = config.icon
                     const isSelected = form.priority === p
 

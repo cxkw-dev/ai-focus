@@ -16,14 +16,13 @@ import {
   Pause,
   CheckCircle2,
   ChevronDown,
-  AlertTriangle,
-  Flame,
   ListChecks,
   Square,
   CheckSquare,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatRelativeDate } from '@/lib/utils'
+import { PRIORITY_MAP } from '@/lib/priority'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,12 +41,12 @@ const STATUS_CONFIG: Record<Status, { label: string; icon: React.ElementType; co
   COMPLETED: { label: 'Done', icon: CheckCircle2, colorVar: 'var(--status-done)', bgVar: 'var(--status-done)' },
 }
 
-const PRIORITY_CONFIG: Record<Priority, { label: string; colorVar: string; bgVar: string; icon?: React.ElementType; pulse?: boolean }> = {
-  LOW: { label: 'Low', colorVar: 'var(--priority-low)', bgVar: 'var(--priority-low)' },
-  MEDIUM: { label: 'Med', colorVar: 'var(--priority-medium)', bgVar: 'var(--priority-medium)' },
-  HIGH: { label: 'High', colorVar: 'var(--priority-high)', bgVar: 'var(--priority-high)', icon: AlertTriangle },
-  URGENT: { label: 'Urgent', colorVar: 'var(--priority-urgent)', bgVar: 'var(--priority-urgent)', icon: Flame, pulse: true },
-}
+const PRIORITY_CONFIG: Record<Priority, { label: string; colorVar: string; bgVar: string; icon: React.ElementType; pulse?: boolean }> = Object.fromEntries(
+  Object.entries(PRIORITY_MAP).map(([key, p]) => [
+    key,
+    { label: p.label, colorVar: p.colorVar, bgVar: p.colorVar, icon: p.icon, ...(key === 'URGENT' ? { pulse: true } : {}) },
+  ])
+) as Record<Priority, { label: string; colorVar: string; bgVar: string; icon: React.ElementType; pulse?: boolean }>
 
 const URL_SPLIT_REGEX = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi
 const URL_MATCH_REGEX = /^(https?:\/\/[^\s]+|www\.[^\s]+)$/i
@@ -189,7 +188,7 @@ function PriorityDropdown({ todo, onPriorityChange }: { todo: Todo; onPriorityCh
             color: config.colorVar,
           }}
         >
-          {Icon && <Icon className="h-3 w-3" />}
+          <Icon className="h-3 w-3" />
           <span>{config.label}</span>
           <ChevronDown className="h-2.5 w-2.5 opacity-50" />
         </button>
@@ -216,11 +215,7 @@ function PriorityDropdown({ todo, onPriorityChange }: { todo: Todo; onPriorityCh
                 color: priorityConfig.colorVar,
               } : { color: 'var(--text-muted)' }}
             >
-              {PriorityIcon ? (
-                <PriorityIcon className="h-3.5 w-3.5" style={{ color: priorityConfig.colorVar }} />
-              ) : (
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: priorityConfig.colorVar }} />
-              )}
+              <PriorityIcon className="h-3.5 w-3.5" style={{ color: priorityConfig.colorVar }} />
               <span>{priorityConfig.label}</span>
               {isActive && (
                 <span className="ml-auto text-[10px] opacity-60">✓</span>
