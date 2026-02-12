@@ -318,6 +318,15 @@ export function getThemeById(id: string): Theme {
   return themes.find(t => t.id === id) || defaultTheme
 }
 
+function resolveFontValue(value: string): string {
+  const match = value.match(/^var\((--[\w-]+)\)$/)
+  if (match) {
+    const resolved = getComputedStyle(document.body).getPropertyValue(match[1]).trim()
+    if (resolved) return resolved
+  }
+  return value
+}
+
 export function applyTheme(theme: Theme): void {
   const root = document.documentElement
   const { colors } = theme
@@ -349,13 +358,18 @@ export function applyTheme(theme: Theme): void {
 
   // Fonts — override --font-sans (used by Tailwind's font-sans class on body)
   // and --font-heading (used by h1-h6 rule in globals.css)
+  // Font values may be var() references (e.g. 'var(--font-lora)') from next/font,
+  // which are defined on <body> via className. Resolve them to actual font family
+  // names before setting on <html> to avoid nested var() resolution issues.
   if (theme.fonts?.body) {
-    root.style.setProperty('--font-sans', `${theme.fonts.body}, system-ui, sans-serif`)
+    const resolved = resolveFontValue(theme.fonts.body)
+    root.style.setProperty('--font-sans', `${resolved}, system-ui, sans-serif`)
   } else {
     root.style.removeProperty('--font-sans')
   }
   if (theme.fonts?.heading) {
-    root.style.setProperty('--font-heading', `${theme.fonts.heading}, system-ui, sans-serif`)
+    const resolved = resolveFontValue(theme.fonts.heading)
+    root.style.setProperty('--font-heading', `${resolved}, system-ui, sans-serif`)
   } else {
     root.style.removeProperty('--font-heading')
   }
