@@ -1,4 +1,4 @@
-import type { Todo, CreateTodoInput, UpdateTodoInput, Label, Category } from '@/types/todo'
+import type { Todo, CreateTodoInput, UpdateTodoInput, Label } from '@/types/todo'
 import type { YearStats } from '@/types/stats'
 import type { NotebookNote, CreateNotebookNoteInput, UpdateNotebookNoteInput } from '@/types/notebook'
 
@@ -40,6 +40,13 @@ export const todosApi = {
       headers,
       body: JSON.stringify({ orderedIds }),
     }).then(r => json(r)),
+
+  toggleSubtask: (todoId: string, subtaskId: string, completed: boolean): Promise<Todo> =>
+    fetch(`/api/todos/${todoId}/subtasks/${subtaskId}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ completed }),
+    }).then(r => json(r)),
 }
 
 export const labelsApi = {
@@ -62,11 +69,6 @@ export const labelsApi = {
 
   delete: (id: string): Promise<{ success: boolean }> =>
     fetch(`/api/labels/${id}`, { method: 'DELETE' }).then(r => json(r)),
-}
-
-export const categoriesApi = {
-  list: (): Promise<Category[]> =>
-    fetch('/api/categories').then(r => json(r)),
 }
 
 export const notebookApi = {

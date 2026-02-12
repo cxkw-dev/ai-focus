@@ -1,6 +1,6 @@
 'use client'
 
-import { Calendar, Trophy, FolderOpen, Tag } from 'lucide-react'
+import { Calendar, Trophy, Tag } from 'lucide-react'
 import type { Highlights } from '@/types/stats'
 
 interface HighlightsPanelProps {
@@ -20,12 +20,6 @@ export function HighlightsPanel({ highlights }: HighlightsPanelProps) {
       label: 'Most Productive',
       value: highlights.mostProductiveMonth,
       color: 'var(--status-done)',
-    },
-    {
-      icon: FolderOpen,
-      label: 'Top Category',
-      value: highlights.topCategory,
-      color: 'var(--accent)',
     },
     {
       icon: Tag,

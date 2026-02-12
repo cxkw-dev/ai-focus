@@ -7,21 +7,13 @@ import {
   Loader2,
   Minus,
   Plus,
-  Tag,
   TrendingUp,
   Zap,
+  X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { LabelMultiSelect, LabelManagerDialog } from './label-multi-select'
 import { useLabels } from '@/hooks/use-labels'
-import { useCategories } from '@/hooks/use-categories'
 import { useTodoForm } from '@/hooks/use-todo-form'
 import type { CreateTodoInput, Priority } from '@/types/todo'
 
@@ -42,16 +34,17 @@ export function InlineTodoForm({
   isLoading,
 }: InlineTodoFormProps) {
   const { labels, handleCreate: onCreateLabel, handleUpdate: onUpdateLabel, handleDelete: onDeleteLabel } = useLabels()
-  const { categories } = useCategories()
   const form = useTodoForm()
   const [isExpanded, setIsExpanded] = React.useState(false)
   const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
+  const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isExpanded) {
         setIsExpanded(false)
         form.reset()
+        setNewSubtaskTitle('')
       }
     }
     document.addEventListener('keydown', handleKeyDown)
@@ -65,6 +58,7 @@ export function InlineTodoForm({
     const success = await onSubmit(form.toPayload())
     if (success) {
       form.reset()
+      setNewSubtaskTitle('')
       setIsExpanded(false)
     }
   }
@@ -183,40 +177,11 @@ export function InlineTodoForm({
                 </div>
               </div>
 
-              {/* Category and Labels Row */}
+              {/* Labels Row */}
               <div
                 className="px-4 py-3 flex items-center gap-3"
                 style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 30%, transparent)' }}
               >
-                {categories.length > 0 && (
-                  <>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: 'var(--text-muted)' }}>Category</span>
-                      <Select value={form.categoryId} onValueChange={form.setCategoryId} disabled={isLoading}>
-                        <SelectTrigger className="h-auto w-auto border-0 bg-transparent px-2 py-1 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground focus:ring-0 shadow-none gap-1.5 p-0 border border-transparent hover:border-[var(--border-color)] rounded-md">
-                          <Tag className="h-3.5 w-3.5" />
-                          <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="">None</SelectItem>
-                          {categories.map((cat) => (
-                            <SelectItem key={cat.id} value={cat.id}>
-                              <span className="flex items-center gap-2">
-                                <span
-                                  className="h-2 w-2 rounded-full"
-                                  style={{ backgroundColor: cat.color }}
-                                />
-                                {cat.name}
-                              </span>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="w-px h-4 bg-[var(--border-color)] opacity-50" />
-                  </>
-                )}
-
                 <div className="flex items-center gap-1.5">
                   <LabelMultiSelect
                     labels={labels}
@@ -248,6 +213,55 @@ export function InlineTodoForm({
                     ))}
                 </div>
               )}
+
+              {/* Subtasks Row */}
+              <div
+                className="px-4 py-3"
+                style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 30%, transparent)' }}
+              >
+                <div className="space-y-1">
+                  {form.subtasks.map((subtask, index) => (
+                    <div key={index} className="flex items-center gap-2 group/subtask">
+                      <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
+                        {index + 1}.
+                      </span>
+                      <span className="text-xs flex-1" style={{ color: 'var(--text-primary)' }}>
+                        {subtask.title}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => form.removeSubtask(index)}
+                        className="flex-shrink-0 opacity-0 group-hover/subtask:opacity-100 transition-opacity"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <div className="flex items-center gap-2">
+                    <Plus className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                    <input
+                      type="text"
+                      value={newSubtaskTitle}
+                      onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          if (newSubtaskTitle.trim()) {
+                            form.addSubtask(newSubtaskTitle)
+                            setNewSubtaskTitle('')
+                          }
+                        }
+                      }}
+                      placeholder="Add a subtask..."
+                      disabled={isLoading}
+                      className="flex-1 bg-transparent text-xs focus:outline-none placeholder:text-[var(--text-muted)]"
+                      style={{ color: 'var(--text-primary)' }}
+                    />
+                  </div>
+                </div>
+              </div>
 
               {/* Actions Row */}
               <div

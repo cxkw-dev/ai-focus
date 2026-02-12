@@ -1,18 +1,11 @@
 'use client'
 
 import * as React from 'react'
-import { cn } from '@/lib/utils'
+import { Plus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RichTextEditor } from '@/components/ui/rich-text-editor'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -23,7 +16,6 @@ import {
 import { LabelMultiSelect, LabelManagerDialog } from './label-multi-select'
 import { PrioritySelector } from './priority-selector'
 import { useLabels } from '@/hooks/use-labels'
-import { useCategories } from '@/hooks/use-categories'
 import { useTodoForm } from '@/hooks/use-todo-form'
 import type { CreateTodoInput } from '@/types/todo'
 
@@ -41,9 +33,9 @@ export function CreateTodoModal({
   isLoading,
 }: CreateTodoModalProps) {
   const { labels, handleCreate: onCreateLabel, handleUpdate: onUpdateLabel, handleDelete: onDeleteLabel } = useLabels()
-  const { categories } = useCategories()
   const form = useTodoForm()
   const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
+  const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
 
   React.useEffect(() => {
     if (!open) form.reset()
@@ -98,41 +90,14 @@ export function CreateTodoModal({
             />
           </div>
 
-          <div className={cn('grid gap-4', categories.length > 0 ? 'grid-cols-2' : 'grid-cols-1')}>
-            <div className="space-y-2">
-              <Label htmlFor="create-dueDate">Due Date</Label>
-              <Input
-                id="create-dueDate"
-                type="date"
-                value={form.dueDate}
-                onChange={(e) => form.setDueDate(e.target.value)}
-              />
-            </div>
-
-            {categories.length > 0 && (
-              <div className="space-y-2">
-                <Label htmlFor="create-category">Category</Label>
-                <Select value={form.categoryId} onValueChange={form.setCategoryId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">None</SelectItem>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        <span className="flex items-center gap-2">
-                          <span
-                            className="h-2 w-2 rounded-full"
-                            style={{ backgroundColor: cat.color }}
-                          />
-                          {cat.name}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+          <div className="space-y-2">
+            <Label htmlFor="create-dueDate">Due Date</Label>
+            <Input
+              id="create-dueDate"
+              type="date"
+              value={form.dueDate}
+              onChange={(e) => form.setDueDate(e.target.value)}
+            />
           </div>
 
           <div className="space-y-2">
@@ -144,6 +109,47 @@ export function CreateTodoModal({
               onManage={() => setIsLabelManagerOpen(true)}
               disabled={isLoading}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Subtasks</Label>
+            <div className="space-y-1.5">
+              {form.subtasks.map((subtask, index) => (
+                <div key={index} className="flex items-center gap-2 group/subtask">
+                  <span className="text-xs flex-1" style={{ color: 'var(--text-primary)' }}>
+                    {subtask.title}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => form.removeSubtask(index)}
+                    className="flex-shrink-0 opacity-0 group-hover/subtask:opacity-100 transition-opacity"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+              <div className="flex items-center gap-2">
+                <Plus className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                <input
+                  type="text"
+                  value={newSubtaskTitle}
+                  onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      if (newSubtaskTitle.trim()) {
+                        form.addSubtask(newSubtaskTitle)
+                        setNewSubtaskTitle('')
+                      }
+                    }
+                  }}
+                  placeholder="Add a subtask..."
+                  className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-[var(--text-muted)] border-b border-transparent focus:border-[var(--border-color)] transition-colors pb-1"
+                  style={{ color: 'var(--text-primary)' }}
+                />
+              </div>
+            </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-4">

@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { emit } from '@/lib/events'
 import { z } from 'zod'
+
+const subtaskSchema = z.object({
+  id: z.string().optional(),
+  title: z.string().min(1).max(200),
+  completed: z.boolean().optional(),
+  order: z.number().int(),
+})
 
 const updateTodoSchema = z.object({
   title: z.string().min(1).max(200).optional(),
@@ -9,8 +17,8 @@ const updateTodoSchema = z.object({
   archived: z.boolean().optional(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
   dueDate: z.string().datetime().optional().nullable(),
-  categoryId: z.string().optional().nullable(),
   labelIds: z.array(z.string()).optional(),
+  subtasks: z.array(subtaskSchema).optional(),
 })
 
 // Resolve an id param that could be a cuid or a task number (e.g. "7")
@@ -30,7 +38,10 @@ export async function GET(
     const { id } = await params
     const todo = await db.todo.findUnique({
       where: todoWhere(id),
-      include: { category: true, labels: { orderBy: { name: 'asc' } } },
+      include: {
+        labels: { orderBy: { name: 'asc' } },
+        subtasks: { orderBy: { order: 'asc' } },
+      },
     })
 
     if (!todo) {
@@ -55,17 +66,40 @@ export async function PATCH(
     const { id } = await params
     const body = await request.json()
     const validatedData = updateTodoSchema.parse(body)
-    const { labelIds, categoryId, ...todoData } = validatedData
+    const { labelIds, subtasks, ...todoData } = validatedData
+
+    // If subtasks are provided, do a declarative sync in a transaction
+    if (subtasks !== undefined) {
+      // Resolve the actual todo id (might be a task number)
+      const existing = await db.todo.findUniqueOrThrow({
+        where: todoWhere(id),
+        select: { id: true, subtasks: { select: { id: true } } },
+      })
+      const todoId = existing.id
+      const incomingIds = subtasks.filter(s => s.id).map(s => s.id!)
+      const toDelete = existing.subtasks.filter(s => !incomingIds.includes(s.id)).map(s => s.id)
+
+      await db.$transaction([
+        // Delete removed subtasks
+        ...(toDelete.length ? [db.subtask.deleteMany({ where: { id: { in: toDelete } } })] : []),
+        // Upsert each subtask
+        ...subtasks.map(s =>
+          s.id
+            ? db.subtask.update({
+                where: { id: s.id },
+                data: { title: s.title, completed: s.completed ?? false, order: s.order },
+              })
+            : db.subtask.create({
+                data: { title: s.title, completed: s.completed ?? false, order: s.order, todoId },
+              })
+        ),
+      ])
+    }
 
     const todo = await db.todo.update({
       where: todoWhere(id),
       data: {
         ...todoData,
-        ...(categoryId !== undefined
-          ? categoryId === null
-            ? { category: { disconnect: true } }
-            : { category: { connect: { id: categoryId } } }
-          : {}),
         ...(labelIds
           ? { labels: { set: labelIds.map((labelId) => ({ id: labelId })) } }
           : {}),
@@ -75,9 +109,13 @@ export async function PATCH(
           ? null
           : undefined,
       },
-      include: { category: true, labels: { orderBy: { name: 'asc' } } },
+      include: {
+        labels: { orderBy: { name: 'asc' } },
+        subtasks: { orderBy: { order: 'asc' } },
+      },
     })
 
+    emit('todos')
     return NextResponse.json(todo)
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -105,6 +143,7 @@ export async function DELETE(
       where: todoWhere(id),
     })
 
+    emit('todos')
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error deleting todo:', error)

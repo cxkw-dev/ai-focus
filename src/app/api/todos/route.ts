@@ -1,14 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { emit } from '@/lib/events'
 import { z } from 'zod'
+
+const subtaskSchema = z.object({
+  id: z.string().optional(),
+  title: z.string().min(1).max(200),
+  completed: z.boolean().optional(),
+  order: z.number().int(),
+})
 
 const createTodoSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
   description: z.string().max(1000).optional(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
   dueDate: z.string().datetime().optional().nullable(),
-  categoryId: z.string().optional().nullable(),
   labelIds: z.array(z.string()).optional(),
+  subtasks: z.array(subtaskSchema).optional(),
 })
 
 export async function GET(request: NextRequest) {
@@ -17,7 +25,6 @@ export async function GET(request: NextRequest) {
     const completed = searchParams.get('completed')
     const status = searchParams.get('status')
     const priority = searchParams.get('priority')
-    const categoryId = searchParams.get('categoryId')
     const archived = searchParams.get('archived')
 
     const where: Record<string, unknown> = {}
@@ -40,15 +47,11 @@ export async function GET(request: NextRequest) {
       where.priority = priority
     }
 
-    if (categoryId) {
-      where.categoryId = categoryId
-    }
-
     const todos = await db.todo.findMany({
       where,
       include: {
-        category: true,
         labels: { orderBy: { name: 'asc' } },
+        subtasks: { orderBy: { order: 'asc' } },
       },
       orderBy: [
         { order: 'asc' },
@@ -70,7 +73,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const validatedData = createTodoSchema.parse(body)
-    const { labelIds, categoryId, ...todoData } = validatedData
+    const { labelIds, subtasks, ...todoData } = validatedData
 
     // Get the minimum order value to place new todo at the top
     const minOrderTodo = await db.todo.findFirst({
@@ -84,20 +87,21 @@ export async function POST(request: NextRequest) {
         ...todoData,
         priority: validatedData.priority || 'MEDIUM',
         dueDate: validatedData.dueDate ? new Date(validatedData.dueDate) : null,
-        ...(categoryId
-          ? { category: { connect: { id: categoryId } } }
-          : {}),
         labels: labelIds?.length
           ? { connect: labelIds.map((id) => ({ id })) }
+          : undefined,
+        subtasks: subtasks?.length
+          ? { create: subtasks.map((s) => ({ title: s.title, completed: s.completed ?? false, order: s.order })) }
           : undefined,
         order: newOrder,
       },
       include: {
-        category: true,
         labels: { orderBy: { name: 'asc' } },
+        subtasks: { orderBy: { order: 'asc' } },
       },
     })
 
+    emit('todos')
     return NextResponse.json(todo, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {

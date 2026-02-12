@@ -15,13 +15,6 @@ export interface PriorityData {
   count: number
 }
 
-export interface CategoryData {
-  name: string
-  color: string
-  count: number
-  completedCount: number
-}
-
 export interface LabelData {
   name: string
   color: string
@@ -31,7 +24,6 @@ export interface LabelData {
 export interface Highlights {
   busiestMonth: string | null
   mostProductiveMonth: string | null
-  topCategory: string | null
   topLabel: string | null
 }
 
@@ -47,7 +39,6 @@ export interface YearStats {
   monthly: MonthlyData[]
   byStatus: StatusData[]
   byPriority: PriorityData[]
-  byCategory: CategoryData[]
   topLabels: LabelData[]
   highlights: Highlights
 }

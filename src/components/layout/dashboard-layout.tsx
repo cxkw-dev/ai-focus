@@ -1,16 +1,26 @@
 'use client'
 
 import * as React from 'react'
+import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Sidebar } from './sidebar'
 import { Header } from './header'
 
-interface DashboardLayoutProps {
-  children: React.ReactNode
-  title: string
+const pageTitles: Record<string, string> = {
+  '/todos': 'Todos',
+  '/notes': 'Notes',
+  '/review': 'Year in Review',
+  '/settings': 'Settings',
 }
 
-export function DashboardLayout({ children, title }: DashboardLayoutProps) {
+interface DashboardLayoutProps {
+  children: React.ReactNode
+}
+
+export function DashboardLayout({ children }: DashboardLayoutProps) {
+  const pathname = usePathname()
+  const title = pageTitles[pathname] || 'Focus'
+
   const [collapsed, setCollapsed] = React.useState(false)
   const [isMobile, setIsMobile] = React.useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
@@ -38,6 +48,11 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  // Close mobile menu on navigation
+  React.useEffect(() => {
+    setMobileMenuOpen(false)
+  }, [pathname])
 
   const handleCollapse = (newCollapsed: boolean) => {
     setCollapsed(newCollapsed)

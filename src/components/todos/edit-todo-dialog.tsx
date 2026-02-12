@@ -4,9 +4,13 @@ import * as React from 'react'
 import {
   CalendarDays,
   Flame,
-  Tag,
   Tags,
   TrendingUp,
+  ListChecks,
+  Plus,
+  X,
+  Square,
+  CheckSquare,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,7 +34,6 @@ import {
 import { LabelMultiSelect, LabelManagerDialog } from './label-multi-select'
 import { PrioritySelector } from './priority-selector'
 import { useLabels } from '@/hooks/use-labels'
-import { useCategories } from '@/hooks/use-categories'
 import { useTodoForm } from '@/hooks/use-todo-form'
 import type { Todo, UpdateTodoInput, Status } from '@/types/todo'
 
@@ -53,7 +56,6 @@ export function EditTodoDialog({
   isLoading,
 }: EditTodoDialogProps) {
   const { labels, handleCreate: onCreateLabel, handleUpdate: onUpdateLabel, handleDelete: onDeleteLabel } = useLabels()
-  const { categories } = useCategories()
   const form = useTodoForm(todo)
   const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
 
@@ -69,8 +71,13 @@ export function EditTodoDialog({
         priority: todo.priority,
         status: todo.status,
         dueDate: todo.dueDate ? new Date(todo.dueDate).toISOString() : null,
-        categoryId: todo.categoryId || null,
         labelIds: todo.labels?.map(l => l.id) ?? [],
+        subtasks: todo.subtasks?.map((s, i) => ({
+          id: s.id,
+          title: s.title,
+          completed: s.completed,
+          order: i,
+        })) ?? [],
       })
       if (JSON.stringify(payload) !== original) {
         onSubmit(payload)
@@ -79,6 +86,15 @@ export function EditTodoDialog({
     }
     onOpenChange(false)
   }, [isEditing, todo, form, onSubmit, onOpenChange])
+
+  const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
+
+  const handleAddSubtask = React.useCallback(() => {
+    if (newSubtaskTitle.trim()) {
+      form.addSubtask(newSubtaskTitle)
+      setNewSubtaskTitle('')
+    }
+  }, [newSubtaskTitle, form])
 
   const handleOpenChange = React.useCallback((nextOpen: boolean) => {
     if (!nextOpen) {
@@ -140,6 +156,72 @@ export function EditTodoDialog({
                     disabled={isLoading}
                   />
                 </div>
+
+                {/* Subtasks */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                    <ListChecks className="h-3.5 w-3.5" />
+                    Subtasks
+                    {form.subtasks.length > 0 && (
+                      <span className="text-[10px] font-normal" style={{ color: 'var(--text-muted)' }}>
+                        {form.subtasks.filter(s => s.completed).length}/{form.subtasks.length}
+                      </span>
+                    )}
+                  </Label>
+                  <div className="space-y-1">
+                    {form.subtasks.map((subtask, index) => (
+                      <div key={subtask.id ?? index} className="flex items-center gap-2 group/subtask">
+                        <button
+                          type="button"
+                          onClick={() => form.toggleSubtask(index)}
+                          className="flex-shrink-0 transition-colors"
+                          style={{ color: subtask.completed ? 'var(--status-done)' : 'var(--text-muted)' }}
+                        >
+                          {subtask.completed ? (
+                            <CheckSquare className="h-4 w-4" />
+                          ) : (
+                            <Square className="h-4 w-4" />
+                          )}
+                        </button>
+                        <input
+                          type="text"
+                          value={subtask.title}
+                          onChange={(e) => form.updateSubtaskTitle(index, e.target.value)}
+                          className="flex-1 bg-transparent text-sm focus:outline-none"
+                          style={{
+                            color: subtask.completed ? 'var(--text-muted)' : 'var(--text-primary)',
+                            textDecoration: subtask.completed ? 'line-through' : 'none',
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => form.removeSubtask(index)}
+                          className="flex-shrink-0 opacity-0 group-hover/subtask:opacity-100 transition-opacity"
+                          style={{ color: 'var(--text-muted)' }}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                    <div className="flex items-center gap-2">
+                      <Plus className="h-4 w-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                      <input
+                        type="text"
+                        value={newSubtaskTitle}
+                        onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            handleAddSubtask()
+                          }
+                        }}
+                        placeholder="Add a subtask..."
+                        className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-[var(--text-muted)]"
+                        style={{ color: 'var(--text-primary)' }}
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Right column - Meta */}
@@ -194,35 +276,6 @@ export function EditTodoDialog({
                     className="h-10 text-sm"
                   />
                 </div>
-
-                {/* Category */}
-                {categories.length > 0 && (
-                  <div className="space-y-2">
-                    <Label htmlFor="category" className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
-                      <Tag className="h-3.5 w-3.5" />
-                      Category
-                    </Label>
-                    <Select value={form.categoryId} onValueChange={form.setCategoryId}>
-                      <SelectTrigger className="h-10">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">None</SelectItem>
-                        {categories.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id}>
-                            <span className="flex items-center gap-2">
-                              <span
-                                className="h-2 w-2 rounded-full"
-                                style={{ backgroundColor: cat.color }}
-                              />
-                              {cat.name}
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
 
                 {/* Labels */}
                 <div className="space-y-2">

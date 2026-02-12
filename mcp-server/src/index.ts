@@ -62,6 +62,13 @@ function inlineFormat(text: string): string {
     .replace(/`(.+?)`/g, "<code>$1</code>");
 }
 
+interface SubtaskResponse {
+  id: string;
+  title: string;
+  completed: boolean;
+  order: number;
+}
+
 interface TodoResponse {
   taskNumber: number;
   title: string;
@@ -70,8 +77,8 @@ interface TodoResponse {
   description?: string | null;
   dueDate?: string | null;
   archived?: boolean;
-  category?: { name: string } | null;
   labels?: { name: string }[];
+  subtasks?: SubtaskResponse[];
 }
 
 function formatTodoSummary(todos: TodoResponse[]) {
@@ -79,9 +86,12 @@ function formatTodoSummary(todos: TodoResponse[]) {
   return todos.map((t) => {
     const parts = [`#${t.taskNumber} | ${t.title}`];
     parts.push(`   status: ${t.status} | priority: ${t.priority}`);
-    if (t.category) parts.push(`   category: ${t.category.name}`);
     if (t.labels?.length) parts.push(`   labels: ${t.labels.map((l) => l.name).join(", ")}`);
     if (t.dueDate) parts.push(`   due: ${t.dueDate.split("T")[0]}`);
+    if (t.subtasks?.length) {
+      const done = t.subtasks.filter((s) => s.completed).length;
+      parts.push(`   subtasks: ${done}/${t.subtasks.length} done`);
+    }
     return parts.join("\n");
   }).join("\n\n");
 }
@@ -167,15 +177,22 @@ server.tool(
       .string()
       .optional()
       .describe("Due date as ISO string"),
-    categoryId: z.string().optional().describe("Category ID"),
     labelIds: z
       .array(z.string())
       .optional()
       .describe("Array of label IDs to attach"),
+    subtasks: z
+      .array(z.string())
+      .optional()
+      .describe("Array of subtask titles to create"),
   },
   async (params) => {
-    const body = { ...params };
-    if (body.description) body.description = toHtml(body.description);
+    const { subtasks: subtaskTitles, ...rest } = params;
+    const body: Record<string, unknown> = { ...rest };
+    if (body.description) body.description = toHtml(body.description as string);
+    if (subtaskTitles?.length) {
+      body.subtasks = subtaskTitles.map((title, i) => ({ title, order: i }));
+    }
     const data = await apiFetch("/api/todos", {
       method: "POST",
       body: JSON.stringify(body),
@@ -220,15 +237,19 @@ IMPORTANT — Description handling:
       .nullable()
       .optional()
       .describe("New due date (ISO string) or null to clear"),
-    categoryId: z
-      .string()
-      .nullable()
-      .optional()
-      .describe("New category ID or null to clear"),
     labelIds: z
       .array(z.string())
       .optional()
       .describe("Replace label IDs"),
+    subtasks: z
+      .array(z.object({
+        id: z.string().optional(),
+        title: z.string(),
+        completed: z.boolean().optional(),
+        order: z.number().int(),
+      }))
+      .optional()
+      .describe("Replace all subtasks (declarative sync). Include id for existing subtasks, omit for new ones."),
   },
   async ({ taskNumber, id, descriptionMode, ...updates }) => {
     const key = taskNumber?.toString() ?? id;
@@ -274,6 +295,26 @@ server.tool(
   }
 );
 
+server.tool(
+  "toggle_subtask",
+  "Toggle a subtask's completed status.",
+  {
+    taskNumber: z.number().int().positive().optional().describe("The parent task number"),
+    todoId: z.string().optional().describe("The parent todo cuid (use taskNumber instead when possible)"),
+    subtaskId: z.string().describe("The subtask ID to toggle"),
+    completed: z.boolean().describe("Set completed to true or false"),
+  },
+  async ({ taskNumber, todoId, subtaskId, completed }) => {
+    const key = taskNumber?.toString() ?? todoId;
+    if (!key) throw new Error("Provide either taskNumber or todoId");
+    const data = await apiFetch(`/api/todos/${key}/subtasks/${subtaskId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ completed }),
+    });
+    return textResult(data);
+  }
+);
+
 // ─── Labels ───
 
 server.tool(
@@ -282,18 +323,6 @@ server.tool(
   {},
   async () => {
     const data = await apiFetch("/api/labels");
-    return textResult(data);
-  }
-);
-
-// ─── Categories ───
-
-server.tool(
-  "list_categories",
-  "List all available categories for organizing todos.",
-  {},
-  async () => {
-    const data = await apiFetch("/api/categories");
     return textResult(data);
   }
 );
@@ -324,25 +353,6 @@ server.tool(
   },
   async ({ id }) => {
     const data = await apiFetch(`/api/labels/${id}`, { method: "DELETE" });
-    return textResult(data);
-  }
-);
-
-// ─── Categories (extended) ───
-
-server.tool(
-  "create_category",
-  "Create a new category for organizing todos.",
-  {
-    name: z.string().min(1).max(50).describe("Category name"),
-    color: z.string().optional().describe("Hex color like #3B82F6"),
-    icon: z.string().max(50).optional().describe("Icon identifier"),
-  },
-  async (params) => {
-    const data = await apiFetch("/api/categories", {
-      method: "POST",
-      body: JSON.stringify(params),
-    });
     return textResult(data);
   }
 );

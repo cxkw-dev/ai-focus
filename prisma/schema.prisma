@@ -16,29 +16,30 @@ model Todo {
   dueDate     DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  categoryId  String?
   order       Int       @default(0)
   archived    Boolean   @default(false)
   status      Status    @default(TODO)
-  category    Category? @relation(fields: [categoryId], references: [id])
   labels      Label[]   @relation("LabelToTodo")
+  subtasks    Subtask[]
 
   @@index([status])
   @@index([archived])
   @@index([priority])
   @@index([dueDate])
-  @@index([categoryId])
   @@index([order])
 }
 
-model Category {
+model Subtask {
   id        String   @id @default(cuid())
-  name      String   @unique
-  color     String   @default("#6366f1")
-  icon      String?
+  title     String
+  completed Boolean  @default(false)
+  order     Int      @default(0)
+  todoId    String
+  todo      Todo     @relation(fields: [todoId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  todos     Todo[]
+
+  @@index([todoId])
 }
 
 model Label {

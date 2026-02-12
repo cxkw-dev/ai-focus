@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { emit } from '@/lib/events'
 import { z } from 'zod'
 
 const reorderSchema = z.object({
@@ -21,6 +22,7 @@ export async function POST(request: NextRequest) {
       )
     )
 
+    emit('todos')
     return NextResponse.json({ success: true })
   } catch (error) {
     if (error instanceof z.ZodError) {

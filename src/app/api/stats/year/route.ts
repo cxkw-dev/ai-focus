@@ -28,8 +28,6 @@ export async function GET(request: NextRequest) {
         priority: true,
         createdAt: true,
         updatedAt: true,
-        categoryId: true,
-        category: { select: { name: true, color: true } },
         labels: { select: { id: true, name: true, color: true } },
       },
     })
@@ -45,8 +43,6 @@ export async function GET(request: NextRequest) {
         priority: true,
         createdAt: true,
         updatedAt: true,
-        categoryId: true,
-        category: { select: { name: true, color: true } },
         labels: { select: { id: true, name: true, color: true } },
       },
     })
@@ -120,24 +116,6 @@ export async function GET(request: NextRequest) {
       count: priorityMap.get(priority) || 0,
     }))
 
-    // --- By Category ---
-    const categoryMap = new Map<string, { name: string; color: string; count: number; completedCount: number }>()
-    for (const todo of todosCreated) {
-      const catName = todo.category?.name || 'Uncategorized'
-      const catColor = todo.category?.color || '#888888'
-      const existing = categoryMap.get(catName) || { name: catName, color: catColor, count: 0, completedCount: 0 }
-      existing.count++
-      categoryMap.set(catName, existing)
-    }
-    for (const todo of todosCompleted) {
-      const catName = todo.category?.name || 'Uncategorized'
-      const catColor = todo.category?.color || '#888888'
-      const existing = categoryMap.get(catName) || { name: catName, color: catColor, count: 0, completedCount: 0 }
-      existing.completedCount++
-      categoryMap.set(catName, existing)
-    }
-    const byCategory = Array.from(categoryMap.values()).sort((a, b) => b.count - a.count)
-
     // --- Top Labels ---
     const labelMap = new Map<string, { name: string; color: string; count: number }>()
     for (const todo of todosCreated) {
@@ -158,7 +136,6 @@ export async function GET(request: NextRequest) {
     const highlights = {
       busiestMonth: monthly[busiestMonthIdx].created > 0 ? MONTH_LABELS[busiestMonthIdx] : null,
       mostProductiveMonth: monthly[productiveMonthIdx].completed > 0 ? MONTH_LABELS[productiveMonthIdx] : null,
-      topCategory: byCategory.length > 0 && byCategory[0].count > 0 ? byCategory[0].name : null,
       topLabel: topLabels.length > 0 ? topLabels[0].name : null,
     }
 
@@ -174,7 +151,6 @@ export async function GET(request: NextRequest) {
       monthly,
       byStatus,
       byPriority,
-      byCategory,
       topLabels,
       highlights,
     }

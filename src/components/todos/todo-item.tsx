@@ -18,6 +18,9 @@ import {
   ChevronDown,
   AlertTriangle,
   Flame,
+  ListChecks,
+  Square,
+  CheckSquare,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatRelativeDate } from '@/lib/utils'
@@ -109,6 +112,7 @@ interface TodoItemProps {
   onDelete: (id: string) => void
   onEdit: (todo: Todo) => void
   onRestore?: (id: string) => void
+  onToggleSubtask?: (todoId: string, subtaskId: string, completed: boolean) => void
   isDragging?: boolean
   isArchiveView?: boolean
 }
@@ -157,7 +161,7 @@ function StatusDropdown({ todo, onStatusChange }: { todo: Todo; onStatusChange: 
               <StatusIcon className="h-3.5 w-3.5" style={{ color: statusConfig.colorVar }} />
               <span>{statusConfig.label}</span>
               {isActive && (
-                <span className="ml-auto text-[10px] opacity-60">&check;</span>
+                <span className="ml-auto text-[10px] opacity-60">✓</span>
               )}
             </DropdownMenuItem>
           )
@@ -219,7 +223,7 @@ function PriorityDropdown({ todo, onPriorityChange }: { todo: Todo; onPriorityCh
               )}
               <span>{priorityConfig.label}</span>
               {isActive && (
-                <span className="ml-auto text-[10px] opacity-60">&check;</span>
+                <span className="ml-auto text-[10px] opacity-60">✓</span>
               )}
             </DropdownMenuItem>
           )
@@ -236,10 +240,16 @@ function TodoItemContent({
   onDelete,
   onEdit,
   onRestore,
+  onToggleSubtask,
   isDragging,
   isArchiveView,
 }: TodoItemProps) {
   const isCompleted = todo.status === 'COMPLETED'
+  const [expanded, setExpanded] = React.useState(false)
+
+  const subtasks = todo.subtasks ?? []
+  const completedCount = subtasks.filter(s => s.completed).length
+  const allDone = subtasks.length > 0 && completedCount === subtasks.length
 
   return (
     <div className="flex flex-col gap-2 w-full min-w-0">
@@ -325,16 +335,20 @@ function TodoItemContent({
               {PRIORITY_CONFIG[todo.priority].label}
             </span>
           )}
-          {todo.category && (
-            <span
-              className={cn(CHIP_BASE)}
+          {subtasks.length > 0 && (
+            <button
+              onClick={() => setExpanded(v => !v)}
+              className={cn(CHIP_BASE, 'hover:brightness-110 cursor-pointer')}
               style={{
-                backgroundColor: `${todo.category.color}15`,
-                color: todo.category.color
+                backgroundColor: allDone
+                  ? 'color-mix(in srgb, var(--status-done) 15%, transparent)'
+                  : 'color-mix(in srgb, var(--text-muted) 10%, transparent)',
+                color: allDone ? 'var(--status-done)' : 'var(--text-muted)',
               }}
             >
-              {todo.category.name}
-            </span>
+              <ListChecks className="h-3 w-3" />
+              <span>{completedCount}/{subtasks.length}</span>
+            </button>
           )}
         </div>
 
@@ -377,11 +391,43 @@ function TodoItemContent({
           )}
         </div>
       </div>
+
+      {/* Expandable subtask checklist */}
+      {expanded && subtasks.length > 0 && (
+        <div
+          className="pt-1 space-y-0.5"
+          style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)' }}
+        >
+          {subtasks.map((subtask) => (
+            <button
+              key={subtask.id}
+              type="button"
+              onClick={() => onToggleSubtask?.(todo.id, subtask.id, !subtask.completed)}
+              className="flex items-center gap-2 w-full text-left py-0.5 px-0.5 rounded transition-colors hover:bg-white/5"
+            >
+              {subtask.completed ? (
+                <CheckSquare className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--status-done)' }} />
+              ) : (
+                <Square className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+              )}
+              <span
+                className="text-[11px] leading-snug"
+                style={{
+                  color: subtask.completed ? 'var(--text-muted)' : 'var(--text-primary)',
+                  textDecoration: subtask.completed ? 'line-through' : 'none',
+                }}
+              >
+                {subtask.title}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
 
-export function TodoItem({ todo, onStatusChange, onPriorityChange, onDelete, onEdit, onRestore, isDragging: isOverlay, isArchiveView }: TodoItemProps) {
+export function TodoItem({ todo, onStatusChange, onPriorityChange, onDelete, onEdit, onRestore, onToggleSubtask, isDragging: isOverlay, isArchiveView }: TodoItemProps) {
   const {
     attributes,
     listeners,
@@ -442,6 +488,7 @@ export function TodoItem({ todo, onStatusChange, onPriorityChange, onDelete, onE
           onDelete={onDelete}
           onEdit={onEdit}
           onRestore={onRestore}
+          onToggleSubtask={onToggleSubtask}
           isDragging={dragging}
           isArchiveView={isArchiveView}
         />

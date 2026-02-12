@@ -2,21 +2,19 @@ export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
 
 export type Status = 'TODO' | 'IN_PROGRESS' | 'WAITING' | 'ON_HOLD' | 'COMPLETED'
 
-export interface Category {
-  id: string
-  name: string
-  color: string
-  icon: string | null
-  createdAt: string
-  updatedAt: string
-}
-
 export interface Label {
   id: string
   name: string
   color: string
   createdAt: string
   updatedAt: string
+}
+
+export interface Subtask {
+  id: string
+  title: string
+  completed: boolean
+  order: number
 }
 
 export interface Todo {
@@ -31,9 +29,15 @@ export interface Todo {
   order: number
   createdAt: string
   updatedAt: string
-  categoryId: string | null
-  category: Category | null
   labels: Label[]
+  subtasks: Subtask[]
+}
+
+export interface SubtaskInput {
+  id?: string
+  title: string
+  completed?: boolean
+  order: number
 }
 
 export interface CreateTodoInput {
@@ -42,8 +46,8 @@ export interface CreateTodoInput {
   priority?: Priority
   status?: Status
   dueDate?: string | null
-  categoryId?: string | null
   labelIds?: string[]
+  subtasks?: SubtaskInput[]
 }
 
 export interface UpdateTodoInput {
@@ -52,6 +56,6 @@ export interface UpdateTodoInput {
   status?: Status
   priority?: Priority
   dueDate?: string | null
-  categoryId?: string | null
   labelIds?: string[]
+  subtasks?: SubtaskInput[]
 }

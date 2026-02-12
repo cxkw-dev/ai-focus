@@ -41,6 +41,7 @@ export function TodoList({ onEdit }: TodoListProps) {
     permanentDelete,
     restore,
     reorder,
+    toggleSubtask,
   } = useTodos()
 
   const [filter, setFilter] = React.useState<Filter>('all')
@@ -115,6 +116,12 @@ export function TodoList({ onEdit }: TodoListProps) {
   const handleRestore = React.useCallback(
     (id: string) => restore.mutate(id),
     [restore]
+  )
+
+  const handleToggleSubtask = React.useCallback(
+    (todoId: string, subtaskId: string, completed: boolean) =>
+      toggleSubtask.mutate({ todoId, subtaskId, completed }),
+    [toggleSubtask]
   )
 
   const activeTodo = activeId ? todos.find((t) => t.id === activeId) : null
@@ -241,6 +248,7 @@ export function TodoList({ onEdit }: TodoListProps) {
                       onDelete={isArchiveView ? handlePermanentDelete : handleDelete}
                       onEdit={onEdit}
                       onRestore={handleRestore}
+                      onToggleSubtask={handleToggleSubtask}
                       isArchiveView={isArchiveView}
                     />
                   ))

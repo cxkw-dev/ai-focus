@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import type { Todo, Priority, Status } from '@/types/todo'
+import type { Todo, Priority, Status, SubtaskInput } from '@/types/todo'
 
 interface TodoFormState {
   title: string
@@ -14,10 +14,13 @@ interface TodoFormState {
   setStatus: (v: Status) => void
   dueDate: string
   setDueDate: (v: string) => void
-  categoryId: string
-  setCategoryId: (v: string) => void
   labelIds: string[]
   setLabelIds: (v: string[]) => void
+  subtasks: SubtaskInput[]
+  addSubtask: (title: string) => void
+  removeSubtask: (index: number) => void
+  updateSubtaskTitle: (index: number, title: string) => void
+  toggleSubtask: (index: number) => void
   reset: () => void
   toPayload: () => {
     title: string
@@ -25,8 +28,8 @@ interface TodoFormState {
     priority: Priority
     status: Status
     dueDate: string | null
-    categoryId: string | null
     labelIds: string[]
+    subtasks: SubtaskInput[]
   }
 }
 
@@ -36,8 +39,8 @@ export function useTodoForm(todo?: Todo | null): TodoFormState {
   const [priority, setPriority] = React.useState<Priority>('MEDIUM')
   const [status, setStatus] = React.useState<Status>('TODO')
   const [dueDate, setDueDate] = React.useState('')
-  const [categoryId, setCategoryId] = React.useState<string>('')
   const [labelIds, setLabelIds] = React.useState<string[]>([])
+  const [subtasks, setSubtasks] = React.useState<SubtaskInput[]>([])
 
   const reset = React.useCallback(() => {
     setTitle('')
@@ -45,8 +48,8 @@ export function useTodoForm(todo?: Todo | null): TodoFormState {
     setPriority('MEDIUM')
     setStatus('TODO')
     setDueDate('')
-    setCategoryId('')
     setLabelIds([])
+    setSubtasks([])
   }, [])
 
   const populateFromTodo = React.useCallback((t: Todo) => {
@@ -55,8 +58,10 @@ export function useTodoForm(todo?: Todo | null): TodoFormState {
     setPriority(t.priority)
     setStatus(t.status)
     setDueDate(t.dueDate ? t.dueDate.split('T')[0] : '')
-    setCategoryId(t.categoryId || '')
     setLabelIds(t.labels?.map(l => l.id) ?? [])
+    setSubtasks(
+      t.subtasks?.map(s => ({ id: s.id, title: s.title, completed: s.completed, order: s.order })) ?? []
+    )
   }, [])
 
   React.useEffect(() => {
@@ -67,15 +72,37 @@ export function useTodoForm(todo?: Todo | null): TodoFormState {
     }
   }, [todo, populateFromTodo, reset])
 
+  const addSubtask = React.useCallback((subtaskTitle: string) => {
+    if (!subtaskTitle.trim()) return
+    setSubtasks(prev => [...prev, { title: subtaskTitle.trim(), completed: false, order: prev.length }])
+  }, [])
+
+  const removeSubtask = React.useCallback((index: number) => {
+    setSubtasks(prev => prev.filter((_, i) => i !== index).map((s, i) => ({ ...s, order: i })))
+  }, [])
+
+  const updateSubtaskTitle = React.useCallback((index: number, newTitle: string) => {
+    setSubtasks(prev => prev.map((s, i) => (i === index ? { ...s, title: newTitle } : s)))
+  }, [])
+
+  const toggleSubtask = React.useCallback((index: number) => {
+    setSubtasks(prev => prev.map((s, i) => (i === index ? { ...s, completed: !s.completed } : s)))
+  }, [])
+
   const toPayload = React.useCallback(() => ({
     title: title.trim(),
     description: description.trim() || undefined,
     priority,
     status,
     dueDate: dueDate ? new Date(dueDate).toISOString() : null,
-    categoryId: categoryId || null,
     labelIds,
-  }), [title, description, priority, status, dueDate, categoryId, labelIds])
+    subtasks: subtasks.map((s, i) => ({
+      ...(s.id ? { id: s.id } : {}),
+      title: s.title,
+      completed: s.completed ?? false,
+      order: i,
+    })),
+  }), [title, description, priority, status, dueDate, labelIds, subtasks])
 
   return {
     title, setTitle,
@@ -83,8 +110,12 @@ export function useTodoForm(todo?: Todo | null): TodoFormState {
     priority, setPriority,
     status, setStatus,
     dueDate, setDueDate,
-    categoryId, setCategoryId,
     labelIds, setLabelIds,
+    subtasks,
+    addSubtask,
+    removeSubtask,
+    updateSubtaskTitle,
+    toggleSubtask,
     reset,
     toPayload,
   }

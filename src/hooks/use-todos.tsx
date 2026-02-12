@@ -14,13 +14,11 @@ export function useTodos() {
   const todosQuery = useQuery({
     queryKey: ['todos'],
     queryFn: () => todosApi.list(),
-    refetchInterval: 3000,
   })
 
   const archivedQuery = useQuery({
     queryKey: ['todos', 'archived'],
     queryFn: () => todosApi.list({ archived: true }),
-    refetchInterval: 3000,
   })
 
   const create = useMutation({
@@ -182,6 +180,27 @@ export function useTodos() {
     },
   })
 
+  const toggleSubtask = useMutation({
+    mutationFn: ({ todoId, subtaskId, completed }: { todoId: string; subtaskId: string; completed: boolean }) =>
+      todosApi.toggleSubtask(todoId, subtaskId, completed),
+    onMutate: async ({ todoId, subtaskId, completed }) => {
+      await queryClient.cancelQueries({ queryKey: ['todos'] })
+      const previous = queryClient.getQueryData<Todo[]>(['todos'])
+      queryClient.setQueryData<Todo[]>(['todos'], (prev = []) =>
+        prev.map(t =>
+          t.id === todoId
+            ? { ...t, subtasks: t.subtasks.map(s => (s.id === subtaskId ? { ...s, completed } : s)) }
+            : t
+        )
+      )
+      return { previous }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(['todos'], context.previous)
+      toast({ title: 'Error', description: 'Failed to toggle subtask.', variant: 'destructive' })
+    },
+  })
+
   const reorder = useMutation({
     mutationFn: (reorderedTodos: Todo[]) =>
       todosApi.reorder(reorderedTodos.map(t => t.id)),
@@ -210,5 +229,6 @@ export function useTodos() {
     restore,
     permanentDelete,
     reorder,
+    toggleSubtask,
   }
 }
