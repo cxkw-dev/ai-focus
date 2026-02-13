@@ -92,13 +92,14 @@ src/
 │   │   ├── labels/         # CRUD
 │   │   ├── notebook/       # Notebook notes CRUD
 │   │   ├── note/           # Scratch pad GET/PATCH
+│   │   ├── github/         # GitHub PR status proxy (read-only)
 │   │   ├── stats/year/     # Year review statistics
 │   │   └── events/         # SSE stream for real-time updates
 │   ├── layout.tsx          # Root layout (fonts, providers)
 │   └── page.tsx            # Redirects to /todos
 ├── components/
 │   ├── layout/             # Sidebar, Header, DashboardLayout
-│   ├── todos/              # TodoItem, TodoList, forms, label picker, scratch pad
+│   ├── todos/              # TodoItem, TodoList, forms, label picker, PR badges, scratch pad
 │   ├── notes/              # NoteEditor, NotesSidebar
 │   ├── review/             # Chart components (monthly, status, priority, labels, highlights)
 │   ├── settings/           # LabelManager
@@ -109,17 +110,18 @@ src/
 │   ├── use-labels.ts       # Label CRUD
 │   ├── use-notebook.ts     # Notebook notes CRUD
 │   ├── use-todo-form.ts    # Shared form state for all 3 todo form variants
+│   ├── use-github-pr-status.ts # GitHub PR status queries (single + batch)
 │   ├── use-sse.ts          # SSE client for real-time cache invalidation
 │   ├── use-year-stats.ts   # Year review stats query
 │   └── use-chart-colors.ts # Dynamic chart colors from CSS variables
 ├── lib/
-│   ├── api.ts              # Typed API client (todosApi, labelsApi, notebookApi, statsApi)
+│   ├── api.ts              # Typed API client (todosApi, labelsApi, notebookApi, statsApi, githubApi)
 │   ├── db.ts               # Prisma client singleton
 │   ├── events.ts           # In-memory event emitter for SSE
 │   ├── themes.ts           # Theme definitions + applyTheme()
 │   └── utils.ts            # cn() helper
 └── types/
-    ├── todo.ts             # Todo, Subtask, Label, Priority, Status
+    ├── todo.ts             # Todo, Subtask, Label, GitHubPrStatus, Priority, Status
     ├── notebook.ts         # NotebookNote
     ├── note.ts             # Note (scratch pad)
     └── stats.ts            # YearStats
@@ -132,7 +134,7 @@ mcp-server/                 # MCP server for Claude Code integration
 ## Database Schema
 
 ### Models
-- **Todo** — id, taskNumber (auto-increment), title, description, priority, dueDate, status, order, archived, labels[], subtasks[]
+- **Todo** — id, taskNumber (auto-increment), title, description, priority, dueDate, status, order, archived, myPrUrl, githubPrUrls[], labels[], subtasks[]
 - **Subtask** — id, title, completed, order, todoId (cascade delete)
 - **Label** — id, name (unique), color, todos[]
 - **Note** — Single scratch pad record (id defaults to "default")
@@ -179,7 +181,7 @@ The app has **separate UI components for desktop and mobile**, not just CSS brea
 
 - **InlineTodoForm (desktop):** Keep controls compact. Use dropdowns/popovers for selectors, not inline lists. Everything should fit in tight toolbar rows.
 - **CreateTodoModal (mobile):** More vertical space available. Fields can be stacked full-width. Dropdowns preferred over inline lists.
-- **EditTodoDialog:** Two-column at `md+` breakpoint. Left: title + description. Right: status, priority, due date, labels.
+- **EditTodoDialog:** Two-column at `md+` breakpoint. Left: title + description + subtasks. Right: status, priority, due date, my PR, waiting on PRs, labels.
 - The main page layout is in `src/app/(dashboard)/todos/page.tsx` — desktop shows InlineTodoForm + todo list + scratch pad in columns; mobile shows tabs + FAB.
 
 ## Theme System
@@ -262,7 +264,7 @@ The `mcp-server/` directory contains a Model Context Protocol server for Claude 
 
 - **Transport:** StdioServerTransport
 - **API Base:** `AI_FOCUS_API_URL` env var (defaults to `http://localhost:4444`)
-- **Features:** Full CRUD for todos/labels/notebook/notes, subtask management, year stats
+- **Features:** Full CRUD for todos/labels/notebook/notes, subtask management, GitHub PR tracking, year stats
 - **taskNumber system:** Todos have auto-increment `taskNumber` for easy CLI reference (e.g. "complete task 7")
 - **Rich text:** Converts plain text to HTML for TipTap editor (bold, italic, lists)
 
