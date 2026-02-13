@@ -14,9 +14,10 @@ const STATE_CONFIG = {
 
 interface GitHubPrBadgeProps {
   url: string
+  showTitle?: boolean
 }
 
-export function GitHubPrBadge({ url }: GitHubPrBadgeProps) {
+export function GitHubPrBadge({ url, showTitle }: GitHubPrBadgeProps) {
   const { data, isLoading, isError } = useGithubPrStatus(url)
 
   // Extract PR number from URL as fallback
@@ -60,13 +61,13 @@ export function GitHubPrBadge({ url }: GitHubPrBadgeProps) {
   const config = STATE_CONFIG[data.state]
   const Icon = config.icon
 
-  return (
+  const chip = (
     <a
       href={url}
       target="_blank"
       rel="noopener noreferrer"
       onClick={(e) => e.stopPropagation()}
-      className={cn(CHIP_BASE, 'hover:brightness-110 cursor-pointer no-underline')}
+      className={cn(CHIP_BASE, 'hover:brightness-110 cursor-pointer no-underline flex-shrink-0')}
       style={{
         backgroundColor: `color-mix(in srgb, ${config.color} 15%, transparent)`,
         color: config.color,
@@ -78,13 +79,28 @@ export function GitHubPrBadge({ url }: GitHubPrBadgeProps) {
       <span>#{data.number}</span>
     </a>
   )
+
+  if (!showTitle) return chip
+
+  return (
+    <span className="inline-flex items-center gap-1.5 min-w-0">
+      {chip}
+      <span
+        className="text-[10px] truncate"
+        style={{ color: 'var(--text-muted)' }}
+      >
+        {data.title}
+      </span>
+    </span>
+  )
 }
 
 interface GitHubPrRowProps {
   urls: string[]
+  showTitle?: boolean
 }
 
-export function GitHubPrRow({ urls }: GitHubPrRowProps) {
+export function GitHubPrRow({ urls, showTitle }: GitHubPrRowProps) {
   const { isLoading, allMergedOrClosed, allMerged } = useGithubPrStatuses(urls)
 
   let label: string
@@ -114,7 +130,7 @@ export function GitHubPrRow({ urls }: GitHubPrRowProps) {
         {label}
       </span>
       {urls.map((url) => (
-        <GitHubPrBadge key={url} url={url} />
+        <GitHubPrBadge key={url} url={url} showTitle={showTitle} />
       ))}
     </div>
   )

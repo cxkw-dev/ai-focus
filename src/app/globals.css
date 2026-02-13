@@ -481,6 +481,45 @@ h1, h2, h3, h4, h5, h6 {
   background-color: color-mix(in srgb, var(--destructive) 25%, transparent);
 }
 
+/* PR dependency tree connectors */
+.pr-tree-branch {
+  position: relative;
+  padding: 2px 0 2px 26px;
+  margin-left: 6px;
+}
+
+/* Vertical connector — top to bottom (middle branches) or top to center (last branch) */
+.pr-tree-branch::before {
+  --tw-content: '';
+  content: var(--tw-content);
+  display: block;
+  position: absolute;
+  left: 12px;
+  top: 0;
+  bottom: 0;
+  width: 1.5px;
+  background-color: var(--border-color);
+}
+
+/* Horizontal arm at center */
+.pr-tree-branch::after {
+  --tw-content: '';
+  content: var(--tw-content);
+  display: block;
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  width: 12px;
+  height: 1.5px;
+  background-color: var(--border-color);
+}
+
+/* Last branch — vertical stops at center */
+.pr-tree-branch-last::before {
+  bottom: auto;
+  height: 50%;
+}
+
 .todo-drag-handle {
   color: color-mix(in srgb, var(--text-muted) 40%, transparent);
 }
