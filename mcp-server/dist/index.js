@@ -26,6 +26,9 @@ function textResult(data) {
         content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
     };
 }
+function isApiError(data) {
+    return Boolean(data && typeof data === "object" && "_error" in data);
+}
 // Convert plain text to HTML paragraphs for the rich text editor.
 // Supports basic markdown-like syntax: **bold**, *italic*, - bullet lists.
 function toHtml(text) {
@@ -70,6 +73,12 @@ function formatTodoSummary(todos) {
             const done = t.subtasks.filter((s) => s.completed).length;
             parts.push(`   subtasks: ${done}/${t.subtasks.length} done`);
         }
+        if (t.myPrUrl) {
+            parts.push(`   my pr: ${t.myPrUrl}`);
+        }
+        if (t.githubPrUrls?.length) {
+            parts.push(`   waiting on: ${t.githubPrUrls.join(", ")}`);
+        }
         return parts.join("\n");
     }).join("\n\n");
 }
@@ -106,6 +115,8 @@ server.tool("list_todos", "List todos/tasks from AI Focus. Returns a compact sum
         query.set("archived", "true");
     const qs = query.toString();
     const data = await apiFetch(`/api/todos${qs ? `?${qs}` : ""}`);
+    if (isApiError(data))
+        return textResult(data);
     if (params.verbose)
         return textResult(data);
     return {
@@ -149,6 +160,15 @@ server.tool("create_todo", "Create a new todo/task in AI Focus.", {
         .array(z.string())
         .optional()
         .describe("Array of subtask titles to create"),
+    myPrUrl: z
+        .string()
+        .nullable()
+        .optional()
+        .describe("GitHub PR URL for this task's own PR"),
+    githubPrUrls: z
+        .array(z.string())
+        .optional()
+        .describe("Array of dependency GitHub PR URLs to wait on"),
 }, async (params) => {
     const { subtasks: subtaskTitles, ...rest } = params;
     const body = { ...rest };
@@ -209,6 +229,15 @@ IMPORTANT — Description handling:
     }))
         .optional()
         .describe("Replace all subtasks (declarative sync). Include id for existing subtasks, omit for new ones."),
+    myPrUrl: z
+        .string()
+        .nullable()
+        .optional()
+        .describe("GitHub PR URL for this task's own PR"),
+    githubPrUrls: z
+        .array(z.string())
+        .optional()
+        .describe("Array of dependency GitHub PR URLs to wait on"),
 }, async ({ taskNumber, id, descriptionMode, ...updates }) => {
     const key = taskNumber?.toString() ?? id;
     if (!key)
@@ -352,6 +381,8 @@ server.tool("search_todos", "Search todos by title or description text. Returns 
     query: z.string().min(1).describe("Search text to match against todo titles"),
 }, async ({ query }) => {
     const data = await apiFetch("/api/todos");
+    if (isApiError(data))
+        return textResult(data);
     const q = query.toLowerCase();
     const filtered = data.filter((t) => t.title.toLowerCase().includes(q) ||
         (t.description && t.description.toLowerCase().includes(q)));

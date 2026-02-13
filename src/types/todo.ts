@@ -31,6 +31,18 @@ export interface Todo {
   updatedAt: string
   labels: Label[]
   subtasks: Subtask[]
+  myPrUrl: string | null
+  githubPrUrls: string[]
+}
+
+export interface GitHubPrStatus {
+  state: 'open' | 'merged' | 'closed'
+  merged: boolean
+  title: string
+  url: string
+  number: number
+  author: string
+  draft: boolean
 }
 
 export interface SubtaskInput {
@@ -48,6 +60,8 @@ export interface CreateTodoInput {
   dueDate?: string | null
   labelIds?: string[]
   subtasks?: SubtaskInput[]
+  myPrUrl?: string | null
+  githubPrUrls?: string[]
 }
 
 export interface UpdateTodoInput {
@@ -58,4 +72,6 @@ export interface UpdateTodoInput {
   dueDate?: string | null
   labelIds?: string[]
   subtasks?: SubtaskInput[]
+  myPrUrl?: string | null
+  githubPrUrls?: string[]
 }

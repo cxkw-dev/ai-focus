@@ -20,8 +20,7 @@ import {
   Square,
   CheckSquare,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { formatRelativeDate } from '@/lib/utils'
+import { cn, formatRelativeDate } from '@/lib/utils'
 import { PRIORITY_MAP } from '@/lib/priority'
 import {
   DropdownMenu,
@@ -29,6 +28,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { GitHubPrBadge, GitHubPrRow } from './github-pr-badge'
 import type { Todo, Status, Priority } from '@/types/todo'
 
 const CHIP_BASE = 'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors'
@@ -386,6 +386,24 @@ function TodoItemContent({
           )}
         </div>
       </div>
+
+      {/* My PR */}
+      {todo.myPrUrl && (
+        <div
+          className="flex items-center gap-1.5 flex-wrap pt-1.5"
+          style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)' }}
+        >
+          <span className="text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>
+            My PR
+          </span>
+          <GitHubPrBadge url={todo.myPrUrl} />
+        </div>
+      )}
+
+      {/* Dependency PRs */}
+      {todo.githubPrUrls?.length > 0 && (
+        <GitHubPrRow urls={todo.githubPrUrls} />
+      )}
 
       {/* Expandable subtask checklist */}
       {expanded && subtasks.length > 0 && (

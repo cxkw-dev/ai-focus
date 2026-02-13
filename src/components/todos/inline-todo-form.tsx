@@ -3,12 +3,13 @@
 import * as React from 'react'
 import {
   CalendarDays,
+  GitPullRequest,
   Loader2,
   Plus,
   X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { PRIORITIES, PRIORITY_MAP } from '@/lib/priority'
+import { PRIORITIES } from '@/lib/priority'
 import { LabelMultiSelect, LabelManagerDialog } from './label-multi-select'
 import { useLabels } from '@/hooks/use-labels'
 import { useTodoForm } from '@/hooks/use-todo-form'
@@ -28,20 +29,28 @@ export function InlineTodoForm({
   const [isExpanded, setIsExpanded] = React.useState(false)
   const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
+  const [newPrUrl, setNewPrUrl] = React.useState('')
   const resetForm = form.reset
 
   const submitCurrentTodo = React.useCallback(async () => {
     if (!form.title.trim()) return false
 
-    const success = await onSubmit(form.toPayload())
+    const payload = form.toPayload()
+    // Include pending PR URL that wasn't explicitly added
+    const pendingUrl = newPrUrl.trim()
+    if (pendingUrl && !payload.githubPrUrls.includes(pendingUrl)) {
+      payload.githubPrUrls = [...payload.githubPrUrls, pendingUrl]
+    }
+    const success = await onSubmit(payload)
     if (success) {
       resetForm()
       setNewSubtaskTitle('')
+      setNewPrUrl('')
       setIsExpanded(false)
     }
 
     return success
-  }, [form, onSubmit, resetForm])
+  }, [form, onSubmit, resetForm, newPrUrl])
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -49,6 +58,7 @@ export function InlineTodoForm({
         setIsExpanded(false)
         resetForm()
         setNewSubtaskTitle('')
+        setNewPrUrl('')
       }
     }
     document.addEventListener('keydown', handleKeyDown)
@@ -261,6 +271,58 @@ export function InlineTodoForm({
                 </div>
               </div>
 
+              {/* GitHub PRs Row */}
+              <div
+                className="px-4 py-3"
+                style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 30%, transparent)' }}
+              >
+                <div className="space-y-1">
+                  {form.githubPrUrls.map((url, index) => (
+                    <div key={url} className="flex items-center gap-2 group/pr">
+                      <GitPullRequest className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                      <span className="text-xs flex-1 truncate" style={{ color: 'var(--text-primary)' }}>
+                        {url.replace(/^https?:\/\/github\.com\//, '')}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => form.removeGithubPrUrl(index)}
+                        className="flex-shrink-0 opacity-0 group-hover/pr:opacity-100 transition-opacity"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <div
+                    className="flex items-center gap-2 rounded-md px-2 py-1.5 border"
+                    style={{
+                      backgroundColor: 'color-mix(in srgb, var(--background) 50%, transparent)',
+                      borderColor: 'color-mix(in srgb, var(--border-color) 60%, transparent)',
+                    }}
+                  >
+                    <input
+                      type="url"
+                      value={newPrUrl}
+                      onChange={(e) => setNewPrUrl(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          if (newPrUrl.trim()) {
+                            form.addGithubPrUrl(newPrUrl)
+                            setNewPrUrl('')
+                          }
+                        }
+                      }}
+                      placeholder="... insert url"
+                      disabled={isLoading}
+                      className="flex-1 bg-transparent text-xs focus:outline-none placeholder:text-[var(--text-muted)] min-w-0"
+                      style={{ color: 'var(--text-primary)' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Actions Row */}
               <div
                 className="px-4 py-3 flex items-center justify-end gap-2"
@@ -271,6 +333,7 @@ export function InlineTodoForm({
                   onClick={() => {
                     setIsExpanded(false)
                     resetForm()
+                    setNewPrUrl('')
                   }}
                   className="px-3 py-1.5 text-xs font-medium rounded-md transition-colors hover:bg-white/5"
                   style={{ color: 'var(--text-muted)' }}

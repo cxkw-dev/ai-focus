@@ -11,6 +11,8 @@ import {
   X,
   Square,
   CheckSquare,
+  GitPullRequest,
+  GitPullRequestArrow,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -33,6 +35,7 @@ import {
 } from '@/components/ui/dialog'
 import { LabelMultiSelect, LabelManagerDialog } from './label-multi-select'
 import { PrioritySelector } from './priority-selector'
+import { GitHubPrBadge } from './github-pr-badge'
 import { useLabels } from '@/hooks/use-labels'
 import { useTodoForm } from '@/hooks/use-todo-form'
 import type { Todo, UpdateTodoInput, Status } from '@/types/todo'
@@ -58,6 +61,8 @@ export function EditTodoDialog({
   const { labels, handleCreate: onCreateLabel, handleUpdate: onUpdateLabel, handleDelete: onDeleteLabel } = useLabels()
   const form = useTodoForm(todo)
   const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
+  const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
+  const [newPrUrl, setNewPrUrl] = React.useState('')
 
   const isEditing = !!todo
 
@@ -65,6 +70,11 @@ export function EditTodoDialog({
   const handleClose = React.useCallback(() => {
     if (isEditing && todo && form.title.trim()) {
       const payload = form.toPayload()
+      // Include pending PR URL that wasn't explicitly added
+      const pendingUrl = newPrUrl.trim()
+      if (pendingUrl && !payload.githubPrUrls.includes(pendingUrl)) {
+        payload.githubPrUrls = [...payload.githubPrUrls, pendingUrl]
+      }
       const original = JSON.stringify({
         title: todo.title.trim(),
         description: todo.description?.trim() || undefined,
@@ -78,6 +88,8 @@ export function EditTodoDialog({
           completed: s.completed,
           order: i,
         })) ?? [],
+        myPrUrl: todo.myPrUrl || null,
+        githubPrUrls: todo.githubPrUrls ?? [],
       })
       if (JSON.stringify(payload) !== original) {
         onSubmit(payload)
@@ -85,9 +97,7 @@ export function EditTodoDialog({
       }
     }
     onOpenChange(false)
-  }, [isEditing, todo, form, onSubmit, onOpenChange])
-
-  const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
+  }, [isEditing, todo, form, onSubmit, onOpenChange, newPrUrl])
 
   const handleAddSubtask = React.useCallback(() => {
     if (newSubtaskTitle.trim()) {
@@ -275,6 +285,105 @@ export function EditTodoDialog({
                     onChange={(e) => form.setDueDate(e.target.value)}
                     className="h-10 text-sm"
                   />
+                </div>
+
+                {/* My PR */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                    <GitPullRequestArrow className="h-3.5 w-3.5" />
+                    My PR
+                  </Label>
+                  <div
+                    className="flex items-center gap-2 rounded-md px-2.5 py-1.5 border"
+                    style={{
+                      backgroundColor: 'color-mix(in srgb, var(--background) 50%, transparent)',
+                      borderColor: 'var(--border-color)',
+                    }}
+                  >
+                    <input
+                      type="url"
+                      value={form.myPrUrl}
+                      onChange={(e) => form.setMyPrUrl(e.target.value)}
+                      placeholder="... insert url"
+                      className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-[var(--text-muted)] min-w-0"
+                      style={{ color: 'var(--text-primary)' }}
+                    />
+                    {form.myPrUrl.trim() && (
+                      <button
+                        type="button"
+                        onClick={() => form.setMyPrUrl('')}
+                        className="flex-shrink-0 transition-opacity"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                  {form.myPrUrl.trim() && (
+                    <GitHubPrBadge url={form.myPrUrl.trim()} />
+                  )}
+                </div>
+
+                {/* Dependency PRs */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                    <GitPullRequest className="h-3.5 w-3.5" />
+                    Waiting On
+                  </Label>
+                  <div className="space-y-1.5">
+                    {form.githubPrUrls.map((url, index) => (
+                      <div key={url} className="flex items-center gap-2 group/pr">
+                        <GitHubPrBadge url={url} />
+                        <button
+                          type="button"
+                          onClick={() => form.removeGithubPrUrl(index)}
+                          className="flex-shrink-0 opacity-0 group-hover/pr:opacity-100 transition-opacity"
+                          style={{ color: 'var(--text-muted)' }}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                    <div
+                      className="flex items-center gap-2 rounded-md px-2.5 py-1.5 border"
+                      style={{
+                        backgroundColor: 'color-mix(in srgb, var(--background) 50%, transparent)',
+                        borderColor: 'var(--border-color)',
+                      }}
+                    >
+                      <input
+                        type="url"
+                        value={newPrUrl}
+                        onChange={(e) => setNewPrUrl(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            if (newPrUrl.trim()) {
+                              form.addGithubPrUrl(newPrUrl)
+                              setNewPrUrl('')
+                            }
+                          }
+                        }}
+                        placeholder="... insert url"
+                        className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-[var(--text-muted)] min-w-0"
+                        style={{ color: 'var(--text-primary)' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (newPrUrl.trim()) {
+                            form.addGithubPrUrl(newPrUrl)
+                            setNewPrUrl('')
+                          }
+                        }}
+                        disabled={!newPrUrl.trim()}
+                        className="flex-shrink-0 text-xs font-medium px-2 py-1 rounded transition-colors disabled:opacity-30"
+                        style={{ color: 'var(--primary)' }}
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Labels */}

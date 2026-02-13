@@ -19,6 +19,8 @@ model Todo {
   order       Int       @default(0)
   archived    Boolean   @default(false)
   status      Status    @default(TODO)
+  myPrUrl      String?
+  githubPrUrls String[]  @default([])
   labels      Label[]   @relation("LabelToTodo")
   subtasks    Subtask[]
 

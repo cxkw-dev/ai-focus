@@ -83,6 +83,8 @@ interface TodoResponse {
   archived?: boolean;
   labels?: { name: string }[];
   subtasks?: SubtaskResponse[];
+  myPrUrl?: string | null;
+  githubPrUrls?: string[];
 }
 
 function formatTodoSummary(todos: TodoResponse[]) {
@@ -95,6 +97,12 @@ function formatTodoSummary(todos: TodoResponse[]) {
     if (t.subtasks?.length) {
       const done = t.subtasks.filter((s) => s.completed).length;
       parts.push(`   subtasks: ${done}/${t.subtasks.length} done`);
+    }
+    if (t.myPrUrl) {
+      parts.push(`   my pr: ${t.myPrUrl}`);
+    }
+    if (t.githubPrUrls?.length) {
+      parts.push(`   waiting on: ${t.githubPrUrls.join(", ")}`);
     }
     return parts.join("\n");
   }).join("\n\n");
@@ -190,6 +198,15 @@ server.tool(
       .array(z.string())
       .optional()
       .describe("Array of subtask titles to create"),
+    myPrUrl: z
+      .string()
+      .nullable()
+      .optional()
+      .describe("GitHub PR URL for this task's own PR"),
+    githubPrUrls: z
+      .array(z.string())
+      .optional()
+      .describe("Array of dependency GitHub PR URLs to wait on"),
   },
   async (params) => {
     const { subtasks: subtaskTitles, ...rest } = params;
@@ -255,6 +272,15 @@ IMPORTANT — Description handling:
       }))
       .optional()
       .describe("Replace all subtasks (declarative sync). Include id for existing subtasks, omit for new ones."),
+    myPrUrl: z
+      .string()
+      .nullable()
+      .optional()
+      .describe("GitHub PR URL for this task's own PR"),
+    githubPrUrls: z
+      .array(z.string())
+      .optional()
+      .describe("Array of dependency GitHub PR URLs to wait on"),
   },
   async ({ taskNumber, id, descriptionMode, ...updates }) => {
     const key = taskNumber?.toString() ?? id;

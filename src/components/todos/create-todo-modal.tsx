@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Plus, X } from 'lucide-react'
+import { GitPullRequest, Plus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -36,6 +36,7 @@ export function CreateTodoModal({
   const form = useTodoForm()
   const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
+  const [newPrUrl, setNewPrUrl] = React.useState('')
   const resetForm = form.reset
 
   React.useEffect(() => {
@@ -46,7 +47,13 @@ export function CreateTodoModal({
     e.preventDefault()
     if (!form.title.trim()) return
 
-    const success = await onSubmit(form.toPayload())
+    const payload = form.toPayload()
+    // Include pending PR URL that wasn't explicitly added
+    const pendingUrl = newPrUrl.trim()
+    if (pendingUrl && !payload.githubPrUrls.includes(pendingUrl)) {
+      payload.githubPrUrls = [...payload.githubPrUrls, pendingUrl]
+    }
+    const success = await onSubmit(payload)
     if (success) onOpenChange(false)
   }
 
@@ -147,6 +154,53 @@ export function CreateTodoModal({
                   }}
                   placeholder="Add a subtask..."
                   className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-[var(--text-muted)] border-b border-transparent focus:border-[var(--border-color)] transition-colors pb-1"
+                  style={{ color: 'var(--text-primary)' }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>GitHub PRs</Label>
+            <div className="space-y-1.5">
+              {form.githubPrUrls.map((url, index) => (
+                <div key={url} className="flex items-center gap-2 group/pr">
+                  <GitPullRequest className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                  <span className="text-xs flex-1 truncate" style={{ color: 'var(--text-primary)' }}>
+                    {url.replace(/^https?:\/\/github\.com\//, '')}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => form.removeGithubPrUrl(index)}
+                    className="flex-shrink-0 opacity-0 group-hover/pr:opacity-100 transition-opacity"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+              <div
+                className="flex items-center gap-2 rounded-md px-2.5 py-1.5 border"
+                style={{
+                  backgroundColor: 'color-mix(in srgb, var(--background) 50%, transparent)',
+                  borderColor: 'var(--border-color)',
+                }}
+              >
+                <input
+                  type="url"
+                  value={newPrUrl}
+                  onChange={(e) => setNewPrUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      if (newPrUrl.trim()) {
+                        form.addGithubPrUrl(newPrUrl)
+                        setNewPrUrl('')
+                      }
+                    }
+                  }}
+                  placeholder="... insert url"
+                  className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-[var(--text-muted)] min-w-0"
                   style={{ color: 'var(--text-primary)' }}
                 />
               </div>

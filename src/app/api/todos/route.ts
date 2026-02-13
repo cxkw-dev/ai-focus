@@ -21,6 +21,8 @@ const createTodoSchema = z.object({
   dueDate: z.string().datetime().optional().nullable(),
   labelIds: z.array(z.string()).optional(),
   subtasks: z.array(subtaskSchema).optional(),
+  myPrUrl: z.string().url().optional().nullable(),
+  githubPrUrls: z.array(z.string().url()).optional(),
 })
 
 const listTodosQuerySchema = z.object({

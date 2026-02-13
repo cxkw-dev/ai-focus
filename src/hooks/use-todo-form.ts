@@ -21,6 +21,12 @@ interface TodoFormState {
   removeSubtask: (index: number) => void
   updateSubtaskTitle: (index: number, title: string) => void
   toggleSubtask: (index: number) => void
+  myPrUrl: string
+  setMyPrUrl: (v: string) => void
+  githubPrUrls: string[]
+  setGithubPrUrls: (v: string[]) => void
+  addGithubPrUrl: (url: string) => void
+  removeGithubPrUrl: (index: number) => void
   reset: () => void
   toPayload: () => {
     title: string
@@ -30,6 +36,8 @@ interface TodoFormState {
     dueDate: string | null
     labelIds: string[]
     subtasks: SubtaskInput[]
+    myPrUrl: string | null
+    githubPrUrls: string[]
   }
 }
 
@@ -41,6 +49,8 @@ export function useTodoForm(todo?: Todo | null): TodoFormState {
   const [dueDate, setDueDate] = React.useState('')
   const [labelIds, setLabelIds] = React.useState<string[]>([])
   const [subtasks, setSubtasks] = React.useState<SubtaskInput[]>([])
+  const [myPrUrl, setMyPrUrl] = React.useState('')
+  const [githubPrUrls, setGithubPrUrls] = React.useState<string[]>([])
 
   const reset = React.useCallback(() => {
     setTitle('')
@@ -50,6 +60,8 @@ export function useTodoForm(todo?: Todo | null): TodoFormState {
     setDueDate('')
     setLabelIds([])
     setSubtasks([])
+    setMyPrUrl('')
+    setGithubPrUrls([])
   }, [])
 
   const populateFromTodo = React.useCallback((t: Todo) => {
@@ -62,6 +74,8 @@ export function useTodoForm(todo?: Todo | null): TodoFormState {
     setSubtasks(
       t.subtasks?.map(s => ({ id: s.id, title: s.title, completed: s.completed, order: s.order })) ?? []
     )
+    setMyPrUrl(t.myPrUrl || '')
+    setGithubPrUrls(t.githubPrUrls ?? [])
   }, [])
 
   React.useEffect(() => {
@@ -89,6 +103,16 @@ export function useTodoForm(todo?: Todo | null): TodoFormState {
     setSubtasks(prev => prev.map((s, i) => (i === index ? { ...s, completed: !s.completed } : s)))
   }, [])
 
+  const addGithubPrUrl = React.useCallback((url: string) => {
+    const trimmed = url.trim()
+    if (!trimmed) return
+    setGithubPrUrls(prev => prev.includes(trimmed) ? prev : [...prev, trimmed])
+  }, [])
+
+  const removeGithubPrUrl = React.useCallback((index: number) => {
+    setGithubPrUrls(prev => prev.filter((_, i) => i !== index))
+  }, [])
+
   const toPayload = React.useCallback(() => ({
     title: title.trim(),
     description: description.trim() || undefined,
@@ -102,7 +126,9 @@ export function useTodoForm(todo?: Todo | null): TodoFormState {
       completed: s.completed ?? false,
       order: i,
     })),
-  }), [title, description, priority, status, dueDate, labelIds, subtasks])
+    myPrUrl: myPrUrl.trim() || null,
+    githubPrUrls,
+  }), [title, description, priority, status, dueDate, labelIds, subtasks, myPrUrl, githubPrUrls])
 
   return {
     title, setTitle,
@@ -116,6 +142,10 @@ export function useTodoForm(todo?: Todo | null): TodoFormState {
     removeSubtask,
     updateSubtaskTitle,
     toggleSubtask,
+    myPrUrl, setMyPrUrl,
+    githubPrUrls, setGithubPrUrls,
+    addGithubPrUrl,
+    removeGithubPrUrl,
     reset,
     toPayload,
   }

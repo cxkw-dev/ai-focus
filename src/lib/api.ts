@@ -1,4 +1,4 @@
-import type { Todo, CreateTodoInput, UpdateTodoInput, Label } from '@/types/todo'
+import type { Todo, CreateTodoInput, UpdateTodoInput, Label, GitHubPrStatus } from '@/types/todo'
 import type { YearStats } from '@/types/stats'
 import type { NotebookNote, CreateNotebookNoteInput, UpdateNotebookNoteInput } from '@/types/notebook'
 
@@ -98,6 +98,11 @@ export const notebookApi = {
 
   delete: (id: string): Promise<{ success: boolean }> =>
     fetch(`/api/notebook/${id}`, { method: 'DELETE' }).then(r => json(r)),
+}
+
+export const githubApi = {
+  getPrStatus: (url: string): Promise<GitHubPrStatus> =>
+    fetch(`/api/github/pr-status?url=${encodeURIComponent(url)}`).then(r => json(r)),
 }
 
 export const statsApi = {

@@ -20,6 +20,8 @@ const updateTodoSchema = z.object({
   dueDate: z.string().datetime().optional().nullable(),
   labelIds: z.array(z.string()).optional(),
   subtasks: z.array(subtaskSchema).optional(),
+  myPrUrl: z.string().url().optional().nullable(),
+  githubPrUrls: z.array(z.string().url()).optional(),
 })
 
 // Resolve an id param that could be a cuid or a task number (e.g. "7")
