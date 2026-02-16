@@ -118,8 +118,8 @@ export function EditTodoDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="w-[96vw] max-w-[1040px] max-h-[90vh] overflow-hidden p-0">
-        <form onSubmit={handleSubmit} className="flex flex-col h-full">
+      <DialogContent className="w-[96vw] max-w-[1040px] max-h-[85vh] flex flex-col overflow-hidden p-0">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
           {/* Header */}
           <div
             className="px-6 py-5 border-b shrink-0"
