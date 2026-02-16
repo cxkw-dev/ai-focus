@@ -1,16 +1,21 @@
 'use client'
 
-import { GitPullRequest, GitMerge, Check, Loader2 } from 'lucide-react'
+import { GitPullRequest, GitMerge, Check, Loader2, CircleDot } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useGithubPrStatus, useGithubPrStatuses } from '@/hooks/use-github-pr-status'
+import type { GitHubPrStatus } from '@/types/todo'
 
 const CHIP_BASE = 'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors'
 
-const STATE_CONFIG = {
-  open: { color: '#3fb950', icon: GitPullRequest, label: 'Open' },
-  merged: { color: '#a371f7', icon: GitMerge, label: 'Merged' },
-  closed: { color: '#f85149', icon: GitPullRequest, label: 'Closed' },
-} as const
+function getBadgeConfig(data: GitHubPrStatus) {
+  if (data.state === 'merged') return { color: '#a371f7', icon: GitMerge, label: 'Merged' }
+  if (data.state === 'closed') return { color: '#f85149', icon: GitPullRequest, label: 'Closed' }
+  if (data.draft) return { color: '#8b949e', icon: GitPullRequest, label: 'Draft' }
+  if (data.reviewStatus === 'changes_requested') return { color: '#e5534b', icon: CircleDot, label: 'Changes' }
+  if (data.reviewStatus === 'review_requested') return { color: '#d29922', icon: GitPullRequest, label: 'In Review' }
+  if (data.reviewStatus === 'approved') return { color: '#3fb950', icon: Check, label: 'Approved' }
+  return { color: '#3fb950', icon: GitPullRequest, label: 'Open' }
+}
 
 interface GitHubPrBadgeProps {
   url: string
@@ -58,7 +63,7 @@ export function GitHubPrBadge({ url, showTitle }: GitHubPrBadgeProps) {
     )
   }
 
-  const config = STATE_CONFIG[data.state]
+  const config = getBadgeConfig(data)
   const Icon = config.icon
 
   const chip = (
@@ -72,7 +77,7 @@ export function GitHubPrBadge({ url, showTitle }: GitHubPrBadgeProps) {
         backgroundColor: `color-mix(in srgb, ${config.color} 15%, transparent)`,
         color: config.color,
       }}
-      title={`${data.title} — ${config.label}${data.draft ? ' (Draft)' : ''}`}
+      title={`${data.title} — ${config.label}`}
     >
       <Icon className="h-3 w-3" />
       <span>{config.label}</span>

@@ -43,6 +43,7 @@ export interface GitHubPrStatus {
   number: number
   author: string
   draft: boolean
+  reviewStatus: 'review_requested' | 'approved' | 'changes_requested' | null
 }
 
 export interface SubtaskInput {
