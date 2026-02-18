@@ -18,6 +18,9 @@ import {
   RemoveFormatting,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { CustomMention } from '@/lib/tiptap-mention'
+import { createMentionSuggestion } from '@/lib/mention-suggestion'
+import type { MentionSuggestionItem } from '@/components/ui/mention-suggestion'
 
 interface RichTextEditorProps {
   value: string
@@ -26,6 +29,7 @@ interface RichTextEditorProps {
   disabled?: boolean
   compact?: boolean
   fullHeight?: boolean
+  mentions?: MentionSuggestionItem[]
 }
 
 function ToolbarButton({
@@ -68,8 +72,21 @@ export function RichTextEditor({
   disabled = false,
   compact = false,
   fullHeight = false,
+  mentions,
 }: RichTextEditorProps) {
   const isInternalUpdate = React.useRef(false)
+  const peopleRef = React.useRef<MentionSuggestionItem[]>(mentions ?? [])
+
+  React.useEffect(() => {
+    peopleRef.current = mentions ?? []
+  }, [mentions])
+
+  const mentionSuggestion = React.useMemo(
+    () => (mentions ? createMentionSuggestion(peopleRef) : null),
+    // Only compute once based on whether mentions is provided
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [!!mentions]
+  )
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -91,6 +108,16 @@ export function RichTextEditor({
       Placeholder.configure({
         placeholder,
       }),
+      ...(mentionSuggestion
+        ? [
+            CustomMention.configure({
+              HTMLAttributes: {
+                class: 'mention',
+              },
+              suggestion: mentionSuggestion,
+            }),
+          ]
+        : []),
     ],
     content: value || '',
     editable: !disabled,

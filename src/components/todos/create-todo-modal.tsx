@@ -16,6 +16,7 @@ import {
 import { LabelMultiSelect, LabelManagerDialog } from './label-multi-select'
 import { PrioritySelector } from './priority-selector'
 import { useLabels } from '@/hooks/use-labels'
+import { usePeople } from '@/hooks/use-people'
 import { useTodoForm } from '@/hooks/use-todo-form'
 import type { CreateTodoInput } from '@/types/todo'
 
@@ -33,6 +34,7 @@ export function CreateTodoModal({
   isLoading,
 }: CreateTodoModalProps) {
   const { labels, handleCreate: onCreateLabel, handleUpdate: onUpdateLabel, handleDelete: onDeleteLabel } = useLabels()
+  const { people } = usePeople()
   const form = useTodoForm()
   const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
@@ -86,6 +88,7 @@ export function CreateTodoModal({
               onChange={form.setDescription}
               placeholder="Add more details..."
               disabled={isLoading}
+              mentions={people.map(p => ({ id: p.id, name: p.name, email: p.email }))}
             />
           </div>
 

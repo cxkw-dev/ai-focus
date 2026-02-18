@@ -388,6 +388,46 @@ server.tool(
   }
 );
 
+// ─── People ───
+
+server.tool(
+  "list_people",
+  "List all people in the directory (name + email). Used for @mentions in task descriptions.",
+  {},
+  async () => {
+    const data = await apiFetch("/api/people");
+    return textResult(data);
+  }
+);
+
+server.tool(
+  "create_person",
+  "Add a person to the directory.",
+  {
+    name: z.string().min(1).max(100).describe("Person's name"),
+    email: z.string().email().max(200).describe("Person's email address"),
+  },
+  async (params) => {
+    const data = await apiFetch("/api/people", {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+    return textResult(data);
+  }
+);
+
+server.tool(
+  "delete_person",
+  "Remove a person from the directory.",
+  {
+    id: z.string().describe("The person's ID"),
+  },
+  async ({ id }) => {
+    const data = await apiFetch(`/api/people/${id}`, { method: "DELETE" });
+    return textResult(data);
+  }
+);
+
 // ─── Notebook ───
 
 server.tool(

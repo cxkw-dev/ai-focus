@@ -1,6 +1,7 @@
 import type { Todo, CreateTodoInput, UpdateTodoInput, Label, GitHubPrStatus } from '@/types/todo'
 import type { YearStats } from '@/types/stats'
 import type { NotebookNote, CreateNotebookNoteInput, UpdateNotebookNoteInput } from '@/types/notebook'
+import type { Person } from '@/types/person'
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) throw new Error(`API error: ${res.status}`)
@@ -103,6 +104,28 @@ export const notebookApi = {
 export const githubApi = {
   getPrStatus: (url: string): Promise<GitHubPrStatus> =>
     fetch(`/api/github/pr-status?url=${encodeURIComponent(url)}`).then(r => json(r)),
+}
+
+export const peopleApi = {
+  list: (): Promise<Person[]> =>
+    fetch('/api/people').then(r => json(r)),
+
+  create: (data: Pick<Person, 'name' | 'email'>): Promise<Person> =>
+    fetch('/api/people', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data),
+    }).then(r => json(r)),
+
+  update: (id: string, data: Partial<Pick<Person, 'name' | 'email'>>): Promise<Person> =>
+    fetch(`/api/people/${id}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify(data),
+    }).then(r => json(r)),
+
+  delete: (id: string): Promise<{ success: boolean }> =>
+    fetch(`/api/people/${id}`, { method: 'DELETE' }).then(r => json(r)),
 }
 
 export const statsApi = {

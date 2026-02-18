@@ -20,6 +20,8 @@ export function useSSE() {
           const { entity } = JSON.parse(event.data)
           if (entity === 'todos') {
             queryClient.invalidateQueries({ queryKey: ['todos'] })
+          } else if (entity === 'people') {
+            queryClient.invalidateQueries({ queryKey: ['people'] })
           }
         } catch {
           // ignore malformed events

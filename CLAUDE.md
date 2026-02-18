@@ -68,7 +68,7 @@ docker-compose down
 - **Styling:** Tailwind CSS v4 with CSS custom properties
 - **Database:** PostgreSQL with Prisma 7 ORM
 - **State Management:** React Query (@tanstack/react-query)
-- **Rich Text:** TipTap v3 with lowlight syntax highlighting
+- **Rich Text:** TipTap v3 with lowlight syntax highlighting + @tiptap/extension-mention for @mentions
 - **Charts:** Recharts (year review page)
 - **Drag & Drop:** @dnd-kit (todo reordering)
 - **UI Components:** Radix UI primitives
@@ -92,6 +92,7 @@ src/
 │   │   ├── labels/         # CRUD
 │   │   ├── notebook/       # Notebook notes CRUD
 │   │   ├── note/           # Scratch pad GET/PATCH
+│   │   ├── people/         # People directory CRUD
 │   │   ├── github/         # GitHub PR status proxy (read-only)
 │   │   ├── stats/year/     # Year review statistics
 │   │   └── events/         # SSE stream for real-time updates
@@ -110,6 +111,7 @@ src/
 │   ├── use-labels.ts       # Label CRUD
 │   ├── use-notebook.ts     # Notebook notes CRUD
 │   ├── use-todo-form.ts    # Shared form state for all 3 todo form variants
+│   ├── use-people.ts       # People directory CRUD
 │   ├── use-github-pr-status.ts # GitHub PR status queries (single + batch)
 │   ├── use-sse.ts          # SSE client for real-time cache invalidation
 │   ├── use-year-stats.ts   # Year review stats query
@@ -118,9 +120,12 @@ src/
 │   ├── api.ts              # Typed API client (todosApi, labelsApi, notebookApi, statsApi, githubApi)
 │   ├── db.ts               # Prisma client singleton
 │   ├── events.ts           # In-memory event emitter for SSE
+│   ├── tiptap-mention.ts    # Custom TipTap mention extension (adds email attr)
+│   ├── mention-suggestion.ts # Mention suggestion/dropdown config (tippy.js)
 │   ├── themes.ts           # Theme definitions + applyTheme()
 │   └── utils.ts            # cn() helper
 └── types/
+    ├── person.ts           # Person
     ├── todo.ts             # Todo, Subtask, Label, GitHubPrStatus, Priority, Status
     ├── notebook.ts         # NotebookNote
     ├── note.ts             # Note (scratch pad)
@@ -139,6 +144,7 @@ mcp-server/                 # MCP server for Claude Code integration
 - **Label** — id, name (unique), color, todos[]
 - **Note** — Single scratch pad record (id defaults to "default")
 - **NotebookNote** — id, title, content (HTML), pinned, createdAt, updatedAt
+- **Person** — id, name, email (@unique), createdAt, updatedAt
 
 ### Enums
 - **Status:** TODO, IN_PROGRESS, WAITING, ON_HOLD, COMPLETED

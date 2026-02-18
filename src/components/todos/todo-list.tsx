@@ -194,7 +194,8 @@ export function TodoList({ onEdit }: TodoListProps) {
       </div>
 
       {/* Todo Items with Drag and Drop */}
-      <div className="flex-1 overflow-y-auto min-h-0">
+      <div className="relative flex-1 min-h-0">
+        <div className="h-full overflow-y-auto scrollbar-hide">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -269,6 +270,14 @@ export function TodoList({ onEdit }: TodoListProps) {
             ) : null}
           </DragOverlay>
         </DndContext>
+        </div>
+        {/* Bottom fade overlay */}
+        <div
+          className="pointer-events-none absolute bottom-0 left-0 right-0 h-12"
+          style={{
+            background: 'linear-gradient(to top, var(--background), transparent)',
+          }}
+        />
       </div>
     </div>
   )

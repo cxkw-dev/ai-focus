@@ -104,6 +104,16 @@ function linkifyHtml(html: string): string {
   }).join('')
 }
 
+function mentionifyHtml(html: string): string {
+  return html.replace(
+    /<span[^>]*data-type="mention"[^>]*data-email="([^"]*)"[^>]*>([^<]*)<\/span>/gi,
+    (_match, email, label) => {
+      const teamsUrl = `https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(email)}`
+      return `<a href="${teamsUrl}" target="_blank" rel="noopener noreferrer" class="mention">${label}</a>`
+    }
+  )
+}
+
 interface TodoItemProps {
   todo: Todo
   onStatusChange: (id: string, status: Status) => void
@@ -250,58 +260,62 @@ function TodoItemContent({
     <div className="flex flex-col gap-2 w-full min-w-0">
       <div className="flex items-start gap-2 min-w-0">
         <div className="flex-1 min-w-0">
-          {todo.labels?.length > 0 && (
-            <div className="flex flex-wrap gap-1 mb-1">
-              {todo.labels.map((label) => (
-                <span
-                  key={label.id}
-                  className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium"
-                  style={{
-                    backgroundColor: `${label.color}22`,
-                    color: label.color,
-                  }}
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              {todo.labels?.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-1">
+                  {todo.labels.map((label) => (
+                    <span
+                      key={label.id}
+                      className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium"
+                      style={{
+                        backgroundColor: `${label.color}22`,
+                        color: label.color,
+                      }}
+                    >
+                      {label.name}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <h3
+                  className={cn(
+                    'text-[13px] font-medium break-words leading-snug',
+                    isCompleted && 'line-through'
+                  )}
+                  style={{ color: isCompleted ? 'var(--text-muted)' : 'var(--text-primary)' }}
                 >
-                  {label.name}
-                </span>
-              ))}
+                  {renderTextWithLinks(todo.title)}
+                </h3>
+                {todo.dueDate && (
+                  <span
+                    className="text-[10px] inline-flex items-center gap-1 flex-shrink-0"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    <Calendar className="h-2.5 w-2.5" />
+                    {formatRelativeDate(todo.dueDate)}
+                  </span>
+                )}
+              </div>
             </div>
-          )}
-          <div className="flex items-center gap-2">
             <span
-              className="text-[10px] font-mono flex-shrink-0"
-              style={{ color: 'var(--text-muted)' }}
+              className="text-[10px] font-mono flex-shrink-0 mt-0.5"
+              style={{ color: 'var(--text-muted)', opacity: 0.6 }}
             >
               #{todo.taskNumber}
             </span>
-            <h3
-              className={cn(
-                'text-[13px] font-medium break-words leading-snug',
-                isCompleted && 'line-through'
-              )}
-              style={{ color: isCompleted ? 'var(--text-muted)' : 'var(--text-primary)' }}
-            >
-              {renderTextWithLinks(todo.title)}
-            </h3>
-            {todo.dueDate && (
-              <span
-                className="text-[10px] inline-flex items-center gap-1 flex-shrink-0"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                <Calendar className="h-2.5 w-2.5" />
-                {formatRelativeDate(todo.dueDate)}
-              </span>
-            )}
           </div>
 
           {todo.description && (
             todo.description.startsWith('<') ? (
               <div
-                className="mt-0.5 break-words rich-text-display"
-                dangerouslySetInnerHTML={{ __html: linkifyHtml(todo.description) }}
+                className="mt-1.5 break-words rich-text-display"
+                dangerouslySetInnerHTML={{ __html: linkifyHtml(mentionifyHtml(todo.description)) }}
               />
             ) : (
               <p
-                className="mt-0.5 text-[11px] break-words leading-snug whitespace-pre-wrap"
+                className="mt-1.5 text-[11px] break-words leading-snug whitespace-pre-wrap"
                 style={{ color: 'var(--text-muted)' }}
               >
                 {renderTextWithLinks(todo.description)}

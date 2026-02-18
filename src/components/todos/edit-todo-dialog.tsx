@@ -37,6 +37,7 @@ import { LabelMultiSelect, LabelManagerDialog } from './label-multi-select'
 import { PrioritySelector } from './priority-selector'
 import { GitHubPrBadge } from './github-pr-badge'
 import { useLabels } from '@/hooks/use-labels'
+import { usePeople } from '@/hooks/use-people'
 import { useTodoForm } from '@/hooks/use-todo-form'
 import type { Todo, UpdateTodoInput, Status } from '@/types/todo'
 
@@ -59,6 +60,7 @@ export function EditTodoDialog({
   isLoading,
 }: EditTodoDialogProps) {
   const { labels, handleCreate: onCreateLabel, handleUpdate: onUpdateLabel, handleDelete: onDeleteLabel } = useLabels()
+  const { people } = usePeople()
   const form = useTodoForm(todo)
   const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
@@ -164,6 +166,7 @@ export function EditTodoDialog({
                     onChange={form.setDescription}
                     placeholder="Add more details, links, or notes..."
                     disabled={isLoading}
+                    mentions={people.map(p => ({ id: p.id, name: p.name, email: p.email }))}
                   />
                 </div>
 

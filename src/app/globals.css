@@ -141,6 +141,15 @@ h1, h2, h3, h4, h5, h6 {
   background-color: var(--text-muted);
 }
 
+/* Hidden scrollbar */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Utilities */
 @utility text-balance {
   text-wrap: balance;
@@ -361,6 +370,17 @@ h1, h2, h3, h4, h5, h6 {
   height: 0;
 }
 
+/* TipTap mention nodes — inside editor */
+.tiptap .mention {
+  background-color: color-mix(in srgb, var(--primary) 18%, transparent);
+  color: var(--primary);
+  border-radius: 0.25rem;
+  padding: 0.1em 0.3em;
+  font-weight: 500;
+  font-size: 0.95em;
+  box-decoration-break: clone;
+}
+
 /* Rendered rich text in todo items */
 .rich-text-display {
   font-size: 11px;
@@ -412,6 +432,16 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .rich-text-display a:hover {
+  text-decoration: underline;
+}
+
+.rich-text-display .mention {
+  color: var(--primary);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.rich-text-display .mention:hover {
   text-decoration: underline;
 }
 
@@ -484,7 +514,7 @@ h1, h2, h3, h4, h5, h6 {
 /* PR dependency tree connectors */
 .pr-tree-branch {
   position: relative;
-  padding: 2px 0 2px 26px;
+  padding: 4px 0 4px 26px;
   margin-left: 6px;
 }
 
