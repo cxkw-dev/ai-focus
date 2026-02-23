@@ -3,6 +3,7 @@
 import * as React from 'react'
 import {
   CalendarDays,
+  CircleDot,
   GitPullRequest,
   Loader2,
   Plus,
@@ -30,6 +31,7 @@ export function InlineTodoForm({
   const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
   const [newPrUrl, setNewPrUrl] = React.useState('')
+  const [newAzureDepUrl, setNewAzureDepUrl] = React.useState('')
   const resetForm = form.reset
 
   const submitCurrentTodo = React.useCallback(async () => {
@@ -41,16 +43,21 @@ export function InlineTodoForm({
     if (pendingUrl && !payload.githubPrUrls.includes(pendingUrl)) {
       payload.githubPrUrls = [...payload.githubPrUrls, pendingUrl]
     }
+    const pendingAzureUrl = newAzureDepUrl.trim()
+    if (pendingAzureUrl && !payload.azureDepUrls.includes(pendingAzureUrl)) {
+      payload.azureDepUrls = [...payload.azureDepUrls, pendingAzureUrl]
+    }
     const success = await onSubmit(payload)
     if (success) {
       resetForm()
       setNewSubtaskTitle('')
       setNewPrUrl('')
+      setNewAzureDepUrl('')
       setIsExpanded(false)
     }
 
     return success
-  }, [form, onSubmit, resetForm, newPrUrl])
+  }, [form, onSubmit, resetForm, newPrUrl, newAzureDepUrl])
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -59,6 +66,7 @@ export function InlineTodoForm({
         resetForm()
         setNewSubtaskTitle('')
         setNewPrUrl('')
+        setNewAzureDepUrl('')
       }
     }
     document.addEventListener('keydown', handleKeyDown)
@@ -323,6 +331,74 @@ export function InlineTodoForm({
                 </div>
               </div>
 
+              {/* Azure Work Items Row */}
+              <div
+                className="px-4 py-3"
+                style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 30%, transparent)' }}
+              >
+                <div className="space-y-1">
+                  {form.azureWorkItemUrl.trim() && (
+                    <div className="flex items-center gap-2 group/azure">
+                      <CircleDot className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                      <span className="text-xs flex-1 truncate" style={{ color: 'var(--text-primary)' }}>
+                        {form.azureWorkItemUrl.replace(/^https?:\/\/dev\.azure\.com\//, '')}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => form.setAzureWorkItemUrl('')}
+                        className="flex-shrink-0 opacity-0 group-hover/azure:opacity-100 transition-opacity"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
+                  {form.azureDepUrls.map((url, index) => (
+                    <div key={url} className="flex items-center gap-2 group/azure">
+                      <CircleDot className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                      <span className="text-xs flex-1 truncate" style={{ color: 'var(--text-primary)' }}>
+                        {url.replace(/^https?:\/\/dev\.azure\.com\//, '')}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => form.removeAzureDepUrl(index)}
+                        className="flex-shrink-0 opacity-0 group-hover/azure:opacity-100 transition-opacity"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <div
+                    className="flex items-center gap-2 rounded-md px-2 py-1.5 border"
+                    style={{
+                      backgroundColor: 'color-mix(in srgb, var(--background) 50%, transparent)',
+                      borderColor: 'color-mix(in srgb, var(--border-color) 60%, transparent)',
+                    }}
+                  >
+                    <input
+                      type="url"
+                      value={newAzureDepUrl}
+                      onChange={(e) => setNewAzureDepUrl(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          if (newAzureDepUrl.trim()) {
+                            form.addAzureDepUrl(newAzureDepUrl)
+                            setNewAzureDepUrl('')
+                          }
+                        }
+                      }}
+                      placeholder="... azure work item url"
+                      disabled={isLoading}
+                      className="flex-1 bg-transparent text-xs focus:outline-none placeholder:text-[var(--text-muted)] min-w-0"
+                      style={{ color: 'var(--text-primary)' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Actions Row */}
               <div
                 className="px-4 py-3 flex items-center justify-end gap-2"
@@ -334,6 +410,7 @@ export function InlineTodoForm({
                     setIsExpanded(false)
                     resetForm()
                     setNewPrUrl('')
+                    setNewAzureDepUrl('')
                   }}
                   className="px-3 py-1.5 text-xs font-medium rounded-md transition-colors hover:bg-white/5"
                   style={{ color: 'var(--text-muted)' }}

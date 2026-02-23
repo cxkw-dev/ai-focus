@@ -79,6 +79,12 @@ function formatTodoSummary(todos) {
         if (t.githubPrUrls?.length) {
             parts.push(`   waiting on: ${t.githubPrUrls.join(", ")}`);
         }
+        if (t.azureWorkItemUrl) {
+            parts.push(`   azure: ${t.azureWorkItemUrl}`);
+        }
+        if (t.azureDepUrls?.length) {
+            parts.push(`   azure deps: ${t.azureDepUrls.join(", ")}`);
+        }
         return parts.join("\n");
     }).join("\n\n");
 }
@@ -169,6 +175,15 @@ server.tool("create_todo", "Create a new todo/task in AI Focus.", {
         .array(z.string())
         .optional()
         .describe("Array of dependency GitHub PR URLs to wait on"),
+    azureWorkItemUrl: z
+        .string()
+        .nullable()
+        .optional()
+        .describe("Azure DevOps work item URL for this task"),
+    azureDepUrls: z
+        .array(z.string())
+        .optional()
+        .describe("Array of dependent Azure DevOps work item URLs to wait on"),
 }, async (params) => {
     const { subtasks: subtaskTitles, ...rest } = params;
     const body = { ...rest };
@@ -238,6 +253,15 @@ IMPORTANT — Description handling:
         .array(z.string())
         .optional()
         .describe("Array of dependency GitHub PR URLs to wait on"),
+    azureWorkItemUrl: z
+        .string()
+        .nullable()
+        .optional()
+        .describe("Azure DevOps work item URL for this task"),
+    azureDepUrls: z
+        .array(z.string())
+        .optional()
+        .describe("Array of dependent Azure DevOps work item URLs to wait on"),
 }, async ({ taskNumber, id, descriptionMode, ...updates }) => {
     const key = taskNumber?.toString() ?? id;
     if (!key)

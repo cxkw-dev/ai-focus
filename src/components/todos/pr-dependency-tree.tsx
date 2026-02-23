@@ -1,32 +1,57 @@
 'use client'
 
-import { Check } from 'lucide-react'
-import { GitHubPrBadge, GitHubPrRow } from './github-pr-badge'
+import { Check, GitPullRequest, CircleDot } from 'lucide-react'
+import { GitHubPrBadge } from './github-pr-badge'
+import { AzureWorkItemBadge } from './azure-workitem-badge'
 import { useGithubPrStatuses } from '@/hooks/use-github-pr-status'
+import { useAzureWorkItemStatuses } from '@/hooks/use-azure-workitem-status'
 
 interface PrDependencyTreeProps {
   myPrUrl: string | null | undefined
   githubPrUrls: string[]
+  azureWorkItemUrl?: string | null
+  azureDepUrls?: string[]
 }
 
-function PrTree({ myPrUrl, githubPrUrls }: { myPrUrl: string; githubPrUrls: string[] }) {
+function SectionHeader({ icon: Icon, label, statusLabel, statusColor }: {
+  icon: React.ElementType
+  label: string
+  statusLabel?: string
+  statusColor?: string
+}) {
+  return (
+    <div className="flex items-center gap-1.5 mb-1">
+      <Icon className="h-3 w-3" style={{ color: 'var(--text-muted)', opacity: 0.6 }} />
+      <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>
+        {label}
+      </span>
+      {statusLabel && (
+        <span className="text-[10px] font-medium flex items-center gap-1" style={{ color: statusColor }}>
+          {statusColor !== 'var(--text-muted)' && <Check className="h-2.5 w-2.5" />}
+          {statusLabel}
+        </span>
+      )}
+    </div>
+  )
+}
+
+function GitHubSection({ myPrUrl, githubPrUrls, showHeader }: { myPrUrl?: string | null; githubPrUrls: string[]; showHeader: boolean }) {
+  const hasDeps = githubPrUrls.length > 0
   const { isLoading, allMergedOrClosed, allMerged } = useGithubPrStatuses(githubPrUrls)
 
-  let label: string
-  let labelColor: string
+  let statusLabel: string | undefined
+  let statusColor: string | undefined
 
-  if (isLoading) {
-    label = 'Depends on'
-    labelColor = 'var(--text-muted)'
-  } else if (allMerged) {
-    label = 'Dependencies merged'
-    labelColor = '#a371f7'
-  } else if (allMergedOrClosed) {
-    label = 'Dependencies resolved'
-    labelColor = '#a371f7'
-  } else {
-    label = 'Depends on'
-    labelColor = 'var(--text-muted)'
+  if (hasDeps) {
+    if (isLoading) {
+      statusLabel = undefined
+    } else if (allMerged) {
+      statusLabel = 'all merged'
+      statusColor = '#a371f7'
+    } else if (allMergedOrClosed) {
+      statusLabel = 'all resolved'
+      statusColor = '#a371f7'
+    }
   }
 
   return (
@@ -34,56 +59,134 @@ function PrTree({ myPrUrl, githubPrUrls }: { myPrUrl: string; githubPrUrls: stri
       className="pt-1.5"
       style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)' }}
     >
-      {/* Root: PR badge with title */}
-      <div className="flex items-center gap-1.5 min-w-0">
-        <GitHubPrBadge url={myPrUrl} showTitle />
-      </div>
+      {showHeader && (
+        <SectionHeader icon={GitPullRequest} label="GitHub" statusLabel={statusLabel} statusColor={statusColor} />
+      )}
 
-      {/* Label */}
-      <div className="flex items-center gap-1 mt-1.5" style={{ paddingLeft: 12 }}>
-        <span className="text-[10px] font-medium flex items-center gap-1" style={{ color: labelColor }}>
-          {allMergedOrClosed && !isLoading && <Check className="h-3 w-3" />}
-          {label}
-        </span>
-      </div>
+      {/* My PR */}
+      {myPrUrl && (
+        <div className="flex items-center gap-1.5 min-w-0">
+          <GitHubPrBadge url={myPrUrl} showTitle />
+        </div>
+      )}
 
-      {/* Tree branches — each branch draws its own connector */}
-      <div className="mt-0.5">
-        {githubPrUrls.map((url, i) => (
-          <div
-            key={url}
-            className={`pr-tree-branch${i === githubPrUrls.length - 1 ? ' pr-tree-branch-last' : ''}`}
-          >
-            <GitHubPrBadge url={url} showTitle />
+      {/* Dependency PRs */}
+      {hasDeps && (
+        <>
+          {myPrUrl && (
+            <div className="flex items-center gap-1 mt-1.5" style={{ paddingLeft: 12 }}>
+              <span className="text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>
+                {allMergedOrClosed && !isLoading ? 'Dependencies resolved' : 'Depends on'}
+              </span>
+            </div>
+          )}
+          {!myPrUrl && !showHeader && (
+            <div className="flex items-center gap-1 mb-0.5">
+              <span className="text-[10px] font-medium flex items-center gap-1" style={{ color: allMergedOrClosed && !isLoading ? '#a371f7' : 'var(--text-muted)' }}>
+                {allMergedOrClosed && !isLoading && <Check className="h-3 w-3" />}
+                {allMergedOrClosed && !isLoading ? (allMerged ? 'PRs merged' : 'PRs closed') : 'Waiting on'}
+              </span>
+            </div>
+          )}
+          <div className={myPrUrl ? 'mt-0.5' : ''}>
+            {githubPrUrls.map((url, i) => (
+              <div
+                key={url}
+                className={myPrUrl ? `pr-tree-branch${i === githubPrUrls.length - 1 ? ' pr-tree-branch-last' : ''}` : 'py-0.5'}
+              >
+                <GitHubPrBadge url={url} showTitle />
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      )}
     </div>
   )
 }
 
-export function PrDependencyTree({ myPrUrl, githubPrUrls }: PrDependencyTreeProps) {
-  const hasDeps = githubPrUrls.length > 0
+function AzureSection({ azureWorkItemUrl, azureDepUrls, showHeader }: { azureWorkItemUrl?: string | null; azureDepUrls: string[]; showHeader: boolean }) {
+  const hasAzureDeps = azureDepUrls.length > 0
+  const { isLoading, allResolved } = useAzureWorkItemStatuses(azureDepUrls)
 
-  if (!myPrUrl && !hasDeps) return null
+  let statusLabel: string | undefined
+  let statusColor: string | undefined
 
-  // Both present — render the tree
-  if (myPrUrl && hasDeps) {
-    return <PrTree myPrUrl={myPrUrl} githubPrUrls={githubPrUrls} />
+  if (hasAzureDeps) {
+    if (isLoading) {
+      statusLabel = undefined
+    } else if (allResolved) {
+      statusLabel = 'all resolved'
+      statusColor = '#3fb950'
+    }
   }
 
-  // Only myPr — flat badge
-  if (myPrUrl) {
-    return (
-      <div
-        className="pt-1.5"
-        style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)' }}
-      >
-        <GitHubPrBadge url={myPrUrl} showTitle />
-      </div>
-    )
-  }
+  return (
+    <div
+      className="pt-1.5"
+      style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)' }}
+    >
+      {showHeader && (
+        <SectionHeader icon={CircleDot} label="Azure DevOps" statusLabel={statusLabel} statusColor={statusColor} />
+      )}
 
-  // Only deps — reuse existing row behavior
-  return <GitHubPrRow urls={githubPrUrls} showTitle />
+      {/* My work item */}
+      {azureWorkItemUrl && (
+        <div className="flex items-center gap-1.5 min-w-0">
+          <AzureWorkItemBadge url={azureWorkItemUrl} showTitle />
+        </div>
+      )}
+
+      {/* Dependency work items */}
+      {hasAzureDeps && (
+        <>
+          {azureWorkItemUrl && (
+            <div className="flex items-center gap-1 mt-1.5" style={{ paddingLeft: 12 }}>
+              <span className="text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>
+                {allResolved && !isLoading ? 'Dependencies resolved' : 'Depends on'}
+              </span>
+            </div>
+          )}
+          {!azureWorkItemUrl && !showHeader && (
+            <div className="flex items-center gap-1 mb-0.5">
+              <span className="text-[10px] font-medium flex items-center gap-1" style={{ color: allResolved && !isLoading ? '#3fb950' : 'var(--text-muted)' }}>
+                {allResolved && !isLoading && <Check className="h-3 w-3" />}
+                {allResolved && !isLoading ? 'All resolved' : 'Waiting on'}
+              </span>
+            </div>
+          )}
+          <div className={azureWorkItemUrl ? 'mt-0.5' : ''}>
+            {azureDepUrls.map((url, i) => (
+              <div
+                key={url}
+                className={azureWorkItemUrl ? `pr-tree-branch${i === azureDepUrls.length - 1 ? ' pr-tree-branch-last' : ''}` : 'py-0.5'}
+              >
+                <AzureWorkItemBadge url={url} showTitle />
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+export function PrDependencyTree({ myPrUrl, githubPrUrls, azureWorkItemUrl, azureDepUrls = [] }: PrDependencyTreeProps) {
+  const hasGithub = !!myPrUrl || githubPrUrls.length > 0
+  const hasAzure = !!azureWorkItemUrl || azureDepUrls.length > 0
+
+  if (!hasGithub && !hasAzure) return null
+
+  // Show section headers when both types are present
+  const showHeaders = hasGithub && hasAzure
+
+  return (
+    <>
+      {hasAzure && (
+        <AzureSection azureWorkItemUrl={azureWorkItemUrl} azureDepUrls={azureDepUrls} showHeader={showHeaders} />
+      )}
+      {hasGithub && (
+        <GitHubSection myPrUrl={myPrUrl} githubPrUrls={githubPrUrls} showHeader={showHeaders} />
+      )}
+    </>
+  )
 }

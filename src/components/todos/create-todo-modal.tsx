@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { GitPullRequest, Plus, X } from 'lucide-react'
+import { CircleDot, GitPullRequest, Plus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -39,6 +39,7 @@ export function CreateTodoModal({
   const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
   const [newPrUrl, setNewPrUrl] = React.useState('')
+  const [newAzureDepUrl, setNewAzureDepUrl] = React.useState('')
   const resetForm = form.reset
 
   React.useEffect(() => {
@@ -54,6 +55,10 @@ export function CreateTodoModal({
     const pendingUrl = newPrUrl.trim()
     if (pendingUrl && !payload.githubPrUrls.includes(pendingUrl)) {
       payload.githubPrUrls = [...payload.githubPrUrls, pendingUrl]
+    }
+    const pendingAzureUrl = newAzureDepUrl.trim()
+    if (pendingAzureUrl && !payload.azureDepUrls.includes(pendingAzureUrl)) {
+      payload.azureDepUrls = [...payload.azureDepUrls, pendingAzureUrl]
     }
     const success = await onSubmit(payload)
     if (success) onOpenChange(false)
@@ -203,6 +208,87 @@ export function CreateTodoModal({
                     }
                   }}
                   placeholder="... insert url"
+                  className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-[var(--text-muted)] min-w-0"
+                  style={{ color: 'var(--text-primary)' }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Azure Work Items</Label>
+            <div className="space-y-1.5">
+              {form.azureWorkItemUrl.trim() && (
+                <div className="flex items-center gap-2 group/azure">
+                  <CircleDot className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                  <span className="text-xs flex-1 truncate" style={{ color: 'var(--text-primary)' }}>
+                    {form.azureWorkItemUrl.replace(/^https?:\/\/dev\.azure\.com\//, '')}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => form.setAzureWorkItemUrl('')}
+                    className="flex-shrink-0 opacity-0 group-hover/azure:opacity-100 transition-opacity"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
+              {!form.azureWorkItemUrl.trim() && (
+                <div
+                  className="flex items-center gap-2 rounded-md px-2.5 py-1.5 border"
+                  style={{
+                    backgroundColor: 'color-mix(in srgb, var(--background) 50%, transparent)',
+                    borderColor: 'var(--border-color)',
+                  }}
+                >
+                  <input
+                    type="url"
+                    value={form.azureWorkItemUrl}
+                    onChange={(e) => form.setAzureWorkItemUrl(e.target.value)}
+                    placeholder="My work item URL..."
+                    className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-[var(--text-muted)] min-w-0"
+                    style={{ color: 'var(--text-primary)' }}
+                  />
+                </div>
+              )}
+              {form.azureDepUrls.map((url, index) => (
+                <div key={url} className="flex items-center gap-2 group/azure">
+                  <CircleDot className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                  <span className="text-xs flex-1 truncate" style={{ color: 'var(--text-primary)' }}>
+                    {url.replace(/^https?:\/\/dev\.azure\.com\//, '')}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => form.removeAzureDepUrl(index)}
+                    className="flex-shrink-0 opacity-0 group-hover/azure:opacity-100 transition-opacity"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+              <div
+                className="flex items-center gap-2 rounded-md px-2.5 py-1.5 border"
+                style={{
+                  backgroundColor: 'color-mix(in srgb, var(--background) 50%, transparent)',
+                  borderColor: 'var(--border-color)',
+                }}
+              >
+                <input
+                  type="url"
+                  value={newAzureDepUrl}
+                  onChange={(e) => setNewAzureDepUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      if (newAzureDepUrl.trim()) {
+                        form.addAzureDepUrl(newAzureDepUrl)
+                        setNewAzureDepUrl('')
+                      }
+                    }
+                  }}
+                  placeholder="Dependent work item URL..."
                   className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-[var(--text-muted)] min-w-0"
                   style={{ color: 'var(--text-primary)' }}
                 />

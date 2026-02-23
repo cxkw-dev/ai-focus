@@ -34,6 +34,25 @@ export interface Todo {
   subtasks: Subtask[]
   myPrUrl: string | null
   githubPrUrls: string[]
+  azureWorkItemUrl: string | null
+  azureDepUrls: string[]
+}
+
+export interface AzureWorkItemLink {
+  name: string
+  url: string
+}
+
+export interface AzureWorkItemStatus {
+  id: number
+  title: string
+  state: string
+  type: string
+  url: string
+  assignedTo: string | null
+  linkedPrs: AzureWorkItemLink[]
+  linkedBranches: AzureWorkItemLink[]
+  linkedCommits: AzureWorkItemLink[]
 }
 
 export interface GitHubPrStatus {
@@ -71,6 +90,8 @@ export interface CreateTodoInput {
   subtasks?: SubtaskInput[]
   myPrUrl?: string | null
   githubPrUrls?: string[]
+  azureWorkItemUrl?: string | null
+  azureDepUrls?: string[]
 }
 
 export interface UpdateTodoInput {
@@ -83,4 +104,6 @@ export interface UpdateTodoInput {
   subtasks?: SubtaskInput[]
   myPrUrl?: string | null
   githubPrUrls?: string[]
+  azureWorkItemUrl?: string | null
+  azureDepUrls?: string[]
 }

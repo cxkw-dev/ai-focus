@@ -427,7 +427,7 @@ function TodoItemContent({
       </div>
 
       {/* PR dependency tree */}
-      <PrDependencyTree myPrUrl={todo.myPrUrl} githubPrUrls={todo.githubPrUrls ?? []} />
+      <PrDependencyTree myPrUrl={todo.myPrUrl} githubPrUrls={todo.githubPrUrls ?? []} azureWorkItemUrl={todo.azureWorkItemUrl} azureDepUrls={todo.azureDepUrls ?? []} />
 
       {/* Subtask checklist */}
       {subtasks.length > 0 && (

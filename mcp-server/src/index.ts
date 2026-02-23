@@ -85,6 +85,8 @@ interface TodoResponse {
   subtasks?: SubtaskResponse[];
   myPrUrl?: string | null;
   githubPrUrls?: string[];
+  azureWorkItemUrl?: string | null;
+  azureDepUrls?: string[];
 }
 
 function formatTodoSummary(todos: TodoResponse[]) {
@@ -103,6 +105,12 @@ function formatTodoSummary(todos: TodoResponse[]) {
     }
     if (t.githubPrUrls?.length) {
       parts.push(`   waiting on: ${t.githubPrUrls.join(", ")}`);
+    }
+    if (t.azureWorkItemUrl) {
+      parts.push(`   azure: ${t.azureWorkItemUrl}`);
+    }
+    if (t.azureDepUrls?.length) {
+      parts.push(`   azure deps: ${t.azureDepUrls.join(", ")}`);
     }
     return parts.join("\n");
   }).join("\n\n");
@@ -207,6 +215,15 @@ server.tool(
       .array(z.string())
       .optional()
       .describe("Array of dependency GitHub PR URLs to wait on"),
+    azureWorkItemUrl: z
+      .string()
+      .nullable()
+      .optional()
+      .describe("Azure DevOps work item URL for this task"),
+    azureDepUrls: z
+      .array(z.string())
+      .optional()
+      .describe("Array of dependent Azure DevOps work item URLs to wait on"),
   },
   async (params) => {
     const { subtasks: subtaskTitles, ...rest } = params;
@@ -281,6 +298,15 @@ IMPORTANT — Description handling:
       .array(z.string())
       .optional()
       .describe("Array of dependency GitHub PR URLs to wait on"),
+    azureWorkItemUrl: z
+      .string()
+      .nullable()
+      .optional()
+      .describe("Azure DevOps work item URL for this task"),
+    azureDepUrls: z
+      .array(z.string())
+      .optional()
+      .describe("Array of dependent Azure DevOps work item URLs to wait on"),
   },
   async ({ taskNumber, id, descriptionMode, ...updates }) => {
     const key = taskNumber?.toString() ?? id;

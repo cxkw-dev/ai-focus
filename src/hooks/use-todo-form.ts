@@ -27,6 +27,12 @@ interface TodoFormState {
   setGithubPrUrls: (v: string[]) => void
   addGithubPrUrl: (url: string) => void
   removeGithubPrUrl: (index: number) => void
+  azureWorkItemUrl: string
+  setAzureWorkItemUrl: (v: string) => void
+  azureDepUrls: string[]
+  setAzureDepUrls: (v: string[]) => void
+  addAzureDepUrl: (url: string) => void
+  removeAzureDepUrl: (index: number) => void
   reset: () => void
   toPayload: () => {
     title: string
@@ -38,6 +44,8 @@ interface TodoFormState {
     subtasks: SubtaskInput[]
     myPrUrl: string | null
     githubPrUrls: string[]
+    azureWorkItemUrl: string | null
+    azureDepUrls: string[]
   }
 }
 
@@ -51,6 +59,8 @@ export function useTodoForm(todo?: Todo | null): TodoFormState {
   const [subtasks, setSubtasks] = React.useState<SubtaskInput[]>([])
   const [myPrUrl, setMyPrUrl] = React.useState('')
   const [githubPrUrls, setGithubPrUrls] = React.useState<string[]>([])
+  const [azureWorkItemUrl, setAzureWorkItemUrl] = React.useState('')
+  const [azureDepUrls, setAzureDepUrls] = React.useState<string[]>([])
 
   const reset = React.useCallback(() => {
     setTitle('')
@@ -62,6 +72,8 @@ export function useTodoForm(todo?: Todo | null): TodoFormState {
     setSubtasks([])
     setMyPrUrl('')
     setGithubPrUrls([])
+    setAzureWorkItemUrl('')
+    setAzureDepUrls([])
   }, [])
 
   const populateFromTodo = React.useCallback((t: Todo) => {
@@ -76,6 +88,8 @@ export function useTodoForm(todo?: Todo | null): TodoFormState {
     )
     setMyPrUrl(t.myPrUrl || '')
     setGithubPrUrls(t.githubPrUrls ?? [])
+    setAzureWorkItemUrl(t.azureWorkItemUrl || '')
+    setAzureDepUrls(t.azureDepUrls ?? [])
   }, [])
 
   React.useEffect(() => {
@@ -113,6 +127,16 @@ export function useTodoForm(todo?: Todo | null): TodoFormState {
     setGithubPrUrls(prev => prev.filter((_, i) => i !== index))
   }, [])
 
+  const addAzureDepUrl = React.useCallback((url: string) => {
+    const trimmed = url.trim()
+    if (!trimmed) return
+    setAzureDepUrls(prev => prev.includes(trimmed) ? prev : [...prev, trimmed])
+  }, [])
+
+  const removeAzureDepUrl = React.useCallback((index: number) => {
+    setAzureDepUrls(prev => prev.filter((_, i) => i !== index))
+  }, [])
+
   const toPayload = React.useCallback(() => ({
     title: title.trim(),
     description: description.trim() || undefined,
@@ -128,7 +152,9 @@ export function useTodoForm(todo?: Todo | null): TodoFormState {
     })),
     myPrUrl: myPrUrl.trim() || null,
     githubPrUrls,
-  }), [title, description, priority, status, dueDate, labelIds, subtasks, myPrUrl, githubPrUrls])
+    azureWorkItemUrl: azureWorkItemUrl.trim() || null,
+    azureDepUrls,
+  }), [title, description, priority, status, dueDate, labelIds, subtasks, myPrUrl, githubPrUrls, azureWorkItemUrl, azureDepUrls])
 
   return {
     title, setTitle,
@@ -146,6 +172,10 @@ export function useTodoForm(todo?: Todo | null): TodoFormState {
     githubPrUrls, setGithubPrUrls,
     addGithubPrUrl,
     removeGithubPrUrl,
+    azureWorkItemUrl, setAzureWorkItemUrl,
+    azureDepUrls, setAzureDepUrls,
+    addAzureDepUrl,
+    removeAzureDepUrl,
     reset,
     toPayload,
   }

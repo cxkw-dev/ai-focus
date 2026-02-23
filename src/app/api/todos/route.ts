@@ -23,6 +23,8 @@ const createTodoSchema = z.object({
   subtasks: z.array(subtaskSchema).optional(),
   myPrUrl: z.string().url().optional().nullable(),
   githubPrUrls: z.array(z.string().url()).optional(),
+  azureWorkItemUrl: z.string().url().optional().nullable(),
+  azureDepUrls: z.array(z.string().url()).optional(),
 })
 
 const listTodosQuerySchema = z.object({
