@@ -14,9 +14,10 @@ model Todo {
   description String?
   priority    Priority  @default(MEDIUM)
   dueDate     DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  order       Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  completedAt  DateTime?
+  order        Int       @default(0)
   archived    Boolean   @default(false)
   status      Status    @default(TODO)
   myPrUrl      String?
@@ -29,6 +30,7 @@ model Todo {
   @@index([priority])
   @@index([dueDate])
   @@index([order])
+  @@index([completedAt])
 }
 
 model Subtask {

@@ -1,4 +1,4 @@
-import type { Todo, CreateTodoInput, UpdateTodoInput, Label, GitHubPrStatus } from '@/types/todo'
+import type { Todo, CreateTodoInput, UpdateTodoInput, Label, GitHubPrStatus, PaginatedTodosResponse } from '@/types/todo'
 import type { YearStats } from '@/types/stats'
 import type { NotebookNote, CreateNotebookNoteInput, UpdateNotebookNoteInput } from '@/types/notebook'
 import type { Person } from '@/types/person'
@@ -11,11 +11,32 @@ async function json<T>(res: Response): Promise<T> {
 const headers = { 'Content-Type': 'application/json' } as const
 
 export const todosApi = {
-  list: (params?: { archived?: boolean }): Promise<Todo[]> => {
+  list: (params?: { archived?: boolean; excludeStatus?: string }): Promise<Todo[]> => {
     const sp = new URLSearchParams()
     if (params?.archived !== undefined) sp.set('archived', String(params.archived))
+    if (params?.excludeStatus) sp.set('excludeStatus', params.excludeStatus)
     const q = sp.toString()
     return fetch(`/api/todos${q ? `?${q}` : ''}`).then(r => json(r))
+  },
+
+  listPaginated: (params: {
+    status?: string
+    archived?: boolean
+    excludeStatus?: string
+    search?: string
+    limit: number
+    offset: number
+    sortBy?: string
+  }): Promise<PaginatedTodosResponse> => {
+    const sp = new URLSearchParams()
+    if (params.status) sp.set('status', params.status)
+    if (params.archived !== undefined) sp.set('archived', String(params.archived))
+    if (params.excludeStatus) sp.set('excludeStatus', params.excludeStatus)
+    if (params.search) sp.set('search', params.search)
+    sp.set('limit', String(params.limit))
+    sp.set('offset', String(params.offset))
+    if (params.sortBy) sp.set('sortBy', params.sortBy)
+    return fetch(`/api/todos?${sp.toString()}`).then(r => json(r))
   },
 
   create: (data: CreateTodoInput): Promise<Todo> =>

@@ -40,7 +40,7 @@ function PrTree({ myPrUrl, githubPrUrls }: { myPrUrl: string; githubPrUrls: stri
       </div>
 
       {/* Label */}
-      <div className="flex items-center gap-1 mt-0.5" style={{ paddingLeft: 12 }}>
+      <div className="flex items-center gap-1 mt-1.5" style={{ paddingLeft: 12 }}>
         <span className="text-[10px] font-medium flex items-center gap-1" style={{ color: labelColor }}>
           {allMergedOrClosed && !isLoading && <Check className="h-3 w-3" />}
           {label}
@@ -48,7 +48,7 @@ function PrTree({ myPrUrl, githubPrUrls }: { myPrUrl: string; githubPrUrls: stri
       </div>
 
       {/* Tree branches — each branch draws its own connector */}
-      <div>
+      <div className="mt-0.5">
         {githubPrUrls.map((url, i) => (
           <div
             key={url}

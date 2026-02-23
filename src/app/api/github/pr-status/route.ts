@@ -42,6 +42,8 @@ export async function GET(request: NextRequest) {
     const pr = await res.json()
 
     let reviewStatus: 'review_requested' | 'approved' | 'changes_requested' | null = null
+    let approvedCount: number | undefined
+    let reviewerCount: number | undefined
 
     if (pr.state === 'open' && !pr.draft) {
       try {
@@ -67,6 +69,14 @@ export async function GET(request: NextRequest) {
             }
           }
 
+          // Count approvals and total reviewers
+          const reviewedLogins = new Set(latestByReviewer.keys())
+          const pendingLogins = (pr.requested_reviewers ?? [])
+            .map((r: { login: string }) => r.login)
+            .filter((login: string) => !reviewedLogins.has(login))
+          approvedCount = [...latestByReviewer.values()].filter(s => s === 'APPROVED').length
+          reviewerCount = latestByReviewer.size + pendingLogins.length
+
           const states = [...latestByReviewer.values()]
           if (states.includes('CHANGES_REQUESTED')) {
             reviewStatus = 'changes_requested'
@@ -90,6 +100,8 @@ export async function GET(request: NextRequest) {
       author: pr.user?.login ?? '',
       draft: pr.draft ?? false,
       reviewStatus,
+      approvedCount,
+      reviewerCount,
     })
   } catch {
     return NextResponse.json({ error: 'Failed to fetch PR status' }, { status: 502 })

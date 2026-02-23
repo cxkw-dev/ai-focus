@@ -11,6 +11,7 @@ import {
   useSensors,
   DragEndEvent,
   DragStartEvent,
+  DragOverEvent,
   DragOverlay,
 } from '@dnd-kit/core'
 import {
@@ -19,12 +20,12 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
-import { CheckCircle2, Circle, Archive, Inbox } from 'lucide-react'
+import { Circle, CheckCircle2, Trash2, Inbox, Search, X, Loader2 } from 'lucide-react'
 import { TodoItem, TodoItemOverlay } from './todo-item'
 import { useTodos } from '@/hooks/use-todos'
 import type { Todo } from '@/types/todo'
 
-type Filter = 'all' | 'active' | 'completed' | 'archived'
+type Filter = 'active' | 'completed' | 'deleted'
 
 interface TodoListProps {
   onEdit: (todo: Todo) => void
@@ -33,7 +34,9 @@ interface TodoListProps {
 export function TodoList({ onEdit }: TodoListProps) {
   const {
     todos,
-    archivedTodos,
+    completedTodos,
+    completedTotal,
+    deletedTodos,
     isLoading,
     updateStatus,
     updatePriority,
@@ -42,10 +45,16 @@ export function TodoList({ onEdit }: TodoListProps) {
     restore,
     reorder,
     toggleSubtask,
+    hasNextCompletedPage,
+    fetchNextCompletedPage,
+    isFetchingNextCompletedPage,
+    completedSearch,
+    setCompletedSearch,
   } = useTodos()
 
-  const [filter, setFilter] = React.useState<Filter>('all')
+  const [filter, setFilter] = React.useState<Filter>('active')
   const [activeId, setActiveId] = React.useState<string | null>(null)
+  const [overId, setOverId] = React.useState<string | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -57,30 +66,23 @@ export function TodoList({ onEdit }: TodoListProps) {
   )
 
   const filteredTodos = React.useMemo(() => {
-    if (filter === 'archived') return archivedTodos
-    switch (filter) {
-      case 'active':
-        return todos.filter((t) => t.status !== 'COMPLETED')
-      case 'completed':
-        return todos.filter((t) => t.status === 'COMPLETED')
-      default:
-        return todos
-    }
-  }, [todos, archivedTodos, filter])
-
-  const stats = React.useMemo(() => {
-    const active = todos.filter((t) => t.status !== 'COMPLETED').length
-    const completed = todos.filter((t) => t.status === 'COMPLETED').length
-    return { active, completed, total: todos.length, archived: archivedTodos.length }
-  }, [todos, archivedTodos])
+    if (filter === 'completed') return completedTodos
+    if (filter === 'deleted') return deletedTodos
+    return todos
+  }, [todos, completedTodos, deletedTodos, filter])
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string)
   }
 
+  const handleDragOver = (event: DragOverEvent) => {
+    setOverId(event.over?.id as string | null)
+  }
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     setActiveId(null)
+    setOverId(null)
 
     if (over && active.id !== over.id) {
       const oldIndex = todos.findIndex((t) => t.id === active.id)
@@ -91,6 +93,7 @@ export function TodoList({ onEdit }: TodoListProps) {
 
   const handleDragCancel = () => {
     setActiveId(null)
+    setOverId(null)
   }
 
   const handleStatusChange = React.useCallback(
@@ -125,7 +128,6 @@ export function TodoList({ onEdit }: TodoListProps) {
   )
 
   const activeTodo = activeId ? todos.find((t) => t.id === activeId) : null
-  const isArchiveView = filter === 'archived'
 
   if (isLoading) {
     return (
@@ -141,6 +143,30 @@ export function TodoList({ onEdit }: TodoListProps) {
     )
   }
 
+  const tabs = [
+    { value: 'active' as Filter, label: 'Active', icon: Circle, count: todos.length, color: 'var(--status-in-progress)' },
+    { value: 'completed' as Filter, label: 'Completed', icon: CheckCircle2, count: completedTotal, color: 'var(--status-done)' },
+    { value: 'deleted' as Filter, label: 'Deleted', icon: Trash2, count: deletedTodos.length, color: 'var(--status-on-hold)' },
+  ]
+
+  const emptyMessage = filter === 'active'
+    ? 'No active tasks'
+    : filter === 'completed'
+      ? completedSearch ? 'No matching tasks' : 'No completed tasks yet'
+      : 'No deleted tasks'
+
+  const emptyIcon = filter === 'completed'
+    ? <CheckCircle2 className="h-6 w-6" style={{ color: 'var(--status-done)' }} />
+    : filter === 'deleted'
+      ? <Trash2 className="h-6 w-6" style={{ color: 'var(--status-on-hold)' }} />
+      : <Inbox className="h-6 w-6" style={{ color: 'var(--accent)' }} />
+
+  const emptyBg = filter === 'completed'
+    ? 'color-mix(in srgb, var(--status-done) 15%, transparent)'
+    : filter === 'deleted'
+      ? 'color-mix(in srgb, var(--status-on-hold) 15%, transparent)'
+      : 'color-mix(in srgb, var(--accent) 15%, transparent)'
+
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Header with filters */}
@@ -153,15 +179,10 @@ export function TodoList({ onEdit }: TodoListProps) {
           <h2 className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--primary)' }}>Tasks</h2>
         </div>
         <div className="flex items-center gap-0.5">
-          {[
-            { value: 'all', label: 'All', icon: Inbox, count: stats.total, color: 'var(--text-muted)' },
-            { value: 'active', label: 'Active', icon: Circle, count: stats.active, color: 'var(--status-in-progress)' },
-            { value: 'completed', label: 'Done', icon: CheckCircle2, count: stats.completed, color: 'var(--status-done)' },
-            { value: 'archived', label: 'Archived', icon: Archive, count: stats.archived, color: 'var(--status-on-hold)' },
-          ].map((tab) => (
+          {tabs.map((tab) => (
             <button
               key={tab.value}
-              onClick={() => setFilter(tab.value as Filter)}
+              onClick={() => setFilter(tab.value)}
               className="todo-filter-btn flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] font-medium transition-colors"
               style={filter === tab.value ? {
                 backgroundColor: `color-mix(in srgb, ${tab.color} 15%, transparent)`,
@@ -193,6 +214,36 @@ export function TodoList({ onEdit }: TodoListProps) {
         </div>
       </div>
 
+      {/* Search bar for completed tab */}
+      {filter === 'completed' && (
+        <div className="relative mb-2 flex-shrink-0">
+          <Search
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5"
+            style={{ color: 'var(--text-muted)' }}
+          />
+          <input
+            type="text"
+            value={completedSearch}
+            onChange={(e) => setCompletedSearch(e.target.value)}
+            placeholder="Search completed tasks..."
+            className="w-full h-8 pl-8 pr-8 rounded-lg text-xs outline-none border transition-colors"
+            style={{
+              backgroundColor: 'var(--surface-2)',
+              color: 'var(--text-primary)',
+              borderColor: 'var(--border-color)',
+            }}
+          />
+          {completedSearch && (
+            <button
+              onClick={() => setCompletedSearch('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-white/10 transition-colors"
+            >
+              <X className="h-3 w-3" style={{ color: 'var(--text-muted)' }} />
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Todo Items with Drag and Drop */}
       <div className="relative flex-1 min-h-0">
         <div className="h-full overflow-y-auto scrollbar-hide">
@@ -200,6 +251,7 @@ export function TodoList({ onEdit }: TodoListProps) {
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
           onDragCancel={handleDragCancel}
         >
@@ -213,48 +265,65 @@ export function TodoList({ onEdit }: TodoListProps) {
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <div
                       className="rounded-full p-3 mb-3"
-                      style={{
-                        backgroundColor: isArchiveView
-                          ? 'color-mix(in srgb, var(--status-on-hold) 15%, transparent)'
-                          : filter === 'completed'
-                          ? 'color-mix(in srgb, var(--status-done) 15%, transparent)'
-                          : 'color-mix(in srgb, var(--accent) 15%, transparent)',
-                      }}
+                      style={{ backgroundColor: emptyBg }}
                     >
-                      {isArchiveView ? (
-                        <Archive className="h-6 w-6" style={{ color: 'var(--status-on-hold)' }} />
-                      ) : filter === 'completed' ? (
-                        <CheckCircle2 className="h-6 w-6" style={{ color: 'var(--status-done)' }} />
-                      ) : (
-                        <Inbox className="h-6 w-6" style={{ color: 'var(--accent)' }} />
-                      )}
+                      {emptyIcon}
                     </div>
                     <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                      {isArchiveView
-                        ? 'No archived items'
-                        : filter === 'all'
-                        ? 'No todos yet'
-                        : filter === 'active'
-                        ? 'All done!'
-                        : 'Nothing completed'}
+                      {emptyMessage}
                     </p>
                   </div>
                 ) : (
-                  filteredTodos.map((todo) => (
-                    <TodoItem
-                      key={todo.id}
-                      todo={todo}
-                      onStatusChange={handleStatusChange}
-                      onPriorityChange={handlePriorityChange}
-                      onDelete={isArchiveView ? handlePermanentDelete : handleDelete}
-                      onEdit={onEdit}
-                      onRestore={handleRestore}
-                      onToggleSubtask={handleToggleSubtask}
-                      isArchiveView={isArchiveView}
-                    />
-                  ))
+                  filteredTodos.map((todo) => {
+                    let dropIndicator: 'above' | 'below' | null = null
+                    if (activeId && overId && overId === todo.id && activeId !== overId) {
+                      const activeIndex = todos.findIndex(t => t.id === activeId)
+                      const overIndex = todos.findIndex(t => t.id === overId)
+                      if (activeIndex !== -1 && overIndex !== -1) {
+                        dropIndicator = activeIndex < overIndex ? 'below' : 'above'
+                      }
+                    }
+                    return (
+                      <TodoItem
+                        key={todo.id}
+                        todo={todo}
+                        onStatusChange={handleStatusChange}
+                        onPriorityChange={handlePriorityChange}
+                        onDelete={filter === 'deleted' ? handlePermanentDelete : handleDelete}
+                        onEdit={onEdit}
+                        onRestore={handleRestore}
+                        onToggleSubtask={handleToggleSubtask}
+                        viewMode={filter}
+                        dropIndicator={dropIndicator}
+                      />
+                    )
+                  })
                 )}
               </AnimatePresence>
+
+              {/* Load more button for completed tab */}
+              {filter === 'completed' && hasNextCompletedPage && (
+                <div className="flex justify-center py-3">
+                  <button
+                    onClick={() => fetchNextCompletedPage()}
+                    disabled={isFetchingNextCompletedPage}
+                    className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-medium transition-colors hover:brightness-110"
+                    style={{
+                      backgroundColor: 'color-mix(in srgb, var(--primary) 15%, transparent)',
+                      color: 'var(--primary)',
+                    }}
+                  >
+                    {isFetchingNextCompletedPage ? (
+                      <>
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      'Load more'
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           </SortableContext>
 

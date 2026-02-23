@@ -32,17 +32,17 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    // Fetch all todos completed in this year (updatedAt as proxy for completedAt)
+    // Fetch all todos completed in this year
     const todosCompleted = await db.todo.findMany({
       where: {
         status: 'COMPLETED',
-        updatedAt: { gte: startDate, lt: endDate },
+        completedAt: { gte: startDate, lt: endDate },
       },
       select: {
         id: true,
         priority: true,
         createdAt: true,
-        updatedAt: true,
+        completedAt: true,
         labels: { select: { id: true, name: true, color: true } },
       },
     })
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     }
 
     for (const todo of todosCompleted) {
-      const m = new Date(todo.updatedAt).getMonth()
+      const m = new Date(todo.completedAt!).getMonth()
       monthly[m].completed++
     }
 
@@ -70,11 +70,11 @@ export async function GET(request: NextRequest) {
     const totalCompleted = todosCompleted.length
     const completionRate = totalCreated > 0 ? Math.round((totalCompleted / totalCreated) * 100) : 0
 
-    // Avg completion days (using updatedAt - createdAt for completed todos)
+    // Avg completion days (using completedAt - createdAt)
     let totalDays = 0
     for (const todo of todosCompleted) {
       const created = new Date(todo.createdAt).getTime()
-      const completed = new Date(todo.updatedAt).getTime()
+      const completed = new Date(todo.completedAt!).getTime()
       totalDays += (completed - created) / (1000 * 60 * 60 * 24)
     }
     const avgCompletionDays = totalCompleted > 0 ? Math.round(totalDays / totalCompleted) : 0

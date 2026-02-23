@@ -29,6 +29,7 @@ export interface Todo {
   order: number
   createdAt: string
   updatedAt: string
+  completedAt: string | null
   labels: Label[]
   subtasks: Subtask[]
   myPrUrl: string | null
@@ -44,6 +45,13 @@ export interface GitHubPrStatus {
   author: string
   draft: boolean
   reviewStatus: 'review_requested' | 'approved' | 'changes_requested' | null
+  approvedCount?: number
+  reviewerCount?: number
+}
+
+export interface PaginatedTodosResponse {
+  todos: Todo[]
+  total: number
 }
 
 export interface SubtaskInput {

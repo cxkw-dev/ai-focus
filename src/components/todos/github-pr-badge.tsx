@@ -13,7 +13,14 @@ function getBadgeConfig(data: GitHubPrStatus) {
   if (data.draft) return { color: '#8b949e', icon: GitPullRequest, label: 'Draft' }
   if (data.reviewStatus === 'changes_requested') return { color: '#e5534b', icon: CircleDot, label: 'Changes' }
   if (data.reviewStatus === 'review_requested') return { color: '#d29922', icon: GitPullRequest, label: 'In Review' }
-  if (data.reviewStatus === 'approved') return { color: '#3fb950', icon: Check, label: 'Approved' }
+  if (data.reviewStatus === 'approved') {
+    const count = data.approvedCount
+    const total = data.reviewerCount
+    if (count != null && total != null && count < total) {
+      return { color: '#d29922', icon: Check, label: `${count}/${total}` }
+    }
+    return { color: '#3fb950', icon: Check, label: 'Approved' }
+  }
   return { color: '#3fb950', icon: GitPullRequest, label: 'Open' }
 }
 

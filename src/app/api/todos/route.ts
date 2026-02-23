@@ -30,6 +30,11 @@ const listTodosQuerySchema = z.object({
   status: statusSchema.optional(),
   priority: prioritySchema.optional(),
   archived: z.enum(['true', 'false']).optional(),
+  excludeStatus: statusSchema.optional(),
+  search: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+  offset: z.coerce.number().int().min(0).optional(),
+  sortBy: z.enum(['order', 'completedAt', 'updatedAt']).optional(),
 })
 
 export async function GET(request: NextRequest) {
@@ -39,6 +44,11 @@ export async function GET(request: NextRequest) {
       status: request.nextUrl.searchParams.get('status') ?? undefined,
       priority: request.nextUrl.searchParams.get('priority') ?? undefined,
       archived: request.nextUrl.searchParams.get('archived') ?? undefined,
+      excludeStatus: request.nextUrl.searchParams.get('excludeStatus') ?? undefined,
+      search: request.nextUrl.searchParams.get('search') ?? undefined,
+      limit: request.nextUrl.searchParams.get('limit') ?? undefined,
+      offset: request.nextUrl.searchParams.get('offset') ?? undefined,
+      sortBy: request.nextUrl.searchParams.get('sortBy') ?? undefined,
     })
 
     const where: Prisma.TodoWhereInput = {}
@@ -61,17 +71,41 @@ export async function GET(request: NextRequest) {
       where.priority = validatedQuery.priority
     }
 
-    const todos = await db.todo.findMany({
-      where,
-      include: {
-        labels: { orderBy: { name: 'asc' } },
-        subtasks: { orderBy: { order: 'asc' } },
-      },
-      orderBy: [
-        { order: 'asc' },
-        { createdAt: 'desc' },
-      ],
-    })
+    if (validatedQuery.excludeStatus) {
+      where.status = { ...((where.status as object) ?? {}), not: validatedQuery.excludeStatus }
+    }
+
+    if (validatedQuery.search) {
+      where.title = { contains: validatedQuery.search, mode: 'insensitive' }
+    }
+
+    const orderBy: Prisma.TodoOrderByWithRelationInput[] =
+      validatedQuery.sortBy === 'completedAt'
+        ? [{ completedAt: 'desc' }]
+        : validatedQuery.sortBy === 'updatedAt'
+          ? [{ updatedAt: 'desc' }]
+          : [{ order: 'asc' }, { createdAt: 'desc' }]
+
+    const include = {
+      labels: { orderBy: { name: 'asc' } as const },
+      subtasks: { orderBy: { order: 'asc' } as const },
+    }
+
+    if (validatedQuery.limit !== undefined) {
+      const [todos, total] = await Promise.all([
+        db.todo.findMany({
+          where,
+          include,
+          orderBy,
+          take: validatedQuery.limit,
+          skip: validatedQuery.offset ?? 0,
+        }),
+        db.todo.count({ where }),
+      ])
+      return NextResponse.json({ todos, total })
+    }
+
+    const todos = await db.todo.findMany({ where, include, orderBy })
 
     return NextResponse.json(todos)
   } catch (error) {

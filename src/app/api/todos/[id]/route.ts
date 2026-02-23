@@ -78,6 +78,25 @@ export async function PATCH(
     const todo = await db.$transaction(async (tx) => {
       let resolvedTodoId: string | null = null
 
+      // Handle completedAt + auto-archive when status changes
+      if (todoData.status !== undefined) {
+        const current = await tx.todo.findUnique({
+          where: todoWhere(id),
+          select: { id: true, status: true },
+        })
+
+        if (!current) throw new Error('TODO_NOT_FOUND')
+        resolvedTodoId = current.id
+
+        if (todoData.status === 'COMPLETED') {
+          todoData.archived = true
+          ;(todoData as Record<string, unknown>).completedAt = new Date()
+        } else if (current.status === 'COMPLETED') {
+          ;(todoData as Record<string, unknown>).completedAt = null
+          todoData.archived = false
+        }
+      }
+
       // If subtasks are provided, do a declarative sync with ownership validation.
       if (subtasks !== undefined) {
         const existing = await tx.todo.findUnique({

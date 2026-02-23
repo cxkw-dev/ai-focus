@@ -114,6 +114,8 @@ function mentionifyHtml(html: string): string {
   )
 }
 
+type ViewMode = 'active' | 'completed' | 'deleted'
+
 interface TodoItemProps {
   todo: Todo
   onStatusChange: (id: string, status: Status) => void
@@ -123,7 +125,8 @@ interface TodoItemProps {
   onRestore?: (id: string) => void
   onToggleSubtask?: (todoId: string, subtaskId: string, completed: boolean) => void
   isDragging?: boolean
-  isArchiveView?: boolean
+  viewMode?: ViewMode
+  dropIndicator?: 'above' | 'below' | null
 }
 
 function StatusDropdown({ todo, onStatusChange }: { todo: Todo; onStatusChange: (id: string, status: Status) => void }) {
@@ -247,10 +250,9 @@ function TodoItemContent({
   onRestore,
   onToggleSubtask,
   isDragging,
-  isArchiveView,
+  viewMode = 'active',
 }: TodoItemProps) {
   const isCompleted = todo.status === 'COMPLETED'
-  const [expanded, setExpanded] = React.useState(false)
 
   const subtasks = todo.subtasks ?? []
   const completedCount = subtasks.filter(s => s.completed).length
@@ -328,10 +330,26 @@ function TodoItemContent({
       {/* Bottom row */}
       <div className="flex items-start gap-2 justify-between min-w-0">
         <div className="flex flex-1 flex-wrap items-center gap-1 min-w-0">
-          {!isArchiveView && (
+          {viewMode === 'active' && (
             <StatusDropdown todo={todo} onStatusChange={onStatusChange} />
           )}
-          {!isArchiveView ? (
+          {viewMode === 'completed' && (() => {
+            const config = STATUS_CONFIG[todo.status]
+            const Icon = config.icon
+            return (
+              <span
+                className={cn(CHIP_BASE)}
+                style={{
+                  backgroundColor: `color-mix(in srgb, ${config.bgVar} 15%, transparent)`,
+                  color: config.colorVar,
+                }}
+              >
+                <Icon className="h-3 w-3" />
+                <span className="hidden sm:inline">{config.label}</span>
+              </span>
+            )
+          })()}
+          {viewMode === 'active' ? (
             <PriorityDropdown todo={todo} onPriorityChange={onPriorityChange} />
           ) : (
             <span
@@ -345,9 +363,8 @@ function TodoItemContent({
             </span>
           )}
           {subtasks.length > 0 && (
-            <button
-              onClick={() => setExpanded(v => !v)}
-              className={cn(CHIP_BASE, 'hover:brightness-110 cursor-pointer')}
+            <span
+              className={cn(CHIP_BASE)}
               style={{
                 backgroundColor: allDone
                   ? 'color-mix(in srgb, var(--status-done) 15%, transparent)'
@@ -357,13 +374,13 @@ function TodoItemContent({
             >
               <ListChecks className="h-3 w-3" />
               <span>{completedCount}/{subtasks.length}</span>
-            </button>
+            </span>
           )}
         </div>
 
         {/* Actions — CSS hover classes instead of JS handlers */}
         <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
-          {isArchiveView ? (
+          {viewMode === 'deleted' ? (
             <>
               <button
                 onClick={() => onRestore?.(todo.id)}
@@ -380,6 +397,14 @@ function TodoItemContent({
                 <Trash2 className="h-3 w-3" />
               </button>
             </>
+          ) : viewMode === 'completed' ? (
+            <button
+              onClick={() => onEdit(todo)}
+              className={cn(CHIP_BASE, 'todo-action-edit')}
+              title="Edit"
+            >
+              <Edit2 className="h-3 w-3" />
+            </button>
           ) : (
             <>
               <button
@@ -404,8 +429,8 @@ function TodoItemContent({
       {/* PR dependency tree */}
       <PrDependencyTree myPrUrl={todo.myPrUrl} githubPrUrls={todo.githubPrUrls ?? []} />
 
-      {/* Expandable subtask checklist */}
-      {expanded && subtasks.length > 0 && (
+      {/* Subtask checklist */}
+      {subtasks.length > 0 && (
         <div
           className="pt-1 space-y-0.5"
           style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)' }}
@@ -439,7 +464,7 @@ function TodoItemContent({
   )
 }
 
-export function TodoItem({ todo, onStatusChange, onPriorityChange, onDelete, onEdit, onRestore, onToggleSubtask, isDragging: isOverlay, isArchiveView }: TodoItemProps) {
+export function TodoItem({ todo, onStatusChange, onPriorityChange, onDelete, onEdit, onRestore, onToggleSubtask, isDragging: isOverlay, viewMode = 'active', dropIndicator }: TodoItemProps) {
   const {
     attributes,
     listeners,
@@ -447,7 +472,7 @@ export function TodoItem({ todo, onStatusChange, onPriorityChange, onDelete, onE
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: todo.id, disabled: isArchiveView })
+  } = useSortable({ id: todo.id, disabled: viewMode !== 'active' })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -457,6 +482,13 @@ export function TodoItem({ todo, onStatusChange, onPriorityChange, onDelete, onE
   const dragging = isOverlay || isDragging
   const isCompleted = todo.status === 'COMPLETED'
 
+  const dropLine = (
+    <div
+      className="h-0.5 rounded-full mx-1 transition-all"
+      style={{ backgroundColor: 'var(--primary)' }}
+    />
+  )
+
   return (
       <motion.div
         ref={setNodeRef}
@@ -465,10 +497,12 @@ export function TodoItem({ todo, onStatusChange, onPriorityChange, onDelete, onE
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: dragging ? 0.5 : 1, y: 0 }}
         exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
-        className="flex items-center gap-0.5 min-w-0"
+        className="min-w-0"
       >
+      {dropIndicator === 'above' && dropLine}
+      <div className="flex items-center gap-0.5">
       {/* Drag Handle — CSS hover class */}
-      {!isArchiveView && (
+      {viewMode === 'active' && (
         <button
           {...attributes}
           {...listeners}
@@ -486,10 +520,12 @@ export function TodoItem({ todo, onStatusChange, onPriorityChange, onDelete, onE
         className={cn(
           'group flex-1 min-w-0 rounded-lg px-3 py-2.5 transition-all',
           dragging && 'shadow-lg z-50',
-          (isCompleted || isArchiveView) && 'opacity-50'
+          (isCompleted || viewMode !== 'active') && 'opacity-50'
         )}
         style={{
-          backgroundColor: 'var(--surface-2)',
+          backgroundColor: todo.status === 'WAITING'
+            ? 'color-mix(in srgb, var(--status-waiting) 8%, var(--surface-2))'
+            : 'var(--surface-2)',
           ...(dragging ? { boxShadow: '0 0 0 2px color-mix(in srgb, var(--primary) 30%, transparent)' } : {}),
         }}
       >
@@ -502,14 +538,16 @@ export function TodoItem({ todo, onStatusChange, onPriorityChange, onDelete, onE
           onRestore={onRestore}
           onToggleSubtask={onToggleSubtask}
           isDragging={dragging}
-          isArchiveView={isArchiveView}
+          viewMode={viewMode}
         />
       </div>
+      </div>
+      {dropIndicator === 'below' && dropLine}
     </motion.div>
   )
 }
 
-export function TodoItemOverlay({ todo, onStatusChange, onPriorityChange, onDelete, onEdit }: Omit<TodoItemProps, 'isDragging' | 'isArchiveView'>) {
+export function TodoItemOverlay({ todo, onStatusChange, onPriorityChange, onDelete, onEdit }: Omit<TodoItemProps, 'isDragging' | 'viewMode' | 'dropIndicator'>) {
   const isCompleted = todo.status === 'COMPLETED'
 
   return (
