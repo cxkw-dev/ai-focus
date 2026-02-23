@@ -14,6 +14,7 @@ services:
       DATABASE_URL: ${DOCKER_DATABASE_URL:-postgresql://postgres@host.docker.internal:5432/aifocus}
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:4444}
       GITHUB_TOKEN: ${GITHUB_TOKEN}
+      AZURE_DEVOPS: ${AZURE_DEVOPS}
       NODE_ENV: production
     extra_hosts:
       - "host.docker.internal:host-gateway"
