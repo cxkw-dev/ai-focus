@@ -49,13 +49,13 @@ interface TodoFormState {
   }
 }
 
-export function useTodoForm(todo?: Todo | null): TodoFormState {
+export function useTodoForm(todo?: Todo | null, options?: { initialLabelIds?: string[] }): TodoFormState {
   const [title, setTitle] = React.useState('')
   const [description, setDescription] = React.useState('')
   const [priority, setPriority] = React.useState<Priority>('MEDIUM')
   const [status, setStatus] = React.useState<Status>('TODO')
   const [dueDate, setDueDate] = React.useState('')
-  const [labelIds, setLabelIds] = React.useState<string[]>([])
+  const [labelIds, setLabelIds] = React.useState<string[]>(options?.initialLabelIds ?? [])
   const [subtasks, setSubtasks] = React.useState<SubtaskInput[]>([])
   const [myPrUrl, setMyPrUrl] = React.useState('')
   const [githubPrUrls, setGithubPrUrls] = React.useState<string[]>([])
@@ -68,13 +68,13 @@ export function useTodoForm(todo?: Todo | null): TodoFormState {
     setPriority('MEDIUM')
     setStatus('TODO')
     setDueDate('')
-    setLabelIds([])
+    setLabelIds(options?.initialLabelIds ?? [])
     setSubtasks([])
     setMyPrUrl('')
     setGithubPrUrls([])
     setAzureWorkItemUrl('')
     setAzureDepUrls([])
-  }, [])
+  }, [options?.initialLabelIds])
 
   const populateFromTodo = React.useCallback((t: Todo) => {
     setTitle(t.title)

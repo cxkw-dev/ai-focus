@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   FileText,
   Settings,
+  StickyNote,
 } from 'lucide-react'
 import {
   Tooltip,
@@ -30,6 +31,11 @@ const navItems = [
     title: 'Todos',
     href: '/todos',
     icon: CheckSquare,
+  },
+  {
+    title: 'Scratch Pad',
+    href: '/scratchpad',
+    icon: StickyNote,
   },
   {
     title: 'Notes',

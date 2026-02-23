@@ -1,26 +1,64 @@
 'use client'
 
 import * as React from 'react'
-import { FileText, List, Plus } from 'lucide-react'
-import { TodoList } from '@/components/todos/todo-list'
+import { Plus } from 'lucide-react'
+import { TodoColumn } from '@/components/todos/todo-column'
 import { EditTodoDialog } from '@/components/todos/edit-todo-dialog'
-import { InlineTodoForm } from '@/components/todos/inline-todo-form'
 import { CreateTodoModal } from '@/components/todos/create-todo-modal'
-import { ScratchPad } from '@/components/todos/scratch-pad'
 import { useToast } from '@/components/ui/use-toast'
 import { useTodos } from '@/hooks/use-todos'
-import type { Todo, UpdateTodoInput } from '@/types/todo'
+import { useLabels } from '@/hooks/use-labels'
+import { categorizeTodos, type TodoCategory } from '@/lib/categorize-todos'
+import type { Todo, UpdateTodoInput, CreateTodoInput } from '@/types/todo'
+
+const COLUMNS: { key: TodoCategory; title: string; color: string }[] = [
+  { key: 'kaf', title: 'KAF', color: 'var(--accent)' },
+  { key: 'projects', title: 'Projects', color: 'var(--primary)' },
+  { key: 'others', title: 'Others', color: 'var(--status-waiting)' },
+]
 
 export default function TodosPage() {
-  const { todos, create, update, isSaving } = useTodos()
+  const {
+    todos,
+    completedTodos,
+    deletedTodos,
+    isLoading,
+    isSaving,
+    create,
+    update,
+    updateStatus,
+    updatePriority,
+    archive,
+    restore,
+    permanentDelete,
+    reorder,
+    toggleSubtask,
+  } = useTodos()
+  const { labels } = useLabels()
   const { toast } = useToast()
 
-  const [isFormOpen, setIsFormOpen] = React.useState(false)
   const [editingTodo, setEditingTodo] = React.useState<Todo | null>(null)
+  const [isFormOpen, setIsFormOpen] = React.useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false)
-  const [mobileView, setMobileView] = React.useState<'notes' | 'tasks'>('notes')
+  const [mobileCategory, setMobileCategory] = React.useState<TodoCategory>('kaf')
 
-  const handleCreate = React.useCallback(async (data: Parameters<typeof create.mutateAsync>[0]) => {
+  // Find label IDs for default auto-labeling
+  const kafLabelId = React.useMemo(
+    () => labels.find(l => l.name.toLowerCase() === 'kaf')?.id,
+    [labels]
+  )
+  const defaultLabelIdsMap = React.useMemo<Record<TodoCategory, string[]>>(() => ({
+    kaf: kafLabelId ? [kafLabelId] : [],
+    projects: [],
+    others: [],
+  }), [kafLabelId])
+
+  // Categorize all todo lists
+  const categorizedActive = React.useMemo(() => categorizeTodos(todos), [todos])
+  const categorizedCompleted = React.useMemo(() => categorizeTodos(completedTodos), [completedTodos])
+  const categorizedDeleted = React.useMemo(() => categorizeTodos(deletedTodos), [deletedTodos])
+
+  const handleCreate = React.useCallback(async (data: CreateTodoInput) => {
     try {
       await create.mutateAsync(data)
       return true
@@ -58,54 +96,112 @@ export default function TodosPage() {
     if (!open) setEditingTodo(null)
   }, [])
 
+  const handleStatusChange = React.useCallback(
+    (id: string, status: Todo['status']) => updateStatus.mutate({ id, status }),
+    [updateStatus]
+  )
+
+  const handlePriorityChange = React.useCallback(
+    (id: string, priority: Todo['priority']) => updatePriority.mutate({ id, priority }),
+    [updatePriority]
+  )
+
+  const handleDelete = React.useCallback(
+    (id: string) => archive.mutate(id),
+    [archive]
+  )
+
+  const handlePermanentDelete = React.useCallback(
+    (id: string) => permanentDelete.mutate(id),
+    [permanentDelete]
+  )
+
+  const handleRestore = React.useCallback(
+    (id: string) => restore.mutate(id),
+    [restore]
+  )
+
+  const handleToggleSubtask = React.useCallback(
+    (todoId: string, subtaskId: string, completed: boolean) =>
+      toggleSubtask.mutate({ todoId, subtaskId, completed }),
+    [toggleSubtask]
+  )
+
+  const handleReorder = React.useCallback(
+    (reorderedTodos: Todo[]) => reorder.mutate(reorderedTodos),
+    [reorder]
+  )
+
+  if (isLoading) {
+    return (
+      <div className="h-[calc(100vh-120px)] flex items-center justify-center">
+        <div className="space-y-2 w-full max-w-md">
+          {[...Array(3)].map((_, i) => (
+            <div
+              key={i}
+              className="h-16 rounded-lg animate-pulse"
+              style={{ backgroundColor: 'var(--surface-2)' }}
+            />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="h-[calc(100vh-120px)] flex flex-col">
       {/* Mobile/Narrow View (< 1280px) */}
       <div className="flex flex-col h-full xl:hidden">
+        {/* Category tab switcher */}
         <div className="flex items-center gap-1 mb-3 p-1 rounded-lg" style={{ backgroundColor: 'var(--surface)' }}>
-          <button
-            type="button"
-            onClick={() => setMobileView('notes')}
-            className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-xs font-medium transition-all"
-            style={{
-              backgroundColor: mobileView === 'notes' ? 'var(--primary)' : 'transparent',
-              color: mobileView === 'notes' ? 'var(--primary-foreground)' : 'var(--text-muted)',
-            }}
-          >
-            <FileText className="h-3.5 w-3.5" />
-            Notes
-          </button>
-          <button
-            type="button"
-            onClick={() => setMobileView('tasks')}
-            className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-xs font-medium transition-all relative"
-            style={{
-              backgroundColor: mobileView === 'tasks' ? 'var(--primary)' : 'transparent',
-              color: mobileView === 'tasks' ? 'var(--primary-foreground)' : 'var(--text-muted)',
-            }}
-          >
-            <List className="h-3.5 w-3.5" />
-            Tasks
-            {todos.length > 0 && (
-              <span
-                className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold"
-                style={{ backgroundColor: 'var(--accent)', color: 'var(--background)' }}
+          {COLUMNS.map((col) => {
+            const count = categorizedActive[col.key].length
+            return (
+              <button
+                key={col.key}
+                type="button"
+                onClick={() => setMobileCategory(col.key)}
+                className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-xs font-medium transition-all relative"
+                style={{
+                  backgroundColor: mobileCategory === col.key ? 'var(--primary)' : 'transparent',
+                  color: mobileCategory === col.key ? 'var(--primary-foreground)' : 'var(--text-muted)',
+                }}
               >
-                {todos.length}
-              </span>
-            )}
-          </button>
+                {col.title}
+                {count > 0 && (
+                  <span
+                    className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold"
+                    style={{ backgroundColor: col.color, color: 'var(--background)' }}
+                  >
+                    {count}
+                  </span>
+                )}
+              </button>
+            )
+          })}
         </div>
 
         <div className="flex-1 min-h-0">
-          {mobileView === 'notes'
-            ? <ScratchPad className="h-full" />
-            : (
-              <div className="flex flex-col min-h-0 h-full">
-                <TodoList onEdit={handleEdit} />
-              </div>
-            )
-          }
+          <TodoColumn
+            title={COLUMNS.find(c => c.key === mobileCategory)!.title}
+            color={COLUMNS.find(c => c.key === mobileCategory)!.color}
+            category={mobileCategory}
+            activeTodos={categorizedActive[mobileCategory]}
+            completedTodos={categorizedCompleted[mobileCategory]}
+            deletedTodos={categorizedDeleted[mobileCategory]}
+            onEdit={handleEdit}
+            onStatusChange={handleStatusChange}
+            onPriorityChange={handlePriorityChange}
+            onDelete={handleDelete}
+            onPermanentDelete={handlePermanentDelete}
+            onRestore={handleRestore}
+            onToggleSubtask={handleToggleSubtask}
+            onReorder={handleReorder}
+            onCreateTodo={handleCreate}
+            isSaving={isSaving}
+            defaultLabelIds={defaultLabelIdsMap[mobileCategory]}
+            showInlineForm={false}
+          />
         </div>
 
         <button
@@ -123,18 +219,45 @@ export default function TodosPage() {
       </div>
 
       {/* Desktop View (>= 1280px) */}
-      <div className="hidden xl:grid xl:grid-cols-[480px_1fr] gap-8 flex-1 min-h-0">
-        <div className="flex flex-col min-h-0 gap-6">
-          <InlineTodoForm
-            onSubmit={handleCreate}
-            isLoading={isSaving}
-          />
-          <div className="flex flex-col min-h-0 flex-1">
-            <TodoList onEdit={handleEdit} />
-          </div>
+      <div className="hidden xl:flex xl:flex-col flex-1 min-h-0 gap-4">
+        <div className="flex-shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:opacity-90 active:scale-[0.98]"
+            style={{
+              backgroundColor: 'var(--primary)',
+              color: 'var(--primary-foreground)',
+            }}
+          >
+            <Plus className="h-4 w-4" strokeWidth={2.5} />
+            Add Task
+          </button>
         </div>
-
-        <ScratchPad className="xl:-mr-4" />
+        <div className="grid grid-cols-3 gap-6 flex-1 min-h-0">
+          {COLUMNS.map((col) => (
+            <TodoColumn
+              key={col.key}
+              title={col.title}
+              color={col.color}
+              category={col.key}
+              activeTodos={categorizedActive[col.key]}
+              completedTodos={categorizedCompleted[col.key]}
+              deletedTodos={categorizedDeleted[col.key]}
+              onEdit={handleEdit}
+              onStatusChange={handleStatusChange}
+              onPriorityChange={handlePriorityChange}
+              onDelete={handleDelete}
+              onPermanentDelete={handlePermanentDelete}
+              onRestore={handleRestore}
+              onToggleSubtask={handleToggleSubtask}
+              onReorder={handleReorder}
+              onCreateTodo={handleCreate}
+              isSaving={isSaving}
+              showInlineForm={false}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Edit Dialog */}
@@ -146,7 +269,7 @@ export default function TodosPage() {
         isLoading={isSaving}
       />
 
-      {/* Create Modal (mobile) */}
+      {/* Create Modal */}
       <CreateTodoModal
         open={isCreateModalOpen}
         onOpenChange={setIsCreateModalOpen}

@@ -11,10 +11,11 @@ async function json<T>(res: Response): Promise<T> {
 const headers = { 'Content-Type': 'application/json' } as const
 
 export const todosApi = {
-  list: (params?: { archived?: boolean; excludeStatus?: string }): Promise<Todo[]> => {
+  list: (params?: { archived?: boolean; excludeStatus?: string; status?: string }): Promise<Todo[]> => {
     const sp = new URLSearchParams()
     if (params?.archived !== undefined) sp.set('archived', String(params.archived))
     if (params?.excludeStatus) sp.set('excludeStatus', params.excludeStatus)
+    if (params?.status) sp.set('status', params.status)
     const q = sp.toString()
     return fetch(`/api/todos${q ? `?${q}` : ''}`).then(r => json(r))
   },

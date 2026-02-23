@@ -3,8 +3,6 @@
 import * as React from 'react'
 import {
   CalendarDays,
-  CircleDot,
-  GitPullRequest,
   Loader2,
   Plus,
   X,
@@ -12,6 +10,7 @@ import {
 import { cn } from '@/lib/utils'
 import { PRIORITIES } from '@/lib/priority'
 import { LabelMultiSelect, LabelManagerDialog } from './label-multi-select'
+import { UrlListField } from './url-fields'
 import { useLabels } from '@/hooks/use-labels'
 import { useTodoForm } from '@/hooks/use-todo-form'
 import type { CreateTodoInput, Priority } from '@/types/todo'
@@ -19,14 +18,16 @@ import type { CreateTodoInput, Priority } from '@/types/todo'
 interface InlineTodoFormProps {
   onSubmit: (data: CreateTodoInput) => Promise<boolean>
   isLoading?: boolean
+  defaultLabelIds?: string[]
 }
 
 export function InlineTodoForm({
   onSubmit,
   isLoading,
+  defaultLabelIds,
 }: InlineTodoFormProps) {
   const { labels, handleCreate: onCreateLabel, handleUpdate: onUpdateLabel, handleDelete: onDeleteLabel } = useLabels()
-  const form = useTodoForm()
+  const form = useTodoForm(null, { initialLabelIds: defaultLabelIds })
   const [isExpanded, setIsExpanded] = React.useState(false)
   const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
@@ -38,14 +39,14 @@ export function InlineTodoForm({
     if (!form.title.trim()) return false
 
     const payload = form.toPayload()
-    // Include pending PR URL that wasn't explicitly added
-    const pendingUrl = newPrUrl.trim()
-    if (pendingUrl && !payload.githubPrUrls.includes(pendingUrl)) {
-      payload.githubPrUrls = [...payload.githubPrUrls, pendingUrl]
+    // Include pending URLs that weren't explicitly added
+    const pendingPr = newPrUrl.trim()
+    if (pendingPr && !payload.githubPrUrls.includes(pendingPr)) {
+      payload.githubPrUrls = [...payload.githubPrUrls, pendingPr]
     }
-    const pendingAzureUrl = newAzureDepUrl.trim()
-    if (pendingAzureUrl && !payload.azureDepUrls.includes(pendingAzureUrl)) {
-      payload.azureDepUrls = [...payload.azureDepUrls, pendingAzureUrl]
+    const pendingAzure = newAzureDepUrl.trim()
+    if (pendingAzure && !payload.azureDepUrls.includes(pendingAzure)) {
+      payload.azureDepUrls = [...payload.azureDepUrls, pendingAzure]
     }
     const success = await onSubmit(payload)
     if (success) {
@@ -279,124 +280,38 @@ export function InlineTodoForm({
                 </div>
               </div>
 
-              {/* GitHub PRs Row */}
-              <div
-                className="px-4 py-3"
-                style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 30%, transparent)' }}
-              >
-                <div className="space-y-1">
-                  {form.githubPrUrls.map((url, index) => (
-                    <div key={url} className="flex items-center gap-2 group/pr">
-                      <GitPullRequest className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
-                      <span className="text-xs flex-1 truncate" style={{ color: 'var(--text-primary)' }}>
-                        {url.replace(/^https?:\/\/github\.com\//, '')}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => form.removeGithubPrUrl(index)}
-                        className="flex-shrink-0 opacity-0 group-hover/pr:opacity-100 transition-opacity"
-                        style={{ color: 'var(--text-muted)' }}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                  <div
-                    className="flex items-center gap-2 rounded-md px-2 py-1.5 border"
-                    style={{
-                      backgroundColor: 'color-mix(in srgb, var(--background) 50%, transparent)',
-                      borderColor: 'color-mix(in srgb, var(--border-color) 60%, transparent)',
-                    }}
-                  >
-                    <input
-                      type="url"
-                      value={newPrUrl}
-                      onChange={(e) => setNewPrUrl(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          if (newPrUrl.trim()) {
-                            form.addGithubPrUrl(newPrUrl)
-                            setNewPrUrl('')
-                          }
-                        }
-                      }}
-                      placeholder="... insert url"
-                      disabled={isLoading}
-                      className="flex-1 bg-transparent text-xs focus:outline-none placeholder:text-[var(--text-muted)] min-w-0"
-                      style={{ color: 'var(--text-primary)' }}
-                    />
-                  </div>
-                </div>
-              </div>
-
               {/* Azure Work Items Row */}
               <div
                 className="px-4 py-3"
                 style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 30%, transparent)' }}
               >
-                <div className="space-y-1">
-                  {form.azureWorkItemUrl.trim() && (
-                    <div className="flex items-center gap-2 group/azure">
-                      <CircleDot className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
-                      <span className="text-xs flex-1 truncate" style={{ color: 'var(--text-primary)' }}>
-                        {form.azureWorkItemUrl.replace(/^https?:\/\/dev\.azure\.com\//, '')}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => form.setAzureWorkItemUrl('')}
-                        className="flex-shrink-0 opacity-0 group-hover/azure:opacity-100 transition-opacity"
-                        style={{ color: 'var(--text-muted)' }}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  )}
-                  {form.azureDepUrls.map((url, index) => (
-                    <div key={url} className="flex items-center gap-2 group/azure">
-                      <CircleDot className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
-                      <span className="text-xs flex-1 truncate" style={{ color: 'var(--text-primary)' }}>
-                        {url.replace(/^https?:\/\/dev\.azure\.com\//, '')}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => form.removeAzureDepUrl(index)}
-                        className="flex-shrink-0 opacity-0 group-hover/azure:opacity-100 transition-opacity"
-                        style={{ color: 'var(--text-muted)' }}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                  <div
-                    className="flex items-center gap-2 rounded-md px-2 py-1.5 border"
-                    style={{
-                      backgroundColor: 'color-mix(in srgb, var(--background) 50%, transparent)',
-                      borderColor: 'color-mix(in srgb, var(--border-color) 60%, transparent)',
-                    }}
-                  >
-                    <input
-                      type="url"
-                      value={newAzureDepUrl}
-                      onChange={(e) => setNewAzureDepUrl(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          if (newAzureDepUrl.trim()) {
-                            form.addAzureDepUrl(newAzureDepUrl)
-                            setNewAzureDepUrl('')
-                          }
-                        }
-                      }}
-                      placeholder="... azure work item url"
-                      disabled={isLoading}
-                      className="flex-1 bg-transparent text-xs focus:outline-none placeholder:text-[var(--text-muted)] min-w-0"
-                      style={{ color: 'var(--text-primary)' }}
-                    />
-                  </div>
-                </div>
+                <UrlListField
+                  type="azure"
+                  urls={form.azureDepUrls}
+                  onAdd={(url) => form.addAzureDepUrl(url)}
+                  onRemove={(i) => form.removeAzureDepUrl(i)}
+                  inputValue={newAzureDepUrl}
+                  onInputChange={setNewAzureDepUrl}
+                  disabled={isLoading}
+                  compact
+                />
+              </div>
+
+              {/* GitHub PRs Row */}
+              <div
+                className="px-4 py-3"
+                style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 30%, transparent)' }}
+              >
+                <UrlListField
+                  type="github"
+                  urls={form.githubPrUrls}
+                  onAdd={(url) => form.addGithubPrUrl(url)}
+                  onRemove={(i) => form.removeGithubPrUrl(i)}
+                  inputValue={newPrUrl}
+                  onInputChange={setNewPrUrl}
+                  disabled={isLoading}
+                  compact
+                />
               </div>
 
               {/* Actions Row */}

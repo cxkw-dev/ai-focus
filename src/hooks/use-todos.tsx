@@ -1,25 +1,15 @@
 'use client'
 
 import * as React from 'react'
-import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Undo2 } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import { todosApi } from '@/lib/api'
-import type { Todo, CreateTodoInput, UpdateTodoInput, Status, Priority, PaginatedTodosResponse } from '@/types/todo'
-
-const COMPLETED_PAGE_SIZE = 20
+import type { Todo, UpdateTodoInput, Status, Priority } from '@/types/todo'
 
 export function useTodos() {
   const queryClient = useQueryClient()
   const { toast, dismiss } = useToast()
-
-  const [completedSearch, setCompletedSearch] = React.useState('')
-  const [debouncedSearch, setDebouncedSearch] = React.useState('')
-
-  React.useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(completedSearch), 300)
-    return () => clearTimeout(timer)
-  }, [completedSearch])
 
   // Active todos (not archived, not completed)
   const todosQuery = useQuery({
@@ -27,22 +17,10 @@ export function useTodos() {
     queryFn: () => todosApi.list({ excludeStatus: 'COMPLETED' }),
   })
 
-  // Completed todos (paginated, searchable)
-  const completedQuery = useInfiniteQuery({
-    queryKey: ['todos', 'completed', { search: debouncedSearch }],
-    queryFn: ({ pageParam = 0 }) =>
-      todosApi.listPaginated({
-        status: 'COMPLETED',
-        limit: COMPLETED_PAGE_SIZE,
-        offset: pageParam,
-        sortBy: 'completedAt',
-        ...(debouncedSearch ? { search: debouncedSearch } : {}),
-      }),
-    initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      const loaded = allPages.reduce((sum, p) => sum + p.todos.length, 0)
-      return loaded < lastPage.total ? loaded : undefined
-    },
+  // Completed todos (all, single fetch)
+  const completedQuery = useQuery({
+    queryKey: ['todos', 'completed'],
+    queryFn: () => todosApi.list({ status: 'COMPLETED' }),
   })
 
   // Deleted todos (archived but not completed)
@@ -67,11 +45,13 @@ export function useTodos() {
       todosApi.update(id, data),
     onSuccess: (updatedTodo) => {
       if (updatedTodo.status === 'COMPLETED') {
-        // Completed via edit dialog — remove from active, invalidate completed
+        // Completed via edit dialog — remove from active, add to completed
         queryClient.setQueryData<Todo[]>(['todos'], (prev = []) =>
           prev.filter(t => t.id !== updatedTodo.id)
         )
-        queryClient.invalidateQueries({ queryKey: ['todos', 'completed'] })
+        queryClient.setQueryData<Todo[]>(['todos', 'completed'], (prev = []) =>
+          [updatedTodo, ...prev.filter(t => t.id !== updatedTodo.id)]
+        )
       } else if (updatedTodo.archived) {
         // Manually archived via edit — move to deleted
         queryClient.setQueryData<Todo[]>(['todos'], (prev = []) =>
@@ -81,13 +61,15 @@ export function useTodos() {
           [updatedTodo, ...prev.filter(t => t.id !== updatedTodo.id)]
         )
       } else {
-        // Status changed from completed back to active — add to active, invalidate completed
+        // Status changed from completed back to active — add to active, remove from completed
         queryClient.setQueryData<Todo[]>(['todos'], (prev = []) => {
           const exists = prev.some(t => t.id === updatedTodo.id)
           if (exists) return prev.map(t => (t.id === updatedTodo.id ? updatedTodo : t))
           return [updatedTodo, ...prev]
         })
-        queryClient.invalidateQueries({ queryKey: ['todos', 'completed'] })
+        queryClient.setQueryData<Todo[]>(['todos', 'completed'], (prev = []) =>
+          prev.filter(t => t.id !== updatedTodo.id)
+        )
       }
     },
     onError: () => {
@@ -102,7 +84,9 @@ export function useTodos() {
       queryClient.setQueryData<Todo[]>(['todos'], (prev = []) =>
         [restoredTodo, ...prev.filter(t => t.id !== restoredTodo.id)]
       )
-      queryClient.invalidateQueries({ queryKey: ['todos', 'completed'] })
+      queryClient.setQueryData<Todo[]>(['todos', 'completed'], (prev = []) =>
+        prev.filter(t => t.id !== restoredTodo.id)
+      )
       toast({ title: 'Restored' })
     },
     onError: () => {
@@ -132,9 +116,11 @@ export function useTodos() {
 
       return { previousTodos, previousStatus }
     },
-    onSuccess: (_data, { id, status }, context) => {
+    onSuccess: (data, { id, status }, context) => {
       if (status === 'COMPLETED') {
-        queryClient.invalidateQueries({ queryKey: ['todos', 'completed'] })
+        queryClient.setQueryData<Todo[]>(['todos', 'completed'], (prev = []) =>
+          [data, ...prev.filter(t => t.id !== id)]
+        )
       }
       if (status === 'COMPLETED' && context?.previousStatus) {
         toast({
@@ -310,7 +296,11 @@ export function useTodos() {
     onMutate: async (reorderedTodos) => {
       await queryClient.cancelQueries({ queryKey: ['todos'] })
       const previous = queryClient.getQueryData<Todo[]>(['todos'])
-      queryClient.setQueryData<Todo[]>(['todos'], reorderedTodos)
+      // Merge reordered subset into cache instead of replacing entire cache
+      const orderMap = new Map(reorderedTodos.map((t, i) => [t.id, i]))
+      queryClient.setQueryData<Todo[]>(['todos'], (old = []) =>
+        old.map(t => orderMap.has(t.id) ? { ...t, order: orderMap.get(t.id)! } : t)
+      )
       return { previous }
     },
     onError: (_err, _vars, context) => {
@@ -319,24 +309,12 @@ export function useTodos() {
     },
   })
 
-  const completedTodos = React.useMemo(
-    () => (completedQuery.data?.pages ?? []).flatMap(p => p.todos),
-    [completedQuery.data?.pages]
-  )
-  const completedTotal = completedQuery.data?.pages?.[0]?.total ?? 0
-
   return {
     todos: todosQuery.data ?? [],
-    completedTodos,
-    completedTotal,
+    completedTodos: completedQuery.data ?? [],
     deletedTodos: deletedQuery.data ?? [],
     isLoading: todosQuery.isLoading,
     isSaving: create.isPending || update.isPending,
-    hasNextCompletedPage: completedQuery.hasNextPage,
-    fetchNextCompletedPage: completedQuery.fetchNextPage,
-    isFetchingNextCompletedPage: completedQuery.isFetchingNextPage,
-    completedSearch,
-    setCompletedSearch,
     create,
     update,
     updateStatus,

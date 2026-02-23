@@ -1,7 +1,14 @@
 'use client'
 
 import * as React from 'react'
-import { CircleDot, GitPullRequest, Plus, X } from 'lucide-react'
+import {
+  CalendarDays,
+  Flame,
+  Tags,
+  ListChecks,
+  Plus,
+  X,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -10,11 +17,13 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
 import { LabelMultiSelect, LabelManagerDialog } from './label-multi-select'
 import { PrioritySelector } from './priority-selector'
+import { SingleUrlField, UrlListField, AzureIcon, GitHubIcon } from './url-fields'
 import { useLabels } from '@/hooks/use-labels'
 import { usePeople } from '@/hooks/use-people'
 import { useTodoForm } from '@/hooks/use-todo-form'
@@ -25,6 +34,7 @@ interface CreateTodoModalProps {
   onOpenChange: (open: boolean) => void
   onSubmit: (data: CreateTodoInput) => Promise<boolean>
   isLoading?: boolean
+  defaultLabelIds?: string[]
 }
 
 export function CreateTodoModal({
@@ -32,10 +42,11 @@ export function CreateTodoModal({
   onOpenChange,
   onSubmit,
   isLoading,
+  defaultLabelIds,
 }: CreateTodoModalProps) {
   const { labels, handleCreate: onCreateLabel, handleUpdate: onUpdateLabel, handleDelete: onDeleteLabel } = useLabels()
   const { people } = usePeople()
-  const form = useTodoForm()
+  const form = useTodoForm(null, { initialLabelIds: defaultLabelIds })
   const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
   const [newPrUrl, setNewPrUrl] = React.useState('')
@@ -46,19 +57,26 @@ export function CreateTodoModal({
     if (!open) resetForm()
   }, [open, resetForm])
 
+  const handleAddSubtask = React.useCallback(() => {
+    if (newSubtaskTitle.trim()) {
+      form.addSubtask(newSubtaskTitle)
+      setNewSubtaskTitle('')
+    }
+  }, [newSubtaskTitle, form])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.title.trim()) return
 
     const payload = form.toPayload()
-    // Include pending PR URL that wasn't explicitly added
-    const pendingUrl = newPrUrl.trim()
-    if (pendingUrl && !payload.githubPrUrls.includes(pendingUrl)) {
-      payload.githubPrUrls = [...payload.githubPrUrls, pendingUrl]
+    // Include pending URLs that weren't explicitly added
+    const pendingPr = newPrUrl.trim()
+    if (pendingPr && !payload.githubPrUrls.includes(pendingPr)) {
+      payload.githubPrUrls = [...payload.githubPrUrls, pendingPr]
     }
-    const pendingAzureUrl = newAzureDepUrl.trim()
-    if (pendingAzureUrl && !payload.azureDepUrls.includes(pendingAzureUrl)) {
-      payload.azureDepUrls = [...payload.azureDepUrls, pendingAzureUrl]
+    const pendingAzure = newAzureDepUrl.trim()
+    if (pendingAzure && !payload.azureDepUrls.includes(pendingAzure)) {
+      payload.azureDepUrls = [...payload.azureDepUrls, pendingAzure]
     }
     const success = await onSubmit(payload)
     if (success) onOpenChange(false)
@@ -66,247 +84,246 @@ export function CreateTodoModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>Create New Task</DialogTitle>
-          <DialogDescription>
-            Add a new task to your list
-          </DialogDescription>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-5 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="create-title">Title</Label>
-            <Input
-              id="create-title"
-              value={form.title}
-              onChange={(e) => form.setTitle(e.target.value)}
-              placeholder="What needs to be done?"
-              autoFocus
-            />
+      <DialogContent className="w-[96vw] max-w-[1040px] max-h-[85vh] flex flex-col overflow-hidden p-0">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          {/* Header */}
+          <div
+            className="px-6 py-5 border-b shrink-0"
+            style={{
+              borderColor: 'var(--border-color)',
+              background: 'linear-gradient(135deg, color-mix(in srgb, var(--primary) 8%, transparent), color-mix(in srgb, var(--accent) 8%, transparent))',
+            }}
+          >
+            <DialogHeader className="space-y-1.5">
+              <DialogTitle className="text-xl">Create New Task</DialogTitle>
+              <DialogDescription className="text-sm">
+                Add a new task to your list
+              </DialogDescription>
+            </DialogHeader>
           </div>
 
-          <div className="space-y-2">
-            <Label>Description</Label>
-            <RichTextEditor
-              value={form.description}
-              onChange={form.setDescription}
-              placeholder="Add more details..."
-              disabled={isLoading}
-              mentions={people.map(p => ({ id: p.id, name: p.name, email: p.email }))}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Priority</Label>
-            <PrioritySelector
-              value={form.priority}
-              onChange={form.setPriority}
-              disabled={isLoading}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="create-dueDate">Due Date</Label>
-            <Input
-              id="create-dueDate"
-              type="date"
-              value={form.dueDate}
-              onChange={(e) => form.setDueDate(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Labels</Label>
-            <LabelMultiSelect
-              labels={labels}
-              value={form.labelIds}
-              onChange={form.setLabelIds}
-              onManage={() => setIsLabelManagerOpen(true)}
-              disabled={isLoading}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Subtasks</Label>
-            <div className="space-y-1.5">
-              {form.subtasks.map((subtask, index) => (
-                <div key={index} className="flex items-center gap-2 group/subtask">
-                  <span className="text-xs flex-1" style={{ color: 'var(--text-primary)' }}>
-                    {subtask.title}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => form.removeSubtask(index)}
-                    className="flex-shrink-0 opacity-0 group-hover/subtask:opacity-100 transition-opacity"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ))}
-              <div className="flex items-center gap-2">
-                <Plus className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
-                <input
-                  type="text"
-                  value={newSubtaskTitle}
-                  onChange={(e) => setNewSubtaskTitle(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      if (newSubtaskTitle.trim()) {
-                        form.addSubtask(newSubtaskTitle)
-                        setNewSubtaskTitle('')
-                      }
-                    }
-                  }}
-                  placeholder="Add a subtask..."
-                  className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-[var(--text-muted)] border-b border-transparent focus:border-[var(--border-color)] transition-colors pb-1"
-                  style={{ color: 'var(--text-primary)' }}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>GitHub PRs</Label>
-            <div className="space-y-1.5">
-              {form.githubPrUrls.map((url, index) => (
-                <div key={url} className="flex items-center gap-2 group/pr">
-                  <GitPullRequest className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
-                  <span className="text-xs flex-1 truncate" style={{ color: 'var(--text-primary)' }}>
-                    {url.replace(/^https?:\/\/github\.com\//, '')}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => form.removeGithubPrUrl(index)}
-                    className="flex-shrink-0 opacity-0 group-hover/pr:opacity-100 transition-opacity"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ))}
-              <div
-                className="flex items-center gap-2 rounded-md px-2.5 py-1.5 border"
-                style={{
-                  backgroundColor: 'color-mix(in srgb, var(--background) 50%, transparent)',
-                  borderColor: 'var(--border-color)',
-                }}
-              >
-                <input
-                  type="url"
-                  value={newPrUrl}
-                  onChange={(e) => setNewPrUrl(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      if (newPrUrl.trim()) {
-                        form.addGithubPrUrl(newPrUrl)
-                        setNewPrUrl('')
-                      }
-                    }
-                  }}
-                  placeholder="... insert url"
-                  className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-[var(--text-muted)] min-w-0"
-                  style={{ color: 'var(--text-primary)' }}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Azure Work Items</Label>
-            <div className="space-y-1.5">
-              {form.azureWorkItemUrl.trim() && (
-                <div className="flex items-center gap-2 group/azure">
-                  <CircleDot className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
-                  <span className="text-xs flex-1 truncate" style={{ color: 'var(--text-primary)' }}>
-                    {form.azureWorkItemUrl.replace(/^https?:\/\/dev\.azure\.com\//, '')}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => form.setAzureWorkItemUrl('')}
-                    className="flex-shrink-0 opacity-0 group-hover/azure:opacity-100 transition-opacity"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              )}
-              {!form.azureWorkItemUrl.trim() && (
-                <div
-                  className="flex items-center gap-2 rounded-md px-2.5 py-1.5 border"
-                  style={{
-                    backgroundColor: 'color-mix(in srgb, var(--background) 50%, transparent)',
-                    borderColor: 'var(--border-color)',
-                  }}
-                >
-                  <input
-                    type="url"
-                    value={form.azureWorkItemUrl}
-                    onChange={(e) => form.setAzureWorkItemUrl(e.target.value)}
-                    placeholder="My work item URL..."
-                    className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-[var(--text-muted)] min-w-0"
-                    style={{ color: 'var(--text-primary)' }}
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto px-6 py-6">
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-0 md:gap-0">
+              {/* Left column - Content */}
+              <div className="space-y-4 md:pr-6">
+                <div className="space-y-2">
+                  <Label htmlFor="create-title" className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                    Task Title
+                  </Label>
+                  <Input
+                    id="create-title"
+                    value={form.title}
+                    onChange={(e) => form.setTitle(e.target.value)}
+                    placeholder="What needs to be done?"
+                    autoFocus
+                    className="h-12 text-base font-medium"
                   />
                 </div>
-              )}
-              {form.azureDepUrls.map((url, index) => (
-                <div key={url} className="flex items-center gap-2 group/azure">
-                  <CircleDot className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
-                  <span className="text-xs flex-1 truncate" style={{ color: 'var(--text-primary)' }}>
-                    {url.replace(/^https?:\/\/dev\.azure\.com\//, '')}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => form.removeAzureDepUrl(index)}
-                    className="flex-shrink-0 opacity-0 group-hover/azure:opacity-100 transition-opacity"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                    Description
+                  </Label>
+                  <RichTextEditor
+                    value={form.description}
+                    onChange={form.setDescription}
+                    placeholder="Add more details, links, or notes..."
+                    disabled={isLoading}
+                    mentions={people.map(p => ({ id: p.id, name: p.name, email: p.email }))}
+                  />
                 </div>
-              ))}
+
+                {/* Subtasks */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                    <ListChecks className="h-3.5 w-3.5" />
+                    Subtasks
+                    {form.subtasks.length > 0 && (
+                      <span className="text-[10px] font-normal" style={{ color: 'var(--text-muted)' }}>
+                        {form.subtasks.length}
+                      </span>
+                    )}
+                  </Label>
+                  <div className="space-y-1">
+                    {form.subtasks.map((subtask, index) => (
+                      <div key={index} className="flex items-center gap-2 group/subtask">
+                        <span className="text-xs flex-1" style={{ color: 'var(--text-primary)' }}>
+                          {subtask.title}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => form.removeSubtask(index)}
+                          className="flex-shrink-0 opacity-0 group-hover/subtask:opacity-100 transition-opacity"
+                          style={{ color: 'var(--text-muted)' }}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                    <div className="flex items-center gap-2">
+                      <Plus className="h-4 w-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                      <input
+                        type="text"
+                        value={newSubtaskTitle}
+                        onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            handleAddSubtask()
+                          }
+                        }}
+                        placeholder="Add a subtask..."
+                        className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-[var(--text-muted)]"
+                        style={{ color: 'var(--text-primary)' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right column - Meta */}
               <div
-                className="flex items-center gap-2 rounded-md px-2.5 py-1.5 border"
-                style={{
-                  backgroundColor: 'color-mix(in srgb, var(--background) 50%, transparent)',
-                  borderColor: 'var(--border-color)',
-                }}
+                className="space-y-5 pt-6 md:pt-0 md:pl-6 md:border-l"
+                style={{ borderColor: 'var(--border-color)' }}
               >
-                <input
-                  type="url"
-                  value={newAzureDepUrl}
-                  onChange={(e) => setNewAzureDepUrl(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      if (newAzureDepUrl.trim()) {
-                        form.addAzureDepUrl(newAzureDepUrl)
-                        setNewAzureDepUrl('')
-                      }
-                    }
-                  }}
-                  placeholder="Dependent work item URL..."
-                  className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-[var(--text-muted)] min-w-0"
-                  style={{ color: 'var(--text-primary)' }}
-                />
+                {/* Priority */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                    <Flame className="h-3.5 w-3.5" />
+                    Priority
+                  </Label>
+                  <PrioritySelector
+                    value={form.priority}
+                    onChange={form.setPriority}
+                    disabled={isLoading}
+                  />
+                </div>
+
+                {/* Due Date */}
+                <div className="space-y-2">
+                  <Label htmlFor="create-dueDate" className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    Due Date
+                  </Label>
+                  <Input
+                    id="create-dueDate"
+                    type="date"
+                    value={form.dueDate}
+                    onChange={(e) => form.setDueDate(e.target.value)}
+                    className="h-10 text-sm"
+                  />
+                </div>
+
+                {/* Azure */}
+                <div className="space-y-3">
+                  <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                    <AzureIcon className="h-3.5 w-3.5" />
+                    Azure
+                  </Label>
+
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>My Work Item</span>
+                    <SingleUrlField
+                      value={form.azureWorkItemUrl}
+                      onChange={form.setAzureWorkItemUrl}
+                      type="azure"
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Waiting On</span>
+                    <UrlListField
+                      type="azure"
+                      urls={form.azureDepUrls}
+                      onAdd={(url) => form.addAzureDepUrl(url)}
+                      onRemove={(i) => form.removeAzureDepUrl(i)}
+                      inputValue={newAzureDepUrl}
+                      onInputChange={setNewAzureDepUrl}
+                      disabled={isLoading}
+                    />
+                  </div>
+                </div>
+
+                {/* GitHub */}
+                <div className="space-y-3">
+                  <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                    <GitHubIcon className="h-3.5 w-3.5" />
+                    GitHub
+                  </Label>
+
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>My PR</span>
+                    <SingleUrlField
+                      value={form.myPrUrl}
+                      onChange={form.setMyPrUrl}
+                      type="github"
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Waiting On</span>
+                    <UrlListField
+                      type="github"
+                      urls={form.githubPrUrls}
+                      onAdd={(url) => form.addGithubPrUrl(url)}
+                      onRemove={(i) => form.removeGithubPrUrl(i)}
+                      inputValue={newPrUrl}
+                      onInputChange={setNewPrUrl}
+                      disabled={isLoading}
+                    />
+                  </div>
+                </div>
+
+                {/* Labels */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                      <Tags className="h-3.5 w-3.5" />
+                      Labels
+                    </Label>
+                    <button
+                      type="button"
+                      onClick={() => setIsLabelManagerOpen(true)}
+                      className="text-[11px] font-medium underline hover:no-underline transition-all"
+                      style={{ color: 'var(--primary)' }}
+                    >
+                      Manage
+                    </button>
+                  </div>
+                  <LabelMultiSelect
+                    labels={labels}
+                    value={form.labelIds}
+                    onChange={form.setLabelIds}
+                    onManage={() => setIsLabelManagerOpen(true)}
+                    disabled={isLoading}
+                    showQuickPick
+                  />
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={!form.title.trim() || isLoading}>
-              {isLoading ? 'Creating...' : 'Create Task'}
-            </Button>
+          {/* Footer */}
+          <div
+            className="px-6 py-4 border-t shrink-0"
+            style={{ borderColor: 'var(--border-color)' }}
+          >
+            <DialogFooter className="flex gap-3 sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                className="h-10 px-5"
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={!form.title.trim() || isLoading} className="h-10 px-5">
+                {isLoading ? 'Creating...' : 'Create Task'}
+              </Button>
+            </DialogFooter>
           </div>
         </form>
       </DialogContent>
