@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { Suspense } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Tags, Users } from 'lucide-react'
 import { LabelManager } from '@/components/settings/label-manager'
@@ -27,7 +28,7 @@ function LoadingSpinner() {
   )
 }
 
-export default function SettingsPage() {
+function SettingsPageContent() {
   const { labels, isLoading: labelsLoading, isMutating: labelsMutating, handleCreate: handleCreateLabel, handleUpdate: handleUpdateLabel, handleDelete: handleDeleteLabel } = useLabels()
   const { people, isLoading: peopleLoading, isMutating: peopleMutating, handleCreate: handleCreatePerson, handleUpdate: handleUpdatePerson, handleDelete: handleDeletePerson } = usePeople()
   const router = useRouter()
@@ -266,5 +267,13 @@ export default function SettingsPage() {
         </div>
       </section>
     </div>
+  )
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <SettingsPageContent />
+    </Suspense>
   )
 }
