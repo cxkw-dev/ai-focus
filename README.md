@@ -107,6 +107,9 @@ The `.env` file is already configured for local development:
 
 ```env
 DATABASE_URL="postgresql://postgres@localhost:5432/aifocus"
+GITHUB_TOKEN=""
+AZURE_DEVOPS=""
+AZURE_DEVOPS_ORG=""
 ```
 
 ## Ports

@@ -554,6 +554,68 @@ server.tool(
   }
 );
 
+// ─── Azure DevOps ───
+
+server.tool(
+  "get_azure_work_item",
+  "Get Azure DevOps work item details for planning: title, state, assignee, area/iteration, description, acceptance criteria, tags, and links.",
+  {
+    workItemId: z.number().int().positive().describe("Azure DevOps work item ID"),
+  },
+  async ({ workItemId }) => {
+    const data = await apiFetch(`/api/azure/workitems/${workItemId}`);
+    return textResult(data);
+  }
+);
+
+server.tool(
+  "get_azure_work_item_comments",
+  "Get ordered Azure DevOps work item comments with author and timestamp.",
+  {
+    workItemId: z.number().int().positive().describe("Azure DevOps work item ID"),
+  },
+  async ({ workItemId }) => {
+    const data = await apiFetch(`/api/azure/workitems/${workItemId}/comments`);
+    return textResult(data);
+  }
+);
+
+server.tool(
+  "get_azure_work_item_relations",
+  "Get Azure DevOps work item relations (parent/child/depends-on/related) with IDs, titles, and states.",
+  {
+    workItemId: z.number().int().positive().describe("Azure DevOps work item ID"),
+  },
+  async ({ workItemId }) => {
+    const data = await apiFetch(`/api/azure/workitems/${workItemId}/relations`);
+    return textResult(data);
+  }
+);
+
+server.tool(
+  "get_azure_work_item_updates",
+  "Get recent Azure DevOps work item field/status updates (who changed what and when).",
+  {
+    workItemId: z.number().int().positive().describe("Azure DevOps work item ID"),
+  },
+  async ({ workItemId }) => {
+    const data = await apiFetch(`/api/azure/workitems/${workItemId}/updates`);
+    return textResult(data);
+  }
+);
+
+server.tool(
+  "get_azure_pr_links",
+  "Get Azure DevOps work item linked PRs/commits and PR merge status.",
+  {
+    workItemId: z.number().int().positive().describe("Azure DevOps work item ID"),
+  },
+  async ({ workItemId }) => {
+    const data = await apiFetch(`/api/azure/workitems/${workItemId}/pr-links`);
+    return textResult(data);
+  }
+);
+
 // ─── Stats ───
 
 server.tool(

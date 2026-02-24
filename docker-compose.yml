@@ -15,6 +15,7 @@ services:
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:4444}
       GITHUB_TOKEN: ${GITHUB_TOKEN}
       AZURE_DEVOPS: ${AZURE_DEVOPS}
+      AZURE_DEVOPS_ORG: ${AZURE_DEVOPS_ORG:-}
       NODE_ENV: production
     extra_hosts:
       - "host.docker.internal:host-gateway"
