@@ -37,7 +37,27 @@
       "Bash(python3:*)",
       "mcp__ai-focus__update_todo",
       "Bash(ls:*)",
-      "Bash(npx next build:*)"
+      "Bash(npx next build:*)",
+      "Bash(git -C /Users/andynguyen/ai-focus log --oneline -10)",
+      "Bash(git -C /Users/andynguyen/ai-focus diff)",
+      "Bash(git -C /Users/andynguyen/ai-focus diff src/lib/themes.ts)",
+      "Bash(git -C /Users/andynguyen/ai-focus add:*)",
+      "Bash(git -C /Users/andynguyen/ai-focus commit -m \"$\\(cat <<''EOF''\nfix theme font switching broken by next/font migration\nEOF\n\\)\")",
+      "Bash(git -C /Users/andynguyen/ai-focus push)",
+      "Bash(git -C /Users/andynguyen/ai-focus status)",
+      "Bash(git -C /Users/andynguyen/ai-focus log --oneline -3)",
+      "Bash(git -C /Users/andynguyen/ai-focus commit -m \"$\\(cat <<''EOF''\nupdate claude.md with current project state\nEOF\n\\)\")",
+      "Bash(npm run db:push:*)",
+      "Bash(npx next lint:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npm run db:generate:*)",
+      "Bash(git push:*)",
+      "Bash(source:*)",
+      "Bash(npx sharp-cli -i \"/Users/andynguyen/Desktop/Screenshot 2026-02-23 at 10.48.48 PM.png\" -o /tmp/icon-info.json -- metadata 2>&1 || sips -g all \"/Users/andynguyen/Desktop/Screenshot 2026-02-23 at 10.48.48 PM.png\" 2>&1)",
+      "Bash(sips:*)",
+      "Bash(pip3 install:*)",
+      "Bash(/tmp/imgvenv/bin/python3:*)",
+      "Bash(tail:*)"
     ]
   }
 }

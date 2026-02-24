@@ -34,13 +34,16 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: 'ai-focus',
   description: 'A modern, minimal productivity app',
-  manifest: '/manifest.json',
+  manifest: '/manifest.json?v=8',
   icons: {
     icon: [
-      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.png?v=8', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-48.png?v=8', sizes: '48x48', type: 'image/png' },
+      { url: '/favicon.ico?v=8', sizes: 'any' },
     ],
+    shortcut: [{ url: '/favicon.ico?v=8' }],
     apple: [
-      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+      { url: '/apple-touch-icon.png?v=8', sizes: '180x180', type: 'image/png' },
     ],
   },
   appleWebApp: {

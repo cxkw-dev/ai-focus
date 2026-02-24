@@ -2,7 +2,7 @@ const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
 
-const svgPath = path.join(__dirname, '../public/icon.svg');
+const sourcePath = path.join(__dirname, '../public/icon-source.png');
 const publicDir = path.join(__dirname, '../public');
 
 // Dark background color matching app theme
@@ -10,7 +10,11 @@ const darkBg = { r: 10, g: 10, b: 11, alpha: 1 }; // #0A0A0B
 const transparentBg = { r: 0, g: 0, b: 0, alpha: 0 };
 
 async function generateIcons() {
-  const svgBuffer = fs.readFileSync(svgPath);
+  if (!fs.existsSync(sourcePath)) {
+    throw new Error('Missing icon source at public/icon-source.png');
+  }
+
+  const sourceBuffer = fs.readFileSync(sourcePath);
 
   // PWA icons with dark background and padding (smaller icon appearance)
   const pwaIcons = [
@@ -21,7 +25,7 @@ async function generateIcons() {
 
   for (const { size, iconSize, name } of pwaIcons) {
     // Create icon at smaller size
-    const iconBuffer = await sharp(svgBuffer)
+    const iconBuffer = await sharp(sourceBuffer)
       .resize(iconSize, iconSize, {
         kernel: 'nearest',
         fit: 'contain',
@@ -53,7 +57,7 @@ async function generateIcons() {
   ];
 
   for (const { size, name } of faviconSizes) {
-    await sharp(svgBuffer)
+    await sharp(sourceBuffer)
       .resize(size, size, {
         kernel: 'nearest',
         fit: 'contain',
@@ -66,7 +70,7 @@ async function generateIcons() {
   }
 
   // Generate favicon.ico
-  await sharp(svgBuffer)
+  await sharp(sourceBuffer)
     .resize(32, 32, {
       kernel: 'nearest',
       fit: 'contain',
