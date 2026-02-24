@@ -127,6 +127,7 @@ interface TodoItemProps {
   isDragging?: boolean
   viewMode?: ViewMode
   dropIndicator?: 'above' | 'below' | null
+  animateTransitions?: boolean
 }
 
 function StatusDropdown({ todo, onStatusChange }: { todo: Todo; onStatusChange: (id: string, status: Status) => void }) {
@@ -470,7 +471,19 @@ function TodoItemContent({
   )
 }
 
-export function TodoItem({ todo, onStatusChange, onPriorityChange, onDelete, onEdit, onRestore, onToggleSubtask, isDragging: isOverlay, viewMode = 'active', dropIndicator }: TodoItemProps) {
+export function TodoItem({
+  todo,
+  onStatusChange,
+  onPriorityChange,
+  onDelete,
+  onEdit,
+  onRestore,
+  onToggleSubtask,
+  isDragging: isOverlay,
+  viewMode = 'active',
+  dropIndicator,
+  animateTransitions = true,
+}: TodoItemProps) {
   const {
     attributes,
     listeners,
@@ -499,10 +512,11 @@ export function TodoItem({ todo, onStatusChange, onPriorityChange, onDelete, onE
       <motion.div
         ref={setNodeRef}
         style={style}
-        layout={!dragging}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: dragging ? 0.5 : 1, y: 0 }}
-        exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
+        layout={animateTransitions && !dragging}
+        initial={animateTransitions ? { opacity: 0, y: 8 } : false}
+        animate={animateTransitions ? { opacity: dragging ? 0.5 : 1, y: 0 } : { opacity: dragging ? 0.5 : 1 }}
+        exit={animateTransitions ? { opacity: 0, x: -12, transition: { duration: 0.16 } } : { opacity: 0 }}
+        transition={animateTransitions ? { duration: 0.16, ease: 'easeOut' } : { duration: 0.01 }}
         className="min-w-0"
       >
       {dropIndicator === 'above' && dropLine}

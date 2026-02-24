@@ -47,6 +47,7 @@ interface TodoColumnProps {
   isSaving?: boolean
   defaultLabelIds?: string[]
   showInlineForm?: boolean
+  animateListTransitions?: boolean
 }
 
 export function TodoColumn({
@@ -67,6 +68,7 @@ export function TodoColumn({
   isSaving,
   defaultLabelIds,
   showInlineForm = true,
+  animateListTransitions = true,
 }: TodoColumnProps) {
   const [filter, setFilter] = React.useState<Filter>('active')
   const [completedSearch, setCompletedSearch] = React.useState('')
@@ -249,19 +251,47 @@ export function TodoColumn({
               strategy={verticalListSortingStrategy}
             >
               <div className="space-y-1">
-                <AnimatePresence mode="popLayout">
-                  {displayedTodos.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                      <div
-                        className="rounded-full p-3 mb-3"
-                        style={{ backgroundColor: emptyBg }}
-                      >
-                        {emptyIcon}
-                      </div>
-                      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                        {emptyMessage}
-                      </p>
+                {displayedTodos.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div
+                      className="rounded-full p-3 mb-3"
+                      style={{ backgroundColor: emptyBg }}
+                    >
+                      {emptyIcon}
                     </div>
+                    <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                      {emptyMessage}
+                    </p>
+                  </div>
+                ) : (
+                  animateListTransitions ? (
+                    <AnimatePresence mode="popLayout" initial={false}>
+                      {displayedTodos.map((todo) => {
+                        let dropIndicator: 'above' | 'below' | null = null
+                        if (activeId && overId && overId === todo.id && activeId !== overId) {
+                          const activeIndex = activeTodos.findIndex(t => t.id === activeId)
+                          const overIndex = activeTodos.findIndex(t => t.id === overId)
+                          if (activeIndex !== -1 && overIndex !== -1) {
+                            dropIndicator = activeIndex < overIndex ? 'below' : 'above'
+                          }
+                        }
+                        return (
+                          <TodoItem
+                            key={todo.id}
+                            todo={todo}
+                            onStatusChange={onStatusChange}
+                            onPriorityChange={onPriorityChange}
+                            onDelete={filter === 'deleted' ? onPermanentDelete : onDelete}
+                            onEdit={onEdit}
+                            onRestore={onRestore}
+                            onToggleSubtask={onToggleSubtask}
+                            viewMode={filter}
+                            dropIndicator={dropIndicator}
+                            animateTransitions={true}
+                          />
+                        )
+                      })}
+                    </AnimatePresence>
                   ) : (
                     displayedTodos.map((todo) => {
                       let dropIndicator: 'above' | 'below' | null = null
@@ -284,11 +314,12 @@ export function TodoColumn({
                           onToggleSubtask={onToggleSubtask}
                           viewMode={filter}
                           dropIndicator={dropIndicator}
+                          animateTransitions={false}
                         />
                       )
                     })
-                  )}
-                </AnimatePresence>
+                  )
+                )}
               </div>
             </SortableContext>
 

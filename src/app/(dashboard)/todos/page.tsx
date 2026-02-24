@@ -42,6 +42,19 @@ export default function TodosPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false)
   const [mobileCategory, setMobileCategory] = React.useState<TodoCategory>('kaf')
 
+  const handleMobileCategoryKeyDown = React.useCallback(
+    (event: React.KeyboardEvent<HTMLButtonElement>, currentCategory: TodoCategory) => {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+      event.preventDefault()
+
+      const currentIndex = COLUMNS.findIndex((column) => column.key === currentCategory)
+      const offset = event.key === 'ArrowRight' ? 1 : -1
+      const nextIndex = (currentIndex + offset + COLUMNS.length) % COLUMNS.length
+      setMobileCategory(COLUMNS[nextIndex].key)
+    },
+    []
+  )
+
   // Find label IDs for default auto-labeling
   const kafLabelId = React.useMemo(
     () => labels.find(l => l.name.toLowerCase() === 'kaf')?.id,
@@ -153,35 +166,75 @@ export default function TodosPage() {
       {/* Mobile/Narrow View (< 1280px) */}
       <div className="flex flex-col h-full xl:hidden">
         {/* Category tab switcher */}
-        <div className="flex items-center gap-1 mb-3 p-1 rounded-lg" style={{ backgroundColor: 'var(--surface)' }}>
-          {COLUMNS.map((col) => {
-            const count = categorizedActive[col.key].length
-            return (
-              <button
-                key={col.key}
-                type="button"
-                onClick={() => setMobileCategory(col.key)}
-                className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-xs font-medium transition-all relative"
-                style={{
-                  backgroundColor: mobileCategory === col.key ? 'var(--primary)' : 'transparent',
-                  color: mobileCategory === col.key ? 'var(--primary-foreground)' : 'var(--text-muted)',
-                }}
-              >
-                {col.title}
-                {count > 0 && (
+        <div
+          className="mb-3 rounded-xl border p-1.5"
+          style={{
+            borderColor: 'var(--border-color)',
+            backgroundColor: 'color-mix(in srgb, var(--surface) 72%, transparent)',
+          }}
+        >
+          <div className="flex gap-1.5 overflow-x-auto scrollbar-hide" role="tablist" aria-label="Task categories">
+            {COLUMNS.map((col) => {
+              const count = categorizedActive[col.key].length
+              const isActive = mobileCategory === col.key
+
+              return (
+                <button
+                  key={col.key}
+                  type="button"
+                  id={`todos-category-tab-${col.key}`}
+                  role="tab"
+                  aria-controls={`todos-category-panel-${col.key}`}
+                  aria-selected={isActive}
+                  onClick={() => setMobileCategory(col.key)}
+                  onKeyDown={(event) => handleMobileCategoryKeyDown(event, col.key)}
+                  className="flex min-w-[112px] flex-1 items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold transition-all active:scale-[0.99]"
+                  style={{
+                    border: `1px solid ${isActive
+                      ? `color-mix(in srgb, ${col.color} 45%, var(--border-color))`
+                      : 'transparent'}`,
+                    backgroundColor: isActive
+                      ? `color-mix(in srgb, ${col.color} 16%, var(--surface-2) 84%)`
+                      : 'transparent',
+                    color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
+                  }}
+                >
+                  <span className="flex items-center gap-2">
+                    <span
+                      className="h-2 w-2 rounded-full flex-shrink-0"
+                      style={{
+                        backgroundColor: col.color,
+                        boxShadow: isActive
+                          ? `0 0 0 3px color-mix(in srgb, ${col.color} 22%, transparent)`
+                          : 'none',
+                      }}
+                    />
+                    <span className="leading-none">{col.title}</span>
+                  </span>
+
                   <span
-                    className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold"
-                    style={{ backgroundColor: col.color, color: 'var(--background)' }}
+                    className="rounded-full px-2 py-0.5 text-[10px] font-semibold tabular-nums"
+                    style={{
+                      backgroundColor: isActive
+                        ? `color-mix(in srgb, ${col.color} 20%, transparent)`
+                        : 'color-mix(in srgb, var(--surface-2) 78%, transparent)',
+                      color: isActive ? col.color : 'var(--text-muted)',
+                    }}
                   >
                     {count}
                   </span>
-                )}
-              </button>
-            )
-          })}
+                </button>
+              )
+            })}
+          </div>
         </div>
 
-        <div className="flex-1 min-h-0">
+        <div
+          className="flex-1 min-h-0"
+          role="tabpanel"
+          id={`todos-category-panel-${mobileCategory}`}
+          aria-labelledby={`todos-category-tab-${mobileCategory}`}
+        >
           <TodoColumn
             title={COLUMNS.find(c => c.key === mobileCategory)!.title}
             color={COLUMNS.find(c => c.key === mobileCategory)!.color}
@@ -201,6 +254,7 @@ export default function TodosPage() {
             isSaving={isSaving}
             defaultLabelIds={defaultLabelIdsMap[mobileCategory]}
             showInlineForm={false}
+            animateListTransitions={false}
           />
         </div>
 
