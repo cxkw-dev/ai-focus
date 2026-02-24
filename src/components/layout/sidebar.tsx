@@ -1,7 +1,6 @@
 'use client'
 
 import * as React from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -68,17 +67,9 @@ export function Sidebar({ collapsed, onCollapse, transition = { duration: 0.2, e
       >
         {/* Logo */}
         <div className={`flex h-16 items-center border-b overflow-hidden ${collapsed ? 'justify-center px-0' : 'px-4'}`} style={{ borderColor: 'var(--border-color)' }}>
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <Image
-              src="/icon.svg"
-              alt="Focus"
-              width={32}
-              height={32}
-              className="shrink-0"
-              style={{ imageRendering: 'pixelated' }}
-            />
+          <Link href="/" className="flex items-center group">
             <AnimatePresence mode="wait">
-              {!collapsed && (
+              {!collapsed ? (
                 <motion.span
                   key="expanded"
                   initial={{ opacity: 0, width: 0 }}
@@ -95,6 +86,24 @@ export function Sidebar({ collapsed, onCollapse, transition = { duration: 0.2, e
                   }}
                 >
                   Focus
+                </motion.span>
+              ) : (
+                <motion.span
+                  key="collapsed"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="text-2xl font-bold uppercase"
+                  style={{
+                    fontFamily: 'var(--font-pixelify), sans-serif',
+                    background: 'linear-gradient(135deg, var(--primary), var(--accent), var(--status-done))',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}
+                >
+                  F
                 </motion.span>
               )}
             </AnimatePresence>

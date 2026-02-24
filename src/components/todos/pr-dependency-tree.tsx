@@ -11,6 +11,7 @@ interface PrDependencyTreeProps {
   githubPrUrls: string[]
   azureWorkItemUrl?: string | null
   azureDepUrls?: string[]
+  noBorder?: boolean
 }
 
 function SectionHeader({ icon: Icon, label, statusLabel, statusColor }: {
@@ -35,7 +36,7 @@ function SectionHeader({ icon: Icon, label, statusLabel, statusColor }: {
   )
 }
 
-function GitHubSection({ myPrUrl, githubPrUrls, showHeader }: { myPrUrl?: string | null; githubPrUrls: string[]; showHeader: boolean }) {
+function GitHubSection({ myPrUrl, githubPrUrls, showHeader, noBorder }: { myPrUrl?: string | null; githubPrUrls: string[]; showHeader: boolean; noBorder?: boolean }) {
   const hasDeps = githubPrUrls.length > 0
   const { isLoading, allMergedOrClosed, allMerged } = useGithubPrStatuses(githubPrUrls)
 
@@ -57,7 +58,7 @@ function GitHubSection({ myPrUrl, githubPrUrls, showHeader }: { myPrUrl?: string
   return (
     <div
       className="pt-1.5"
-      style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)' }}
+      style={noBorder ? undefined : { borderTop: '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)' }}
     >
       {showHeader && (
         <SectionHeader icon={GitPullRequest} label="GitHub" statusLabel={statusLabel} statusColor={statusColor} />
@@ -104,7 +105,7 @@ function GitHubSection({ myPrUrl, githubPrUrls, showHeader }: { myPrUrl?: string
   )
 }
 
-function AzureSection({ azureWorkItemUrl, azureDepUrls, showHeader }: { azureWorkItemUrl?: string | null; azureDepUrls: string[]; showHeader: boolean }) {
+function AzureSection({ azureWorkItemUrl, azureDepUrls, showHeader, noBorder }: { azureWorkItemUrl?: string | null; azureDepUrls: string[]; showHeader: boolean; noBorder?: boolean }) {
   const hasAzureDeps = azureDepUrls.length > 0
   const { isLoading, allResolved } = useAzureWorkItemStatuses(azureDepUrls)
 
@@ -123,7 +124,7 @@ function AzureSection({ azureWorkItemUrl, azureDepUrls, showHeader }: { azureWor
   return (
     <div
       className="pt-1.5"
-      style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)' }}
+      style={noBorder ? undefined : { borderTop: '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)' }}
     >
       {showHeader && (
         <SectionHeader icon={CircleDot} label="Azure DevOps" statusLabel={statusLabel} statusColor={statusColor} />
@@ -170,7 +171,7 @@ function AzureSection({ azureWorkItemUrl, azureDepUrls, showHeader }: { azureWor
   )
 }
 
-export function PrDependencyTree({ myPrUrl, githubPrUrls, azureWorkItemUrl, azureDepUrls = [] }: PrDependencyTreeProps) {
+export function PrDependencyTree({ myPrUrl, githubPrUrls, azureWorkItemUrl, azureDepUrls = [], noBorder }: PrDependencyTreeProps) {
   const hasGithub = !!myPrUrl || githubPrUrls.length > 0
   const hasAzure = !!azureWorkItemUrl || azureDepUrls.length > 0
 
@@ -182,10 +183,10 @@ export function PrDependencyTree({ myPrUrl, githubPrUrls, azureWorkItemUrl, azur
   return (
     <>
       {hasAzure && (
-        <AzureSection azureWorkItemUrl={azureWorkItemUrl} azureDepUrls={azureDepUrls} showHeader={showHeaders} />
+        <AzureSection azureWorkItemUrl={azureWorkItemUrl} azureDepUrls={azureDepUrls} showHeader={showHeaders} noBorder={noBorder} />
       )}
       {hasGithub && (
-        <GitHubSection myPrUrl={myPrUrl} githubPrUrls={githubPrUrls} showHeader={showHeaders} />
+        <GitHubSection myPrUrl={myPrUrl} githubPrUrls={githubPrUrls} showHeader={showHeaders} noBorder={!hasAzure && noBorder} />
       )}
     </>
   )

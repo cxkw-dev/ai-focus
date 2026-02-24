@@ -207,14 +207,27 @@ export default function TodosPage() {
         <button
           type="button"
           onClick={() => setIsCreateModalOpen(true)}
-          className="fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-105 active:scale-95 z-50"
+          className="group fixed bottom-6 right-6 flex items-center rounded-full active:scale-95 transition-transform z-50"
           style={{
-            backgroundColor: 'var(--primary)',
-            color: 'var(--primary-foreground)',
-            boxShadow: '0 4px 20px color-mix(in srgb, var(--primary) 40%, transparent)',
+            backgroundColor: 'var(--surface-2)',
+            boxShadow: '0 4px 20px color-mix(in srgb, var(--background) 70%, transparent)',
           }}
         >
-          <Plus className="h-6 w-6" strokeWidth={2.5} />
+          <span
+            className="w-12 h-12 flex items-center justify-center rounded-full flex-shrink-0"
+            style={{
+              backgroundColor: 'var(--primary)',
+              border: '3px solid var(--surface-2)',
+            }}
+          >
+            <Plus className="h-5 w-5" strokeWidth={2.5} style={{ color: 'var(--primary-foreground)' }} />
+          </span>
+          <span
+            className="text-xs font-semibold tracking-wide pr-4 pl-2"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            Add Task
+          </span>
         </button>
       </div>
 
@@ -224,14 +237,27 @@ export default function TodosPage() {
           <button
             type="button"
             onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:opacity-90 active:scale-[0.98]"
+            className="group flex items-center rounded-full cursor-pointer active:scale-[0.97] transition-transform"
             style={{
-              backgroundColor: 'var(--primary)',
-              color: 'var(--primary-foreground)',
+              backgroundColor: 'var(--surface-2)',
+              boxShadow: '0 2px 8px color-mix(in srgb, var(--background) 60%, transparent)',
             }}
           >
-            <Plus className="h-4 w-4" strokeWidth={2.5} />
-            Add Task
+            <span
+              className="w-9 h-9 flex items-center justify-center rounded-full flex-shrink-0"
+              style={{
+                backgroundColor: 'var(--primary)',
+                border: '3px solid var(--surface-2)',
+              }}
+            >
+              <Plus className="h-4 w-4 group-hover:animate-[spin_0.5s_ease-in-out]" strokeWidth={2.5} style={{ color: 'var(--primary-foreground)' }} />
+            </span>
+            <span
+              className="text-xs font-semibold tracking-wide pr-4 pl-2"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              Add Task
+            </span>
           </button>
         </div>
         <div className="grid grid-cols-3 gap-6 flex-1 min-h-0">
