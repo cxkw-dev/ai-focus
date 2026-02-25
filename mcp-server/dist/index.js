@@ -88,6 +88,32 @@ function formatTodoSummary(todos) {
         return parts.join("\n");
     }).join("\n\n");
 }
+const AZURE_WORK_ITEM_URL_REGEX = /^https?:\/\/dev\.azure\.com\/[^/]+\/[^/]+\/_workitems\/edit\/(\d+)(?:[/?#]|$)/i;
+function parseAzureWorkItemId(url) {
+    if (!url)
+        return null;
+    const match = url.trim().match(AZURE_WORK_ITEM_URL_REGEX);
+    if (!match)
+        return null;
+    const parsed = Number.parseInt(match[1], 10);
+    if (!Number.isInteger(parsed) || parsed <= 0)
+        return null;
+    return parsed;
+}
+function withLimitedList(data, key, maxItems) {
+    if (!data || typeof data !== "object")
+        return data;
+    const source = data;
+    const items = source[key];
+    if (!Array.isArray(items))
+        return data;
+    return {
+        ...source,
+        count: source.count ?? items.length,
+        returned: Math.min(items.length, maxItems),
+        [key]: items.slice(0, maxItems),
+    };
+}
 // --- server ---
 const server = new McpServer({
     name: "ai-focus",
@@ -453,6 +479,81 @@ server.tool("get_year_stats", "Get year-in-review statistics: completion rates, 
     return textResult(data);
 });
 // ─── Bulk / Workflow helpers ───
+server.tool("get_todo_execution_context", "Get a todo by task number or id and hydrate linked Azure planning context in one call. Optimized for kickstarting implementation work.", {
+    taskNumber: z.number().int().positive().optional().describe("The task number (e.g. 7)"),
+    id: z.string().optional().describe("The todo cuid (use taskNumber instead when possible)"),
+    includeComments: z
+        .boolean()
+        .optional()
+        .describe("Include Azure comments (default true)"),
+    includeUpdates: z
+        .boolean()
+        .optional()
+        .describe("Include Azure updates/change history (default false)"),
+    maxComments: z
+        .number()
+        .int()
+        .min(1)
+        .max(100)
+        .optional()
+        .describe("Max Azure comments to return when includeComments=true (default 20)"),
+    maxUpdates: z
+        .number()
+        .int()
+        .min(1)
+        .max(100)
+        .optional()
+        .describe("Max Azure updates to return when includeUpdates=true (default 20)"),
+}, async ({ taskNumber, id, includeComments = true, includeUpdates = false, maxComments = 20, maxUpdates = 20, }) => {
+    const key = taskNumber?.toString() ?? id;
+    if (!key)
+        throw new Error("Provide either taskNumber or id");
+    const todoData = await apiFetch(`/api/todos/${key}`);
+    if (isApiError(todoData))
+        return textResult(todoData);
+    const todo = todoData;
+    const azureWorkItemId = parseAzureWorkItemId(todo.azureWorkItemUrl);
+    if (!azureWorkItemId) {
+        return textResult({
+            todo,
+            azure: {
+                linked: false,
+                reason: "No valid azureWorkItemUrl found on this todo",
+            },
+        });
+    }
+    const [workItem, relations, prLinks, comments, updates] = await Promise.all([
+        apiFetch(`/api/azure/workitems/${azureWorkItemId}`),
+        apiFetch(`/api/azure/workitems/${azureWorkItemId}/relations`),
+        apiFetch(`/api/azure/workitems/${azureWorkItemId}/pr-links`),
+        includeComments
+            ? apiFetch(`/api/azure/workitems/${azureWorkItemId}/comments`)
+            : Promise.resolve(null),
+        includeUpdates
+            ? apiFetch(`/api/azure/workitems/${azureWorkItemId}/updates`)
+            : Promise.resolve(null),
+    ]);
+    return textResult({
+        todo,
+        azure: {
+            linked: true,
+            workItemId: azureWorkItemId,
+            workItem,
+            relations,
+            prLinks,
+            comments: includeComments
+                ? isApiError(comments)
+                    ? comments
+                    : withLimitedList(comments, "comments", maxComments)
+                : { skipped: true },
+            updates: includeUpdates
+                ? isApiError(updates)
+                    ? updates
+                    : withLimitedList(updates, "updates", maxUpdates)
+                : { skipped: true },
+        },
+    });
+});
 server.tool("search_todos", "Search todos by title or description text. Returns matching active todos.", {
     query: z.string().min(1).describe("Search text to match against todo titles"),
 }, async ({ query }) => {
