@@ -74,7 +74,7 @@ export function EditTodoDialog({
   // Save changes when dialog closes (escape, overlay click, close button)
   const handleClose = React.useCallback(() => {
     if (isEditing && todo && form.title.trim()) {
-      const payload: UpdateTodoInput = {
+      const payload = {
         ...form.toPayload(),
         description: normalizeDescription(form.description),
       }
