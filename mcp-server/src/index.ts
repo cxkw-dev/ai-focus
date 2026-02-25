@@ -5,6 +5,9 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 
 const API_BASE = process.env.AI_FOCUS_API_URL || "http://localhost:4444";
+const EXPOSE_AZURE_LOW_LEVEL = ["1", "true", "yes", "on"].includes(
+  (process.env.MCP_EXPOSE_AZURE_LOW_LEVEL ?? "").toLowerCase()
+);
 
 // --- helpers ---
 
@@ -582,65 +585,67 @@ server.tool(
 
 // ─── Azure DevOps ───
 
-server.tool(
-  "get_azure_work_item",
-  "Get Azure DevOps work item details for planning: title, state, assignee, area/iteration, description, acceptance criteria, tags, and links.",
-  {
-    workItemId: z.number().int().positive().describe("Azure DevOps work item ID"),
-  },
-  async ({ workItemId }) => {
-    const data = await apiFetch(`/api/azure/workitems/${workItemId}`);
-    return textResult(data);
-  }
-);
+if (EXPOSE_AZURE_LOW_LEVEL) {
+  server.tool(
+    "get_azure_work_item",
+    "[deprecated] Low-level Azure tool. Prefer get_azure_work_item_context.",
+    {
+      workItemId: z.number().int().positive().describe("Azure DevOps work item ID"),
+    },
+    async ({ workItemId }) => {
+      const data = await apiFetch(`/api/azure/workitems/${workItemId}`);
+      return textResult(data);
+    }
+  );
 
-server.tool(
-  "get_azure_work_item_comments",
-  "Get ordered Azure DevOps work item comments with author and timestamp.",
-  {
-    workItemId: z.number().int().positive().describe("Azure DevOps work item ID"),
-  },
-  async ({ workItemId }) => {
-    const data = await apiFetch(`/api/azure/workitems/${workItemId}/comments`);
-    return textResult(data);
-  }
-);
+  server.tool(
+    "get_azure_work_item_comments",
+    "[deprecated] Low-level Azure tool. Prefer get_azure_work_item_context.",
+    {
+      workItemId: z.number().int().positive().describe("Azure DevOps work item ID"),
+    },
+    async ({ workItemId }) => {
+      const data = await apiFetch(`/api/azure/workitems/${workItemId}/comments`);
+      return textResult(data);
+    }
+  );
 
-server.tool(
-  "get_azure_work_item_relations",
-  "Get Azure DevOps work item relations (parent/child/depends-on/related) with IDs, titles, and states.",
-  {
-    workItemId: z.number().int().positive().describe("Azure DevOps work item ID"),
-  },
-  async ({ workItemId }) => {
-    const data = await apiFetch(`/api/azure/workitems/${workItemId}/relations`);
-    return textResult(data);
-  }
-);
+  server.tool(
+    "get_azure_work_item_relations",
+    "[deprecated] Low-level Azure tool. Prefer get_azure_work_item_context.",
+    {
+      workItemId: z.number().int().positive().describe("Azure DevOps work item ID"),
+    },
+    async ({ workItemId }) => {
+      const data = await apiFetch(`/api/azure/workitems/${workItemId}/relations`);
+      return textResult(data);
+    }
+  );
 
-server.tool(
-  "get_azure_work_item_updates",
-  "Get recent Azure DevOps work item field/status updates (who changed what and when).",
-  {
-    workItemId: z.number().int().positive().describe("Azure DevOps work item ID"),
-  },
-  async ({ workItemId }) => {
-    const data = await apiFetch(`/api/azure/workitems/${workItemId}/updates`);
-    return textResult(data);
-  }
-);
+  server.tool(
+    "get_azure_work_item_updates",
+    "[deprecated] Low-level Azure tool. Prefer get_azure_work_item_context.",
+    {
+      workItemId: z.number().int().positive().describe("Azure DevOps work item ID"),
+    },
+    async ({ workItemId }) => {
+      const data = await apiFetch(`/api/azure/workitems/${workItemId}/updates`);
+      return textResult(data);
+    }
+  );
 
-server.tool(
-  "get_azure_pr_links",
-  "Get Azure DevOps work item linked PRs/commits and PR merge status.",
-  {
-    workItemId: z.number().int().positive().describe("Azure DevOps work item ID"),
-  },
-  async ({ workItemId }) => {
-    const data = await apiFetch(`/api/azure/workitems/${workItemId}/pr-links`);
-    return textResult(data);
-  }
-);
+  server.tool(
+    "get_azure_pr_links",
+    "[deprecated] Low-level Azure tool. Prefer get_azure_work_item_context.",
+    {
+      workItemId: z.number().int().positive().describe("Azure DevOps work item ID"),
+    },
+    async ({ workItemId }) => {
+      const data = await apiFetch(`/api/azure/workitems/${workItemId}/pr-links`);
+      return textResult(data);
+    }
+  );
+}
 
 server.tool(
   "get_azure_work_item_context",
