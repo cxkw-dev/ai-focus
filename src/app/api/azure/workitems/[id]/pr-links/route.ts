@@ -50,7 +50,6 @@ export async function GET(
     const workItemId = parseWorkItemId(id)
     const config = getAzureDevOpsConfig()
     const workItem = await fetchWorkItem(config, workItemId, {
-      fields: ['System.TeamProject'],
       expandRelations: true,
     })
     const teamProject = getWorkItemTeamProject(workItem)

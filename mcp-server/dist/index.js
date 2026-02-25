@@ -100,19 +100,13 @@ function parseAzureWorkItemId(url) {
         return null;
     return parsed;
 }
-function withLimitedList(data, key, maxItems) {
-    if (!data || typeof data !== "object")
-        return data;
-    const source = data;
-    const items = source[key];
-    if (!Array.isArray(items))
-        return data;
-    return {
-        ...source,
-        count: source.count ?? items.length,
-        returned: Math.min(items.length, maxItems),
-        [key]: items.slice(0, maxItems),
-    };
+function buildAzureContextQuery(params) {
+    const query = new URLSearchParams();
+    query.set("includeComments", String(params.includeComments));
+    query.set("includeUpdates", String(params.includeUpdates));
+    query.set("maxComments", String(params.maxComments));
+    query.set("maxUpdates", String(params.maxUpdates));
+    return query.toString();
 }
 // --- server ---
 const server = new McpServer({
@@ -470,6 +464,49 @@ server.tool("get_azure_pr_links", "Get Azure DevOps work item linked PRs/commits
     const data = await apiFetch(`/api/azure/workitems/${workItemId}/pr-links`);
     return textResult(data);
 });
+server.tool("get_azure_work_item_context", "Get optimized Azure DevOps planning context in one call (details + relations + PR links + optional comments/updates). Prefer this over calling multiple Azure tools.", {
+    workItemId: z.number().int().positive().optional().describe("Azure DevOps work item ID"),
+    workItemUrl: z
+        .string()
+        .optional()
+        .describe("Azure DevOps work item URL (alternative to workItemId)"),
+    includeComments: z
+        .boolean()
+        .optional()
+        .describe("Include Azure comments (default true)"),
+    includeUpdates: z
+        .boolean()
+        .optional()
+        .describe("Include Azure updates/change history (default false)"),
+    maxComments: z
+        .number()
+        .int()
+        .min(1)
+        .max(100)
+        .optional()
+        .describe("Max Azure comments to return when includeComments=true (default 20)"),
+    maxUpdates: z
+        .number()
+        .int()
+        .min(1)
+        .max(100)
+        .optional()
+        .describe("Max Azure updates to return when includeUpdates=true (default 20)"),
+}, async ({ workItemId, workItemUrl, includeComments = true, includeUpdates = false, maxComments = 20, maxUpdates = 20, }) => {
+    const parsedFromUrl = parseAzureWorkItemId(workItemUrl ?? null);
+    const resolvedWorkItemId = workItemId ?? parsedFromUrl;
+    if (!resolvedWorkItemId) {
+        throw new Error("Provide either workItemId or a valid workItemUrl");
+    }
+    const qs = buildAzureContextQuery({
+        includeComments,
+        includeUpdates,
+        maxComments,
+        maxUpdates,
+    });
+    const data = await apiFetch(`/api/azure/workitems/${resolvedWorkItemId}/context?${qs}`);
+    return textResult(data);
+});
 // ─── Stats ───
 server.tool("get_year_stats", "Get year-in-review statistics: completion rates, streaks, busiest months, etc.", {
     year: z.number().min(2000).max(2100).optional().describe("Year (defaults to current year)"),
@@ -522,35 +559,19 @@ server.tool("get_todo_execution_context", "Get a todo by task number or id and h
             },
         });
     }
-    const [workItem, relations, prLinks, comments, updates] = await Promise.all([
-        apiFetch(`/api/azure/workitems/${azureWorkItemId}`),
-        apiFetch(`/api/azure/workitems/${azureWorkItemId}/relations`),
-        apiFetch(`/api/azure/workitems/${azureWorkItemId}/pr-links`),
-        includeComments
-            ? apiFetch(`/api/azure/workitems/${azureWorkItemId}/comments`)
-            : Promise.resolve(null),
-        includeUpdates
-            ? apiFetch(`/api/azure/workitems/${azureWorkItemId}/updates`)
-            : Promise.resolve(null),
-    ]);
+    const qs = buildAzureContextQuery({
+        includeComments,
+        includeUpdates,
+        maxComments,
+        maxUpdates,
+    });
+    const context = await apiFetch(`/api/azure/workitems/${azureWorkItemId}/context?${qs}`);
     return textResult({
         todo,
         azure: {
             linked: true,
             workItemId: azureWorkItemId,
-            workItem,
-            relations,
-            prLinks,
-            comments: includeComments
-                ? isApiError(comments)
-                    ? comments
-                    : withLimitedList(comments, "comments", maxComments)
-                : { skipped: true },
-            updates: includeUpdates
-                ? isApiError(updates)
-                    ? updates
-                    : withLimitedList(updates, "updates", maxUpdates)
-                : { skipped: true },
+            context,
         },
     });
 });
