@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import { useGithubPrStatus, useGithubPrStatuses } from '@/hooks/use-github-pr-status'
 import type { GitHubPrStatus } from '@/types/todo'
 
-const CHIP_BASE = 'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors'
+const CHIP_BASE = 'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors min-w-0 max-w-full'
 
 function getBadgeConfig(data: GitHubPrStatus) {
   if (data.state === 'merged') return { color: '#a371f7', icon: GitMerge, label: 'Merged' }
@@ -46,7 +46,7 @@ export function GitHubPrBadge({ url, showTitle }: GitHubPrBadgeProps) {
         }}
       >
         <Loader2 className="h-3 w-3 animate-spin" />
-        <span>#{prNumber}</span>
+        <span className="truncate">#{prNumber}</span>
       </span>
     )
   }
@@ -65,7 +65,7 @@ export function GitHubPrBadge({ url, showTitle }: GitHubPrBadgeProps) {
         }}
       >
         <GitPullRequest className="h-3 w-3" />
-        <span>#{prNumber}</span>
+        <span className="truncate">#{prNumber}</span>
       </a>
     )
   }
@@ -87,18 +87,18 @@ export function GitHubPrBadge({ url, showTitle }: GitHubPrBadgeProps) {
       title={`${data.title} — ${config.label}`}
     >
       <Icon className="h-3 w-3" />
-      <span>{config.label}</span>
-      <span>#{data.number}</span>
+      <span className="truncate max-w-[7rem]">{config.label}</span>
+      <span className="shrink-0">#{data.number}</span>
     </a>
   )
 
   if (!showTitle) return chip
 
   return (
-    <span className="inline-flex items-center gap-1.5 min-w-0">
+    <span className="flex w-full min-w-0 items-center gap-1.5">
       {chip}
       <span
-        className="text-[10px] truncate"
+        className="min-w-0 flex-1 text-[10px] truncate"
         style={{ color: 'var(--text-muted)' }}
       >
         {data.title}

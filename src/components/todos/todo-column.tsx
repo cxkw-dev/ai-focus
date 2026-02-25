@@ -74,6 +74,22 @@ export function TodoColumn({
   const [completedSearch, setCompletedSearch] = React.useState('')
   const [activeId, setActiveId] = React.useState<string | null>(null)
   const [overId, setOverId] = React.useState<string | null>(null)
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null)
+  const listContentRef = React.useRef<HTMLDivElement>(null)
+  const [showBottomFade, setShowBottomFade] = React.useState(false)
+
+  const updateBottomFade = React.useCallback(() => {
+    const container = scrollContainerRef.current
+    if (!container) {
+      setShowBottomFade(false)
+      return
+    }
+
+    const maxScrollTop = container.scrollHeight - container.clientHeight
+    const hasOverflow = maxScrollTop > 1
+    const isAtBottom = maxScrollTop - container.scrollTop <= 2
+    setShowBottomFade(hasOverflow && !isAtBottom)
+  }, [])
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -146,6 +162,29 @@ export function TodoColumn({
     : filter === 'deleted'
       ? 'color-mix(in srgb, var(--status-on-hold) 15%, transparent)'
       : 'color-mix(in srgb, var(--accent) 15%, transparent)'
+
+  React.useEffect(() => {
+    updateBottomFade()
+  }, [updateBottomFade, displayedTodos.length, filter, completedSearch])
+
+  React.useEffect(() => {
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    const resizeObserver = new ResizeObserver(() => {
+      updateBottomFade()
+    })
+
+    resizeObserver.observe(container)
+    const listContent = listContentRef.current
+    if (listContent) {
+      resizeObserver.observe(listContent)
+    }
+
+    return () => {
+      resizeObserver.disconnect()
+    }
+  }, [updateBottomFade])
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -237,7 +276,11 @@ export function TodoColumn({
 
       {/* Todo items with drag and drop */}
       <div className="relative flex-1 min-h-0">
-        <div className="h-full overflow-y-auto scrollbar-hide">
+        <div
+          ref={scrollContainerRef}
+          onScroll={updateBottomFade}
+          className="h-full overflow-y-auto scrollbar-hide"
+        >
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -250,7 +293,7 @@ export function TodoColumn({
               items={displayedTodos.map((t) => t.id)}
               strategy={verticalListSortingStrategy}
             >
-              <div className="space-y-1">
+              <div ref={listContentRef} className="space-y-1">
                 {displayedTodos.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <div
@@ -337,12 +380,14 @@ export function TodoColumn({
           </DndContext>
         </div>
         {/* Bottom fade overlay */}
-        <div
-          className="pointer-events-none absolute bottom-0 left-0 right-0 h-12"
-          style={{
-            background: 'linear-gradient(to top, var(--background), transparent)',
-          }}
-        />
+        {showBottomFade && (
+          <div
+            className="pointer-events-none absolute bottom-0 left-0 right-0 h-12"
+            style={{
+              background: 'linear-gradient(to top, var(--background), transparent)',
+            }}
+          />
+        )}
       </div>
     </div>
   )

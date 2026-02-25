@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import { useAzureWorkItemStatus, useAzureWorkItemStatuses } from '@/hooks/use-azure-workitem-status'
 import type { AzureWorkItemStatus } from '@/types/todo'
 
-const CHIP_BASE = 'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors'
+const CHIP_BASE = 'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors min-w-0 max-w-full'
 
 function getBadgeConfig(data: AzureWorkItemStatus) {
   const state = data.state.toLowerCase()
@@ -40,7 +40,7 @@ export function AzureWorkItemBadge({ url, showTitle }: AzureWorkItemBadgeProps) 
         }}
       >
         <Loader2 className="h-3 w-3 animate-spin" />
-        <span>#{itemId}</span>
+        <span className="truncate">#{itemId}</span>
       </span>
     )
   }
@@ -59,7 +59,7 @@ export function AzureWorkItemBadge({ url, showTitle }: AzureWorkItemBadgeProps) 
         }}
       >
         <CircleDot className="h-3 w-3" />
-        <span>#{itemId}</span>
+        <span className="truncate">#{itemId}</span>
       </a>
     )
   }
@@ -80,18 +80,18 @@ export function AzureWorkItemBadge({ url, showTitle }: AzureWorkItemBadgeProps) 
       title={`${data.title} — ${config.label}`}
     >
       <CircleDot className="h-3 w-3" />
-      <span>{config.label}</span>
-      <span>#{data.id}</span>
+      <span className="truncate max-w-[7rem]">{config.label}</span>
+      <span className="shrink-0">#{data.id}</span>
     </a>
   )
 
   if (!showTitle) return chip
 
   return (
-    <span className="inline-flex items-center gap-1.5 min-w-0">
+    <span className="flex w-full min-w-0 items-center gap-1.5">
       {chip}
       <span
-        className="text-[10px] truncate"
+        className="min-w-0 flex-1 text-[10px] truncate"
         style={{ color: 'var(--text-muted)' }}
       >
         {data.title}

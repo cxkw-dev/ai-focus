@@ -16,6 +16,7 @@ interface HeaderProps {
   title: string
   onMenuClick?: () => void
   showMenuButton?: boolean
+  actions?: React.ReactNode
 }
 
 function ThemeSwitcher() {
@@ -133,7 +134,7 @@ function ThemeSwitcher() {
   )
 }
 
-export function Header({ title, onMenuClick, showMenuButton }: HeaderProps) {
+export function Header({ title, onMenuClick, showMenuButton, actions }: HeaderProps) {
   return (
     <header
       className="sticky top-0 z-30 flex h-16 items-center justify-between border-b backdrop-blur-lg px-6"
@@ -157,6 +158,7 @@ export function Header({ title, onMenuClick, showMenuButton }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-2">
+        {actions}
         <ThemeSwitcher />
       </div>
     </header>

@@ -258,62 +258,10 @@ export default function TodosPage() {
           />
         </div>
 
-        <button
-          type="button"
-          onClick={() => setIsCreateModalOpen(true)}
-          className="group fixed bottom-6 right-6 flex items-center rounded-full active:scale-95 transition-transform z-50"
-          style={{
-            backgroundColor: 'var(--surface-2)',
-            boxShadow: '0 4px 20px color-mix(in srgb, var(--background) 70%, transparent)',
-          }}
-        >
-          <span
-            className="w-12 h-12 flex items-center justify-center rounded-full flex-shrink-0"
-            style={{
-              backgroundColor: 'var(--primary)',
-              border: '3px solid var(--surface-2)',
-            }}
-          >
-            <Plus className="h-5 w-5" strokeWidth={2.5} style={{ color: 'var(--primary-foreground)' }} />
-          </span>
-          <span
-            className="text-xs font-semibold tracking-wide pr-4 pl-2"
-            style={{ color: 'var(--text-primary)' }}
-          >
-            Add Task
-          </span>
-        </button>
       </div>
 
       {/* Desktop View (>= 1280px) */}
       <div className="hidden xl:flex xl:flex-col flex-1 min-h-0 gap-4">
-        <div className="flex-shrink-0">
-          <button
-            type="button"
-            onClick={() => setIsCreateModalOpen(true)}
-            className="group flex items-center rounded-full cursor-pointer active:scale-[0.97] transition-transform"
-            style={{
-              backgroundColor: 'var(--surface-2)',
-              boxShadow: '0 2px 8px color-mix(in srgb, var(--background) 60%, transparent)',
-            }}
-          >
-            <span
-              className="w-9 h-9 flex items-center justify-center rounded-full flex-shrink-0"
-              style={{
-                backgroundColor: 'var(--primary)',
-                border: '3px solid var(--surface-2)',
-              }}
-            >
-              <Plus className="h-4 w-4 group-hover:animate-[spin_0.5s_ease-in-out]" strokeWidth={2.5} style={{ color: 'var(--primary-foreground)' }} />
-            </span>
-            <span
-              className="text-xs font-semibold tracking-wide pr-4 pl-2"
-              style={{ color: 'var(--text-primary)' }}
-            >
-              Add Task
-            </span>
-          </button>
-        </div>
         <div className="grid grid-cols-3 gap-6 flex-1 min-h-0">
           {COLUMNS.map((col) => (
             <TodoColumn
@@ -356,6 +304,33 @@ export default function TodosPage() {
         onSubmit={handleCreate}
         isLoading={isSaving}
       />
+
+      <button
+        type="button"
+        onClick={() => setIsCreateModalOpen(true)}
+        className="group fixed bottom-6 right-6 z-50 flex items-center rounded-full active:scale-95 transition-transform"
+        style={{
+          backgroundColor: 'var(--surface-2)',
+          boxShadow: '0 4px 20px color-mix(in srgb, var(--background) 70%, transparent)',
+        }}
+        aria-label="Add task"
+      >
+        <span
+          className="w-12 h-12 flex items-center justify-center rounded-full flex-shrink-0"
+          style={{
+            backgroundColor: 'var(--primary)',
+            border: '3px solid var(--surface-2)',
+          }}
+        >
+          <Plus className="h-5 w-5 group-hover:animate-[spin_0.5s_ease-in-out]" strokeWidth={2.5} style={{ color: 'var(--primary-foreground)' }} />
+        </span>
+        <span
+          className="text-xs font-semibold tracking-wide pr-4 pl-2 hidden sm:inline"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          Add Task
+        </span>
+      </button>
     </div>
   )
 }

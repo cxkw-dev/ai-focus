@@ -64,6 +64,10 @@ export function EditTodoDialog({
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
   const [newPrUrl, setNewPrUrl] = React.useState('')
   const [newAzureDepUrl, setNewAzureDepUrl] = React.useState('')
+  const normalizeDescription = React.useCallback((value: string | null | undefined) => {
+    const trimmed = value?.trim()
+    return trimmed ? trimmed : null
+  }, [])
 
   const isEditing = !!todo
 
@@ -71,6 +75,7 @@ export function EditTodoDialog({
   const handleClose = React.useCallback(() => {
     if (isEditing && todo && form.title.trim()) {
       const payload = form.toPayload()
+      payload.description = normalizeDescription(form.description)
       // Include pending URLs that weren't explicitly added
       const pendingPr = newPrUrl.trim()
       if (pendingPr && !payload.githubPrUrls.includes(pendingPr)) {
@@ -82,7 +87,7 @@ export function EditTodoDialog({
       }
       const original = JSON.stringify({
         title: todo.title.trim(),
-        description: todo.description?.trim() || undefined,
+        description: normalizeDescription(todo.description),
         priority: todo.priority,
         status: todo.status,
         dueDate: todo.dueDate ? new Date(todo.dueDate).toISOString() : null,
@@ -104,7 +109,7 @@ export function EditTodoDialog({
       }
     }
     onOpenChange(false)
-  }, [isEditing, todo, form, onSubmit, onOpenChange, newPrUrl, newAzureDepUrl])
+  }, [isEditing, todo, form, onSubmit, onOpenChange, newPrUrl, newAzureDepUrl, normalizeDescription])
 
   const handleAddSubtask = React.useCallback(() => {
     if (newSubtaskTitle.trim()) {

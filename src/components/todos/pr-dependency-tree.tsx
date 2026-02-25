@@ -21,13 +21,13 @@ function SectionHeader({ icon: Icon, label, statusLabel, statusColor }: {
   statusColor?: string
 }) {
   return (
-    <div className="flex items-center gap-1.5 mb-1">
-      <Icon className="h-3 w-3" style={{ color: 'var(--text-muted)', opacity: 0.6 }} />
+    <div className="mb-1 flex min-w-0 flex-wrap items-center gap-1.5">
+      <Icon className="h-3 w-3 flex-shrink-0" style={{ color: 'var(--text-muted)', opacity: 0.6 }} />
       <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>
         {label}
       </span>
       {statusLabel && (
-        <span className="text-[10px] font-medium flex items-center gap-1" style={{ color: statusColor }}>
+        <span className="flex min-w-0 items-center gap-1 text-[10px] font-medium" style={{ color: statusColor }}>
           {statusColor !== 'var(--text-muted)' && <Check className="h-2.5 w-2.5" />}
           {statusLabel}
         </span>
@@ -66,7 +66,7 @@ function GitHubSection({ myPrUrl, githubPrUrls, showHeader, noBorder }: { myPrUr
 
       {/* My PR */}
       {myPrUrl && (
-        <div className="flex items-center gap-1.5 min-w-0">
+        <div className="flex w-full min-w-0 items-center gap-1.5">
           <GitHubPrBadge url={myPrUrl} showTitle />
         </div>
       )}
@@ -93,7 +93,7 @@ function GitHubSection({ myPrUrl, githubPrUrls, showHeader, noBorder }: { myPrUr
             {githubPrUrls.map((url, i) => (
               <div
                 key={url}
-                className={myPrUrl ? `pr-tree-branch${i === githubPrUrls.length - 1 ? ' pr-tree-branch-last' : ''}` : 'py-0.5'}
+                className={myPrUrl ? `pr-tree-branch min-w-0${i === githubPrUrls.length - 1 ? ' pr-tree-branch-last' : ''}` : 'min-w-0 py-0.5'}
               >
                 <GitHubPrBadge url={url} showTitle />
               </div>
@@ -132,7 +132,7 @@ function AzureSection({ azureWorkItemUrl, azureDepUrls, showHeader, noBorder }: 
 
       {/* My work item */}
       {azureWorkItemUrl && (
-        <div className="flex items-center gap-1.5 min-w-0">
+        <div className="flex w-full min-w-0 items-center gap-1.5">
           <AzureWorkItemBadge url={azureWorkItemUrl} showTitle />
         </div>
       )}
@@ -159,7 +159,7 @@ function AzureSection({ azureWorkItemUrl, azureDepUrls, showHeader, noBorder }: 
             {azureDepUrls.map((url, i) => (
               <div
                 key={url}
-                className={azureWorkItemUrl ? `pr-tree-branch${i === azureDepUrls.length - 1 ? ' pr-tree-branch-last' : ''}` : 'py-0.5'}
+                className={azureWorkItemUrl ? `pr-tree-branch min-w-0${i === azureDepUrls.length - 1 ? ' pr-tree-branch-last' : ''}` : 'min-w-0 py-0.5'}
               >
                 <AzureWorkItemBadge url={url} showTitle />
               </div>
