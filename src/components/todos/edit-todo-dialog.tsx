@@ -74,8 +74,10 @@ export function EditTodoDialog({
   // Save changes when dialog closes (escape, overlay click, close button)
   const handleClose = React.useCallback(() => {
     if (isEditing && todo && form.title.trim()) {
-      const payload = form.toPayload()
-      payload.description = normalizeDescription(form.description)
+      const payload: UpdateTodoInput = {
+        ...form.toPayload(),
+        description: normalizeDescription(form.description),
+      }
       // Include pending URLs that weren't explicitly added
       const pendingPr = newPrUrl.trim()
       if (pendingPr && !payload.githubPrUrls.includes(pendingPr)) {
