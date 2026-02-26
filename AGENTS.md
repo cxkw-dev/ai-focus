@@ -188,7 +188,31 @@ The app has **separate UI components for desktop and mobile**, not just CSS brea
 - **InlineTodoForm (desktop):** Keep controls compact. Use dropdowns/popovers for selectors, not inline lists. Everything should fit in tight toolbar rows.
 - **CreateTodoModal (mobile):** More vertical space available. Fields can be stacked full-width. Dropdowns preferred over inline lists.
 - **EditTodoDialog:** Two-column at `md+` breakpoint. Left: title + description + subtasks. Right: status, priority, due date, my PR, waiting on PRs, labels.
-- The main page layout is in `src/app/(dashboard)/todos/page.tsx` — desktop shows InlineTodoForm + todo list + scratch pad in columns; mobile shows tabs + FAB.
+- The main page layout is in `src/app/(dashboard)/todos/page.tsx`.
+- Current behavior: both desktop and mobile use `CreateTodoModal` via the floating action button (FAB). `InlineTodoForm` is currently not shown on the todos page.
+- Mobile (< `xl`): single active category panel with tab-style category switcher.
+- Desktop (`xl+`): three parallel category columns (`KAF`, `Projects`, `Others`).
+- Keep both layouts aligned functionally. If a feature is added to one, verify whether it should also exist in the other.
+
+## Motion + Interaction Architecture
+
+### Framer Motion + dnd-kit rules
+
+- `TodoColumn` uses `AnimatePresence` for list transitions only when `animateListTransitions` is true.
+- On mobile, list transitions are intentionally disabled (`animateListTransitions={false}`) to reduce motion and jank while preserving drag behavior.
+- `TodoItem` owns per-card motion (`layout`, enter/exit, drag opacity). Keep motion logic there instead of duplicating in parent containers.
+- Keep drag-and-drop behavior in `@dnd-kit`; use Framer Motion for visual transitions only (not for reorder state).
+- For drag overlays, continue using `TodoItemOverlay` to avoid mutating live list item styles during drag.
+
+### Subtask display/edit behavior
+
+- Subtasks render inside `src/components/todos/todo-item.tsx`.
+- In active view, subtasks support inline toggle, reorder, and title editing.
+- Display mode now also supports adding subtasks via a subtle `Add` control in the subtasks header.
+- Preserve this UX contract:
+  - Subtasks section should still be available in active view even when there are zero subtasks, so users can add the first one.
+  - New subtask input commits on Enter/blur and silently cancels empty input.
+  - Persist subtask changes through `onUpdateSubtasks` (full subtask list payload), not ad-hoc local-only state.
 
 ## Theme System
 
