@@ -34,6 +34,7 @@ import {
   ListChecks,
   Square,
   CheckSquare,
+  Plus,
 } from 'lucide-react'
 import { cn, formatRelativeDate } from '@/lib/utils'
 import { PRIORITY_MAP } from '@/lib/priority'
@@ -130,6 +131,13 @@ function toSubtaskInput(subtasks: Subtask[]): SubtaskInput[] {
 
 function subtaskDndId(subtaskId: string) {
   return `subtask-${subtaskId}`
+}
+
+function createTempSubtaskId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `new-${crypto.randomUUID()}`
+  }
+  return `new-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 }
 
 function SortableEditableSubtaskRow({
@@ -374,6 +382,8 @@ function TodoItemContent({
   const isCompleted = todo.status === 'COMPLETED'
   const canInlineEditSubtasks = viewMode === 'active' && !isDragging
   const [subtasks, setSubtasks] = React.useState<Subtask[]>(todo.subtasks ?? [])
+  const [isAddingSubtask, setIsAddingSubtask] = React.useState(false)
+  const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
   const { people } = usePeople()
   const subtaskMentions = React.useMemo(
     () => people.map((person) => ({ id: person.id, name: person.name, email: person.email })),
@@ -462,10 +472,39 @@ function TodoItemContent({
     })
   }, [persistSubtasks])
 
+  const handleAddSubtaskCommit = React.useCallback(() => {
+    const normalized = normalizeSubtaskTitle(newSubtaskTitle)
+
+    if (!hasMeaningfulText(normalized)) {
+      setNewSubtaskTitle('')
+      setIsAddingSubtask(false)
+      return
+    }
+
+    setSubtasks((prev) => {
+      const nextSubtasks: Subtask[] = [
+        ...prev,
+        {
+          id: createTempSubtaskId(),
+          title: normalized,
+          completed: false,
+          order: prev.length,
+        },
+      ]
+      persistSubtasks(nextSubtasks)
+      return nextSubtasks
+    })
+
+    setNewSubtaskTitle('')
+    setIsAddingSubtask(false)
+  }, [newSubtaskTitle, persistSubtasks])
+
   const completedCount = subtasks.filter(s => s.completed).length
   const allDone = subtasks.length > 0 && completedCount === subtasks.length
   const hasIntegrations = !!todo.myPrUrl || (todo.githubPrUrls ?? []).length > 0 || !!todo.azureWorkItemUrl || (todo.azureDepUrls ?? []).length > 0
   const hasSubtasks = subtasks.length > 0
+  const canAddSubtasks = canInlineEditSubtasks && !!onUpdateSubtasks
+  const shouldShowSubtasks = hasSubtasks || canAddSubtasks || isAddingSubtask
 
   return (
     <div className="flex flex-col gap-2 w-full min-w-0">
@@ -629,7 +668,7 @@ function TodoItemContent({
       )}
 
       {/* Subtasks */}
-      {hasSubtasks && (
+      {shouldShowSubtasks && (
         <div
           className="pt-1.5"
           style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)' }}
@@ -639,67 +678,98 @@ function TodoItemContent({
             <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>
               Subtasks
             </span>
-            <span
-              className="text-[10px] font-medium"
-              style={{ color: allDone ? 'var(--status-done)' : 'var(--text-muted)' }}
-            >
-              {completedCount}/{subtasks.length}
-            </span>
-          </div>
-          {canInlineEditSubtasks ? (
-            <DndContext
-              sensors={subtaskSensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleSubtaskDragEnd}
-            >
-              <SortableContext
-                items={subtasks.map(subtask => subtaskDndId(subtask.id))}
-                strategy={verticalListSortingStrategy}
+            {hasSubtasks && (
+              <span
+                className="text-[10px] font-medium"
+                style={{ color: allDone ? 'var(--status-done)' : 'var(--text-muted)' }}
               >
-                <div className="space-y-0.5">
-                  {subtasks.map((subtask) => (
-                    <SortableEditableSubtaskRow
-                      key={subtask.id}
-                      subtask={subtask}
-                      onToggle={() => handleSubtaskToggle(subtask.id, !subtask.completed)}
-                      onTitleChange={(title) => handleSubtaskTitleChange(subtask.id, title)}
-                      onTitleCommit={() => handleSubtaskTitleCommit(subtask.id)}
-                      mentions={subtaskMentions}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
-          ) : (
-            <div className="space-y-0.5">
-              {subtasks.map((subtask) => (
-                <div
-                  key={subtask.id}
-                  className="flex items-center gap-2 w-full text-left py-0.5 px-0.5 rounded"
+                {completedCount}/{subtasks.length}
+              </span>
+            )}
+            {canAddSubtasks && !isAddingSubtask && (
+              <button
+                type="button"
+                onClick={() => setIsAddingSubtask(true)}
+                className="ml-auto inline-flex items-center gap-1 rounded px-1 py-0.5 text-[10px] transition-colors hover:bg-white/5"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                <Plus className="h-2.5 w-2.5" />
+                Add
+              </button>
+            )}
+          </div>
+          {hasSubtasks && (
+            canInlineEditSubtasks ? (
+              <DndContext
+                sensors={subtaskSensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleSubtaskDragEnd}
+              >
+                <SortableContext
+                  items={subtasks.map(subtask => subtaskDndId(subtask.id))}
+                  strategy={verticalListSortingStrategy}
                 >
-                  {subtask.completed ? (
-                    <CheckSquare className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--status-done)' }} />
-                  ) : (
-                    <Square className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
-                  )}
-                  <div
-                    className="text-[11px] leading-snug"
-                    style={{
-                      color: subtask.completed ? 'var(--text-muted)' : 'var(--text-primary)',
-                      textDecoration: subtask.completed ? 'line-through' : 'none',
-                    }}
-                  >
-                    {isHtmlContent(subtask.title) ? (
-                      <div
-                        className="[&_p]:my-0 [&_p]:leading-snug [&_.mention]:font-medium [&_.mention:hover]:underline [&_a]:text-[var(--primary)] [&_a:hover]:underline"
-                        dangerouslySetInnerHTML={{ __html: linkifyHtml(mentionifyHtml(subtask.title)) }}
+                  <div className="space-y-0.5">
+                    {subtasks.map((subtask) => (
+                      <SortableEditableSubtaskRow
+                        key={subtask.id}
+                        subtask={subtask}
+                        onToggle={() => handleSubtaskToggle(subtask.id, !subtask.completed)}
+                        onTitleChange={(title) => handleSubtaskTitleChange(subtask.id, title)}
+                        onTitleCommit={() => handleSubtaskTitleCommit(subtask.id)}
+                        mentions={subtaskMentions}
                       />
-                    ) : (
-                      subtask.title
-                    )}
+                    ))}
                   </div>
-                </div>
-              ))}
+                </SortableContext>
+              </DndContext>
+            ) : (
+              <div className="space-y-0.5">
+                {subtasks.map((subtask) => (
+                  <div
+                    key={subtask.id}
+                    className="flex items-center gap-2 w-full text-left py-0.5 px-0.5 rounded"
+                  >
+                    {subtask.completed ? (
+                      <CheckSquare className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--status-done)' }} />
+                    ) : (
+                      <Square className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                    )}
+                    <div
+                      className="text-[11px] leading-snug"
+                      style={{
+                        color: subtask.completed ? 'var(--text-muted)' : 'var(--text-primary)',
+                        textDecoration: subtask.completed ? 'line-through' : 'none',
+                      }}
+                    >
+                      {isHtmlContent(subtask.title) ? (
+                        <div
+                          className="[&_p]:my-0 [&_p]:leading-snug [&_.mention]:font-medium [&_.mention:hover]:underline [&_a]:text-[var(--primary)] [&_a:hover]:underline"
+                          dangerouslySetInnerHTML={{ __html: linkifyHtml(mentionifyHtml(subtask.title)) }}
+                        />
+                      ) : (
+                        subtask.title
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          )}
+          {canAddSubtasks && isAddingSubtask && (
+            <div className="mt-1 rounded px-1 py-0.5" style={{ backgroundColor: 'color-mix(in srgb, var(--surface) 45%, transparent)' }}>
+              <div className="flex items-center gap-1.5">
+                <Plus className="h-3 w-3 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                <SubtaskMentionInput
+                  value={newSubtaskTitle}
+                  onChange={setNewSubtaskTitle}
+                  onCommit={handleAddSubtaskCommit}
+                  mentions={subtaskMentions}
+                  placeholder="Add a subtask..."
+                  className="!text-[11px] !leading-snug text-[var(--text-primary)]"
+                  ariaLabel="New subtask title"
+                />
+              </div>
             </div>
           )}
         </div>
