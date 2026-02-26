@@ -2,7 +2,22 @@
 
 import * as React from 'react'
 import { motion } from 'framer-motion'
-import { useSortable } from '@dnd-kit/sortable'
+import {
+  DndContext,
+  PointerSensor,
+  KeyboardSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import {
   Trash2,
@@ -29,7 +44,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { PrDependencyTree } from './pr-dependency-tree'
-import type { Todo, Status, Priority } from '@/types/todo'
+import type { Todo, Status, Priority, Subtask, SubtaskInput } from '@/types/todo'
 
 const CHIP_BASE = 'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors'
 
@@ -124,10 +139,94 @@ interface TodoItemProps {
   onEdit: (todo: Todo) => void
   onRestore?: (id: string) => void
   onToggleSubtask?: (todoId: string, subtaskId: string, completed: boolean) => void
+  onUpdateSubtasks?: (todoId: string, subtasks: SubtaskInput[]) => void
   isDragging?: boolean
   viewMode?: ViewMode
   dropIndicator?: 'above' | 'below' | null
   animateTransitions?: boolean
+}
+
+function toSubtaskInput(subtasks: Subtask[]): SubtaskInput[] {
+  return subtasks.map((subtask, index) => ({
+    id: subtask.id,
+    title: subtask.title,
+    completed: subtask.completed,
+    order: index,
+  }))
+}
+
+function subtaskDndId(subtaskId: string) {
+  return `subtask-${subtaskId}`
+}
+
+function SortableEditableSubtaskRow({
+  subtask,
+  onToggle,
+  onTitleChange,
+  onTitleCommit,
+}: {
+  subtask: Subtask
+  onToggle: () => void
+  onTitleChange: (title: string) => void
+  onTitleCommit: () => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: subtaskDndId(subtask.id),
+  })
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-2 py-0.5 px-0.5 rounded transition-colors hover:bg-white/5"
+    >
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className={cn(
+          'flex-shrink-0 cursor-grab active:cursor-grabbing p-0.5 rounded transition-colors',
+          isDragging && 'cursor-grabbing'
+        )}
+        style={{ color: 'var(--text-muted)', opacity: 0.7 }}
+        aria-label="Reorder subtask"
+      >
+        <GripVertical className="h-3.5 w-3.5" />
+      </button>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex-shrink-0"
+      >
+        {subtask.completed ? (
+          <CheckSquare className="h-3.5 w-3.5" style={{ color: 'var(--status-done)' }} />
+        ) : (
+          <Square className="h-3.5 w-3.5" style={{ color: 'var(--text-muted)' }} />
+        )}
+      </button>
+      <input
+        type="text"
+        value={subtask.title}
+        onChange={(event) => onTitleChange(event.target.value)}
+        onBlur={onTitleCommit}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            event.currentTarget.blur()
+          }
+        }}
+        className="flex-1 min-w-0 bg-transparent text-[11px] leading-snug focus:outline-none"
+        style={{
+          color: subtask.completed ? 'var(--text-muted)' : 'var(--text-primary)',
+          textDecoration: subtask.completed ? 'line-through' : 'none',
+        }}
+        aria-label="Subtask title"
+      />
+    </div>
+  )
 }
 
 function StatusDropdown({ todo, onStatusChange }: { todo: Todo; onStatusChange: (id: string, status: Status) => void }) {
@@ -250,12 +349,95 @@ function TodoItemContent({
   onEdit,
   onRestore,
   onToggleSubtask,
+  onUpdateSubtasks,
   isDragging,
   viewMode = 'active',
 }: TodoItemProps) {
   const isCompleted = todo.status === 'COMPLETED'
+  const canInlineEditSubtasks = viewMode === 'active' && !isDragging
+  const [subtasks, setSubtasks] = React.useState<Subtask[]>(todo.subtasks ?? [])
+  const subtaskSensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 6 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
 
-  const subtasks = todo.subtasks ?? []
+  React.useEffect(() => {
+    setSubtasks(todo.subtasks ?? [])
+  }, [todo.subtasks])
+
+  const persistSubtasks = React.useCallback((nextSubtasks: Subtask[]) => {
+    onUpdateSubtasks?.(todo.id, toSubtaskInput(nextSubtasks))
+  }, [onUpdateSubtasks, todo.id])
+
+  const handleSubtaskToggle = React.useCallback((subtaskId: string, completed: boolean) => {
+    setSubtasks(prev => prev.map(subtask =>
+      subtask.id === subtaskId ? { ...subtask, completed } : subtask
+    ))
+    onToggleSubtask?.(todo.id, subtaskId, completed)
+  }, [onToggleSubtask, todo.id])
+
+  const handleSubtaskTitleChange = React.useCallback((subtaskId: string, title: string) => {
+    setSubtasks(prev => prev.map(subtask =>
+      subtask.id === subtaskId ? { ...subtask, title } : subtask
+    ))
+  }, [])
+
+  const handleSubtaskTitleCommit = React.useCallback((subtaskId: string) => {
+    setSubtasks(prev => {
+      const current = prev.find(subtask => subtask.id === subtaskId)
+      if (!current) return prev
+
+      const trimmed = current.title.trim()
+      const original = (todo.subtasks ?? []).find(subtask => subtask.id === subtaskId)?.title ?? ''
+
+      if (!trimmed) {
+        if (current.title !== original) {
+          return prev.map(subtask =>
+            subtask.id === subtaskId ? { ...subtask, title: original } : subtask
+          )
+        }
+        return prev
+      }
+
+      if (trimmed !== current.title) {
+        const normalized = prev.map(subtask =>
+          subtask.id === subtaskId ? { ...subtask, title: trimmed } : subtask
+        )
+        if (trimmed !== original) {
+          persistSubtasks(normalized)
+        }
+        return normalized
+      }
+
+      if (trimmed !== original) {
+        persistSubtasks(prev)
+      }
+
+      return prev
+    })
+  }, [persistSubtasks, todo.subtasks])
+
+  const handleSubtaskDragEnd = React.useCallback((event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    setSubtasks(prev => {
+      const activeIndex = prev.findIndex(subtask => subtaskDndId(subtask.id) === active.id)
+      const overIndex = prev.findIndex(subtask => subtaskDndId(subtask.id) === over.id)
+      if (activeIndex === -1 || overIndex === -1) return prev
+      const reordered = arrayMove(prev, activeIndex, overIndex).map((subtask, index) => ({
+        ...subtask,
+        order: index,
+      }))
+      persistSubtasks(reordered)
+      return reordered
+    })
+  }, [persistSubtasks])
+
   const completedCount = subtasks.filter(s => s.completed).length
   const allDone = subtasks.length > 0 && completedCount === subtasks.length
   const hasIntegrations = !!todo.myPrUrl || (todo.githubPrUrls ?? []).length > 0 || !!todo.azureWorkItemUrl || (todo.azureDepUrls ?? []).length > 0
@@ -440,31 +622,54 @@ function TodoItemContent({
               {completedCount}/{subtasks.length}
             </span>
           </div>
-          <div className="space-y-0.5">
-            {subtasks.map((subtask) => (
-              <button
-                key={subtask.id}
-                type="button"
-                onClick={() => onToggleSubtask?.(todo.id, subtask.id, !subtask.completed)}
-                className="flex items-center gap-2 w-full text-left py-0.5 px-0.5 rounded transition-colors hover:bg-white/5"
+          {canInlineEditSubtasks ? (
+            <DndContext
+              sensors={subtaskSensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleSubtaskDragEnd}
+            >
+              <SortableContext
+                items={subtasks.map(subtask => subtaskDndId(subtask.id))}
+                strategy={verticalListSortingStrategy}
               >
-                {subtask.completed ? (
-                  <CheckSquare className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--status-done)' }} />
-                ) : (
-                  <Square className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
-                )}
-                <span
-                  className="text-[11px] leading-snug"
-                  style={{
-                    color: subtask.completed ? 'var(--text-muted)' : 'var(--text-primary)',
-                    textDecoration: subtask.completed ? 'line-through' : 'none',
-                  }}
+                <div className="space-y-0.5">
+                  {subtasks.map((subtask) => (
+                    <SortableEditableSubtaskRow
+                      key={subtask.id}
+                      subtask={subtask}
+                      onToggle={() => handleSubtaskToggle(subtask.id, !subtask.completed)}
+                      onTitleChange={(title) => handleSubtaskTitleChange(subtask.id, title)}
+                      onTitleCommit={() => handleSubtaskTitleCommit(subtask.id)}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          ) : (
+            <div className="space-y-0.5">
+              {subtasks.map((subtask) => (
+                <div
+                  key={subtask.id}
+                  className="flex items-center gap-2 w-full text-left py-0.5 px-0.5 rounded"
                 >
-                  {subtask.title}
-                </span>
-              </button>
-            ))}
-          </div>
+                  {subtask.completed ? (
+                    <CheckSquare className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--status-done)' }} />
+                  ) : (
+                    <Square className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                  )}
+                  <span
+                    className="text-[11px] leading-snug"
+                    style={{
+                      color: subtask.completed ? 'var(--text-muted)' : 'var(--text-primary)',
+                      textDecoration: subtask.completed ? 'line-through' : 'none',
+                    }}
+                  >
+                    {subtask.title}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -479,6 +684,7 @@ export function TodoItem({
   onEdit,
   onRestore,
   onToggleSubtask,
+  onUpdateSubtasks,
   isDragging: isOverlay,
   viewMode = 'active',
   dropIndicator,
@@ -557,6 +763,7 @@ export function TodoItem({
           onEdit={onEdit}
           onRestore={onRestore}
           onToggleSubtask={onToggleSubtask}
+          onUpdateSubtasks={onUpdateSubtasks}
           isDragging={dragging}
           viewMode={viewMode}
         />

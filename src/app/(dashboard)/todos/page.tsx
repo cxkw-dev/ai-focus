@@ -9,7 +9,7 @@ import { useToast } from '@/components/ui/use-toast'
 import { useTodos } from '@/hooks/use-todos'
 import { useLabels } from '@/hooks/use-labels'
 import { categorizeTodos, type TodoCategory } from '@/lib/categorize-todos'
-import type { Todo, UpdateTodoInput, CreateTodoInput } from '@/types/todo'
+import type { Todo, UpdateTodoInput, CreateTodoInput, SubtaskInput } from '@/types/todo'
 
 const COLUMNS: { key: TodoCategory; title: string; color: string }[] = [
   { key: 'kaf', title: 'KAF', color: 'var(--accent)' },
@@ -140,6 +140,12 @@ export default function TodosPage() {
     [toggleSubtask]
   )
 
+  const handleUpdateSubtasks = React.useCallback(
+    (todoId: string, subtasks: SubtaskInput[]) =>
+      update.mutate({ id: todoId, data: { subtasks } }),
+    [update]
+  )
+
   const handleReorder = React.useCallback(
     (reorderedTodos: Todo[]) => reorder.mutate(reorderedTodos),
     [reorder]
@@ -249,6 +255,7 @@ export default function TodosPage() {
             onPermanentDelete={handlePermanentDelete}
             onRestore={handleRestore}
             onToggleSubtask={handleToggleSubtask}
+            onUpdateSubtasks={handleUpdateSubtasks}
             onReorder={handleReorder}
             onCreateTodo={handleCreate}
             isSaving={isSaving}
@@ -279,6 +286,7 @@ export default function TodosPage() {
               onPermanentDelete={handlePermanentDelete}
               onRestore={handleRestore}
               onToggleSubtask={handleToggleSubtask}
+              onUpdateSubtasks={handleUpdateSubtasks}
               onReorder={handleReorder}
               onCreateTodo={handleCreate}
               isSaving={isSaving}

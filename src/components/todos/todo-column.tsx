@@ -23,7 +23,7 @@ import {
 import { Circle, CheckCircle2, Trash2, Inbox, Search, X } from 'lucide-react'
 import { TodoItem, TodoItemOverlay } from './todo-item'
 import { InlineTodoForm } from './inline-todo-form'
-import type { Todo, Status, Priority, CreateTodoInput } from '@/types/todo'
+import type { Todo, Status, Priority, CreateTodoInput, SubtaskInput } from '@/types/todo'
 import type { TodoCategory } from '@/lib/categorize-todos'
 
 type Filter = 'active' | 'completed' | 'deleted'
@@ -42,6 +42,7 @@ interface TodoColumnProps {
   onPermanentDelete: (id: string) => void
   onRestore: (id: string) => void
   onToggleSubtask: (todoId: string, subtaskId: string, completed: boolean) => void
+  onUpdateSubtasks: (todoId: string, subtasks: SubtaskInput[]) => void
   onReorder: (reorderedTodos: Todo[]) => void
   onCreateTodo: (data: CreateTodoInput) => Promise<boolean>
   isSaving?: boolean
@@ -63,6 +64,7 @@ export function TodoColumn({
   onPermanentDelete,
   onRestore,
   onToggleSubtask,
+  onUpdateSubtasks,
   onReorder,
   onCreateTodo,
   isSaving,
@@ -328,6 +330,7 @@ export function TodoColumn({
                             onEdit={onEdit}
                             onRestore={onRestore}
                             onToggleSubtask={onToggleSubtask}
+                            onUpdateSubtasks={onUpdateSubtasks}
                             viewMode={filter}
                             dropIndicator={dropIndicator}
                             animateTransitions={true}
@@ -355,6 +358,7 @@ export function TodoColumn({
                           onEdit={onEdit}
                           onRestore={onRestore}
                           onToggleSubtask={onToggleSubtask}
+                          onUpdateSubtasks={onUpdateSubtasks}
                           viewMode={filter}
                           dropIndicator={dropIndicator}
                           animateTransitions={false}

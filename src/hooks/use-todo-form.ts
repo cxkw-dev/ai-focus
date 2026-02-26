@@ -19,6 +19,7 @@ interface TodoFormState {
   subtasks: SubtaskInput[]
   addSubtask: (title: string) => void
   removeSubtask: (index: number) => void
+  moveSubtask: (fromIndex: number, toIndex: number) => void
   updateSubtaskTitle: (index: number, title: string) => void
   toggleSubtask: (index: number) => void
   myPrUrl: string
@@ -109,6 +110,19 @@ export function useTodoForm(todo?: Todo | null, options?: { initialLabelIds?: st
     setSubtasks(prev => prev.filter((_, i) => i !== index).map((s, i) => ({ ...s, order: i })))
   }, [])
 
+  const moveSubtask = React.useCallback((fromIndex: number, toIndex: number) => {
+    setSubtasks(prev => {
+      if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0 || fromIndex >= prev.length || toIndex >= prev.length) {
+        return prev
+      }
+      const next = [...prev]
+      const [moved] = next.splice(fromIndex, 1)
+      if (!moved) return prev
+      next.splice(toIndex, 0, moved)
+      return next.map((subtask, index) => ({ ...subtask, order: index }))
+    })
+  }, [])
+
   const updateSubtaskTitle = React.useCallback((index: number, newTitle: string) => {
     setSubtasks(prev => prev.map((s, i) => (i === index ? { ...s, title: newTitle } : s)))
   }, [])
@@ -166,6 +180,7 @@ export function useTodoForm(todo?: Todo | null, options?: { initialLabelIds?: st
     subtasks,
     addSubtask,
     removeSubtask,
+    moveSubtask,
     updateSubtaskTitle,
     toggleSubtask,
     myPrUrl, setMyPrUrl,

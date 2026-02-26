@@ -11,7 +11,24 @@ import {
   X,
   Square,
   CheckSquare,
+  GripVertical,
 } from 'lucide-react'
+import {
+  DndContext,
+  PointerSensor,
+  KeyboardSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  useSortable,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -39,6 +56,84 @@ import { usePeople } from '@/hooks/use-people'
 import { useTodoForm } from '@/hooks/use-todo-form'
 import type { Todo, UpdateTodoInput, Status } from '@/types/todo'
 
+function getSubtaskDndId(subtaskId: string | undefined, index: number): string {
+  return subtaskId ?? `new-subtask-${index}`
+}
+
+function SortableEditSubtaskRow({
+  dndId,
+  completed,
+  title,
+  onToggle,
+  onTitleChange,
+  onRemove,
+}: {
+  dndId: string
+  completed: boolean
+  title: string
+  onToggle: () => void
+  onTitleChange: (title: string) => void
+  onRemove: () => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: dndId })
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-2 group/subtask"
+    >
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="flex-shrink-0 cursor-grab active:cursor-grabbing p-0.5 rounded transition-colors"
+        style={{
+          color: 'var(--text-muted)',
+          opacity: isDragging ? 1 : 0.6,
+        }}
+        aria-label="Reorder subtask"
+      >
+        <GripVertical className="h-3.5 w-3.5" />
+      </button>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex-shrink-0 transition-colors"
+        style={{ color: completed ? 'var(--status-done)' : 'var(--text-muted)' }}
+      >
+        {completed ? (
+          <CheckSquare className="h-4 w-4" />
+        ) : (
+          <Square className="h-4 w-4" />
+        )}
+      </button>
+      <input
+        type="text"
+        value={title}
+        onChange={(e) => onTitleChange(e.target.value)}
+        className="flex-1 bg-transparent text-sm focus:outline-none"
+        style={{
+          color: completed ? 'var(--text-muted)' : 'var(--text-primary)',
+          textDecoration: completed ? 'line-through' : 'none',
+        }}
+      />
+      <button
+        type="button"
+        onClick={onRemove}
+        className="flex-shrink-0 opacity-0 group-hover/subtask:opacity-100 transition-opacity"
+        style={{ color: 'var(--text-muted)' }}
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  )
+}
+
 interface EditTodoDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -64,6 +159,14 @@ export function EditTodoDialog({
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
   const [newPrUrl, setNewPrUrl] = React.useState('')
   const [newAzureDepUrl, setNewAzureDepUrl] = React.useState('')
+  const subtaskSensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 6 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
   const normalizeDescription = React.useCallback((value: string | null | undefined) => {
     const trimmed = value?.trim()
     return trimmed ? trimmed : null
@@ -130,6 +233,22 @@ export function EditTodoDialog({
     e.preventDefault()
   }
 
+  const handleSubtaskDragEnd = React.useCallback((event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const activeIndex = form.subtasks.findIndex((subtask, index) =>
+      getSubtaskDndId(subtask.id, index) === active.id
+    )
+    const overIndex = form.subtasks.findIndex((subtask, index) =>
+      getSubtaskDndId(subtask.id, index) === over.id
+    )
+
+    if (activeIndex !== -1 && overIndex !== -1) {
+      form.moveSubtask(activeIndex, overIndex)
+    }
+  }, [form])
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="w-[96vw] max-w-[1040px] max-h-[85vh] flex flex-col overflow-hidden p-0">
@@ -194,40 +313,30 @@ export function EditTodoDialog({
                     )}
                   </Label>
                   <div className="space-y-1">
-                    {form.subtasks.map((subtask, index) => (
-                      <div key={subtask.id ?? index} className="flex items-center gap-2 group/subtask">
-                        <button
-                          type="button"
-                          onClick={() => form.toggleSubtask(index)}
-                          className="flex-shrink-0 transition-colors"
-                          style={{ color: subtask.completed ? 'var(--status-done)' : 'var(--text-muted)' }}
-                        >
-                          {subtask.completed ? (
-                            <CheckSquare className="h-4 w-4" />
-                          ) : (
-                            <Square className="h-4 w-4" />
-                          )}
-                        </button>
-                        <input
-                          type="text"
-                          value={subtask.title}
-                          onChange={(e) => form.updateSubtaskTitle(index, e.target.value)}
-                          className="flex-1 bg-transparent text-sm focus:outline-none"
-                          style={{
-                            color: subtask.completed ? 'var(--text-muted)' : 'var(--text-primary)',
-                            textDecoration: subtask.completed ? 'line-through' : 'none',
-                          }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => form.removeSubtask(index)}
-                          className="flex-shrink-0 opacity-0 group-hover/subtask:opacity-100 transition-opacity"
-                          style={{ color: 'var(--text-muted)' }}
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    ))}
+                    <DndContext
+                      sensors={subtaskSensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleSubtaskDragEnd}
+                    >
+                      <SortableContext
+                        items={form.subtasks.map((subtask, index) => getSubtaskDndId(subtask.id, index))}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div className="space-y-1">
+                          {form.subtasks.map((subtask, index) => (
+                            <SortableEditSubtaskRow
+                              key={getSubtaskDndId(subtask.id, index)}
+                              dndId={getSubtaskDndId(subtask.id, index)}
+                              completed={!!subtask.completed}
+                              title={subtask.title}
+                              onToggle={() => form.toggleSubtask(index)}
+                              onTitleChange={(title) => form.updateSubtaskTitle(index, title)}
+                              onRemove={() => form.removeSubtask(index)}
+                            />
+                          ))}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
                     <div className="flex items-center gap-2">
                       <Plus className="h-4 w-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
                       <input
