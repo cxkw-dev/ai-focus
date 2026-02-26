@@ -381,6 +381,34 @@ h1, h2, h3, h4, h5, h6 {
   box-decoration-break: clone;
 }
 
+/* Compact mention editor for subtask rows */
+.subtask-mention-editor > * + * {
+  margin-top: 0;
+}
+
+.subtask-mention-editor p {
+  margin: 0;
+}
+
+.subtask-mention-editor p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--text-muted);
+  opacity: 0.6;
+  pointer-events: none;
+  height: 0;
+}
+
+.subtask-mention-editor .mention {
+  background-color: color-mix(in srgb, var(--primary) 18%, transparent);
+  color: var(--primary);
+  border-radius: 0.25rem;
+  padding: 0.08em 0.24em;
+  font-weight: 500;
+  font-size: 0.95em;
+  box-decoration-break: clone;
+}
+
 /* Rendered rich text in todo items */
 .rich-text-display {
   font-size: 11px;

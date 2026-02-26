@@ -6,7 +6,7 @@ import { z } from 'zod'
 
 const subtaskSchema = z.object({
   id: z.string().optional(),
-  title: z.string().min(1).max(200),
+  title: z.string().min(1).max(1000),
   completed: z.boolean().optional(),
   order: z.number().int(),
 })

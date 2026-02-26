@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import type { Todo, Priority, Status, SubtaskInput } from '@/types/todo'
+import { hasMeaningfulText, normalizeSubtaskTitle } from '@/lib/rich-text'
 
 interface TodoFormState {
   title: string
@@ -102,8 +103,9 @@ export function useTodoForm(todo?: Todo | null, options?: { initialLabelIds?: st
   }, [todo, populateFromTodo, reset])
 
   const addSubtask = React.useCallback((subtaskTitle: string) => {
-    if (!subtaskTitle.trim()) return
-    setSubtasks(prev => [...prev, { title: subtaskTitle.trim(), completed: false, order: prev.length }])
+    const normalized = normalizeSubtaskTitle(subtaskTitle)
+    if (!hasMeaningfulText(normalized)) return
+    setSubtasks(prev => [...prev, { title: normalized, completed: false, order: prev.length }])
   }, [])
 
   const removeSubtask = React.useCallback((index: number) => {

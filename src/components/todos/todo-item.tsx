@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { motion } from 'framer-motion'
+import { motion, useAnimationControls } from 'framer-motion'
 import {
   DndContext,
   PointerSensor,
@@ -43,6 +43,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { SubtaskMentionInput } from '@/components/ui/subtask-mention-input'
+import { usePeople } from '@/hooks/use-people'
+import {
+  cleanUrlEnd,
+  ensureProtocol,
+  hasMeaningfulText,
+  isHtmlContent,
+  linkifyHtml,
+  mentionifyHtml,
+  normalizeSubtaskTitle,
+} from '@/lib/rich-text'
 import { PrDependencyTree } from './pr-dependency-tree'
 import type { Todo, Status, Priority, Subtask, SubtaskInput } from '@/types/todo'
 
@@ -65,19 +76,6 @@ const PRIORITY_CONFIG: Record<Priority, { label: string; colorVar: string; bgVar
 
 const URL_SPLIT_REGEX = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi
 const URL_MATCH_REGEX = /^(https?:\/\/[^\s]+|www\.[^\s]+)$/i
-
-function cleanUrlEnd(url: string): [string, string] {
-  const trailing = /[.,;:!?)]+$/
-  const match = url.match(trailing)
-  if (match) {
-    return [url.slice(0, -match[0].length), match[0]]
-  }
-  return [url, '']
-}
-
-function ensureProtocol(url: string): string {
-  return url.startsWith('http') ? url : `https://${url}`
-}
 
 function renderTextWithLinks(text: string) {
   const parts = text.split(URL_SPLIT_REGEX)
@@ -102,31 +100,6 @@ function renderTextWithLinks(text: string) {
     }
     return part
   })
-}
-
-function linkifyHtml(html: string): string {
-  const parts = html.split(/(<a\s[^>]*>[\s\S]*?<\/a>)/gi)
-  return parts.map(part => {
-    if (/^<a\s/i.test(part)) return part
-    return part.replace(
-      /(https?:\/\/[^\s<]+|www\.[^\s<]+)/gi,
-      (match) => {
-        const [cleanUrl, trailing] = cleanUrlEnd(match)
-        const href = ensureProtocol(cleanUrl)
-        return `<a href="${href}" target="_blank" rel="noopener noreferrer">${cleanUrl}</a>${trailing}`
-      }
-    )
-  }).join('')
-}
-
-function mentionifyHtml(html: string): string {
-  return html.replace(
-    /<span[^>]*data-type="mention"[^>]*data-email="([^"]*)"[^>]*>([^<]*)<\/span>/gi,
-    (_match, email, label) => {
-      const teamsUrl = `https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(email)}`
-      return `<a href="${teamsUrl}" target="_blank" rel="noopener noreferrer" class="mention">${label}</a>`
-    }
-  )
 }
 
 type ViewMode = 'active' | 'completed' | 'deleted'
@@ -164,12 +137,16 @@ function SortableEditableSubtaskRow({
   onToggle,
   onTitleChange,
   onTitleCommit,
+  mentions,
 }: {
   subtask: Subtask
   onToggle: () => void
   onTitleChange: (title: string) => void
   onTitleCommit: () => void
+  mentions: { id: string; name: string; email: string }[]
 }) {
+  const [isEditing, setIsEditing] = React.useState(false)
+  const commitFxControls = useAnimationControls()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: subtaskDndId(subtask.id),
   })
@@ -177,54 +154,95 @@ function SortableEditableSubtaskRow({
     transform: CSS.Transform.toString(transform),
     transition,
   }
+  const handleCommit = React.useCallback(() => {
+    onTitleCommit()
+    void commitFxControls.start({
+      x: [0, -1.5, 1.5, -0.75, 0],
+      transition: { duration: 0.24, ease: 'easeOut' },
+    })
+  }, [commitFxControls, onTitleCommit])
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-2 py-0.5 px-0.5 rounded transition-colors hover:bg-white/5"
+      className="relative py-0.5"
     >
-      <button
-        type="button"
-        {...attributes}
-        {...listeners}
-        className={cn(
-          'flex-shrink-0 cursor-grab active:cursor-grabbing p-0.5 rounded transition-colors',
-          isDragging && 'cursor-grabbing'
-        )}
-        style={{ color: 'var(--text-muted)', opacity: 0.7 }}
-        aria-label="Reorder subtask"
-      >
-        <GripVertical className="h-3.5 w-3.5" />
-      </button>
-      <button
-        type="button"
-        onClick={onToggle}
-        className="flex-shrink-0"
-      >
-        {subtask.completed ? (
-          <CheckSquare className="h-3.5 w-3.5" style={{ color: 'var(--status-done)' }} />
-        ) : (
-          <Square className="h-3.5 w-3.5" style={{ color: 'var(--text-muted)' }} />
-        )}
-      </button>
-      <input
-        type="text"
-        value={subtask.title}
-        onChange={(event) => onTitleChange(event.target.value)}
-        onBlur={onTitleCommit}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') {
-            event.currentTarget.blur()
-          }
-        }}
-        className="flex-1 min-w-0 bg-transparent text-[11px] leading-snug focus:outline-none"
-        style={{
-          color: subtask.completed ? 'var(--text-muted)' : 'var(--text-primary)',
-          textDecoration: subtask.completed ? 'line-through' : 'none',
-        }}
-        aria-label="Subtask title"
+      <motion.span
+        className="absolute left-0 top-1/2 h-3 w-0.5 rounded-full pointer-events-none"
+        animate={
+          isEditing
+            ? { opacity: [0.45, 1, 0.45], scaleY: [0.75, 1, 0.75] }
+            : { opacity: 0, scaleY: 0.75 }
+        }
+        transition={
+          isEditing
+            ? { duration: 1.2, ease: 'easeInOut', repeat: Number.POSITIVE_INFINITY }
+            : { duration: 0.12, ease: 'easeOut' }
+        }
+        style={{ backgroundColor: 'var(--primary)' }}
       />
+      <motion.div
+        className="flex items-center rounded pl-1 pr-0.5 transition-colors hover:bg-white/5"
+        animate={{
+          backgroundColor: isEditing ? 'color-mix(in srgb, var(--primary) 10%, transparent)' : 'transparent',
+          boxShadow: isEditing
+            ? 'inset 0 0 0 1px color-mix(in srgb, var(--primary) 28%, transparent)'
+            : 'inset 0 0 0 1px transparent',
+          y: isEditing ? -0.5 : 0,
+        }}
+        transition={{ type: 'spring', stiffness: 300, damping: 28, mass: 0.6 }}
+      >
+        <motion.div className="flex items-center gap-2 w-full min-w-0" animate={commitFxControls}>
+          <button
+            type="button"
+            {...attributes}
+            {...listeners}
+            className={cn(
+              'flex-shrink-0 cursor-grab active:cursor-grabbing p-0.5 rounded transition-colors',
+              isDragging && 'cursor-grabbing'
+            )}
+            style={{ color: 'var(--text-muted)', opacity: 0.7 }}
+            aria-label="Reorder subtask"
+          >
+            <GripVertical className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={onToggle}
+            className="flex-shrink-0"
+          >
+            {subtask.completed ? (
+              <CheckSquare className="h-3.5 w-3.5" style={{ color: 'var(--status-done)' }} />
+            ) : (
+              <Square className="h-3.5 w-3.5" style={{ color: 'var(--text-muted)' }} />
+            )}
+          </button>
+          <div className="flex-1 min-w-0">
+            <SubtaskMentionInput
+              value={subtask.title}
+              onChange={onTitleChange}
+              onCommit={handleCommit}
+              onFocusChange={setIsEditing}
+              mentions={mentions}
+              completed={subtask.completed}
+              className={cn(
+                '!text-[11px] !leading-snug',
+                subtask.completed ? 'text-[var(--text-muted)]' : 'text-[var(--text-primary)]'
+              )}
+              ariaLabel="Subtask title"
+            />
+          </div>
+          <motion.span
+            className="text-[9px] uppercase tracking-wide font-semibold flex-shrink-0"
+            animate={{ opacity: isEditing ? 1 : 0, x: isEditing ? 0 : -2 }}
+            transition={{ duration: 0.14, ease: 'easeOut' }}
+            style={{ color: 'var(--primary)' }}
+          >
+            editing
+          </motion.span>
+        </motion.div>
+      </motion.div>
     </div>
   )
 }
@@ -356,6 +374,11 @@ function TodoItemContent({
   const isCompleted = todo.status === 'COMPLETED'
   const canInlineEditSubtasks = viewMode === 'active' && !isDragging
   const [subtasks, setSubtasks] = React.useState<Subtask[]>(todo.subtasks ?? [])
+  const { people } = usePeople()
+  const subtaskMentions = React.useMemo(
+    () => people.map((person) => ({ id: person.id, name: person.name, email: person.email })),
+    [people]
+  )
   const subtaskSensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 6 },
@@ -391,10 +414,11 @@ function TodoItemContent({
       const current = prev.find(subtask => subtask.id === subtaskId)
       if (!current) return prev
 
-      const trimmed = current.title.trim()
+      const trimmed = normalizeSubtaskTitle(current.title)
       const original = (todo.subtasks ?? []).find(subtask => subtask.id === subtaskId)?.title ?? ''
+      const originalNormalized = normalizeSubtaskTitle(original)
 
-      if (!trimmed) {
+      if (!hasMeaningfulText(trimmed)) {
         if (current.title !== original) {
           return prev.map(subtask =>
             subtask.id === subtaskId ? { ...subtask, title: original } : subtask
@@ -407,13 +431,13 @@ function TodoItemContent({
         const normalized = prev.map(subtask =>
           subtask.id === subtaskId ? { ...subtask, title: trimmed } : subtask
         )
-        if (trimmed !== original) {
+        if (trimmed !== originalNormalized) {
           persistSubtasks(normalized)
         }
         return normalized
       }
 
-      if (trimmed !== original) {
+      if (trimmed !== originalNormalized) {
         persistSubtasks(prev)
       }
 
@@ -640,6 +664,7 @@ function TodoItemContent({
                       onToggle={() => handleSubtaskToggle(subtask.id, !subtask.completed)}
                       onTitleChange={(title) => handleSubtaskTitleChange(subtask.id, title)}
                       onTitleCommit={() => handleSubtaskTitleCommit(subtask.id)}
+                      mentions={subtaskMentions}
                     />
                   ))}
                 </div>
@@ -657,15 +682,22 @@ function TodoItemContent({
                   ) : (
                     <Square className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
                   )}
-                  <span
+                  <div
                     className="text-[11px] leading-snug"
                     style={{
                       color: subtask.completed ? 'var(--text-muted)' : 'var(--text-primary)',
                       textDecoration: subtask.completed ? 'line-through' : 'none',
                     }}
                   >
-                    {subtask.title}
-                  </span>
+                    {isHtmlContent(subtask.title) ? (
+                      <div
+                        className="[&_p]:my-0 [&_p]:leading-snug [&_.mention]:font-medium [&_.mention:hover]:underline [&_a]:text-[var(--primary)] [&_a:hover]:underline"
+                        dangerouslySetInnerHTML={{ __html: linkifyHtml(mentionifyHtml(subtask.title)) }}
+                      />
+                    ) : (
+                      subtask.title
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

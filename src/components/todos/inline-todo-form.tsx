@@ -10,9 +10,18 @@ import {
 import { cn } from '@/lib/utils'
 import { PRIORITIES } from '@/lib/priority'
 import { LabelMultiSelect, LabelManagerDialog } from './label-multi-select'
+import { SubtaskMentionInput } from '@/components/ui/subtask-mention-input'
 import { UrlListField } from './url-fields'
 import { useLabels } from '@/hooks/use-labels'
+import { usePeople } from '@/hooks/use-people'
 import { useTodoForm } from '@/hooks/use-todo-form'
+import {
+  hasMeaningfulText,
+  isHtmlContent,
+  linkifyHtml,
+  mentionifyHtml,
+  normalizeSubtaskTitle,
+} from '@/lib/rich-text'
 import type { CreateTodoInput, Priority } from '@/types/todo'
 
 interface InlineTodoFormProps {
@@ -27,12 +36,17 @@ export function InlineTodoForm({
   defaultLabelIds,
 }: InlineTodoFormProps) {
   const { labels, handleCreate: onCreateLabel, handleUpdate: onUpdateLabel, handleDelete: onDeleteLabel } = useLabels()
+  const { people } = usePeople()
   const form = useTodoForm(null, { initialLabelIds: defaultLabelIds })
   const [isExpanded, setIsExpanded] = React.useState(false)
   const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
   const [newPrUrl, setNewPrUrl] = React.useState('')
   const [newAzureDepUrl, setNewAzureDepUrl] = React.useState('')
+  const subtaskMentions = React.useMemo(
+    () => people.map((person) => ({ id: person.id, name: person.name, email: person.email })),
+    [people]
+  )
   const resetForm = form.reset
 
   const submitCurrentTodo = React.useCallback(async () => {
@@ -242,9 +256,16 @@ export function InlineTodoForm({
                       <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
                         {index + 1}.
                       </span>
-                      <span className="text-xs flex-1" style={{ color: 'var(--text-primary)' }}>
-                        {subtask.title}
-                      </span>
+                      <div className="text-xs flex-1 min-w-0" style={{ color: 'var(--text-primary)' }}>
+                        {isHtmlContent(subtask.title) ? (
+                          <div
+                            className="[&_p]:my-0 [&_p]:leading-snug [&_.mention]:font-medium [&_.mention:hover]:underline [&_a]:text-[var(--primary)] [&_a:hover]:underline"
+                            dangerouslySetInnerHTML={{ __html: linkifyHtml(mentionifyHtml(subtask.title)) }}
+                          />
+                        ) : (
+                          subtask.title
+                        )}
+                      </div>
                       <button
                         type="button"
                         onClick={() => form.removeSubtask(index)}
@@ -257,24 +278,20 @@ export function InlineTodoForm({
                   ))}
                   <div className="flex items-center gap-2">
                     <Plus className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
-                    <input
-                      type="text"
+                    <SubtaskMentionInput
                       value={newSubtaskTitle}
-                      onChange={(e) => setNewSubtaskTitle(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          if (newSubtaskTitle.trim()) {
-                            form.addSubtask(newSubtaskTitle)
-                            setNewSubtaskTitle('')
-                          }
-                        }
+                      onChange={setNewSubtaskTitle}
+                      onCommit={() => {
+                        const normalized = normalizeSubtaskTitle(newSubtaskTitle)
+                        if (!hasMeaningfulText(normalized)) return
+                        form.addSubtask(normalized)
+                        setNewSubtaskTitle('')
                       }}
+                      commitOnBlur={false}
+                      mentions={subtaskMentions}
                       placeholder="Add a subtask..."
                       disabled={isLoading}
-                      className="flex-1 bg-transparent text-xs focus:outline-none placeholder:text-[var(--text-muted)]"
-                      style={{ color: 'var(--text-primary)' }}
+                      className="flex-1 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
                     />
                   </div>
                 </div>

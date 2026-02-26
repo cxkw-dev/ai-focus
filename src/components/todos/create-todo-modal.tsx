@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RichTextEditor } from '@/components/ui/rich-text-editor'
+import { SubtaskMentionInput } from '@/components/ui/subtask-mention-input'
 import {
   Dialog,
   DialogContent,
@@ -27,6 +28,13 @@ import { SingleUrlField, UrlListField, AzureIcon, GitHubIcon } from './url-field
 import { useLabels } from '@/hooks/use-labels'
 import { usePeople } from '@/hooks/use-people'
 import { useTodoForm } from '@/hooks/use-todo-form'
+import {
+  hasMeaningfulText,
+  isHtmlContent,
+  linkifyHtml,
+  mentionifyHtml,
+  normalizeSubtaskTitle,
+} from '@/lib/rich-text'
 import type { CreateTodoInput } from '@/types/todo'
 
 interface CreateTodoModalProps {
@@ -52,16 +60,20 @@ export function CreateTodoModal({
   const [newPrUrl, setNewPrUrl] = React.useState('')
   const [newAzureDepUrl, setNewAzureDepUrl] = React.useState('')
   const resetForm = form.reset
+  const subtaskMentions = React.useMemo(
+    () => people.map((person) => ({ id: person.id, name: person.name, email: person.email })),
+    [people]
+  )
 
   React.useEffect(() => {
     if (!open) resetForm()
   }, [open, resetForm])
 
   const handleAddSubtask = React.useCallback(() => {
-    if (newSubtaskTitle.trim()) {
-      form.addSubtask(newSubtaskTitle)
-      setNewSubtaskTitle('')
-    }
+    const normalized = normalizeSubtaskTitle(newSubtaskTitle)
+    if (!hasMeaningfulText(normalized)) return
+    form.addSubtask(normalized)
+    setNewSubtaskTitle('')
   }, [newSubtaskTitle, form])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -148,9 +160,16 @@ export function CreateTodoModal({
                   <div className="space-y-1">
                     {form.subtasks.map((subtask, index) => (
                       <div key={index} className="flex items-center gap-2 group/subtask">
-                        <span className="text-xs flex-1" style={{ color: 'var(--text-primary)' }}>
-                          {subtask.title}
-                        </span>
+                        <div className="text-xs flex-1 min-w-0" style={{ color: 'var(--text-primary)' }}>
+                          {isHtmlContent(subtask.title) ? (
+                            <div
+                              className="[&_p]:my-0 [&_p]:leading-snug [&_.mention]:font-medium [&_.mention:hover]:underline [&_a]:text-[var(--primary)] [&_a:hover]:underline"
+                              dangerouslySetInnerHTML={{ __html: linkifyHtml(mentionifyHtml(subtask.title)) }}
+                            />
+                          ) : (
+                            subtask.title
+                          )}
+                        </div>
                         <button
                           type="button"
                           onClick={() => form.removeSubtask(index)}
@@ -163,19 +182,14 @@ export function CreateTodoModal({
                     ))}
                     <div className="flex items-center gap-2">
                       <Plus className="h-4 w-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
-                      <input
-                        type="text"
+                      <SubtaskMentionInput
                         value={newSubtaskTitle}
-                        onChange={(e) => setNewSubtaskTitle(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault()
-                            handleAddSubtask()
-                          }
-                        }}
+                        onChange={setNewSubtaskTitle}
+                        onCommit={handleAddSubtask}
+                        commitOnBlur={false}
+                        mentions={subtaskMentions}
                         placeholder="Add a subtask..."
-                        className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-[var(--text-muted)]"
-                        style={{ color: 'var(--text-primary)' }}
+                        className="flex-1 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
                       />
                     </div>
                   </div>
