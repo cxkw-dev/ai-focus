@@ -122,7 +122,7 @@ interface TodoItemProps {
 
 function toSubtaskInput(subtasks: Subtask[]): SubtaskInput[] {
   return subtasks.map((subtask, index) => ({
-    id: subtask.id,
+    ...(isTemporarySubtaskId(subtask.id) ? {} : { id: subtask.id }),
     title: subtask.title,
     completed: subtask.completed,
     order: index,
@@ -138,6 +138,10 @@ function createTempSubtaskId() {
     return `new-${crypto.randomUUID()}`
   }
   return `new-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+}
+
+function isTemporarySubtaskId(subtaskId: string) {
+  return subtaskId.startsWith('new-')
 }
 
 function SortableEditableSubtaskRow({
