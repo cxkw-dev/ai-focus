@@ -599,18 +599,21 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--text-muted);
 }
 
-/* Contacts drawer tab — seamless card extension */
+/* Contacts drawer tab — inside right edge of card */
 .todo-contacts-tab {
-  background-color: color-mix(in srgb, var(--surface-2) 80%, var(--background));
-  color: color-mix(in srgb, var(--text-muted) 50%, transparent);
+  background-color: color-mix(in srgb, var(--border-color) 15%, transparent);
+  color: color-mix(in srgb, var(--text-muted) 40%, transparent);
+  border-left: 1px solid color-mix(in srgb, var(--border-color) 30%, transparent);
 }
 .todo-contacts-tab:hover {
-  background-color: color-mix(in srgb, var(--primary) 15%, var(--surface-2));
+  background-color: color-mix(in srgb, var(--primary) 12%, transparent);
   color: var(--primary);
+  border-left-color: color-mix(in srgb, var(--primary) 25%, transparent);
 }
 .todo-contacts-tab-active {
-  background-color: color-mix(in srgb, var(--primary) 20%, var(--surface-2));
+  background-color: color-mix(in srgb, var(--primary) 15%, transparent);
   color: var(--primary);
+  border-left-color: color-mix(in srgb, var(--primary) 30%, transparent);
 }
 
 /* TipTap code block syntax highlighting */
