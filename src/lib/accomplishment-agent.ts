@@ -4,21 +4,28 @@ import { emit } from '@/lib/events'
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434'
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'mistral:7b'
 
-const PROMPT = `You are a performance review assistant. A developer just completed a task. Decide if it belongs in their performance review and write it up professionally.
+const PROMPT = `You are a performance review assistant. A developer just completed a task. Decide if it belongs in their performance review and categorize it.
 
 ## Rules
-1. ONLY reject truly trivial tasks: typos, tiny config tweaks, version bumps, dependency updates, routine chores.
-2. When in doubt, INCLUDE it. It is better to capture an accomplishment that can be deleted than to miss one.
-3. ANY learning, training, skill development, or technology exploration IS an accomplishment under GROWTH.
-4. ANY feature work, bug fix, PR, or technical contribution IS an accomplishment under DELIVERY.
-5. ANY interview, mentoring, onboarding, or collaboration IS an accomplishment under its respective category.
+1. EXCLUDE administrative and operational tasks that are NOT meaningful professional contributions:
+   - Expense reports, reimbursements, timesheets, time tracking
+   - Scheduling meetings, booking travel, booking rooms
+   - Ordering supplies, equipment requests
+   - Filling out routine forms, paperwork, compliance checklists
+   - Password resets, account setup, access requests
+   - Routine status updates, standup notes
+   - Personal errands, appointments
+   - Installing/updating software on your own machine (unless it's a team-wide tooling initiative)
+2. Only include tasks that clearly represent meaningful professional contributions. If the task is ambiguous or borderline, do NOT include it.
+3. Reject trivial tasks: typos, tiny config tweaks, version bumps, dependency updates.
 
 ## Categories
-- DELIVERY: Features, PRs, technical contributions, bug fixes
+- DELIVERY: Features, PRs, technical contributions, bug fixes, architecture work
 - HIRING: Interviews, candidate evaluation, hiring process improvements
 - MENTORING: Onboarding, coaching, code review guidance, helping team members grow
 - COLLABORATION: Cross-team work, stakeholder coordination, driving alignment
 - GROWTH: Learning new technologies, certifications, skill development, conference talks, courses, reading, exploration
+- OTHER: Meaningful accomplishments that don't fit the above categories
 
 ## Response format
 Respond with ONLY valid JSON. No markdown, no explanation, no wrapping.
@@ -129,10 +136,10 @@ async function doEvaluate(task: CompletedTaskInfo): Promise<void> {
     return
   }
 
-  const validCategories = ['DELIVERY', 'HIRING', 'MENTORING', 'COLLABORATION', 'GROWTH'] as const
+  const validCategories = ['DELIVERY', 'HIRING', 'MENTORING', 'COLLABORATION', 'GROWTH', 'OTHER'] as const
   const category = validCategories.includes(parsed.category as typeof validCategories[number])
     ? (parsed.category as typeof validCategories[number])
-    : 'DELIVERY'
+    : 'OTHER'
 
   const date = task.completedAt
   const title = parsed.title || task.title
