@@ -575,10 +575,10 @@ function TodoItemContent({
                 {todo.labels?.map((label) => (
                   <span
                     key={label.id}
-                    className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium"
+                    className="inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold"
                     style={{
-                      backgroundColor: `${label.color}22`,
-                      color: label.color,
+                      backgroundColor: `${label.color}cc`,
+                      color: '#fff',
                     }}
                   >
                     {label.name}

@@ -201,19 +201,17 @@ export function LabelMultiSelect({
                 onClick={() => toggleLabel(label.id)}
                 disabled={disabled}
                 className={cn(
-                  'inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-[10px] font-medium transition-all',
+                  'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[10px] font-semibold transition-all',
                   disabled && 'opacity-50 cursor-not-allowed'
                 )}
                 style={{
-                  backgroundColor: `${label.color}22`,
-                  color: label.color,
-                  boxShadow: `0 0 0 1px ${label.color}66`,
+                  backgroundColor: `${label.color}cc`,
+                  color: '#fff',
                 }}
                 title="Remove label"
               >
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: label.color }} />
                 {label.name}
-                <span className="text-[10px] opacity-70">&times;</span>
+                <span className="text-[10px] opacity-80">&times;</span>
               </button>
             ))}
           </div>
@@ -276,10 +274,10 @@ export function LabelMultiSelect({
           {selectedLabels.map((label) => (
             <span
               key={label.id}
-              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
+              className="inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold"
               style={{
-                backgroundColor: `${label.color}22`,
-                color: label.color,
+                backgroundColor: `${label.color}cc`,
+                color: '#fff',
               }}
             >
               {label.name}
