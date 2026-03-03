@@ -151,12 +151,14 @@ function SortableEditableSubtaskRow({
   onToggle,
   onTitleChange,
   onTitleCommit,
+  onDelete,
   mentions,
 }: {
   subtask: Subtask
   onToggle: () => void
   onTitleChange: (title: string) => void
   onTitleCommit: () => void
+  onDelete: () => void
   mentions: { id: string; name: string; email: string }[]
 }) {
   const [isEditing, setIsEditing] = React.useState(false)
@@ -197,7 +199,7 @@ function SortableEditableSubtaskRow({
         style={{ backgroundColor: 'var(--primary)' }}
       />
       <motion.div
-        className="flex items-center rounded pl-1 pr-0.5 transition-colors hover:bg-white/5"
+        className="group/subtask flex items-center rounded pl-1 pr-0.5 transition-colors hover:bg-white/5"
         animate={{
           backgroundColor: isEditing ? 'color-mix(in srgb, var(--primary) 10%, transparent)' : 'transparent',
           boxShadow: isEditing
@@ -255,6 +257,15 @@ function SortableEditableSubtaskRow({
           >
             editing
           </motion.span>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="flex-shrink-0 p-0.5 rounded opacity-0 group-hover/subtask:opacity-60 hover:!opacity-100 transition-opacity"
+            style={{ color: 'var(--destructive)' }}
+            title="Delete subtask"
+          >
+            <Trash2 className="h-3 w-3" />
+          </button>
         </motion.div>
       </motion.div>
     </div>
@@ -475,6 +486,16 @@ function TodoItemContent({
       }))
       persistSubtasks(reordered)
       return reordered
+    })
+  }, [persistSubtasks])
+
+  const handleSubtaskDelete = React.useCallback((subtaskId: string) => {
+    setSubtasks(prev => {
+      const nextSubtasks = prev
+        .filter(subtask => subtask.id !== subtaskId)
+        .map((subtask, index) => ({ ...subtask, order: index }))
+      persistSubtasks(nextSubtasks)
+      return nextSubtasks
     })
   }, [persistSubtasks])
 
@@ -732,6 +753,7 @@ function TodoItemContent({
                         onToggle={() => handleSubtaskToggle(subtask.id, !subtask.completed)}
                         onTitleChange={(title) => handleSubtaskTitleChange(subtask.id, title)}
                         onTitleCommit={() => handleSubtaskTitleCommit(subtask.id)}
+                        onDelete={() => handleSubtaskDelete(subtask.id)}
                         mentions={subtaskMentions}
                       />
                     ))}
