@@ -863,7 +863,8 @@ export function TodoItem({
       {/* Card */}
       <div
         className={cn(
-          'group flex-1 min-w-0 rounded-lg px-3 py-2.5 transition-all duration-150 todo-card relative overflow-visible',
+          'group flex-1 min-w-0 px-3 py-2.5 transition-all duration-150 todo-card relative overflow-visible',
+          dragging ? 'rounded-lg' : 'rounded-l-lg',
           dragging && 'shadow-lg z-50',
           (isCompleted || viewMode !== 'active') && 'opacity-50'
         )}
@@ -894,7 +895,7 @@ export function TodoItem({
         />
       </div>
 
-      {/* Contacts tab — sits beside the card like the drag handle */}
+      {/* Contacts tab — completes the card's right edge */}
       {!dragging && (
         <button
           onClick={(e) => { e.stopPropagation(); setContactsOpen(prev => !prev) }}
@@ -902,6 +903,11 @@ export function TodoItem({
             'todo-contacts-tab flex-shrink-0 self-stretch w-5 flex items-center justify-center rounded-r-lg transition-all duration-150',
             contactsOpen && 'todo-contacts-tab-active'
           )}
+          style={{
+            backgroundColor: todo.status === 'WAITING'
+              ? 'color-mix(in srgb, var(--status-waiting) 8%, var(--surface-2))'
+              : undefined,
+          }}
           title="Contacts"
         >
           <Users className="h-3 w-3" />

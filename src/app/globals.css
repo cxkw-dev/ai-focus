@@ -599,17 +599,15 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--text-muted);
 }
 
-/* Contacts drawer tab — sits beside card like drag handle */
+/* Contacts drawer tab — part of the card shape */
 .todo-contacts-tab {
-  background-color: color-mix(in srgb, var(--surface-2) 60%, transparent);
+  background-color: var(--surface-2);
   color: color-mix(in srgb, var(--text-muted) 40%, transparent);
 }
 .todo-contacts-tab:hover {
-  background-color: color-mix(in srgb, var(--primary) 12%, transparent);
   color: var(--primary);
 }
 .todo-contacts-tab-active {
-  background-color: color-mix(in srgb, var(--primary) 15%, transparent);
   color: var(--primary);
 }
 
