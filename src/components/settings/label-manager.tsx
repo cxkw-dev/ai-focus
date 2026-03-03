@@ -110,10 +110,10 @@ export function LabelManager({
             Create Label
           </div>
           <span
-            className="inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold"
+            className="h-5 px-1.5 rounded text-[10px] font-semibold inline-flex items-center gap-1"
             style={{
-              backgroundColor: `${newColor}cc`,
-              color: '#fff',
+              backgroundColor: `color-mix(in srgb, ${newColor} 15%, transparent)`,
+              color: newColor,
             }}
           >
             {newName.trim() ? newName.trim() : 'Preview'}
@@ -215,10 +215,10 @@ export function LabelManager({
             >
               <div className="flex flex-wrap items-center gap-2">
                 <span
-                  className="inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold"
+                  className="h-5 px-1.5 rounded text-[10px] font-semibold inline-flex items-center gap-1"
                   style={{
-                    backgroundColor: `${draft.color}cc`,
-                    color: '#fff',
+                    backgroundColor: `color-mix(in srgb, ${draft.color} 15%, transparent)`,
+                    color: draft.color,
                   }}
                 >
                   {draft.name.trim() || 'Untitled'}

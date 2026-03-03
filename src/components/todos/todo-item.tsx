@@ -80,6 +80,7 @@ const PRIORITY_CONFIG: Record<Priority, { label: string; colorVar: string; bgVar
 const URL_SPLIT_REGEX = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi
 const URL_MATCH_REGEX = /^(https?:\/\/[^\s]+|www\.[^\s]+)$/i
 
+
 function renderTextWithLinks(text: string) {
   const parts = text.split(URL_SPLIT_REGEX)
 
@@ -336,11 +337,11 @@ function PriorityDropdown({ todo, onPriorityChange }: { todo: Todo; onPriorityCh
         <button
           className={cn(
             CHIP_BASE,
-            config.pulse && 'animate-pulse',
-            'hover:brightness-110 cursor-pointer'
+            'hover:brightness-110 cursor-pointer',
+            config.pulse && 'urgent-border'
           )}
           style={{
-            backgroundColor: `color-mix(in srgb, ${config.bgVar} 15%, transparent)`,
+            backgroundColor: config.pulse ? undefined : `color-mix(in srgb, ${config.bgVar} 15%, transparent)`,
             color: config.colorVar,
           }}
         >
@@ -563,9 +564,9 @@ function TodoItemContent({
                   <PriorityDropdown todo={todo} onPriorityChange={onPriorityChange} />
                 ) : (
                   <span
-                    className={cn(CHIP_BASE)}
+                    className={cn(CHIP_BASE, PRIORITY_CONFIG[todo.priority].pulse && 'urgent-border')}
                     style={{
-                      backgroundColor: `color-mix(in srgb, ${PRIORITY_CONFIG[todo.priority].bgVar} 15%, transparent)`,
+                      backgroundColor: PRIORITY_CONFIG[todo.priority].pulse ? undefined : `color-mix(in srgb, ${PRIORITY_CONFIG[todo.priority].bgVar} 15%, transparent)`,
                       color: PRIORITY_CONFIG[todo.priority].colorVar,
                     }}
                   >
@@ -575,10 +576,10 @@ function TodoItemContent({
                 {todo.labels?.map((label) => (
                   <span
                     key={label.id}
-                    className="inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold"
+                    className={cn(CHIP_BASE, 'font-semibold')}
                     style={{
-                      backgroundColor: `${label.color}cc`,
-                      color: '#fff',
+                      backgroundColor: `color-mix(in srgb, ${label.color} 15%, transparent)`,
+                      color: label.color,
                     }}
                   >
                     {label.name}
