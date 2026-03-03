@@ -35,6 +35,7 @@ import {
   Square,
   CheckSquare,
   Plus,
+  Users,
 } from 'lucide-react'
 import { cn, formatRelativeDate } from '@/lib/utils'
 import { PRIORITY_MAP } from '@/lib/priority'
@@ -56,6 +57,7 @@ import {
   normalizeSubtaskTitle,
 } from '@/lib/rich-text'
 import { PrDependencyTree } from './pr-dependency-tree'
+import { ContactsDrawer } from './contacts-drawer'
 import type { Todo, Status, Priority, Subtask, SubtaskInput } from '@/types/todo'
 
 const CHIP_BASE = 'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors'
@@ -814,6 +816,8 @@ export function TodoItem({
     isDragging,
   } = useSortable({ id: todo.id, disabled: viewMode !== 'active' })
 
+  const [contactsOpen, setContactsOpen] = React.useState(false)
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -859,7 +863,7 @@ export function TodoItem({
       {/* Card */}
       <div
         className={cn(
-          'group flex-1 min-w-0 rounded-lg px-3 py-2.5 transition-all duration-150 todo-card',
+          'group flex-1 min-w-0 rounded-lg px-3 py-2.5 transition-all duration-150 todo-card relative overflow-visible',
           dragging && 'shadow-lg z-50',
           (isCompleted || viewMode !== 'active') && 'opacity-50'
         )}
@@ -882,6 +886,30 @@ export function TodoItem({
           isDragging={dragging}
           viewMode={viewMode}
         />
+
+        {/* Contacts drawer tab — always visible on right edge */}
+        {!dragging && (
+          <>
+            <button
+              onClick={(e) => { e.stopPropagation(); setContactsOpen(prev => !prev) }}
+              className="absolute top-1/2 -translate-y-1/2 -right-3 w-6 h-10 flex items-center justify-center rounded-r-md transition-colors z-20"
+              style={{
+                backgroundColor: 'var(--surface)',
+                border: '1px solid var(--border-color)',
+                borderLeft: 'none',
+              }}
+              title="Contacts"
+            >
+              <Users className="h-3 w-3" style={{ color: 'var(--text-muted)' }} />
+            </button>
+
+            <ContactsDrawer
+              todoId={todo.id}
+              open={contactsOpen}
+              onClose={() => setContactsOpen(false)}
+            />
+          </>
+        )}
       </div>
       </div>
       {dropIndicator === 'below' && dropLine}
