@@ -53,7 +53,10 @@ export function ContactsDrawer({ todoId, open, onClose }: ContactsDrawerProps) {
   React.useEffect(() => {
     if (!open) return
     function handleClick(e: MouseEvent) {
-      if (drawerRef.current && !drawerRef.current.contains(e.target as Node)) {
+      const target = e.target as HTMLElement
+      // Ignore clicks on the tab button — let its toggle handler manage state
+      if (target.closest('.todo-contacts-tab')) return
+      if (drawerRef.current && !drawerRef.current.contains(target)) {
         onClose()
       }
     }
