@@ -887,20 +887,18 @@ export function TodoItem({
           viewMode={viewMode}
         />
 
-        {/* Contacts drawer tab — always visible on right edge */}
+        {/* Contacts drawer tab */}
         {!dragging && (
           <>
             <button
               onClick={(e) => { e.stopPropagation(); setContactsOpen(prev => !prev) }}
-              className="absolute top-1/2 -translate-y-1/2 -right-3 w-6 h-10 flex items-center justify-center rounded-r-md transition-colors z-20"
-              style={{
-                backgroundColor: 'var(--surface)',
-                border: '1px solid var(--border-color)',
-                borderLeft: 'none',
-              }}
+              className={cn(
+                'todo-contacts-tab absolute top-0 bottom-0 -right-[18px] w-[18px] flex items-center justify-center rounded-r-lg transition-all duration-150 z-20',
+                contactsOpen && 'todo-contacts-tab-active'
+              )}
               title="Contacts"
             >
-              <Users className="h-3 w-3" style={{ color: 'var(--text-muted)' }} />
+              <Users className="h-3 w-3 transition-colors duration-150" />
             </button>
 
             <ContactsDrawer
