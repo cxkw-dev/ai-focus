@@ -137,17 +137,27 @@ export function NotesSidebar({ notes, selectedId, onSelect, onCreate, onDelete, 
                   )}
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <p
-                        className="text-xs font-medium truncate"
-                        style={isSelected ? {
-                          background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent',
-                          backgroundClip: 'text',
-                        } : { color: 'var(--text-primary)' }}
-                      >
-                        {note.title || 'Untitled'}
-                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <p
+                          className="text-xs font-medium truncate"
+                          style={isSelected ? {
+                            background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text',
+                          } : { color: 'var(--text-primary)' }}
+                        >
+                          {note.title || 'Untitled'}
+                        </p>
+                        {note.todo && (
+                          <span
+                            className="text-[10px] font-medium px-1 rounded shrink-0"
+                            style={{ color: 'var(--primary)', backgroundColor: 'color-mix(in srgb, var(--primary) 12%, transparent)' }}
+                          >
+                            #{note.todo.taskNumber}
+                          </span>
+                        )}
+                      </div>
                       {preview && (
                         <p className="text-[11px] truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>
                           {preview}

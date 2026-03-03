@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
-import { DM_Sans, Inconsolata, Lora, Pixelify_Sans } from 'next/font/google'
+import { DM_Sans, Inconsolata, Inter, Lora, Pixelify_Sans } from 'next/font/google'
 import { ThemeProvider } from '@/components/providers/theme-provider'
 import { QueryProvider } from '@/components/providers/query-provider'
 import { Toaster } from '@/components/ui/toaster'
@@ -30,6 +30,12 @@ const dmSans = DM_Sans({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
   variable: '--font-dm-sans',
+})
+
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-inter',
 })
 
 export const metadata: Metadata = {
@@ -74,7 +80,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${GeistSans.variable} ${GeistMono.variable} ${pixelifySans.variable} ${inconsolata.variable} ${lora.variable} ${dmSans.variable} font-sans antialiased`}>
+      <body className={`${GeistSans.variable} ${GeistMono.variable} ${pixelifySans.variable} ${inconsolata.variable} ${lora.variable} ${dmSans.variable} ${inter.variable} font-sans antialiased`}>
         <QueryProvider>
           <ThemeProvider
             attribute="class"

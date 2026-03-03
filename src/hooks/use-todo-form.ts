@@ -37,6 +37,14 @@ interface TodoFormState {
   setAzureDepUrls: (v: string[]) => void
   addAzureDepUrl: (url: string) => void
   removeAzureDepUrl: (index: number) => void
+  myIssueUrls: string[]
+  setMyIssueUrls: (v: string[]) => void
+  addMyIssueUrl: (url: string) => void
+  removeMyIssueUrl: (index: number) => void
+  githubIssueUrls: string[]
+  setGithubIssueUrls: (v: string[]) => void
+  addGithubIssueUrl: (url: string) => void
+  removeGithubIssueUrl: (index: number) => void
   reset: () => void
   toPayload: () => {
     title: string
@@ -50,6 +58,8 @@ interface TodoFormState {
     githubPrUrls: string[]
     azureWorkItemUrl: string | null
     azureDepUrls: string[]
+    myIssueUrls: string[]
+    githubIssueUrls: string[]
   }
 }
 
@@ -65,6 +75,8 @@ export function useTodoForm(todo?: Todo | null, options?: { initialLabelIds?: st
   const [githubPrUrls, setGithubPrUrls] = React.useState<string[]>([])
   const [azureWorkItemUrl, setAzureWorkItemUrl] = React.useState('')
   const [azureDepUrls, setAzureDepUrls] = React.useState<string[]>([])
+  const [myIssueUrls, setMyIssueUrls] = React.useState<string[]>([])
+  const [githubIssueUrls, setGithubIssueUrls] = React.useState<string[]>([])
 
   const reset = React.useCallback(() => {
     setTitle('')
@@ -78,6 +90,8 @@ export function useTodoForm(todo?: Todo | null, options?: { initialLabelIds?: st
     setGithubPrUrls([])
     setAzureWorkItemUrl('')
     setAzureDepUrls([])
+    setMyIssueUrls([])
+    setGithubIssueUrls([])
   }, [options?.initialLabelIds])
 
   const populateFromTodo = React.useCallback((t: Todo) => {
@@ -94,6 +108,8 @@ export function useTodoForm(todo?: Todo | null, options?: { initialLabelIds?: st
     setGithubPrUrls(t.githubPrUrls ?? [])
     setAzureWorkItemUrl(t.azureWorkItemUrl || '')
     setAzureDepUrls(t.azureDepUrls ?? [])
+    setMyIssueUrls(t.myIssueUrls ?? [])
+    setGithubIssueUrls(t.githubIssueUrls ?? [])
   }, [])
 
   React.useEffect(() => {
@@ -165,6 +181,26 @@ export function useTodoForm(todo?: Todo | null, options?: { initialLabelIds?: st
     setAzureDepUrls(prev => prev.filter((_, i) => i !== index))
   }, [])
 
+  const addMyIssueUrl = React.useCallback((url: string) => {
+    const trimmed = url.trim()
+    if (!trimmed) return
+    setMyIssueUrls(prev => prev.includes(trimmed) ? prev : [...prev, trimmed])
+  }, [])
+
+  const removeMyIssueUrl = React.useCallback((index: number) => {
+    setMyIssueUrls(prev => prev.filter((_, i) => i !== index))
+  }, [])
+
+  const addGithubIssueUrl = React.useCallback((url: string) => {
+    const trimmed = url.trim()
+    if (!trimmed) return
+    setGithubIssueUrls(prev => prev.includes(trimmed) ? prev : [...prev, trimmed])
+  }, [])
+
+  const removeGithubIssueUrl = React.useCallback((index: number) => {
+    setGithubIssueUrls(prev => prev.filter((_, i) => i !== index))
+  }, [])
+
   const toPayload = React.useCallback(() => ({
     title: title.trim(),
     description: description.trim() || undefined,
@@ -182,7 +218,9 @@ export function useTodoForm(todo?: Todo | null, options?: { initialLabelIds?: st
     githubPrUrls,
     azureWorkItemUrl: azureWorkItemUrl.trim() || null,
     azureDepUrls,
-  }), [title, description, priority, status, dueDate, labelIds, subtasks, myPrUrls, githubPrUrls, azureWorkItemUrl, azureDepUrls])
+    myIssueUrls,
+    githubIssueUrls,
+  }), [title, description, priority, status, dueDate, labelIds, subtasks, myPrUrls, githubPrUrls, azureWorkItemUrl, azureDepUrls, myIssueUrls, githubIssueUrls])
 
   return {
     title, setTitle,
@@ -207,6 +245,12 @@ export function useTodoForm(todo?: Todo | null, options?: { initialLabelIds?: st
     azureDepUrls, setAzureDepUrls,
     addAzureDepUrl,
     removeAzureDepUrl,
+    myIssueUrls, setMyIssueUrls,
+    addMyIssueUrl,
+    removeMyIssueUrl,
+    githubIssueUrls, setGithubIssueUrls,
+    addGithubIssueUrl,
+    removeGithubIssueUrl,
     reset,
     toPayload,
   }

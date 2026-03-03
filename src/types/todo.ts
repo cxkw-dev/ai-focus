@@ -36,6 +36,10 @@ export interface Todo {
   githubPrUrls: string[]
   azureWorkItemUrl: string | null
   azureDepUrls: string[]
+  myIssueUrls: string[]
+  githubIssueUrls: string[]
+  notebookNoteId: string | null
+  notebookNote?: { id: string; title: string } | null
 }
 
 export interface TodoContact {
@@ -81,6 +85,22 @@ export interface GitHubPrStatus {
   reviewerCount?: number
 }
 
+export interface GitHubIssueLabel {
+  name: string
+  color: string
+}
+
+export interface GitHubIssueStatus {
+  state: 'open' | 'closed'
+  stateReason: 'completed' | 'not_planned' | null
+  title: string
+  url: string
+  number: number
+  author: string
+  labels: GitHubIssueLabel[]
+  assignees: string[]
+}
+
 export interface PaginatedTodosResponse {
   todos: Todo[]
   total: number
@@ -105,6 +125,9 @@ export interface CreateTodoInput {
   githubPrUrls?: string[]
   azureWorkItemUrl?: string | null
   azureDepUrls?: string[]
+  myIssueUrls?: string[]
+  githubIssueUrls?: string[]
+  notebookNoteId?: string | null
 }
 
 export interface UpdateTodoInput {
@@ -119,4 +142,7 @@ export interface UpdateTodoInput {
   githubPrUrls?: string[]
   azureWorkItemUrl?: string | null
   azureDepUrls?: string[]
+  myIssueUrls?: string[]
+  githubIssueUrls?: string[]
+  notebookNoteId?: string | null
 }

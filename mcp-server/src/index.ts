@@ -91,6 +91,9 @@ interface TodoResponse {
   githubPrUrls?: string[];
   azureWorkItemUrl?: string | null;
   azureDepUrls?: string[];
+  myIssueUrls?: string[];
+  githubIssueUrls?: string[];
+  notebookNoteId?: string | null;
 }
 
 function formatTodoSummary(todos: TodoResponse[]) {
@@ -115,6 +118,15 @@ function formatTodoSummary(todos: TodoResponse[]) {
     }
     if (t.azureDepUrls?.length) {
       parts.push(`   azure deps: ${t.azureDepUrls.join(", ")}`);
+    }
+    if (t.myIssueUrls?.length) {
+      parts.push(`   my issues: ${t.myIssueUrls.join(", ")}`);
+    }
+    if (t.githubIssueUrls?.length) {
+      parts.push(`   waiting on issues: ${t.githubIssueUrls.join(", ")}`);
+    }
+    if (t.notebookNoteId) {
+      parts.push(`   note: ${t.notebookNoteId}`);
     }
     return parts.join("\n");
   }).join("\n\n");
@@ -252,6 +264,14 @@ server.tool(
       .array(z.string())
       .optional()
       .describe("Array of dependent Azure DevOps work item URLs to wait on"),
+    myIssueUrls: z
+      .array(z.string())
+      .optional()
+      .describe("GitHub Issue URLs for this task's own issues"),
+    githubIssueUrls: z
+      .array(z.string())
+      .optional()
+      .describe("Array of dependency GitHub Issue URLs to wait on"),
   },
   async (params) => {
     const { subtasks: subtaskTitles, ...rest } = params;
@@ -334,6 +354,19 @@ IMPORTANT — Description handling:
       .array(z.string())
       .optional()
       .describe("Array of dependent Azure DevOps work item URLs to wait on"),
+    myIssueUrls: z
+      .array(z.string())
+      .optional()
+      .describe("GitHub Issue URLs for this task's own issues"),
+    githubIssueUrls: z
+      .array(z.string())
+      .optional()
+      .describe("Array of dependency GitHub Issue URLs to wait on"),
+    notebookNoteId: z
+      .string()
+      .nullable()
+      .optional()
+      .describe("Notebook note ID to link (or null to unlink)"),
   },
   async ({ taskNumber, id, descriptionMode, ...updates }) => {
     const key = taskNumber?.toString() ?? id;

@@ -36,6 +36,7 @@ import {
   CheckSquare,
   Plus,
   Users,
+  FileText,
 } from 'lucide-react'
 import { cn, formatRelativeDate } from '@/lib/utils'
 import { PRIORITY_MAP } from '@/lib/priority'
@@ -58,6 +59,7 @@ import {
 } from '@/lib/rich-text'
 import { PrDependencyTree } from './pr-dependency-tree'
 import { ContactsDrawer } from './contacts-drawer'
+import { NoteDrawer } from './note-drawer'
 import type { Todo, Status, Priority, Subtask, SubtaskInput } from '@/types/todo'
 
 const CHIP_BASE = 'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors'
@@ -529,7 +531,7 @@ function TodoItemContent({
 
   const completedCount = subtasks.filter(s => s.completed).length
   const allDone = subtasks.length > 0 && completedCount === subtasks.length
-  const hasIntegrations = (todo.myPrUrls ?? []).length > 0 || (todo.githubPrUrls ?? []).length > 0 || !!todo.azureWorkItemUrl || (todo.azureDepUrls ?? []).length > 0
+  const hasIntegrations = (todo.myPrUrls ?? []).length > 0 || (todo.githubPrUrls ?? []).length > 0 || !!todo.azureWorkItemUrl || (todo.azureDepUrls ?? []).length > 0 || (todo.myIssueUrls ?? []).length > 0 || (todo.githubIssueUrls ?? []).length > 0
   const hasSubtasks = subtasks.length > 0
   const canAddSubtasks = canInlineEditSubtasks && !!onUpdateSubtasks
   const shouldShowSubtasks = hasSubtasks || canAddSubtasks || isAddingSubtask
@@ -701,6 +703,8 @@ function TodoItemContent({
           githubPrUrls={todo.githubPrUrls ?? []}
           azureWorkItemUrl={todo.azureWorkItemUrl}
           azureDepUrls={todo.azureDepUrls ?? []}
+          myIssueUrls={todo.myIssueUrls ?? []}
+          githubIssueUrls={todo.githubIssueUrls ?? []}
         />
       )}
 
@@ -802,6 +806,7 @@ function TodoItemContent({
                   value={newSubtaskTitle}
                   onChange={setNewSubtaskTitle}
                   onCommit={handleAddSubtaskCommit}
+                  commitOnBlur={false}
                   mentions={subtaskMentions}
                   placeholder="Add a subtask..."
                   className="!text-[11px] !leading-snug text-[var(--text-primary)]"
@@ -840,6 +845,7 @@ export function TodoItem({
   } = useSortable({ id: todo.id, disabled: viewMode !== 'active' })
 
   const [contactsOpen, setContactsOpen] = React.useState(false)
+  const [noteOpen, setNoteOpen] = React.useState(false)
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -916,25 +922,58 @@ export function TodoItem({
           open={contactsOpen}
           onClose={() => setContactsOpen(false)}
         />
+
+        {todo.notebookNoteId && (
+          <NoteDrawer
+            noteId={todo.notebookNoteId}
+            open={noteOpen}
+            onClose={() => setNoteOpen(false)}
+            onUnlink={async () => {
+              const { todosApi } = await import('@/lib/api')
+              await todosApi.update(todo.id, { notebookNoteId: null })
+              setNoteOpen(false)
+            }}
+          />
+        )}
       </div>
 
-      {/* Contacts tab — completes the card's right edge */}
+      {/* Side tabs — contacts + note */}
       {!dragging && (
-        <button
-          onClick={(e) => { e.stopPropagation(); setContactsOpen(prev => !prev) }}
-          className={cn(
-            'todo-contacts-tab flex-shrink-0 self-stretch w-5 flex items-center justify-center rounded-r-lg transition-all duration-150',
-            contactsOpen && 'todo-contacts-tab-active'
+        <div className="flex flex-col self-stretch">
+          <button
+            onClick={(e) => { e.stopPropagation(); setContactsOpen(prev => !prev) }}
+            className={cn(
+              'todo-contacts-tab flex-shrink-0 flex-1 w-5 flex items-center justify-center transition-all duration-150',
+              !todo.notebookNoteId && 'rounded-r-lg',
+              contactsOpen && 'todo-contacts-tab-active'
+            )}
+            style={{
+              backgroundColor: todo.status === 'WAITING'
+                ? 'color-mix(in srgb, var(--status-waiting) 8%, var(--surface-2))'
+                : undefined,
+            }}
+            title="Contacts"
+          >
+            <Users className="h-3 w-3" />
+          </button>
+          {todo.notebookNoteId && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setNoteOpen(prev => !prev) }}
+              className={cn(
+                'todo-note-tab flex-shrink-0 flex-1 w-5 flex items-center justify-center rounded-br-lg transition-all duration-150',
+                noteOpen && 'todo-note-tab-active'
+              )}
+              style={{
+                backgroundColor: todo.status === 'WAITING'
+                  ? 'color-mix(in srgb, var(--status-waiting) 8%, var(--surface-2))'
+                  : undefined,
+              }}
+              title="Note"
+            >
+              <FileText className="h-3 w-3" />
+            </button>
           )}
-          style={{
-            backgroundColor: todo.status === 'WAITING'
-              ? 'color-mix(in srgb, var(--status-waiting) 8%, var(--surface-2))'
-              : undefined,
-          }}
-          title="Contacts"
-        >
-          <Users className="h-3 w-3" />
-        </button>
+        </div>
       )}
       </div>
       {dropIndicator === 'below' && dropLine}

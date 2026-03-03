@@ -1,4 +1,4 @@
-import type { Todo, TodoContact, CreateTodoInput, UpdateTodoInput, Label, GitHubPrStatus, AzureWorkItemStatus, PaginatedTodosResponse } from '@/types/todo'
+import type { Todo, TodoContact, CreateTodoInput, UpdateTodoInput, Label, GitHubPrStatus, GitHubIssueStatus, AzureWorkItemStatus, PaginatedTodosResponse } from '@/types/todo'
 import type { YearStats } from '@/types/stats'
 import type { NotebookNote, CreateNotebookNoteInput, UpdateNotebookNoteInput } from '@/types/notebook'
 import type { Person } from '@/types/person'
@@ -127,6 +127,9 @@ export const notebookApi = {
 export const githubApi = {
   getPrStatus: (url: string): Promise<GitHubPrStatus> =>
     fetch(`/api/github/pr-status?url=${encodeURIComponent(url)}`).then(r => json(r)),
+
+  getIssueStatus: (url: string): Promise<GitHubIssueStatus> =>
+    fetch(`/api/github/issue-status?url=${encodeURIComponent(url)}`).then(r => json(r)),
 }
 
 export const azureApi = {

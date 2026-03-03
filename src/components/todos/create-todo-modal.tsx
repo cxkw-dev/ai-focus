@@ -60,6 +60,8 @@ export function CreateTodoModal({
   const [newMyPrUrl, setNewMyPrUrl] = React.useState('')
   const [newPrUrl, setNewPrUrl] = React.useState('')
   const [newAzureDepUrl, setNewAzureDepUrl] = React.useState('')
+  const [newMyIssueUrl, setNewMyIssueUrl] = React.useState('')
+  const [newIssueUrl, setNewIssueUrl] = React.useState('')
   const resetForm = form.reset
   const subtaskMentions = React.useMemo(
     () => people.map((person) => ({ id: person.id, name: person.name, email: person.email })),
@@ -94,6 +96,14 @@ export function CreateTodoModal({
     const pendingAzure = newAzureDepUrl.trim()
     if (pendingAzure && !payload.azureDepUrls.includes(pendingAzure)) {
       payload.azureDepUrls = [...payload.azureDepUrls, pendingAzure]
+    }
+    const pendingMyIssue = newMyIssueUrl.trim()
+    if (pendingMyIssue && !payload.myIssueUrls!.includes(pendingMyIssue)) {
+      payload.myIssueUrls = [...payload.myIssueUrls!, pendingMyIssue]
+    }
+    const pendingIssue = newIssueUrl.trim()
+    if (pendingIssue && !payload.githubIssueUrls!.includes(pendingIssue)) {
+      payload.githubIssueUrls = [...payload.githubIssueUrls!, pendingIssue]
     }
     const success = await onSubmit(payload)
     if (success) onOpenChange(false)
@@ -294,6 +304,40 @@ export function CreateTodoModal({
                       onRemove={(i) => form.removeGithubPrUrl(i)}
                       inputValue={newPrUrl}
                       onInputChange={setNewPrUrl}
+                      disabled={isLoading}
+                    />
+                  </div>
+                </div>
+
+                {/* GitHub Issues */}
+                <div className="space-y-3">
+                  <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                    <GitHubIcon className="h-3.5 w-3.5" />
+                    GitHub Issues
+                  </Label>
+
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>My Issues</span>
+                    <UrlListField
+                      type="github-issue"
+                      urls={form.myIssueUrls}
+                      onAdd={(url) => form.addMyIssueUrl(url)}
+                      onRemove={(i) => form.removeMyIssueUrl(i)}
+                      inputValue={newMyIssueUrl}
+                      onInputChange={setNewMyIssueUrl}
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Waiting On</span>
+                    <UrlListField
+                      type="github-issue"
+                      urls={form.githubIssueUrls}
+                      onAdd={(url) => form.addGithubIssueUrl(url)}
+                      onRemove={(i) => form.removeGithubIssueUrl(i)}
+                      inputValue={newIssueUrl}
+                      onInputChange={setNewIssueUrl}
                       disabled={isLoading}
                     />
                   </div>

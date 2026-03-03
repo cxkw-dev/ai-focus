@@ -1,9 +1,11 @@
 'use client'
 
-import { Check, GitPullRequest, CircleDot } from 'lucide-react'
+import { Check, GitPullRequest, CircleDot, CircleDotDashed } from 'lucide-react'
 import { GitHubPrBadge } from './github-pr-badge'
+import { GitHubIssueBadge } from './github-issue-badge'
 import { AzureWorkItemBadge } from './azure-workitem-badge'
 import { useGithubPrStatuses } from '@/hooks/use-github-pr-status'
+import { useGithubIssueStatuses } from '@/hooks/use-github-issue-status'
 import { useAzureWorkItemStatuses } from '@/hooks/use-azure-workitem-status'
 
 interface PrDependencyTreeProps {
@@ -11,6 +13,8 @@ interface PrDependencyTreeProps {
   githubPrUrls: string[]
   azureWorkItemUrl?: string | null
   azureDepUrls?: string[]
+  myIssueUrls?: string[]
+  githubIssueUrls?: string[]
   noBorder?: boolean
 }
 
@@ -172,14 +176,83 @@ function AzureSection({ azureWorkItemUrl, azureDepUrls, showHeader, noBorder }: 
   )
 }
 
-export function PrDependencyTree({ myPrUrls, githubPrUrls, azureWorkItemUrl, azureDepUrls = [], noBorder }: PrDependencyTreeProps) {
+function GitHubIssuesSection({ myIssueUrls = [], githubIssueUrls, showHeader, noBorder }: { myIssueUrls?: string[]; githubIssueUrls: string[]; showHeader: boolean; noBorder?: boolean }) {
+  const hasMyIssues = myIssueUrls.length > 0
+  const hasDeps = githubIssueUrls.length > 0
+  const { isLoading, allClosed } = useGithubIssueStatuses(githubIssueUrls)
+
+  let statusLabel: string | undefined
+  let statusColor: string | undefined
+
+  if (hasDeps) {
+    if (isLoading) {
+      statusLabel = undefined
+    } else if (allClosed) {
+      statusLabel = 'all closed'
+      statusColor = '#a371f7'
+    }
+  }
+
+  return (
+    <div
+      className="pt-1.5"
+      style={noBorder ? undefined : { borderTop: '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)' }}
+    >
+      {showHeader && (
+        <SectionHeader icon={CircleDotDashed} label="Issues" statusLabel={statusLabel} statusColor={statusColor} />
+      )}
+
+      {/* My Issues */}
+      {hasMyIssues && myIssueUrls.map((url) => (
+        <div key={url} className="flex w-full min-w-0 items-center gap-1.5">
+          <GitHubIssueBadge url={url} showTitle />
+        </div>
+      ))}
+
+      {/* Dependency Issues */}
+      {hasDeps && (
+        <>
+          {hasMyIssues && (
+            <div className="flex items-center gap-1 mt-1.5" style={{ paddingLeft: 12 }}>
+              <span className="text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>
+                {allClosed && !isLoading ? 'Dependencies resolved' : 'Depends on'}
+              </span>
+            </div>
+          )}
+          {!hasMyIssues && !showHeader && (
+            <div className="flex items-center gap-1 mb-0.5">
+              <span className="text-[10px] font-medium flex items-center gap-1" style={{ color: allClosed && !isLoading ? '#a371f7' : 'var(--text-muted)' }}>
+                {allClosed && !isLoading && <Check className="h-3 w-3" />}
+                {allClosed && !isLoading ? 'Issues closed' : 'Waiting on'}
+              </span>
+            </div>
+          )}
+          <div className={hasMyIssues ? 'mt-0.5' : ''}>
+            {githubIssueUrls.map((url, i) => (
+              <div
+                key={url}
+                className={hasMyIssues ? `pr-tree-branch min-w-0${i === githubIssueUrls.length - 1 ? ' pr-tree-branch-last' : ''}` : 'min-w-0 py-0.5'}
+              >
+                <GitHubIssueBadge url={url} showTitle />
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+export function PrDependencyTree({ myPrUrls, githubPrUrls, azureWorkItemUrl, azureDepUrls = [], myIssueUrls = [], githubIssueUrls = [], noBorder }: PrDependencyTreeProps) {
   const hasGithub = myPrUrls.length > 0 || githubPrUrls.length > 0
   const hasAzure = !!azureWorkItemUrl || azureDepUrls.length > 0
+  const hasIssues = myIssueUrls.length > 0 || githubIssueUrls.length > 0
 
-  if (!hasGithub && !hasAzure) return null
+  if (!hasGithub && !hasAzure && !hasIssues) return null
 
-  // Show section headers when both types are present
-  const showHeaders = hasGithub && hasAzure
+  // Show section headers when multiple types are present
+  const sectionCount = [hasGithub, hasAzure, hasIssues].filter(Boolean).length
+  const showHeaders = sectionCount > 1
 
   return (
     <>
@@ -188,6 +261,9 @@ export function PrDependencyTree({ myPrUrls, githubPrUrls, azureWorkItemUrl, azu
       )}
       {hasGithub && (
         <GitHubSection myPrUrls={myPrUrls} githubPrUrls={githubPrUrls} showHeader={showHeaders} noBorder={!hasAzure && noBorder} />
+      )}
+      {hasIssues && (
+        <GitHubIssuesSection myIssueUrls={myIssueUrls} githubIssueUrls={githubIssueUrls} showHeader={showHeaders} noBorder={!hasAzure && !hasGithub && noBorder} />
       )}
     </>
   )

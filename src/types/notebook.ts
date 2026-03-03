@@ -5,6 +5,7 @@ export interface NotebookNote {
   pinned: boolean
   createdAt: string
   updatedAt: string
+  todo?: { id: string; taskNumber: number; title: string } | null
 }
 
 export interface CreateNotebookNoteInput {

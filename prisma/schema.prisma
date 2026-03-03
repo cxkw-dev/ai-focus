@@ -24,10 +24,14 @@ model Todo {
   githubPrUrls     String[]  @default([])
   azureWorkItemUrl String?
   azureDepUrls     String[]  @default([])
+  myIssueUrls      String[]  @default([])
+  githubIssueUrls  String[]  @default([])
   labels          Label[]          @relation("LabelToTodo")
   subtasks        Subtask[]
   accomplishment  Accomplishment?
   contacts        TodoContact[]
+  notebookNoteId  String?        @unique
+  notebookNote    NotebookNote?  @relation(fields: [notebookNoteId], references: [id], onDelete: SetNull)
 
   @@index([status])
   @@index([archived])
@@ -81,6 +85,7 @@ model NotebookNote {
   pinned    Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  todo      Todo?
 
   @@index([updatedAt])
   @@index([pinned])

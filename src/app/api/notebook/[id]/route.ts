@@ -16,6 +16,9 @@ export async function GET(
     const { id } = await params
     const note = await db.notebookNote.findUnique({
       where: { id },
+      include: {
+        todo: { select: { id: true, taskNumber: true, title: true } },
+      },
     })
 
     if (!note) {
@@ -44,6 +47,9 @@ export async function PATCH(
     const note = await db.notebookNote.update({
       where: { id },
       data: validatedData,
+      include: {
+        todo: { select: { id: true, taskNumber: true, title: true } },
+      },
     })
 
     return NextResponse.json(note)

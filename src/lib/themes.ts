@@ -187,10 +187,7 @@ export const themes: Theme[] = [
     id: 'anthropic',
     name: 'Anthropic',
     description: 'Warm terracotta tones',
-    fonts: {
-      heading: 'var(--font-lora)',
-      body: 'var(--font-dm-sans)',
-    },
+    fonts: {},
     colors: {
       // Backgrounds - Warm dark
       background: '#191919',

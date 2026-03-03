@@ -15,6 +15,7 @@ import {
   GripVertical,
   Users,
   Trash2,
+  FileText,
 } from 'lucide-react'
 import {
   DndContext,
@@ -60,6 +61,8 @@ import { usePeople } from '@/hooks/use-people'
 import { useTodoContacts } from '@/hooks/use-todo-contacts'
 import { useTodoForm } from '@/hooks/use-todo-form'
 import { hasMeaningfulText, normalizeSubtaskTitle } from '@/lib/rich-text'
+import { todosApi, notebookApi } from '@/lib/api'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Todo, UpdateTodoInput, Status } from '@/types/todo'
 
 function getSubtaskDndId(subtaskId: string | undefined, index: number): string {
@@ -212,6 +215,8 @@ export function EditTodoDialog({
   const [newMyPrUrl, setNewMyPrUrl] = React.useState('')
   const [newPrUrl, setNewPrUrl] = React.useState('')
   const [newAzureDepUrl, setNewAzureDepUrl] = React.useState('')
+  const [newMyIssueUrl, setNewMyIssueUrl] = React.useState('')
+  const [newIssueUrl, setNewIssueUrl] = React.useState('')
   const { contacts, addContact, updateContact, removeContact } = useTodoContacts(
     todo?.id ?? '',
     !!todo
@@ -220,6 +225,37 @@ export function EditTodoDialog({
   const [newContactRole, setNewContactRole] = React.useState('')
   const [editingContactId, setEditingContactId] = React.useState<string | null>(null)
   const [editingContactRole, setEditingContactRole] = React.useState('')
+  const queryClient = useQueryClient()
+  const { data: allNotes } = useQuery({
+    queryKey: ['notebook'],
+    queryFn: () => notebookApi.list(),
+  })
+  const unlinkedNotes = React.useMemo(
+    () => (allNotes ?? []).filter(n => !n.todo),
+    [allNotes]
+  )
+
+  const handleCreateAndLinkNote = React.useCallback(async () => {
+    if (!todo) return
+    const note = await notebookApi.create({ title: `Note for #${todo.taskNumber}` })
+    await todosApi.update(todo.id, { notebookNoteId: note.id })
+    queryClient.invalidateQueries({ queryKey: ['todos'] })
+    queryClient.invalidateQueries({ queryKey: ['notebook'] })
+  }, [todo, queryClient])
+
+  const handleLinkExistingNote = React.useCallback(async (noteId: string) => {
+    if (!noteId || !todo) return
+    await todosApi.update(todo.id, { notebookNoteId: noteId })
+    queryClient.invalidateQueries({ queryKey: ['todos'] })
+    queryClient.invalidateQueries({ queryKey: ['notebook'] })
+  }, [todo, queryClient])
+
+  const handleUnlinkNote = React.useCallback(async () => {
+    if (!todo) return
+    await todosApi.update(todo.id, { notebookNoteId: null })
+    queryClient.invalidateQueries({ queryKey: ['todos'] })
+    queryClient.invalidateQueries({ queryKey: ['notebook'] })
+  }, [todo, queryClient])
   const subtaskMentions = React.useMemo(
     () => people.map((person) => ({ id: person.id, name: person.name, email: person.email })),
     [people]
@@ -259,6 +295,14 @@ export function EditTodoDialog({
       if (pendingAzure && !payload.azureDepUrls.includes(pendingAzure)) {
         payload.azureDepUrls = [...payload.azureDepUrls, pendingAzure]
       }
+      const pendingMyIssue = newMyIssueUrl.trim()
+      if (pendingMyIssue && !payload.myIssueUrls.includes(pendingMyIssue)) {
+        payload.myIssueUrls = [...payload.myIssueUrls, pendingMyIssue]
+      }
+      const pendingIssue = newIssueUrl.trim()
+      if (pendingIssue && !payload.githubIssueUrls.includes(pendingIssue)) {
+        payload.githubIssueUrls = [...payload.githubIssueUrls, pendingIssue]
+      }
       const original = JSON.stringify({
         title: todo.title.trim(),
         description: normalizeDescription(todo.description),
@@ -276,6 +320,8 @@ export function EditTodoDialog({
         githubPrUrls: todo.githubPrUrls ?? [],
         azureWorkItemUrl: todo.azureWorkItemUrl || null,
         azureDepUrls: todo.azureDepUrls ?? [],
+        myIssueUrls: todo.myIssueUrls ?? [],
+        githubIssueUrls: todo.githubIssueUrls ?? [],
       })
       if (JSON.stringify(payload) !== original) {
         onSubmit(payload)
@@ -283,7 +329,7 @@ export function EditTodoDialog({
       }
     }
     onOpenChange(false)
-  }, [isEditing, todo, form, onSubmit, onOpenChange, newMyPrUrl, newPrUrl, newAzureDepUrl, normalizeDescription])
+  }, [isEditing, todo, form, onSubmit, onOpenChange, newMyPrUrl, newPrUrl, newAzureDepUrl, newMyIssueUrl, newIssueUrl, normalizeDescription])
 
   const handleAddSubtask = React.useCallback(() => {
     const normalized = normalizeSubtaskTitle(newSubtaskTitle)
@@ -541,6 +587,40 @@ export function EditTodoDialog({
                   </div>
                 </div>
 
+                {/* GitHub Issues */}
+                <div className="space-y-3">
+                  <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                    <GitHubIcon className="h-3.5 w-3.5" />
+                    GitHub Issues
+                  </Label>
+
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>My Issues</span>
+                    <UrlListField
+                      type="github-issue"
+                      urls={form.myIssueUrls}
+                      onAdd={(url) => form.addMyIssueUrl(url)}
+                      onRemove={(i) => form.removeMyIssueUrl(i)}
+                      inputValue={newMyIssueUrl}
+                      onInputChange={setNewMyIssueUrl}
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Waiting On</span>
+                    <UrlListField
+                      type="github-issue"
+                      urls={form.githubIssueUrls}
+                      onAdd={(url) => form.addGithubIssueUrl(url)}
+                      onRemove={(i) => form.removeGithubIssueUrl(i)}
+                      inputValue={newIssueUrl}
+                      onInputChange={setNewIssueUrl}
+                      disabled={isLoading}
+                    />
+                  </div>
+                </div>
+
                 {/* Labels */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -565,6 +645,53 @@ export function EditTodoDialog({
                     disabled={isLoading}
                     showQuickPick
                   />
+                </div>
+
+                {/* Connected Note */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                    <FileText className="h-3.5 w-3.5" />
+                    Connected Note
+                  </Label>
+                  {todo?.notebookNoteId ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] flex-1 truncate" style={{ color: 'var(--text-primary)' }}>
+                        {todo.notebookNote?.title || 'Untitled'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleUnlinkNote}
+                        className="text-[11px] font-medium underline hover:no-underline"
+                        style={{ color: 'var(--destructive)' }}
+                      >
+                        Unlink
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <button
+                        type="button"
+                        onClick={handleCreateAndLinkNote}
+                        className="w-full text-[11px] rounded px-2 py-1.5 border transition-colors hover:bg-white/5 text-left"
+                        style={{ borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
+                      >
+                        + Create new note
+                      </button>
+                      {unlinkedNotes.length > 0 && (
+                        <select
+                          value=""
+                          onChange={(e) => handleLinkExistingNote(e.target.value)}
+                          className="w-full text-[11px] rounded px-1.5 py-1 bg-transparent border outline-none"
+                          style={{ borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
+                        >
+                          <option value="">Link existing note...</option>
+                          {unlinkedNotes.map((note) => (
+                            <option key={note.id} value={note.id}>{note.title}</option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Contacts */}

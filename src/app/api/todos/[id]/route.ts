@@ -25,6 +25,9 @@ const updateTodoSchema = z.object({
   githubPrUrls: z.array(z.string().url()).optional(),
   azureWorkItemUrl: z.string().url().optional().nullable(),
   azureDepUrls: z.array(z.string().url()).optional(),
+  myIssueUrls: z.array(z.string().url()).optional(),
+  githubIssueUrls: z.array(z.string().url()).optional(),
+  notebookNoteId: z.string().optional().nullable(),
 })
 
 // Resolve an id param that could be a cuid or a task number (e.g. "7")
@@ -51,6 +54,7 @@ export async function GET(
       include: {
         labels: { orderBy: { name: 'asc' } },
         subtasks: { orderBy: { order: 'asc' } },
+        notebookNote: { select: { id: true, title: true } },
       },
     })
 

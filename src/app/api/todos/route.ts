@@ -25,6 +25,9 @@ const createTodoSchema = z.object({
   githubPrUrls: z.array(z.string().url()).optional(),
   azureWorkItemUrl: z.string().url().optional().nullable(),
   azureDepUrls: z.array(z.string().url()).optional(),
+  myIssueUrls: z.array(z.string().url()).optional(),
+  githubIssueUrls: z.array(z.string().url()).optional(),
+  notebookNoteId: z.string().optional().nullable(),
 })
 
 const listTodosQuerySchema = z.object({
@@ -91,6 +94,7 @@ export async function GET(request: NextRequest) {
     const include = {
       labels: { orderBy: { name: 'asc' } as const },
       subtasks: { orderBy: { order: 'asc' } as const },
+      notebookNote: { select: { id: true, title: true } },
     }
 
     if (validatedQuery.limit !== undefined) {
@@ -155,6 +159,7 @@ export async function POST(request: NextRequest) {
       include: {
         labels: { orderBy: { name: 'asc' } },
         subtasks: { orderBy: { order: 'asc' } },
+        notebookNote: { select: { id: true, title: true } },
       },
     })
 

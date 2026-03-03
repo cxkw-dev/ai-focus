@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { Plus, X } from 'lucide-react'
 import { GitHubPrBadge } from './github-pr-badge'
+import { GitHubIssueBadge } from './github-issue-badge'
 import { AzureWorkItemBadge } from './azure-workitem-badge'
 
 export function GitHubIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
@@ -21,8 +22,9 @@ export function AzureIcon({ className, style }: { className?: string; style?: Re
   )
 }
 
-export function detectUrlType(url: string): 'github' | 'azure' | 'unknown' {
+export function detectUrlType(url: string): 'github' | 'github-issue' | 'azure' | 'unknown' {
   if (/github\.com\/.+\/pull\/\d+/.test(url)) return 'github'
+  if (/github\.com\/.+\/issues\/\d+/.test(url)) return 'github-issue'
   if (/dev\.azure\.com|visualstudio\.com/.test(url)) return 'azure'
   return 'unknown'
 }
@@ -30,8 +32,14 @@ export function detectUrlType(url: string): 'github' | 'azure' | 'unknown' {
 interface SingleUrlFieldProps {
   value: string
   onChange: (value: string) => void
-  type: 'github' | 'azure'
+  type: 'github' | 'github-issue' | 'azure'
   disabled?: boolean
+}
+
+function renderBadgeForType(type: 'github' | 'github-issue' | 'azure', url: string) {
+  if (type === 'github') return <GitHubPrBadge url={url} />
+  if (type === 'github-issue') return <GitHubIssueBadge url={url} />
+  return <AzureWorkItemBadge url={url} />
 }
 
 export function SingleUrlField({
@@ -40,16 +48,12 @@ export function SingleUrlField({
   type,
   disabled,
 }: SingleUrlFieldProps) {
-  const Icon = type === 'github' ? GitHubIcon : AzureIcon
+  const Icon = type === 'azure' ? AzureIcon : GitHubIcon
 
   if (value.trim()) {
     return (
       <div className="flex items-center gap-2">
-        {type === 'github' ? (
-          <GitHubPrBadge url={value.trim()} />
-        ) : (
-          <AzureWorkItemBadge url={value.trim()} />
-        )}
+        {renderBadgeForType(type, value.trim())}
         <button
           type="button"
           onClick={() => onChange('')}
@@ -84,7 +88,7 @@ export function SingleUrlField({
 }
 
 interface UrlListFieldProps {
-  type: 'github' | 'azure'
+  type: 'github' | 'github-issue' | 'azure'
   urls: string[]
   onAdd: (url: string) => void
   onRemove: (index: number) => void
@@ -111,7 +115,7 @@ export function UrlListField({
     onInputChange('')
   }, [inputValue, onAdd, onInputChange])
 
-  const Icon = type === 'github' ? GitHubIcon : AzureIcon
+  const Icon = type === 'azure' ? AzureIcon : GitHubIcon
   const py = compact ? 'py-1' : 'py-1.5'
   const px = compact ? 'px-2' : 'px-2.5'
   const textSize = compact ? 'text-xs' : 'text-sm'
@@ -120,11 +124,7 @@ export function UrlListField({
     <div className="space-y-1.5">
       {urls.map((url, index) => (
         <div key={url} className="flex items-center gap-2 group/dep">
-          {type === 'github' ? (
-            <GitHubPrBadge url={url} />
-          ) : (
-            <AzureWorkItemBadge url={url} />
-          )}
+          {renderBadgeForType(type, url)}
           <button
             type="button"
             onClick={() => onRemove(index)}
