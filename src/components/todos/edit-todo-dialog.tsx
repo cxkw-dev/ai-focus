@@ -573,18 +573,19 @@ export function EditTodoDialog({
                     <Users className="h-3.5 w-3.5" />
                     Contacts
                   </Label>
-                  <div className="space-y-1.5">
+                  <div className="space-y-0.5">
                     {contacts.map((contact) => (
                       <div
                         key={contact.id}
-                        className="flex items-center gap-2 rounded-md px-2 py-1.5 group/contact"
-                        style={{ backgroundColor: 'color-mix(in srgb, var(--background) 50%, transparent)' }}
+                        className="flex items-center gap-1 rounded px-1.5 py-1 group/contact hover:bg-white/5 transition-colors"
+                        title={contact.person.email}
                       >
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>
-                            {contact.person.name}
-                          </p>
-                          {editingContactId === contact.id ? (
+                        {editingContactId === contact.id ? (
+                          <div className="flex-1 flex items-center gap-1 min-w-0">
+                            <span className="text-[11px] font-medium shrink-0" style={{ color: 'var(--text-primary)' }}>
+                              {contact.person.name.split(' ')[0]}
+                            </span>
+                            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>&middot;</span>
                             <input
                               autoFocus
                               value={editingContactRole}
@@ -604,84 +605,102 @@ export function EditTodoDialog({
                                 }
                                 if (e.key === 'Escape') setEditingContactId(null)
                               }}
-                              className="w-full text-[10px] bg-transparent border-b outline-none"
+                              className="flex-1 min-w-0 text-[11px] bg-transparent border-b outline-none"
                               style={{ color: 'var(--primary)', borderColor: 'var(--primary)' }}
                             />
-                          ) : (
+                          </div>
+                        ) : (
+                          <div className="flex-1 flex items-center gap-1 min-w-0">
+                            <a
+                              href={`https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(contact.person.email)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[11px] font-medium truncate hover:underline"
+                              style={{ color: 'var(--text-primary)' }}
+                              title={`Chat with ${contact.person.name} in Teams`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {contact.person.name}
+                            </a>
+                            <span className="text-[11px] shrink-0" style={{ color: 'var(--text-muted)' }}>&middot;</span>
                             <button
                               type="button"
+                              className="text-[11px] truncate italic hover:underline"
+                              style={{ color: 'var(--primary)' }}
                               onClick={() => {
                                 setEditingContactId(contact.id)
                                 setEditingContactRole(contact.role)
                               }}
-                              className="text-[10px] italic hover:underline"
-                              style={{ color: 'var(--primary)' }}
+                              title="Click to edit role"
                             >
                               {contact.role}
                             </button>
-                          )}
-                        </div>
+                          </div>
+                        )}
                         <button
                           type="button"
                           onClick={() => removeContact(contact.id)}
-                          className="p-0.5 rounded opacity-0 group-hover/contact:opacity-100 transition-opacity"
+                          className="p-0.5 rounded opacity-0 group-hover/contact:opacity-100 transition-opacity shrink-0"
                           style={{ color: 'var(--destructive)' }}
                         >
-                          <Trash2 className="h-3 w-3" />
+                          <Trash2 className="h-2.5 w-2.5" />
                         </button>
                       </div>
                     ))}
 
-                    {/* Add contact */}
-                    <div className="flex flex-col gap-1">
-                      <select
-                        value={newContactPersonId}
-                        onChange={(e) => setNewContactPersonId(e.target.value)}
-                        className="w-full text-xs rounded px-1.5 py-1 bg-transparent border outline-none"
-                        style={{ borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
-                      >
-                        <option value="">Add contact...</option>
-                        {people
-                          .filter((p: { id: string }) => !contacts.some(c => c.personId === p.id))
-                          .map((p: { id: string; name: string }) => (
-                            <option key={p.id} value={p.id}>{p.name}</option>
-                          ))}
-                      </select>
-                      {newContactPersonId && (
-                        <div className="flex gap-1">
-                          <input
-                            autoFocus
-                            value={newContactRole}
-                            onChange={(e) => setNewContactRole(e.target.value)}
-                            placeholder="Role"
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && newContactRole.trim()) {
-                                addContact({ personId: newContactPersonId, role: newContactRole.trim() })
-                                setNewContactPersonId('')
-                                setNewContactRole('')
-                              }
-                            }}
-                            className="flex-1 text-xs rounded px-1.5 py-1 bg-transparent border outline-none"
-                            style={{ borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (newContactRole.trim()) {
-                                addContact({ personId: newContactPersonId, role: newContactRole.trim() })
-                                setNewContactPersonId('')
-                                setNewContactRole('')
-                              }
-                            }}
-                            disabled={!newContactRole.trim()}
-                            className="text-[10px] font-medium px-2 py-0.5 rounded disabled:opacity-40"
-                            style={{ backgroundColor: 'var(--primary)', color: 'white' }}
-                          >
-                            Add
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    {/* Always-visible add */}
+                    {people.filter((p: { id: string }) => !contacts.some(c => c.personId === p.id)).length > 0 && (
+                      <div className="pt-1 space-y-1">
+                        <select
+                          value={newContactPersonId}
+                          onChange={(e) => setNewContactPersonId(e.target.value)}
+                          className="w-full text-[11px] rounded px-1.5 py-1 bg-transparent border outline-none"
+                          style={{ borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
+                        >
+                          <option value="">Add contact...</option>
+                          {people
+                            .filter((p: { id: string }) => !contacts.some(c => c.personId === p.id))
+                            .map((p: { id: string; name: string }) => (
+                              <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                        </select>
+                        {newContactPersonId && (
+                          <div className="flex gap-1">
+                            <input
+                              autoFocus
+                              value={newContactRole}
+                              onChange={(e) => setNewContactRole(e.target.value)}
+                              placeholder="Role"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && newContactRole.trim()) {
+                                  addContact({ personId: newContactPersonId, role: newContactRole.trim() })
+                                  setNewContactPersonId('')
+                                  setNewContactRole('')
+                                }
+                              }}
+                              className="flex-1 text-[11px] rounded px-1.5 py-1 bg-transparent border outline-none min-w-0"
+                              style={{ borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (newContactRole.trim()) {
+                                  addContact({ personId: newContactPersonId, role: newContactRole.trim() })
+                                  setNewContactPersonId('')
+                                  setNewContactRole('')
+                                }
+                              }}
+                              disabled={!newContactRole.trim()}
+                              className="p-1 rounded disabled:opacity-40 transition-colors"
+                              style={{ color: 'var(--primary)' }}
+                              title="Add contact"
+                            >
+                              <Plus className="h-3 w-3" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

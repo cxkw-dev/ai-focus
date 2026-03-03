@@ -102,43 +102,38 @@ export function Sidebar({ collapsed, onCollapse, transition = { duration: 0.2, e
       >
         {/* Logo */}
         <div className={`flex h-16 items-center border-b overflow-hidden ${collapsed ? 'justify-center px-0' : 'px-4'}`} style={{ borderColor: 'var(--border-color)' }}>
-          <Link href="/" className="flex items-center group">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div
+              className="shrink-0 rounded-lg overflow-hidden"
+              style={{
+                width: collapsed ? 36 : 40,
+                height: collapsed ? 36 : 40,
+                backgroundColor: 'var(--primary)',
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/icon-192.png"
+                alt="Focus"
+                className="w-full h-full"
+                style={{ imageRendering: 'pixelated' }}
+              />
+            </div>
             <AnimatePresence mode="wait">
-              {!collapsed ? (
+              {!collapsed && (
                 <motion.span
-                  key="expanded"
+                  key="brand-text"
                   initial={{ opacity: 0, width: 0 }}
                   animate={{ opacity: 1, width: 'auto' }}
                   exit={{ opacity: 0, width: 0 }}
                   transition={{ duration: 0.15 }}
-                  className="text-3xl font-bold uppercase whitespace-nowrap overflow-hidden"
+                  className="text-xl font-bold uppercase whitespace-nowrap overflow-hidden"
                   style={{
                     fontFamily: 'var(--font-pixelify), sans-serif',
-                    background: 'linear-gradient(135deg, var(--primary), var(--accent), var(--status-done))',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
+                    color: 'var(--text-primary)',
                   }}
                 >
                   Focus
-                </motion.span>
-              ) : (
-                <motion.span
-                  key="collapsed"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className="text-2xl font-bold uppercase"
-                  style={{
-                    fontFamily: 'var(--font-pixelify), sans-serif',
-                    background: 'linear-gradient(135deg, var(--primary), var(--accent), var(--status-done))',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                  }}
-                >
-                  F
                 </motion.span>
               )}
             </AnimatePresence>
