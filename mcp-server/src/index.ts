@@ -733,8 +733,8 @@ server.tool(
     title: z.string().min(1).max(200).describe("Accomplishment title"),
     description: z.string().max(1000).optional().describe("Details about the accomplishment"),
     category: z
-      .enum(["DELIVERY", "HIRING", "MENTORING", "COLLABORATION", "GROWTH"])
-      .describe("Category: DELIVERY (features/PRs), HIRING (interviews), MENTORING (coaching), COLLABORATION (cross-team), GROWTH (learning)"),
+      .enum(["DELIVERY", "HIRING", "MENTORING", "COLLABORATION", "GROWTH", "OTHER"])
+      .describe("Category: DELIVERY (features/PRs), HIRING (interviews), MENTORING (coaching), COLLABORATION (cross-team), GROWTH (learning), OTHER (doesn't fit above)"),
     date: z.string().describe("Date of accomplishment (ISO string, e.g. 2026-01-15)"),
   },
   async (params) => {
@@ -754,7 +754,7 @@ server.tool(
     title: z.string().min(1).max(200).optional().describe("New title"),
     description: z.string().max(1000).nullable().optional().describe("New description"),
     category: z
-      .enum(["DELIVERY", "HIRING", "MENTORING", "COLLABORATION", "GROWTH"])
+      .enum(["DELIVERY", "HIRING", "MENTORING", "COLLABORATION", "GROWTH", "OTHER"])
       .optional()
       .describe("New category"),
     date: z.string().optional().describe("New date (ISO string)"),
