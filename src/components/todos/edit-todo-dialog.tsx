@@ -13,6 +13,8 @@ import {
   Square,
   CheckSquare,
   GripVertical,
+  Users,
+  Trash2,
 } from 'lucide-react'
 import {
   DndContext,
@@ -55,6 +57,7 @@ import { PrioritySelector } from './priority-selector'
 import { SingleUrlField, UrlListField, AzureIcon, GitHubIcon } from './url-fields'
 import { useLabels } from '@/hooks/use-labels'
 import { usePeople } from '@/hooks/use-people'
+import { useTodoContacts } from '@/hooks/use-todo-contacts'
 import { useTodoForm } from '@/hooks/use-todo-form'
 import { hasMeaningfulText, normalizeSubtaskTitle } from '@/lib/rich-text'
 import type { Todo, UpdateTodoInput, Status } from '@/types/todo'
@@ -209,6 +212,14 @@ export function EditTodoDialog({
   const [newMyPrUrl, setNewMyPrUrl] = React.useState('')
   const [newPrUrl, setNewPrUrl] = React.useState('')
   const [newAzureDepUrl, setNewAzureDepUrl] = React.useState('')
+  const { contacts, addContact, updateContact, removeContact } = useTodoContacts(
+    todo?.id ?? '',
+    !!todo
+  )
+  const [newContactPersonId, setNewContactPersonId] = React.useState('')
+  const [newContactRole, setNewContactRole] = React.useState('')
+  const [editingContactId, setEditingContactId] = React.useState<string | null>(null)
+  const [editingContactRole, setEditingContactRole] = React.useState('')
   const subtaskMentions = React.useMemo(
     () => people.map((person) => ({ id: person.id, name: person.name, email: person.email })),
     [people]
@@ -554,6 +565,124 @@ export function EditTodoDialog({
                     disabled={isLoading}
                     showQuickPick
                   />
+                </div>
+
+                {/* Contacts */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                    <Users className="h-3.5 w-3.5" />
+                    Contacts
+                  </Label>
+                  <div className="space-y-1.5">
+                    {contacts.map((contact) => (
+                      <div
+                        key={contact.id}
+                        className="flex items-center gap-2 rounded-md px-2 py-1.5 group/contact"
+                        style={{ backgroundColor: 'color-mix(in srgb, var(--background) 50%, transparent)' }}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+                            {contact.person.name}
+                          </p>
+                          {editingContactId === contact.id ? (
+                            <input
+                              autoFocus
+                              value={editingContactRole}
+                              onChange={(e) => setEditingContactRole(e.target.value)}
+                              onBlur={() => {
+                                if (editingContactRole.trim()) {
+                                  updateContact({ contactId: contact.id, data: { role: editingContactRole.trim() } })
+                                }
+                                setEditingContactId(null)
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  if (editingContactRole.trim()) {
+                                    updateContact({ contactId: contact.id, data: { role: editingContactRole.trim() } })
+                                  }
+                                  setEditingContactId(null)
+                                }
+                                if (e.key === 'Escape') setEditingContactId(null)
+                              }}
+                              className="w-full text-[10px] bg-transparent border-b outline-none"
+                              style={{ color: 'var(--primary)', borderColor: 'var(--primary)' }}
+                            />
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingContactId(contact.id)
+                                setEditingContactRole(contact.role)
+                              }}
+                              className="text-[10px] italic hover:underline"
+                              style={{ color: 'var(--primary)' }}
+                            >
+                              {contact.role}
+                            </button>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeContact(contact.id)}
+                          className="p-0.5 rounded opacity-0 group-hover/contact:opacity-100 transition-opacity"
+                          style={{ color: 'var(--destructive)' }}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+
+                    {/* Add contact */}
+                    <div className="flex flex-col gap-1">
+                      <select
+                        value={newContactPersonId}
+                        onChange={(e) => setNewContactPersonId(e.target.value)}
+                        className="w-full text-xs rounded px-1.5 py-1 bg-transparent border outline-none"
+                        style={{ borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
+                      >
+                        <option value="">Add contact...</option>
+                        {people
+                          .filter((p: { id: string }) => !contacts.some(c => c.personId === p.id))
+                          .map((p: { id: string; name: string }) => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                          ))}
+                      </select>
+                      {newContactPersonId && (
+                        <div className="flex gap-1">
+                          <input
+                            autoFocus
+                            value={newContactRole}
+                            onChange={(e) => setNewContactRole(e.target.value)}
+                            placeholder="Role"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && newContactRole.trim()) {
+                                addContact({ personId: newContactPersonId, role: newContactRole.trim() })
+                                setNewContactPersonId('')
+                                setNewContactRole('')
+                              }
+                            }}
+                            className="flex-1 text-xs rounded px-1.5 py-1 bg-transparent border outline-none"
+                            style={{ borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (newContactRole.trim()) {
+                                addContact({ personId: newContactPersonId, role: newContactRole.trim() })
+                                setNewContactPersonId('')
+                                setNewContactRole('')
+                              }
+                            }}
+                            disabled={!newContactRole.trim()}
+                            className="text-[10px] font-medium px-2 py-0.5 rounded disabled:opacity-40"
+                            style={{ backgroundColor: 'var(--primary)', color: 'white' }}
+                          >
+                            Add
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
