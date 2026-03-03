@@ -27,6 +27,7 @@ model Todo {
   labels          Label[]          @relation("LabelToTodo")
   subtasks        Subtask[]
   accomplishment  Accomplishment?
+  contacts        TodoContact[]
 
   @@index([status])
   @@index([archived])
@@ -98,6 +99,21 @@ model Person {
   email     String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  todoContacts TodoContact[]
+}
+
+model TodoContact {
+  id       String @id @default(cuid())
+  role     String
+  order    Int    @default(0)
+  todoId   String
+  todo     Todo   @relation(fields: [todoId], references: [id], onDelete: Cascade)
+  personId String
+  person   Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@unique([todoId, personId])
+  @@index([todoId])
+  @@index([personId])
 }
 
 enum AccomplishmentCategory {
