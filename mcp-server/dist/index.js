@@ -697,6 +697,69 @@ server.tool("start_todo", "Mark a todo as in progress.", {
     });
     return textResult(data);
 });
+// ─── Todo Contacts ───
+server.tool("list_todo_contacts", "List contacts assigned to a todo/task. Each contact has a person (name, email) and a role.", {
+    taskNumber: z.number().int().positive().optional().describe("Task number (e.g. 7)"),
+    id: z.string().optional().describe("Todo cuid (use taskNumber instead when possible)"),
+}, async (params) => {
+    let resolvedId = params.id;
+    if (params.taskNumber && !params.id) {
+        const todo = await apiFetch(`/api/todos/${params.taskNumber}`);
+        if (isApiError(todo))
+            return textResult(todo);
+        resolvedId = todo.id;
+    }
+    if (!resolvedId)
+        return textResult({ _error: true, message: "Provide taskNumber or id" });
+    const data = await apiFetch(`/api/todos/${resolvedId}/contacts`);
+    if (isApiError(data))
+        return textResult(data);
+    return textResult(data);
+});
+server.tool("add_todo_contact", "Add a contact (person) to a todo/task with a role.", {
+    taskNumber: z.number().int().positive().optional().describe("Task number (e.g. 7)"),
+    id: z.string().optional().describe("Todo cuid"),
+    personId: z.string().describe("Person ID to add as contact"),
+    role: z.string().describe("Role this person plays (e.g. 'reviewer', 'stakeholder')"),
+}, async (params) => {
+    let resolvedId = params.id;
+    if (params.taskNumber && !params.id) {
+        const todo = await apiFetch(`/api/todos/${params.taskNumber}`);
+        if (isApiError(todo))
+            return textResult(todo);
+        resolvedId = todo.id;
+    }
+    if (!resolvedId)
+        return textResult({ _error: true, message: "Provide taskNumber or id" });
+    const data = await apiFetch(`/api/todos/${resolvedId}/contacts`, {
+        method: "POST",
+        body: JSON.stringify({ personId: params.personId, role: params.role }),
+    });
+    if (isApiError(data))
+        return textResult(data);
+    return textResult(data);
+});
+server.tool("remove_todo_contact", "Remove a contact from a todo/task.", {
+    taskNumber: z.number().int().positive().optional().describe("Task number"),
+    id: z.string().optional().describe("Todo cuid"),
+    contactId: z.string().describe("The TodoContact ID to remove"),
+}, async (params) => {
+    let resolvedId = params.id;
+    if (params.taskNumber && !params.id) {
+        const todo = await apiFetch(`/api/todos/${params.taskNumber}`);
+        if (isApiError(todo))
+            return textResult(todo);
+        resolvedId = todo.id;
+    }
+    if (!resolvedId)
+        return textResult({ _error: true, message: "Provide taskNumber or id" });
+    const data = await apiFetch(`/api/todos/${resolvedId}/contacts/${params.contactId}`, {
+        method: "DELETE",
+    });
+    if (isApiError(data))
+        return textResult(data);
+    return textResult(data);
+});
 // ─── Start ───
 async function main() {
     const transport = new StdioServerTransport();
