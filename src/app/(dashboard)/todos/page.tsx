@@ -5,10 +5,12 @@ import { Plus } from 'lucide-react'
 import { TodoColumn } from '@/components/todos/todo-column'
 import { EditTodoDialog } from '@/components/todos/edit-todo-dialog'
 import { CreateTodoModal } from '@/components/todos/create-todo-modal'
+import { NoteDrawer } from '@/components/todos/note-drawer'
 import { useToast } from '@/components/ui/use-toast'
 import { useTodos } from '@/hooks/use-todos'
 import { useLabels } from '@/hooks/use-labels'
 import { categorizeTodos, type TodoCategory } from '@/lib/categorize-todos'
+import { todosApi } from '@/lib/api'
 import type { Todo, UpdateTodoInput, CreateTodoInput, SubtaskInput } from '@/types/todo'
 
 const COLUMNS: { key: TodoCategory; title: string; color: string }[] = [
@@ -41,6 +43,7 @@ export default function TodosPage() {
   const [isFormOpen, setIsFormOpen] = React.useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false)
   const [mobileCategory, setMobileCategory] = React.useState<TodoCategory>('kaf')
+  const [openNote, setOpenNote] = React.useState<{ todoId: string; noteId: string; todoTitle: string } | null>(null)
 
   const handleMobileCategoryKeyDown = React.useCallback(
     (event: React.KeyboardEvent<HTMLButtonElement>, currentCategory: TodoCategory) => {
@@ -151,6 +154,21 @@ export default function TodosPage() {
     [reorder]
   )
 
+  const handleOpenNote = React.useCallback(
+    (todoId: string, noteId: string) => {
+      const allTodos = [...todos, ...completedTodos, ...deletedTodos]
+      const todo = allTodos.find(t => t.id === todoId)
+      setOpenNote({ todoId, noteId, todoTitle: todo?.title ?? 'Note' })
+    },
+    [todos, completedTodos, deletedTodos]
+  )
+
+  const handleUnlinkNote = React.useCallback(async () => {
+    if (!openNote) return
+    await todosApi.update(openNote.todoId, { notebookNoteId: null })
+    setOpenNote(null)
+  }, [openNote])
+
   if (isLoading) {
     return (
       <div className="h-[calc(100vh-120px)] flex items-center justify-center">
@@ -256,6 +274,7 @@ export default function TodosPage() {
             onRestore={handleRestore}
             onToggleSubtask={handleToggleSubtask}
             onUpdateSubtasks={handleUpdateSubtasks}
+            onOpenNote={handleOpenNote}
             onReorder={handleReorder}
             onCreateTodo={handleCreate}
             isSaving={isSaving}
@@ -287,6 +306,7 @@ export default function TodosPage() {
               onRestore={handleRestore}
               onToggleSubtask={handleToggleSubtask}
               onUpdateSubtasks={handleUpdateSubtasks}
+              onOpenNote={handleOpenNote}
               onReorder={handleReorder}
               onCreateTodo={handleCreate}
               isSaving={isSaving}
@@ -311,6 +331,15 @@ export default function TodosPage() {
         onOpenChange={setIsCreateModalOpen}
         onSubmit={handleCreate}
         isLoading={isSaving}
+      />
+
+      {/* Note Drawer */}
+      <NoteDrawer
+        noteId={openNote?.noteId ?? null}
+        todoTitle={openNote?.todoTitle}
+        open={!!openNote}
+        onClose={() => setOpenNote(null)}
+        onUnlink={handleUnlinkNote}
       />
 
       <button

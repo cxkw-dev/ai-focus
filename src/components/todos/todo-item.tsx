@@ -59,7 +59,6 @@ import {
 } from '@/lib/rich-text'
 import { PrDependencyTree } from './pr-dependency-tree'
 import { ContactsDrawer } from './contacts-drawer'
-import { NoteDrawer } from './note-drawer'
 import type { Todo, Status, Priority, Subtask, SubtaskInput } from '@/types/todo'
 
 const CHIP_BASE = 'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors'
@@ -119,6 +118,7 @@ interface TodoItemProps {
   onRestore?: (id: string) => void
   onToggleSubtask?: (todoId: string, subtaskId: string, completed: boolean) => void
   onUpdateSubtasks?: (todoId: string, subtasks: SubtaskInput[]) => void
+  onOpenNote?: (todoId: string, noteId: string) => void
   isDragging?: boolean
   viewMode?: ViewMode
   dropIndicator?: 'above' | 'below' | null
@@ -830,6 +830,7 @@ export function TodoItem({
   onRestore,
   onToggleSubtask,
   onUpdateSubtasks,
+  onOpenNote,
   isDragging: isOverlay,
   viewMode = 'active',
   dropIndicator,
@@ -845,7 +846,6 @@ export function TodoItem({
   } = useSortable({ id: todo.id, disabled: viewMode !== 'active' })
 
   const [contactsOpen, setContactsOpen] = React.useState(false)
-  const [noteOpen, setNoteOpen] = React.useState(false)
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -922,19 +922,6 @@ export function TodoItem({
           open={contactsOpen}
           onClose={() => setContactsOpen(false)}
         />
-
-        {todo.notebookNoteId && (
-          <NoteDrawer
-            noteId={todo.notebookNoteId}
-            open={noteOpen}
-            onClose={() => setNoteOpen(false)}
-            onUnlink={async () => {
-              const { todosApi } = await import('@/lib/api')
-              await todosApi.update(todo.id, { notebookNoteId: null })
-              setNoteOpen(false)
-            }}
-          />
-        )}
       </div>
 
       {/* Side tabs — contacts + note */}
@@ -958,10 +945,9 @@ export function TodoItem({
           </button>
           {todo.notebookNoteId && (
             <button
-              onClick={(e) => { e.stopPropagation(); setNoteOpen(prev => !prev) }}
+              onClick={(e) => { e.stopPropagation(); onOpenNote?.(todo.id, todo.notebookNoteId!) }}
               className={cn(
                 'todo-note-tab flex-shrink-0 flex-1 w-5 flex items-center justify-center rounded-br-lg transition-all duration-150',
-                noteOpen && 'todo-note-tab-active'
               )}
               style={{
                 backgroundColor: todo.status === 'WAITING'

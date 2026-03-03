@@ -43,6 +43,7 @@ interface TodoColumnProps {
   onRestore: (id: string) => void
   onToggleSubtask: (todoId: string, subtaskId: string, completed: boolean) => void
   onUpdateSubtasks: (todoId: string, subtasks: SubtaskInput[]) => void
+  onOpenNote?: (todoId: string, noteId: string) => void
   onReorder: (reorderedTodos: Todo[]) => void
   onCreateTodo: (data: CreateTodoInput) => Promise<boolean>
   isSaving?: boolean
@@ -65,6 +66,7 @@ export function TodoColumn({
   onRestore,
   onToggleSubtask,
   onUpdateSubtasks,
+  onOpenNote,
   onReorder,
   onCreateTodo,
   isSaving,
@@ -331,6 +333,7 @@ export function TodoColumn({
                             onRestore={onRestore}
                             onToggleSubtask={onToggleSubtask}
                             onUpdateSubtasks={onUpdateSubtasks}
+                            onOpenNote={onOpenNote}
                             viewMode={filter}
                             dropIndicator={dropIndicator}
                             animateTransitions={true}
