@@ -19,7 +19,7 @@ interface HeaderProps {
 }
 
 function OllamaStatus() {
-  const { data, isLoading } = useOllamaStatus()
+  const { data, isLoading, refetch, isFetching } = useOllamaStatus()
   const [mounted, setMounted] = React.useState(false)
 
   React.useEffect(() => {
@@ -36,35 +36,40 @@ function OllamaStatus() {
     <TooltipProvider delayDuration={200}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div
-            className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] font-medium cursor-default select-none transition-colors"
+          <button
+            onClick={() => refetch()}
+            className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] font-medium cursor-pointer select-none transition-colors hover:brightness-110"
             style={{
               backgroundColor: 'var(--surface)',
               border: '1px solid var(--border-color)',
               color: 'var(--text-muted)',
             }}
           >
-            <span
-              className="relative flex h-2 w-2"
-            >
-              {connected && (
+            <span className="relative flex h-2 w-2">
+              {isFetching ? (
+                <span
+                  className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"
+                  style={{ backgroundColor: 'var(--text-muted)' }}
+                />
+              ) : connected ? (
                 <span
                   className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"
                   style={{ backgroundColor: '#22c55e' }}
                 />
-              )}
+              ) : null}
               <span
                 className="relative inline-flex h-2 w-2 rounded-full"
-                style={{ backgroundColor: connected ? '#22c55e' : '#ef4444' }}
+                style={{ backgroundColor: isFetching ? 'var(--text-muted)' : connected ? '#22c55e' : '#ef4444' }}
               />
             </span>
             <span className="hidden sm:inline">{model || 'ollama'}</span>
-          </div>
+          </button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
           <div className="text-xs">
             <p className="font-medium">{connected ? 'Ollama connected' : 'Ollama unreachable'}</p>
             <p style={{ color: 'var(--text-muted)' }}>{url}</p>
+            <p style={{ color: 'var(--text-muted)', marginTop: 2 }}>Click to refresh</p>
           </div>
         </TooltipContent>
       </Tooltip>

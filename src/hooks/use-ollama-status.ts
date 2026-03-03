@@ -17,7 +17,7 @@ export function useOllamaStatus() {
       if (!res.ok) return { connected: false, model: '', url: '' }
       return res.json()
     },
-    refetchInterval: 30_000,
-    staleTime: 25_000,
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: true,
   })
 }

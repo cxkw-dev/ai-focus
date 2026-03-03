@@ -25,33 +25,68 @@ interface SidebarProps {
   transition?: { duration: number; ease?: 'easeInOut' | 'easeIn' | 'easeOut' | 'linear' }
 }
 
-const navItems = [
-  {
-    title: 'Todos',
-    href: '/todos',
-    icon: CheckSquare,
-  },
-  {
-    title: 'Scratch Pad',
-    href: '/scratchpad',
-    icon: StickyNote,
-  },
-  {
-    title: 'Notes',
-    href: '/notes',
-    icon: FileText,
-  },
-  {
-    title: 'Review',
-    href: '/review',
-    icon: BarChart3,
-  },
-  {
-    title: 'Settings',
-    href: '/settings',
-    icon: Settings,
-  },
+const topNavItems = [
+  { title: 'Todos', href: '/todos', icon: CheckSquare },
+  { title: 'Scratch Pad', href: '/scratchpad', icon: StickyNote },
+  { title: 'Notes', href: '/notes', icon: FileText },
 ]
+
+const bottomNavItems = [
+  { title: 'Review', href: '/review', icon: BarChart3 },
+  { title: 'Settings', href: '/settings', icon: Settings },
+]
+
+function renderNavItem(
+  item: { title: string; href: string; icon: React.ComponentType<{ className?: string }> },
+  pathname: string,
+  collapsed: boolean,
+) {
+  const isActive = pathname === item.href
+  const Icon = item.icon
+
+  const navLink = (
+    <Link
+      key={item.href}
+      href={item.href}
+      className={`flex items-center rounded-lg py-2.5 text-sm font-medium transition-colors duration-200 ${collapsed ? 'justify-center px-0' : 'gap-3 px-3'}`}
+      style={isActive ? {
+        backgroundColor: 'color-mix(in srgb, var(--primary) 15%, transparent)',
+        color: 'var(--primary)',
+        boxShadow: '0 1px 3px color-mix(in srgb, var(--primary) 20%, transparent)',
+      } : {
+        color: 'var(--text-muted)',
+      }}
+    >
+      <Icon className="h-5 w-5 shrink-0" />
+      <AnimatePresence mode="wait">
+        {!collapsed && (
+          <motion.span
+            initial={{ opacity: 0, width: 0 }}
+            animate={{ opacity: 1, width: 'auto' }}
+            exit={{ opacity: 0, width: 0 }}
+            transition={{ duration: 0.15 }}
+            className="overflow-hidden whitespace-nowrap"
+          >
+            {item.title}
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </Link>
+  )
+
+  if (collapsed) {
+    return (
+      <Tooltip key={item.href}>
+        <TooltipTrigger asChild>{navLink}</TooltipTrigger>
+        <TooltipContent side="right" className="font-medium">
+          {item.title}
+        </TooltipContent>
+      </Tooltip>
+    )
+  }
+
+  return navLink
+}
 
 export function Sidebar({ collapsed, onCollapse, transition = { duration: 0.2, ease: 'easeInOut' } }: SidebarProps) {
   const pathname = usePathname()
@@ -110,55 +145,17 @@ export function Sidebar({ collapsed, onCollapse, transition = { duration: 0.2, e
           </Link>
         </div>
 
-        {/* Navigation */}
-        <nav className={`flex-1 space-y-1 ${collapsed ? 'px-2 py-3' : 'p-3'}`}>
-          {navItems.map((item) => {
-            const isActive = pathname === item.href
-            const Icon = item.icon
+        {/* Top Navigation */}
+        <nav className={`flex-1 flex flex-col gap-1 ${collapsed ? 'px-2 py-3' : 'p-3'}`}>
+          {topNavItems.map((item) => renderNavItem(item, pathname, collapsed))}
+        </nav>
 
-            const navLink = (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center rounded-lg py-2.5 text-sm font-medium transition-all duration-200 ${collapsed ? 'justify-center px-0' : 'gap-3 px-3'}`}
-                style={isActive ? {
-                  backgroundColor: 'color-mix(in srgb, var(--primary) 15%, transparent)',
-                  color: 'var(--primary)',
-                  boxShadow: '0 1px 3px color-mix(in srgb, var(--primary) 20%, transparent)',
-                } : {
-                  color: 'var(--text-muted)',
-                }}
-              >
-                <Icon className="h-5 w-5 shrink-0" />
-                <AnimatePresence mode="wait">
-                  {!collapsed && (
-                    <motion.span
-                      initial={{ opacity: 0, width: 0 }}
-                      animate={{ opacity: 1, width: 'auto' }}
-                      exit={{ opacity: 0, width: 0 }}
-                      transition={{ duration: 0.15 }}
-                      className="overflow-hidden whitespace-nowrap"
-                    >
-                      {item.title}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </Link>
-            )
-
-            if (collapsed) {
-              return (
-                <Tooltip key={item.href}>
-                  <TooltipTrigger asChild>{navLink}</TooltipTrigger>
-                  <TooltipContent side="right" className="font-medium">
-                    {item.title}
-                  </TooltipContent>
-                </Tooltip>
-              )
-            }
-
-            return navLink
-          })}
+        {/* Bottom Navigation */}
+        <nav
+          className={`flex flex-col gap-1 border-t ${collapsed ? 'px-2 py-3' : 'p-3'}`}
+          style={{ borderColor: 'var(--border-color)' }}
+        >
+          {bottomNavItems.map((item) => renderNavItem(item, pathname, collapsed))}
         </nav>
 
         {/* Collapse Toggle - Edge positioned */}

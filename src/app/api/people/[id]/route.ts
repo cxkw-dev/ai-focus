@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 import { emit } from '@/lib/events'
 
 const updatePersonSchema = z.object({
   name: z.string().min(1).max(100).optional(),
-  email: z.string().email().max(200).optional(),
+  email: z.string().email().max(200).transform(e => e.toLowerCase()).optional(),
 })
 
 export async function PATCH(
@@ -29,6 +30,13 @@ export async function PATCH(
       return NextResponse.json(
         { error: 'Validation failed', details: error.issues },
         { status: 400 }
+      )
+    }
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return NextResponse.json(
+        { error: 'A contact with this email already exists' },
+        { status: 409 }
       )
     }
 

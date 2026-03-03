@@ -180,11 +180,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Todo card hover */
-.todo-card {
-  border: 1px solid transparent;
-}
 .todo-card:hover {
-  border-color: color-mix(in srgb, var(--border-color) 60%, transparent);
+  outline: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
+  outline-offset: -1px;
   box-shadow: 0 2px 8px color-mix(in srgb, var(--background) 50%, transparent);
 }
 
