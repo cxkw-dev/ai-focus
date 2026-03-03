@@ -92,7 +92,7 @@ export function NoteDrawer({ noteId, todoTitle, open, onClose, onUnlink }: NoteD
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
-            className="fixed top-0 right-0 bottom-0 z-[61] w-[420px] max-w-[90vw] flex flex-col"
+            className="fixed top-0 right-0 bottom-0 z-[61] w-[720px] max-w-[90vw] flex flex-col"
             style={{
               backgroundColor: 'var(--surface)',
               borderLeft: '1px solid var(--border-color)',
@@ -139,13 +139,14 @@ export function NoteDrawer({ noteId, todoTitle, open, onClose, onUnlink }: NoteD
             </div>
 
             {/* Editor */}
-            <div className="flex-1 overflow-y-auto px-5 py-4">
+            <div className="flex-1 min-h-0 flex flex-col px-5 py-4">
               {isLoading ? (
                 <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Loading...</p>
               ) : (
                 <RichTextEditor
                   value={content}
                   onChange={handleContentChange}
+                  fullHeight
                 />
               )}
             </div>

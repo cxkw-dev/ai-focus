@@ -396,6 +396,7 @@ function TodoItemContent({
   onRestore,
   onToggleSubtask,
   onUpdateSubtasks,
+  onOpenNote,
   isDragging,
   viewMode = 'active',
 }: TodoItemProps) {
@@ -590,26 +591,17 @@ function TodoItemContent({
               </div>
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
-              {viewMode === 'active' && (
+              {(viewMode === 'active' || viewMode === 'completed') && (
                 <>
-                  <button
-                    onClick={() => onEdit(todo)}
-                    className={cn(CHIP_BASE, 'todo-action-edit')}
-                    title="Edit"
-                  >
-                    <Edit2 className="h-3 w-3" />
-                  </button>
-                  <button
-                    onClick={() => onDelete(todo.id)}
-                    className={cn(CHIP_BASE, 'todo-action-delete')}
-                    title="Delete"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                </>
-              )}
-              {viewMode === 'completed' && (
-                <>
+                  {todo.notebookNoteId && (
+                    <button
+                      onClick={() => onOpenNote?.(todo.id, todo.notebookNoteId!)}
+                      className={cn(CHIP_BASE, 'todo-action-edit')}
+                      title="Open note"
+                    >
+                      <FileText className="h-3 w-3" />
+                    </button>
+                  )}
                   <button
                     onClick={() => onEdit(todo)}
                     className={cn(CHIP_BASE, 'todo-action-edit')}
@@ -913,6 +905,7 @@ export function TodoItem({
           onRestore={onRestore}
           onToggleSubtask={onToggleSubtask}
           onUpdateSubtasks={onUpdateSubtasks}
+          onOpenNote={onOpenNote}
           isDragging={dragging}
           viewMode={viewMode}
         />
@@ -924,42 +917,23 @@ export function TodoItem({
         />
       </div>
 
-      {/* Side tabs — contacts + note */}
+      {/* Side tab — contacts */}
       {!dragging && (
-        <div className="flex flex-col self-stretch">
-          <button
-            onClick={(e) => { e.stopPropagation(); setContactsOpen(prev => !prev) }}
-            className={cn(
-              'todo-contacts-tab flex-shrink-0 flex-1 w-5 flex items-center justify-center transition-all duration-150',
-              !todo.notebookNoteId && 'rounded-r-lg',
-              contactsOpen && 'todo-contacts-tab-active'
-            )}
-            style={{
-              backgroundColor: todo.status === 'WAITING'
-                ? 'color-mix(in srgb, var(--status-waiting) 8%, var(--surface-2))'
-                : undefined,
-            }}
-            title="Contacts"
-          >
-            <Users className="h-3 w-3" />
-          </button>
-          {todo.notebookNoteId && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onOpenNote?.(todo.id, todo.notebookNoteId!) }}
-              className={cn(
-                'todo-note-tab flex-shrink-0 flex-1 w-5 flex items-center justify-center rounded-br-lg transition-all duration-150',
-              )}
-              style={{
-                backgroundColor: todo.status === 'WAITING'
-                  ? 'color-mix(in srgb, var(--status-waiting) 8%, var(--surface-2))'
-                  : undefined,
-              }}
-              title="Note"
-            >
-              <FileText className="h-3 w-3" />
-            </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); setContactsOpen(prev => !prev) }}
+          className={cn(
+            'todo-contacts-tab flex-shrink-0 self-stretch w-5 flex items-center justify-center rounded-r-lg transition-all duration-150',
+            contactsOpen && 'todo-contacts-tab-active'
           )}
-        </div>
+          style={{
+            backgroundColor: todo.status === 'WAITING'
+              ? 'color-mix(in srgb, var(--status-waiting) 8%, var(--surface-2))'
+              : undefined,
+          }}
+          title="Contacts"
+        >
+          <Users className="h-3 w-3" />
+        </button>
       )}
       </div>
       {dropIndicator === 'below' && dropLine}
