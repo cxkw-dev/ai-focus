@@ -190,6 +190,7 @@ export async function PATCH(
         include: {
           labels: { orderBy: { name: 'asc' } },
           subtasks: { orderBy: { order: 'asc' } },
+          notebookNote: { select: { id: true, title: true } },
         },
       })
 
