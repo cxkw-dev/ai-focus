@@ -601,23 +601,16 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Contacts drawer tab — seamless card extension */
 .todo-contacts-tab {
-  background-color: color-mix(in srgb, var(--surface-2) 60%, transparent);
-  color: color-mix(in srgb, var(--text-muted) 30%, transparent);
-  opacity: 0;
+  background-color: color-mix(in srgb, var(--surface-2) 80%, var(--background));
+  color: color-mix(in srgb, var(--text-muted) 50%, transparent);
 }
-.todo-card:hover .todo-contacts-tab {
-  opacity: 1;
-  background-color: var(--surface-2);
-  color: var(--text-muted);
-}
-.todo-card:hover .todo-contacts-tab:hover {
+.todo-contacts-tab:hover {
   background-color: color-mix(in srgb, var(--primary) 15%, var(--surface-2));
   color: var(--primary);
 }
 .todo-contacts-tab-active {
-  opacity: 1 !important;
-  background-color: color-mix(in srgb, var(--primary) 20%, var(--surface-2)) !important;
-  color: var(--primary) !important;
+  background-color: color-mix(in srgb, var(--primary) 20%, var(--surface-2));
+  color: var(--primary);
 }
 
 /* TipTap code block syntax highlighting */
