@@ -47,6 +47,13 @@ export interface ThemeColors {
   priorityMedium: string
   priorityHigh: string
   priorityUrgent: string
+
+  // Category colors (accomplishments)
+  categoryDelivery: string
+  categoryHiring: string
+  categoryMentoring: string
+  categoryCollaboration: string
+  categoryGrowth: string
 }
 
 export interface ThemeFonts {
@@ -109,6 +116,13 @@ export const themes: Theme[] = [
       priorityMedium: '#FFCB8E',
       priorityHigh: '#FFB199',
       priorityUrgent: '#FF6B6B',
+
+      // Category colors
+      categoryDelivery: '#FFB199',
+      categoryHiring: '#FF7D8C',
+      categoryMentoring: '#FFCB8E',
+      categoryCollaboration: '#7DD3A8',
+      categoryGrowth: '#C9B6AE',
     },
   },
   {
@@ -157,6 +171,13 @@ export const themes: Theme[] = [
       priorityMedium: '#FEE75C',
       priorityHigh: '#F0B232',
       priorityUrgent: '#ED4245',
+
+      // Category colors
+      categoryDelivery: '#5865F2',
+      categoryHiring: '#EB459E',
+      categoryMentoring: '#FEE75C',
+      categoryCollaboration: '#57F287',
+      categoryGrowth: '#949BA4',
     },
   },
   {
@@ -209,6 +230,13 @@ export const themes: Theme[] = [
       priorityMedium: '#DDA15E',
       priorityHigh: '#D97757',
       priorityUrgent: '#DC4C4C',
+
+      // Category colors
+      categoryDelivery: '#D97757',
+      categoryHiring: '#BC6C5A',
+      categoryMentoring: '#DDA15E',
+      categoryCollaboration: '#8FB67A',
+      categoryGrowth: '#A39990',
     },
   },
   {
@@ -257,6 +285,13 @@ export const themes: Theme[] = [
       priorityMedium: '#E5C07B',
       priorityHigh: '#D19A66',
       priorityUrgent: '#E06C75',
+
+      // Category colors
+      categoryDelivery: '#61AFEF',
+      categoryHiring: '#C678DD',
+      categoryMentoring: '#E5C07B',
+      categoryCollaboration: '#98C379',
+      categoryGrowth: '#7F848E',
     },
   },
   {
@@ -308,6 +343,13 @@ export const themes: Theme[] = [
       priorityMedium: '#DF740C',
       priorityHigh: '#E8A54B',
       priorityUrgent: '#DF3B57',
+
+      // Category colors
+      categoryDelivery: '#6FC3DF',
+      categoryHiring: '#9A5CCF',
+      categoryMentoring: '#DF740C',
+      categoryCollaboration: '#7AD4A0',
+      categoryGrowth: '#6B7A8D',
     },
   },
 ]
@@ -355,6 +397,11 @@ export function applyTheme(theme: Theme): void {
   root.style.setProperty('--priority-medium', colors.priorityMedium)
   root.style.setProperty('--priority-high', colors.priorityHigh)
   root.style.setProperty('--priority-urgent', colors.priorityUrgent)
+  root.style.setProperty('--category-delivery', colors.categoryDelivery)
+  root.style.setProperty('--category-hiring', colors.categoryHiring)
+  root.style.setProperty('--category-mentoring', colors.categoryMentoring)
+  root.style.setProperty('--category-collaboration', colors.categoryCollaboration)
+  root.style.setProperty('--category-growth', colors.categoryGrowth)
 
   // Fonts — override --font-sans (used by Tailwind's font-sans class on body)
   // and --font-heading (used by h1-h6 rule in globals.css)

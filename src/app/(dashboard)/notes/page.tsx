@@ -76,9 +76,17 @@ export default function NotesPage() {
               onSaveTitle={handleSaveTitle}
             />
           ) : (
-            <div className="flex flex-col items-center justify-center h-full gap-3" style={{ color: 'var(--text-muted)' }}>
-              <FileText className="h-10 w-10 opacity-30" />
-              <p className="text-sm">Select or create a note</p>
+            <div className="flex flex-col items-center justify-center h-full gap-4" style={{ color: 'var(--text-muted)' }}>
+              <div
+                className="flex h-16 w-16 items-center justify-center rounded-2xl"
+                style={{ backgroundColor: 'color-mix(in srgb, var(--primary) 8%, transparent)' }}
+              >
+                <FileText className="h-7 w-7" style={{ color: 'var(--primary)', opacity: 0.6 }} />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)', opacity: 0.6 }}>No note selected</p>
+                <p className="text-xs mt-1">Pick a note from the sidebar or create a new one</p>
+              </div>
             </div>
           )}
         </div>

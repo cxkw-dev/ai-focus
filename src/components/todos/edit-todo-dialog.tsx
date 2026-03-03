@@ -206,6 +206,7 @@ export function EditTodoDialog({
   const form = useTodoForm(todo)
   const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
+  const [newMyPrUrl, setNewMyPrUrl] = React.useState('')
   const [newPrUrl, setNewPrUrl] = React.useState('')
   const [newAzureDepUrl, setNewAzureDepUrl] = React.useState('')
   const subtaskMentions = React.useMemo(
@@ -235,6 +236,10 @@ export function EditTodoDialog({
         description: normalizeDescription(form.description),
       }
       // Include pending URLs that weren't explicitly added
+      const pendingMyPr = newMyPrUrl.trim()
+      if (pendingMyPr && !payload.myPrUrls.includes(pendingMyPr)) {
+        payload.myPrUrls = [...payload.myPrUrls, pendingMyPr]
+      }
       const pendingPr = newPrUrl.trim()
       if (pendingPr && !payload.githubPrUrls.includes(pendingPr)) {
         payload.githubPrUrls = [...payload.githubPrUrls, pendingPr]
@@ -256,7 +261,7 @@ export function EditTodoDialog({
           completed: s.completed,
           order: i,
         })) ?? [],
-        myPrUrl: todo.myPrUrl || null,
+        myPrUrls: todo.myPrUrls ?? [],
         githubPrUrls: todo.githubPrUrls ?? [],
         azureWorkItemUrl: todo.azureWorkItemUrl || null,
         azureDepUrls: todo.azureDepUrls ?? [],
@@ -267,7 +272,7 @@ export function EditTodoDialog({
       }
     }
     onOpenChange(false)
-  }, [isEditing, todo, form, onSubmit, onOpenChange, newPrUrl, newAzureDepUrl, normalizeDescription])
+  }, [isEditing, todo, form, onSubmit, onOpenChange, newMyPrUrl, newPrUrl, newAzureDepUrl, normalizeDescription])
 
   const handleAddSubtask = React.useCallback(() => {
     const normalized = normalizeSubtaskTitle(newSubtaskTitle)
@@ -499,11 +504,14 @@ export function EditTodoDialog({
                   </Label>
 
                   <div className="space-y-1.5">
-                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>My PR</span>
-                    <SingleUrlField
-                      value={form.myPrUrl}
-                      onChange={form.setMyPrUrl}
+                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>My PRs</span>
+                    <UrlListField
                       type="github"
+                      urls={form.myPrUrls}
+                      onAdd={(url) => form.addMyPrUrl(url)}
+                      onRemove={(i) => form.removeMyPrUrl(i)}
+                      inputValue={newMyPrUrl}
+                      onInputChange={setNewMyPrUrl}
                       disabled={isLoading}
                     />
                   </div>

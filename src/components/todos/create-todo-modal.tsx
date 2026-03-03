@@ -57,6 +57,7 @@ export function CreateTodoModal({
   const form = useTodoForm(null, { initialLabelIds: defaultLabelIds })
   const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
+  const [newMyPrUrl, setNewMyPrUrl] = React.useState('')
   const [newPrUrl, setNewPrUrl] = React.useState('')
   const [newAzureDepUrl, setNewAzureDepUrl] = React.useState('')
   const resetForm = form.reset
@@ -82,6 +83,10 @@ export function CreateTodoModal({
 
     const payload = form.toPayload()
     // Include pending URLs that weren't explicitly added
+    const pendingMyPr = newMyPrUrl.trim()
+    if (pendingMyPr && !payload.myPrUrls.includes(pendingMyPr)) {
+      payload.myPrUrls = [...payload.myPrUrls, pendingMyPr]
+    }
     const pendingPr = newPrUrl.trim()
     if (pendingPr && !payload.githubPrUrls.includes(pendingPr)) {
       payload.githubPrUrls = [...payload.githubPrUrls, pendingPr]
@@ -268,11 +273,14 @@ export function CreateTodoModal({
                   </Label>
 
                   <div className="space-y-1.5">
-                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>My PR</span>
-                    <SingleUrlField
-                      value={form.myPrUrl}
-                      onChange={form.setMyPrUrl}
+                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>My PRs</span>
+                    <UrlListField
                       type="github"
+                      urls={form.myPrUrls}
+                      onAdd={(url) => form.addMyPrUrl(url)}
+                      onRemove={(i) => form.removeMyPrUrl(i)}
+                      inputValue={newMyPrUrl}
+                      onInputChange={setNewMyPrUrl}
                       disabled={isLoading}
                     />
                   </div>

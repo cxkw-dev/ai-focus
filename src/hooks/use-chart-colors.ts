@@ -25,6 +25,11 @@ function readChartColors() {
     priorityMedium: getCssVar('--priority-medium'),
     priorityHigh: getCssVar('--priority-high'),
     priorityUrgent: getCssVar('--priority-urgent'),
+    categoryDelivery: getCssVar('--category-delivery'),
+    categoryHiring: getCssVar('--category-hiring'),
+    categoryMentoring: getCssVar('--category-mentoring'),
+    categoryCollaboration: getCssVar('--category-collaboration'),
+    categoryGrowth: getCssVar('--category-growth'),
   }
 }
 

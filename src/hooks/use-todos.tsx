@@ -17,10 +17,10 @@ export function useTodos() {
     queryFn: () => todosApi.list({ excludeStatus: 'COMPLETED' }),
   })
 
-  // Completed todos (all, single fetch)
+  // Completed todos (archived when completed, so include archived)
   const completedQuery = useQuery({
     queryKey: ['todos', 'completed'],
-    queryFn: () => todosApi.list({ status: 'COMPLETED' }),
+    queryFn: () => todosApi.list({ status: 'COMPLETED', archived: true }),
   })
 
   // Deleted todos (archived but not completed)
@@ -254,17 +254,23 @@ export function useTodos() {
     mutationFn: (id: string) => todosApi.delete(id),
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: ['todos', 'deleted'] })
-      const previous = queryClient.getQueryData<Todo[]>(['todos', 'deleted'])
+      await queryClient.cancelQueries({ queryKey: ['todos', 'completed'] })
+      const previousDeleted = queryClient.getQueryData<Todo[]>(['todos', 'deleted'])
+      const previousCompleted = queryClient.getQueryData<Todo[]>(['todos', 'completed'])
       queryClient.setQueryData<Todo[]>(['todos', 'deleted'], (prev = []) =>
         prev.filter(t => t.id !== id)
       )
-      return { previous }
+      queryClient.setQueryData<Todo[]>(['todos', 'completed'], (prev = []) =>
+        prev.filter(t => t.id !== id)
+      )
+      return { previousDeleted, previousCompleted }
     },
     onSuccess: () => {
       toast({ title: 'Permanently deleted' })
     },
     onError: (_err, _id, context) => {
-      if (context?.previous) queryClient.setQueryData(['todos', 'deleted'], context.previous)
+      if (context?.previousDeleted) queryClient.setQueryData(['todos', 'deleted'], context.previousDeleted)
+      if (context?.previousCompleted) queryClient.setQueryData(['todos', 'completed'], context.previousCompleted)
       toast({ title: 'Error', description: 'Failed to delete todo.', variant: 'destructive' })
     },
   })

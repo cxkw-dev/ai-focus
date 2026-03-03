@@ -20,12 +20,13 @@ model Todo {
   order        Int       @default(0)
   archived    Boolean   @default(false)
   status      Status    @default(TODO)
-  myPrUrl          String?
+  myPrUrls         String[]  @default([])
   githubPrUrls     String[]  @default([])
   azureWorkItemUrl String?
   azureDepUrls     String[]  @default([])
-  labels      Label[]   @relation("LabelToTodo")
-  subtasks    Subtask[]
+  labels          Label[]          @relation("LabelToTodo")
+  subtasks        Subtask[]
+  accomplishment  Accomplishment?
 
   @@index([status])
   @@index([archived])
@@ -97,4 +98,28 @@ model Person {
   email     String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum AccomplishmentCategory {
+  DELIVERY
+  HIRING
+  MENTORING
+  COLLABORATION
+  GROWTH
+}
+
+model Accomplishment {
+  id          String                  @id @default(cuid())
+  title       String
+  description String?
+  category    AccomplishmentCategory
+  date        DateTime
+  year        Int
+  todoId      String?                 @unique
+  todo        Todo?                   @relation(fields: [todoId], references: [id], onDelete: SetNull)
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+
+  @@index([year])
+  @@index([category])
 }

@@ -95,6 +95,13 @@
   --priority-high: #FFB199;
   --priority-urgent: #FF6B6B;
 
+  /* Category colors */
+  --category-delivery: #FFB199;
+  --category-hiring: #FF7D8C;
+  --category-mentoring: #FFCB8E;
+  --category-collaboration: #7DD3A8;
+  --category-growth: #C9B6AE;
+
 }
 
 /* Force dark mode since Midnight Peach is a dark theme */
@@ -170,6 +177,15 @@ h1, h2, h3, h4, h5, h6 {
 @utility focus-ring {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
+}
+
+/* Todo card hover */
+.todo-card {
+  border: 1px solid transparent;
+}
+.todo-card:hover {
+  border-color: color-mix(in srgb, var(--border-color) 60%, transparent);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--background) 50%, transparent);
 }
 
 /* Flame animations for urgent priority */

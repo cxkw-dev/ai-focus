@@ -23,8 +23,10 @@ interface TodoFormState {
   moveSubtask: (fromIndex: number, toIndex: number) => void
   updateSubtaskTitle: (index: number, title: string) => void
   toggleSubtask: (index: number) => void
-  myPrUrl: string
-  setMyPrUrl: (v: string) => void
+  myPrUrls: string[]
+  setMyPrUrls: (v: string[]) => void
+  addMyPrUrl: (url: string) => void
+  removeMyPrUrl: (index: number) => void
   githubPrUrls: string[]
   setGithubPrUrls: (v: string[]) => void
   addGithubPrUrl: (url: string) => void
@@ -44,7 +46,7 @@ interface TodoFormState {
     dueDate: string | null
     labelIds: string[]
     subtasks: SubtaskInput[]
-    myPrUrl: string | null
+    myPrUrls: string[]
     githubPrUrls: string[]
     azureWorkItemUrl: string | null
     azureDepUrls: string[]
@@ -59,7 +61,7 @@ export function useTodoForm(todo?: Todo | null, options?: { initialLabelIds?: st
   const [dueDate, setDueDate] = React.useState('')
   const [labelIds, setLabelIds] = React.useState<string[]>(options?.initialLabelIds ?? [])
   const [subtasks, setSubtasks] = React.useState<SubtaskInput[]>([])
-  const [myPrUrl, setMyPrUrl] = React.useState('')
+  const [myPrUrls, setMyPrUrls] = React.useState<string[]>([])
   const [githubPrUrls, setGithubPrUrls] = React.useState<string[]>([])
   const [azureWorkItemUrl, setAzureWorkItemUrl] = React.useState('')
   const [azureDepUrls, setAzureDepUrls] = React.useState<string[]>([])
@@ -72,7 +74,7 @@ export function useTodoForm(todo?: Todo | null, options?: { initialLabelIds?: st
     setDueDate('')
     setLabelIds(options?.initialLabelIds ?? [])
     setSubtasks([])
-    setMyPrUrl('')
+    setMyPrUrls([])
     setGithubPrUrls([])
     setAzureWorkItemUrl('')
     setAzureDepUrls([])
@@ -88,7 +90,7 @@ export function useTodoForm(todo?: Todo | null, options?: { initialLabelIds?: st
     setSubtasks(
       t.subtasks?.map(s => ({ id: s.id, title: s.title, completed: s.completed, order: s.order })) ?? []
     )
-    setMyPrUrl(t.myPrUrl || '')
+    setMyPrUrls(t.myPrUrls ?? [])
     setGithubPrUrls(t.githubPrUrls ?? [])
     setAzureWorkItemUrl(t.azureWorkItemUrl || '')
     setAzureDepUrls(t.azureDepUrls ?? [])
@@ -133,6 +135,16 @@ export function useTodoForm(todo?: Todo | null, options?: { initialLabelIds?: st
     setSubtasks(prev => prev.map((s, i) => (i === index ? { ...s, completed: !s.completed } : s)))
   }, [])
 
+  const addMyPrUrl = React.useCallback((url: string) => {
+    const trimmed = url.trim()
+    if (!trimmed) return
+    setMyPrUrls(prev => prev.includes(trimmed) ? prev : [...prev, trimmed])
+  }, [])
+
+  const removeMyPrUrl = React.useCallback((index: number) => {
+    setMyPrUrls(prev => prev.filter((_, i) => i !== index))
+  }, [])
+
   const addGithubPrUrl = React.useCallback((url: string) => {
     const trimmed = url.trim()
     if (!trimmed) return
@@ -166,11 +178,11 @@ export function useTodoForm(todo?: Todo | null, options?: { initialLabelIds?: st
       completed: s.completed ?? false,
       order: i,
     })),
-    myPrUrl: myPrUrl.trim() || null,
+    myPrUrls,
     githubPrUrls,
     azureWorkItemUrl: azureWorkItemUrl.trim() || null,
     azureDepUrls,
-  }), [title, description, priority, status, dueDate, labelIds, subtasks, myPrUrl, githubPrUrls, azureWorkItemUrl, azureDepUrls])
+  }), [title, description, priority, status, dueDate, labelIds, subtasks, myPrUrls, githubPrUrls, azureWorkItemUrl, azureDepUrls])
 
   return {
     title, setTitle,
@@ -185,7 +197,9 @@ export function useTodoForm(todo?: Todo | null, options?: { initialLabelIds?: st
     moveSubtask,
     updateSubtaskTitle,
     toggleSubtask,
-    myPrUrl, setMyPrUrl,
+    myPrUrls, setMyPrUrls,
+    addMyPrUrl,
+    removeMyPrUrl,
     githubPrUrls, setGithubPrUrls,
     addGithubPrUrl,
     removeGithubPrUrl,

@@ -133,10 +133,36 @@ export async function GET(request: NextRequest) {
     const busiestMonthIdx = monthly.reduce((max, m, i) => m.created > monthly[max].created ? i : max, 0)
     const productiveMonthIdx = monthly.reduce((max, m, i) => m.completed > monthly[max].completed ? i : max, 0)
 
+    // --- Accomplishments ---
+    const accomplishments = await db.accomplishment.findMany({
+      where: { year },
+      select: { category: true },
+    })
+
+    const accomplishmentCategoryMap = new Map<string, number>()
+    for (const a of accomplishments) {
+      accomplishmentCategoryMap.set(a.category, (accomplishmentCategoryMap.get(a.category) || 0) + 1)
+    }
+    const byCategory = ['DELIVERY', 'HIRING', 'MENTORING', 'COLLABORATION', 'GROWTH'].map(category => ({
+      category,
+      count: accomplishmentCategoryMap.get(category) || 0,
+    }))
+
+    // Top category
+    let topCategory: string | null = null
+    let topCategoryCount = 0
+    for (const bc of byCategory) {
+      if (bc.count > topCategoryCount) {
+        topCategoryCount = bc.count
+        topCategory = bc.category
+      }
+    }
+
     const highlights = {
       busiestMonth: monthly[busiestMonthIdx].created > 0 ? MONTH_LABELS[busiestMonthIdx] : null,
       mostProductiveMonth: monthly[productiveMonthIdx].completed > 0 ? MONTH_LABELS[productiveMonthIdx] : null,
       topLabel: topLabels.length > 0 ? topLabels[0].name : null,
+      topCategory,
     }
 
     const stats: YearStats = {
@@ -153,6 +179,10 @@ export async function GET(request: NextRequest) {
       byPriority,
       topLabels,
       highlights,
+      accomplishments: {
+        total: accomplishments.length,
+        byCategory,
+      },
     }
 
     return NextResponse.json(stats)

@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import { pushEvalEntry } from '@/lib/eval-store'
 
 export function useSSE() {
   const queryClient = useQueryClient()
@@ -17,7 +18,15 @@ export function useSSE() {
 
       es.onmessage = (event) => {
         try {
-          const { entity } = JSON.parse(event.data)
+          const data = JSON.parse(event.data)
+          const { entity, payload } = data
+
+          // Forward eval events to the shared store
+          if (entity === 'eval' && payload) {
+            pushEvalEntry(payload)
+          }
+
+          // Invalidate React Query caches for data entities
           if (entity === 'todos') {
             queryClient.invalidateQueries({ queryKey: ['todos'] })
           } else if (entity === 'people') {

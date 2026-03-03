@@ -16,12 +16,12 @@ const subtaskSchema = z.object({
 
 const createTodoSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
-  description: z.string().max(1000).optional(),
+  description: z.string().max(10000).optional(),
   priority: prioritySchema.optional(),
   dueDate: z.string().datetime().optional().nullable(),
   labelIds: z.array(z.string()).optional(),
   subtasks: z.array(subtaskSchema).optional(),
-  myPrUrl: z.string().url().optional().nullable(),
+  myPrUrls: z.array(z.string().url()).optional(),
   githubPrUrls: z.array(z.string().url()).optional(),
   azureWorkItemUrl: z.string().url().optional().nullable(),
   azureDepUrls: z.array(z.string().url()).optional(),

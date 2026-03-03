@@ -87,7 +87,7 @@ interface TodoResponse {
   archived?: boolean;
   labels?: { name: string }[];
   subtasks?: SubtaskResponse[];
-  myPrUrl?: string | null;
+  myPrUrls?: string[];
   githubPrUrls?: string[];
   azureWorkItemUrl?: string | null;
   azureDepUrls?: string[];
@@ -104,8 +104,8 @@ function formatTodoSummary(todos: TodoResponse[]) {
       const done = t.subtasks.filter((s) => s.completed).length;
       parts.push(`   subtasks: ${done}/${t.subtasks.length} done`);
     }
-    if (t.myPrUrl) {
-      parts.push(`   my pr: ${t.myPrUrl}`);
+    if (t.myPrUrls?.length) {
+      parts.push(`   my prs: ${t.myPrUrls.join(", ")}`);
     }
     if (t.githubPrUrls?.length) {
       parts.push(`   waiting on: ${t.githubPrUrls.join(", ")}`);
@@ -212,7 +212,7 @@ server.tool(
     title: z.string().min(1).max(200).describe("Task title"),
     description: z
       .string()
-      .max(1000)
+      .max(10000)
       .optional()
       .describe("Task description (supports markdown)"),
     priority: z
@@ -235,11 +235,10 @@ server.tool(
       .array(z.string())
       .optional()
       .describe("Array of subtask titles to create"),
-    myPrUrl: z
-      .string()
-      .nullable()
+    myPrUrls: z
+      .array(z.string())
       .optional()
-      .describe("GitHub PR URL for this task's own PR"),
+      .describe("GitHub PR URLs for this task's own PRs"),
     githubPrUrls: z
       .array(z.string())
       .optional()
@@ -284,7 +283,7 @@ IMPORTANT — Description handling:
     title: z.string().min(1).max(200).optional().describe("New title"),
     description: z
       .string()
-      .max(1000)
+      .max(10000)
       .optional()
       .describe("Description content. Behavior depends on descriptionMode."),
     descriptionMode: z
@@ -318,11 +317,10 @@ IMPORTANT — Description handling:
       }))
       .optional()
       .describe("Replace all subtasks (declarative sync). Include id for existing subtasks, omit for new ones."),
-    myPrUrl: z
-      .string()
-      .nullable()
+    myPrUrls: z
+      .array(z.string())
       .optional()
-      .describe("GitHub PR URL for this task's own PR"),
+      .describe("GitHub PR URLs for this task's own PRs"),
     githubPrUrls: z
       .array(z.string())
       .optional()
@@ -700,6 +698,84 @@ server.tool(
       maxUpdates,
     });
     const data = await apiFetch(`/api/azure/workitems/${resolvedWorkItemId}/context?${qs}`);
+    return textResult(data);
+  }
+);
+
+// ─── Accomplishments ───
+
+server.tool(
+  "list_accomplishments",
+  "List accomplishments for a given year. Used for performance review tracking.",
+  {
+    year: z.number().min(2000).max(2100).optional().describe("Year (defaults to current year)"),
+  },
+  async (params) => {
+    const qs = params.year ? `?year=${params.year}` : "";
+    const data = await apiFetch(`/api/accomplishments${qs}`);
+    if (isApiError(data)) return textResult(data);
+    const items = data as { id: string; title: string; category: string; date: string; description?: string | null }[];
+    if (items.length === 0) return { content: [{ type: "text" as const, text: "No accomplishments found." }] };
+    const text = items.map((a) => {
+      const parts = [`${a.date.split("T")[0]} | [${a.category}] ${a.title}`];
+      if (a.description) parts.push(`   ${a.description}`);
+      parts.push(`   id: ${a.id}`);
+      return parts.join("\n");
+    }).join("\n\n");
+    return { content: [{ type: "text" as const, text }] };
+  }
+);
+
+server.tool(
+  "create_accomplishment",
+  "Create a new accomplishment entry for performance review tracking.",
+  {
+    title: z.string().min(1).max(200).describe("Accomplishment title"),
+    description: z.string().max(1000).optional().describe("Details about the accomplishment"),
+    category: z
+      .enum(["DELIVERY", "HIRING", "MENTORING", "COLLABORATION", "GROWTH"])
+      .describe("Category: DELIVERY (features/PRs), HIRING (interviews), MENTORING (coaching), COLLABORATION (cross-team), GROWTH (learning)"),
+    date: z.string().describe("Date of accomplishment (ISO string, e.g. 2026-01-15)"),
+  },
+  async (params) => {
+    const data = await apiFetch("/api/accomplishments", {
+      method: "POST",
+      body: JSON.stringify(params),
+    });
+    return textResult(data);
+  }
+);
+
+server.tool(
+  "update_accomplishment",
+  "Update an existing accomplishment.",
+  {
+    id: z.string().describe("The accomplishment ID"),
+    title: z.string().min(1).max(200).optional().describe("New title"),
+    description: z.string().max(1000).nullable().optional().describe("New description"),
+    category: z
+      .enum(["DELIVERY", "HIRING", "MENTORING", "COLLABORATION", "GROWTH"])
+      .optional()
+      .describe("New category"),
+    date: z.string().optional().describe("New date (ISO string)"),
+  },
+  async ({ id, ...updates }) => {
+    const data = await apiFetch(`/api/accomplishments/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(updates),
+    });
+    return textResult(data);
+  }
+);
+
+server.tool(
+  "delete_accomplishment",
+  "Delete an accomplishment.",
+  {
+    id: z.string().describe("The accomplishment ID to delete"),
+  },
+  async ({ id }) => {
+    const data = await apiFetch(`/api/accomplishments/${id}`, { method: "DELETE" });
     return textResult(data);
   }
 );

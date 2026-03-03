@@ -4,7 +4,7 @@ import {
   PlusCircle,
   CheckCircle2,
   TrendingUp,
-  Clock,
+  Trophy,
   Flame,
   Zap,
 } from 'lucide-react'
@@ -12,9 +12,10 @@ import type { YearStats } from '@/types/stats'
 
 interface SummaryCardsProps {
   summary: YearStats['summary']
+  accomplishmentsTotal?: number
 }
 
-export function SummaryCards({ summary }: SummaryCardsProps) {
+export function SummaryCards({ summary, accomplishmentsTotal = 0 }: SummaryCardsProps) {
   const cards = [
     {
       label: 'Tasks Created',
@@ -35,10 +36,10 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
       color: 'var(--accent)',
     },
     {
-      label: 'Avg Days to Complete',
-      value: summary.avgCompletionDays,
-      icon: Clock,
-      color: 'var(--status-waiting)',
+      label: 'Accomplishments',
+      value: accomplishmentsTotal,
+      icon: Trophy,
+      color: 'var(--category-delivery)',
     },
     {
       label: 'Active Streak',
@@ -61,19 +62,37 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
         return (
           <div
             key={card.label}
-            className="rounded-xl border p-4"
+            className="relative rounded-xl border p-4 overflow-hidden transition-all duration-200 hover:-translate-y-0.5"
             style={{
               backgroundColor: 'var(--surface)',
               borderColor: 'var(--border-color)',
             }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = `color-mix(in srgb, ${card.color} 40%, var(--border-color))`
+              e.currentTarget.style.boxShadow = `0 4px 12px color-mix(in srgb, ${card.color} 10%, transparent)`
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border-color)'
+              e.currentTarget.style.boxShadow = 'none'
+            }}
           >
-            <div className="flex items-center gap-2 mb-2">
-              <Icon className="h-4 w-4" style={{ color: card.color }} />
+            {/* Colored top accent line */}
+            <div
+              className="absolute top-0 left-0 right-0 h-0.5"
+              style={{ backgroundColor: card.color }}
+            />
+            <div className="flex items-center gap-2 mb-3">
+              <div
+                className="flex h-7 w-7 items-center justify-center rounded-lg"
+                style={{ backgroundColor: `color-mix(in srgb, ${card.color} 12%, transparent)` }}
+              >
+                <Icon className="h-3.5 w-3.5" style={{ color: card.color }} />
+              </div>
               <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                 {card.label}
               </span>
             </div>
-            <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+            <p className="text-2xl font-bold tabular-nums" style={{ color: 'var(--text-primary)' }}>
               {card.value}
             </p>
           </div>

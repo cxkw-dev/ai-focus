@@ -32,7 +32,7 @@ export interface Todo {
   completedAt: string | null
   labels: Label[]
   subtasks: Subtask[]
-  myPrUrl: string | null
+  myPrUrls: string[]
   githubPrUrls: string[]
   azureWorkItemUrl: string | null
   azureDepUrls: string[]
@@ -88,7 +88,7 @@ export interface CreateTodoInput {
   dueDate?: string | null
   labelIds?: string[]
   subtasks?: SubtaskInput[]
-  myPrUrl?: string | null
+  myPrUrls?: string[]
   githubPrUrls?: string[]
   azureWorkItemUrl?: string | null
   azureDepUrls?: string[]
@@ -102,7 +102,7 @@ export interface UpdateTodoInput {
   dueDate?: string | null
   labelIds?: string[]
   subtasks?: SubtaskInput[]
-  myPrUrl?: string | null
+  myPrUrls?: string[]
   githubPrUrls?: string[]
   azureWorkItemUrl?: string | null
   azureDepUrls?: string[]

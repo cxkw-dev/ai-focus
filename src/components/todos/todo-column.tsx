@@ -326,7 +326,7 @@ export function TodoColumn({
                             todo={todo}
                             onStatusChange={onStatusChange}
                             onPriorityChange={onPriorityChange}
-                            onDelete={filter === 'deleted' ? onPermanentDelete : onDelete}
+                            onDelete={filter === 'active' ? onDelete : onPermanentDelete}
                             onEdit={onEdit}
                             onRestore={onRestore}
                             onToggleSubtask={onToggleSubtask}
@@ -354,7 +354,7 @@ export function TodoColumn({
                           todo={todo}
                           onStatusChange={onStatusChange}
                           onPriorityChange={onPriorityChange}
-                          onDelete={filter === 'deleted' ? onPermanentDelete : onDelete}
+                          onDelete={filter === 'active' ? onDelete : onPermanentDelete}
                           onEdit={onEdit}
                           onRestore={onRestore}
                           onToggleSubtask={onToggleSubtask}

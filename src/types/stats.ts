@@ -21,10 +21,16 @@ export interface LabelData {
   count: number
 }
 
+export interface AccomplishmentCategoryData {
+  category: string
+  count: number
+}
+
 export interface Highlights {
   busiestMonth: string | null
   mostProductiveMonth: string | null
   topLabel: string | null
+  topCategory: string | null
 }
 
 export interface YearStats {
@@ -41,4 +47,8 @@ export interface YearStats {
   byPriority: PriorityData[]
   topLabels: LabelData[]
   highlights: Highlights
+  accomplishments: {
+    total: number
+    byCategory: AccomplishmentCategoryData[]
+  }
 }

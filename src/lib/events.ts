@@ -2,7 +2,7 @@
 // When any API mutation occurs, we emit an event so connected clients
 // can invalidate their React Query cache instead of polling.
 
-type Listener = (entity: string) => void
+type Listener = (entity: string, payload?: unknown) => void
 
 const listeners = new Set<Listener>()
 
@@ -11,8 +11,8 @@ export function subscribe(listener: Listener) {
   return () => { listeners.delete(listener) }
 }
 
-export function emit(entity: string) {
+export function emit(entity: string, payload?: unknown) {
   for (const listener of listeners) {
-    listener(entity)
+    listener(entity, payload)
   }
 }

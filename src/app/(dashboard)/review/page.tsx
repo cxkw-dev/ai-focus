@@ -3,13 +3,12 @@
 import * as React from 'react'
 import { ChevronDown } from 'lucide-react'
 import { useYearStats } from '@/hooks/use-year-stats'
+import { useAccomplishments } from '@/hooks/use-accomplishments'
 import { useChartColors } from '@/hooks/use-chart-colors'
-import { SummaryCards } from '@/components/review/summary-cards'
-import { MonthlyChart } from '@/components/review/monthly-chart'
-import { StatusChart } from '@/components/review/status-chart'
-import { PriorityChart } from '@/components/review/priority-chart'
-import { LabelsChart } from '@/components/review/labels-chart'
 import { HighlightsPanel } from '@/components/review/highlights-panel'
+import { MonthlyChart } from '@/components/review/monthly-chart'
+import { LabelsChart } from '@/components/review/labels-chart'
+import { AccomplishmentsSection } from '@/components/review/accomplishments-section'
 
 const currentYear = new Date().getFullYear()
 const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - i)
@@ -17,7 +16,10 @@ const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - i)
 export default function ReviewPage() {
   const [year, setYear] = React.useState(currentYear)
   const { data: stats, isLoading } = useYearStats(year)
+  const { accomplishments, create, update, remove } = useAccomplishments(year)
   const colors = useChartColors()
+
+  const hasData = stats && (stats.summary.totalCreated > 0 || (stats.accomplishments?.total ?? 0) > 0 || accomplishments.length > 0)
 
   return (
     <div className="flex flex-col gap-6 pb-8">
@@ -32,7 +34,6 @@ export default function ReviewPage() {
               backgroundColor: 'var(--surface)',
               borderColor: 'var(--border-color)',
               color: 'var(--text-primary)',
-              // ring color
               ['--tw-ring-color' as string]: 'var(--primary)',
             }}
           >
@@ -56,36 +57,33 @@ export default function ReviewPage() {
         </div>
       )}
 
-      {stats && stats.summary.totalCreated === 0 && !isLoading && (
+      {stats && !hasData && !isLoading && (
         <div
           className="rounded-xl border p-12 text-center"
           style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-color)' }}
         >
           <p className="text-lg font-medium" style={{ color: 'var(--text-primary)' }}>
-            No tasks found for {year}
+            No data found for {year}
           </p>
           <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
-            Tasks you create and complete will show up here.
+            Tasks and accomplishments will show up here.
           </p>
         </div>
       )}
 
-      {stats && stats.summary.totalCreated > 0 && (
+      {stats && hasData && (
         <>
-          {/* Summary Cards */}
-          <SummaryCards summary={stats.summary} />
-
-          {/* Monthly Activity - full width */}
           <MonthlyChart data={stats.monthly} colors={colors} />
 
-          {/* Status + Priority - side by side on desktop */}
-          <div className="grid gap-6 md:grid-cols-2">
-            <StatusChart data={stats.byStatus} colors={colors} />
-            <PriorityChart data={stats.byPriority} colors={colors} />
-          </div>
+          <AccomplishmentsSection
+            accomplishments={accomplishments}
+            year={year}
+            onCreate={(data) => create.mutate(data)}
+            onUpdate={(id, data) => update.mutate({ id, data })}
+            onDelete={(id) => remove.mutate(id)}
+          />
 
-          {/* Labels + Highlights - side by side on desktop */}
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
             <LabelsChart data={stats.topLabels} colors={colors} />
             <HighlightsPanel highlights={stats.highlights} />
           </div>

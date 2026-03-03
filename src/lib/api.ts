@@ -2,6 +2,7 @@ import type { Todo, CreateTodoInput, UpdateTodoInput, Label, GitHubPrStatus, Azu
 import type { YearStats } from '@/types/stats'
 import type { NotebookNote, CreateNotebookNoteInput, UpdateNotebookNoteInput } from '@/types/notebook'
 import type { Person } from '@/types/person'
+import type { Accomplishment, CreateAccomplishmentInput, UpdateAccomplishmentInput } from '@/types/accomplishment'
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) throw new Error(`API error: ${res.status}`)
@@ -153,6 +154,28 @@ export const peopleApi = {
 
   delete: (id: string): Promise<{ success: boolean }> =>
     fetch(`/api/people/${id}`, { method: 'DELETE' }).then(r => json(r)),
+}
+
+export const accomplishmentsApi = {
+  list: (year: number): Promise<Accomplishment[]> =>
+    fetch(`/api/accomplishments?year=${year}`).then(r => json(r)),
+
+  create: (data: CreateAccomplishmentInput): Promise<Accomplishment> =>
+    fetch('/api/accomplishments', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data),
+    }).then(r => json(r)),
+
+  update: (id: string, data: UpdateAccomplishmentInput): Promise<Accomplishment> =>
+    fetch(`/api/accomplishments/${id}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify(data),
+    }).then(r => json(r)),
+
+  delete: (id: string): Promise<{ success: boolean }> =>
+    fetch(`/api/accomplishments/${id}`, { method: 'DELETE' }).then(r => json(r)),
 }
 
 export const statsApi = {

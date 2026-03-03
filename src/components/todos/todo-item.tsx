@@ -505,7 +505,7 @@ function TodoItemContent({
 
   const completedCount = subtasks.filter(s => s.completed).length
   const allDone = subtasks.length > 0 && completedCount === subtasks.length
-  const hasIntegrations = !!todo.myPrUrl || (todo.githubPrUrls ?? []).length > 0 || !!todo.azureWorkItemUrl || (todo.azureDepUrls ?? []).length > 0
+  const hasIntegrations = (todo.myPrUrls ?? []).length > 0 || (todo.githubPrUrls ?? []).length > 0 || !!todo.azureWorkItemUrl || (todo.azureDepUrls ?? []).length > 0
   const hasSubtasks = subtasks.length > 0
   const canAddSubtasks = canInlineEditSubtasks && !!onUpdateSubtasks
   const shouldShowSubtasks = hasSubtasks || canAddSubtasks || isAddingSubtask
@@ -583,13 +583,22 @@ function TodoItemContent({
                 </>
               )}
               {viewMode === 'completed' && (
-                <button
-                  onClick={() => onEdit(todo)}
-                  className={cn(CHIP_BASE, 'todo-action-edit')}
-                  title="Edit"
-                >
-                  <Edit2 className="h-3 w-3" />
-                </button>
+                <>
+                  <button
+                    onClick={() => onEdit(todo)}
+                    className={cn(CHIP_BASE, 'todo-action-edit')}
+                    title="Edit"
+                  >
+                    <Edit2 className="h-3 w-3" />
+                  </button>
+                  <button
+                    onClick={() => onDelete(todo.id)}
+                    className={cn(CHIP_BASE, 'todo-action-delete')}
+                    title="Delete"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </>
               )}
               {viewMode === 'deleted' && (
                 <>
@@ -664,7 +673,7 @@ function TodoItemContent({
       {/* Integrations */}
       {hasIntegrations && (
         <PrDependencyTree
-          myPrUrl={todo.myPrUrl}
+          myPrUrls={todo.myPrUrls ?? []}
           githubPrUrls={todo.githubPrUrls ?? []}
           azureWorkItemUrl={todo.azureWorkItemUrl}
           azureDepUrls={todo.azureDepUrls ?? []}
@@ -850,7 +859,7 @@ export function TodoItem({
       {/* Card */}
       <div
         className={cn(
-          'group flex-1 min-w-0 rounded-lg px-3 py-2.5 transition-all',
+          'group flex-1 min-w-0 rounded-lg px-3 py-2.5 transition-all duration-150 todo-card',
           dragging && 'shadow-lg z-50',
           (isCompleted || viewMode !== 'active') && 'opacity-50'
         )}

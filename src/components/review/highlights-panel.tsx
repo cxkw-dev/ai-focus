@@ -1,7 +1,9 @@
 'use client'
 
-import { Calendar, Trophy, Tag } from 'lucide-react'
+import { Calendar, Trophy, Tag, Award } from 'lucide-react'
 import type { Highlights } from '@/types/stats'
+import { getCategoryLabel } from './category-badge'
+import type { AccomplishmentCategory } from '@/types/accomplishment'
 
 interface HighlightsPanelProps {
   highlights: Highlights
@@ -26,6 +28,12 @@ export function HighlightsPanel({ highlights }: HighlightsPanelProps) {
       label: 'Top Label',
       value: highlights.topLabel,
       color: 'var(--status-in-progress)',
+    },
+    {
+      icon: Award,
+      label: 'Top Category',
+      value: highlights.topCategory ? getCategoryLabel(highlights.topCategory as AccomplishmentCategory) : null,
+      color: 'var(--category-delivery)',
     },
   ].filter(item => item.value)
 

@@ -15,9 +15,10 @@ export async function GET() {
         }
       }, 30_000)
 
-      const unsubscribe = subscribe((entity) => {
+      const unsubscribe = subscribe((entity, payload) => {
         try {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ entity })}\n\n`))
+          const data = payload ? { entity, payload } : { entity }
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
         } catch {
           cleanup()
         }

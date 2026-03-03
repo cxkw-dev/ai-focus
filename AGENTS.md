@@ -139,7 +139,7 @@ mcp-server/                 # MCP server for Codex agent integration
 ## Database Schema
 
 ### Models
-- **Todo** — id, taskNumber (auto-increment), title, description, priority, dueDate, status, order, archived, myPrUrl, githubPrUrls[], labels[], subtasks[]
+- **Todo** — id, taskNumber (auto-increment), title, description, priority, dueDate, status, order, archived, myPrUrls[], githubPrUrls[], labels[], subtasks[]
 - **Subtask** — id, title, completed, order, todoId (cascade delete)
 - **Label** — id, name (unique), color, todos[]
 - **Note** — Single scratch pad record (id defaults to "default")

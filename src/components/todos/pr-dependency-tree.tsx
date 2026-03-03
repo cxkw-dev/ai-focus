@@ -7,7 +7,7 @@ import { useGithubPrStatuses } from '@/hooks/use-github-pr-status'
 import { useAzureWorkItemStatuses } from '@/hooks/use-azure-workitem-status'
 
 interface PrDependencyTreeProps {
-  myPrUrl: string | null | undefined
+  myPrUrls: string[]
   githubPrUrls: string[]
   azureWorkItemUrl?: string | null
   azureDepUrls?: string[]
@@ -36,7 +36,8 @@ function SectionHeader({ icon: Icon, label, statusLabel, statusColor }: {
   )
 }
 
-function GitHubSection({ myPrUrl, githubPrUrls, showHeader, noBorder }: { myPrUrl?: string | null; githubPrUrls: string[]; showHeader: boolean; noBorder?: boolean }) {
+function GitHubSection({ myPrUrls = [], githubPrUrls, showHeader, noBorder }: { myPrUrls?: string[]; githubPrUrls: string[]; showHeader: boolean; noBorder?: boolean }) {
+  const hasMyPrs = myPrUrls.length > 0
   const hasDeps = githubPrUrls.length > 0
   const { isLoading, allMergedOrClosed, allMerged } = useGithubPrStatuses(githubPrUrls)
 
@@ -64,24 +65,24 @@ function GitHubSection({ myPrUrl, githubPrUrls, showHeader, noBorder }: { myPrUr
         <SectionHeader icon={GitPullRequest} label="GitHub" statusLabel={statusLabel} statusColor={statusColor} />
       )}
 
-      {/* My PR */}
-      {myPrUrl && (
-        <div className="flex w-full min-w-0 items-center gap-1.5">
-          <GitHubPrBadge url={myPrUrl} showTitle />
+      {/* My PRs */}
+      {hasMyPrs && myPrUrls.map((url) => (
+        <div key={url} className="flex w-full min-w-0 items-center gap-1.5">
+          <GitHubPrBadge url={url} showTitle />
         </div>
-      )}
+      ))}
 
       {/* Dependency PRs */}
       {hasDeps && (
         <>
-          {myPrUrl && (
+          {hasMyPrs && (
             <div className="flex items-center gap-1 mt-1.5" style={{ paddingLeft: 12 }}>
               <span className="text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>
                 {allMergedOrClosed && !isLoading ? 'Dependencies resolved' : 'Depends on'}
               </span>
             </div>
           )}
-          {!myPrUrl && !showHeader && (
+          {!hasMyPrs && !showHeader && (
             <div className="flex items-center gap-1 mb-0.5">
               <span className="text-[10px] font-medium flex items-center gap-1" style={{ color: allMergedOrClosed && !isLoading ? '#a371f7' : 'var(--text-muted)' }}>
                 {allMergedOrClosed && !isLoading && <Check className="h-3 w-3" />}
@@ -89,11 +90,11 @@ function GitHubSection({ myPrUrl, githubPrUrls, showHeader, noBorder }: { myPrUr
               </span>
             </div>
           )}
-          <div className={myPrUrl ? 'mt-0.5' : ''}>
+          <div className={hasMyPrs ? 'mt-0.5' : ''}>
             {githubPrUrls.map((url, i) => (
               <div
                 key={url}
-                className={myPrUrl ? `pr-tree-branch min-w-0${i === githubPrUrls.length - 1 ? ' pr-tree-branch-last' : ''}` : 'min-w-0 py-0.5'}
+                className={hasMyPrs ? `pr-tree-branch min-w-0${i === githubPrUrls.length - 1 ? ' pr-tree-branch-last' : ''}` : 'min-w-0 py-0.5'}
               >
                 <GitHubPrBadge url={url} showTitle />
               </div>
@@ -171,8 +172,8 @@ function AzureSection({ azureWorkItemUrl, azureDepUrls, showHeader, noBorder }: 
   )
 }
 
-export function PrDependencyTree({ myPrUrl, githubPrUrls, azureWorkItemUrl, azureDepUrls = [], noBorder }: PrDependencyTreeProps) {
-  const hasGithub = !!myPrUrl || githubPrUrls.length > 0
+export function PrDependencyTree({ myPrUrls, githubPrUrls, azureWorkItemUrl, azureDepUrls = [], noBorder }: PrDependencyTreeProps) {
+  const hasGithub = myPrUrls.length > 0 || githubPrUrls.length > 0
   const hasAzure = !!azureWorkItemUrl || azureDepUrls.length > 0
 
   if (!hasGithub && !hasAzure) return null
@@ -186,7 +187,7 @@ export function PrDependencyTree({ myPrUrl, githubPrUrls, azureWorkItemUrl, azur
         <AzureSection azureWorkItemUrl={azureWorkItemUrl} azureDepUrls={azureDepUrls} showHeader={showHeaders} noBorder={noBorder} />
       )}
       {hasGithub && (
-        <GitHubSection myPrUrl={myPrUrl} githubPrUrls={githubPrUrls} showHeader={showHeaders} noBorder={!hasAzure && noBorder} />
+        <GitHubSection myPrUrls={myPrUrls} githubPrUrls={githubPrUrls} showHeader={showHeaders} noBorder={!hasAzure && noBorder} />
       )}
     </>
   )

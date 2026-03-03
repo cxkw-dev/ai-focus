@@ -1,16 +1,15 @@
 'use client'
 
 import * as React from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, Palette, Check } from 'lucide-react'
+import { Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { useAppTheme } from '@/components/providers/theme-provider'
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { useOllamaStatus } from '@/hooks/use-ollama-status'
 
 interface HeaderProps {
   title: string
@@ -19,118 +18,57 @@ interface HeaderProps {
   actions?: React.ReactNode
 }
 
-function ThemeSwitcher() {
-  const { theme, setTheme, themes } = useAppTheme()
+function OllamaStatus() {
+  const { data, isLoading } = useOllamaStatus()
   const [mounted, setMounted] = React.useState(false)
 
   React.useEffect(() => {
     setMounted(true)
   }, [])
 
-  if (!mounted) {
-    return (
-      <div
-        className="w-9 h-9 rounded-lg animate-pulse"
-        style={{ backgroundColor: 'var(--surface)' }}
-      />
-    )
-  }
+  if (!mounted || isLoading) return null
+
+  const connected = data?.connected ?? false
+  const model = data?.model ?? ''
+  const url = data?.url ?? ''
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          className="relative flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 group"
-          style={{
-            backgroundColor: 'var(--surface)',
-            borderWidth: '1px',
-            borderColor: 'var(--border-color)',
-          }}
-          aria-label="Switch theme"
-        >
-          {/* Color preview dots */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <div
-              className="w-3 h-3 rounded-full"
-              style={{ backgroundColor: theme.colors.primary }}
-            />
-          </div>
-          <Palette
-            className="w-4 h-4 transition-opacity duration-200 group-hover:opacity-0"
-            style={{ color: 'var(--text-primary)' }}
-          />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <div
-          className="px-2 py-1.5 text-xs font-medium uppercase tracking-wider"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          Choose Theme
-        </div>
-        {themes.map((t) => (
-          <DropdownMenuItem
-            key={t.id}
-            onClick={() => setTheme(t.id)}
-            className="flex items-center gap-3 cursor-pointer py-2.5 px-2"
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div
+            className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] font-medium cursor-default select-none transition-colors"
+            style={{
+              backgroundColor: 'var(--surface)',
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-muted)',
+            }}
           >
-            {/* Color preview */}
-            <div
-              className="flex items-center justify-center w-8 h-8 rounded-md overflow-hidden shrink-0"
-              style={{
-                backgroundColor: t.colors.surface,
-                borderWidth: '1px',
-                borderColor: t.colors.border,
-              }}
+            <span
+              className="relative flex h-2 w-2"
             >
-              <div className="flex gap-0.5">
-                <div
-                  className="w-2 h-4 rounded-sm"
-                  style={{ backgroundColor: t.colors.primary }}
+              {connected && (
+                <span
+                  className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"
+                  style={{ backgroundColor: '#22c55e' }}
                 />
-                <div
-                  className="w-2 h-4 rounded-sm"
-                  style={{ backgroundColor: t.colors.accent }}
-                />
-              </div>
-            </div>
-
-            {/* Theme info */}
-            <div className="flex-1 min-w-0">
-              <div
-                className="text-sm font-medium truncate"
-                style={{ color: 'var(--text-primary)' }}
-              >
-                {t.name}
-              </div>
-              <div
-                className="text-xs truncate"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                {t.description}
-              </div>
-            </div>
-
-            {/* Selected indicator */}
-            <AnimatePresence>
-              {theme.id === t.id && (
-                <motion.div
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0, opacity: 0 }}
-                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                >
-                  <Check
-                    className="w-4 h-4 shrink-0"
-                    style={{ color: 'var(--primary)' }}
-                  />
-                </motion.div>
               )}
-            </AnimatePresence>
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+              <span
+                className="relative inline-flex h-2 w-2 rounded-full"
+                style={{ backgroundColor: connected ? '#22c55e' : '#ef4444' }}
+              />
+            </span>
+            <span className="hidden sm:inline">{model || 'ollama'}</span>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          <div className="text-xs">
+            <p className="font-medium">{connected ? 'Ollama connected' : 'Ollama unreachable'}</p>
+            <p style={{ color: 'var(--text-muted)' }}>{url}</p>
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   )
 }
 
@@ -159,7 +97,7 @@ export function Header({ title, onMenuClick, showMenuButton, actions }: HeaderPr
 
       <div className="flex items-center gap-2">
         {actions}
-        <ThemeSwitcher />
+        <OllamaStatus />
       </div>
     </header>
   )

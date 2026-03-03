@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
+import { evaluateAccomplishment } from '@/lib/accomplishment-agent'
 import { z } from 'zod'
 
 const subtaskSchema = z.object({
@@ -13,14 +14,14 @@ const subtaskSchema = z.object({
 
 const updateTodoSchema = z.object({
   title: z.string().min(1).max(200).optional(),
-  description: z.string().max(1000).optional().nullable(),
+  description: z.string().max(10000).optional().nullable(),
   status: z.enum(['TODO', 'IN_PROGRESS', 'WAITING', 'ON_HOLD', 'COMPLETED']).optional(),
   archived: z.boolean().optional(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
   dueDate: z.string().datetime().optional().nullable(),
   labelIds: z.array(z.string()).optional(),
   subtasks: z.array(subtaskSchema).optional(),
-  myPrUrl: z.string().url().optional().nullable(),
+  myPrUrls: z.array(z.string().url()).optional(),
   githubPrUrls: z.array(z.string().url()).optional(),
   azureWorkItemUrl: z.string().url().optional().nullable(),
   azureDepUrls: z.array(z.string().url()).optional(),
@@ -96,6 +97,11 @@ export async function PATCH(
         } else if (current.status === 'COMPLETED') {
           ;(todoData as Record<string, unknown>).completedAt = null
           todoData.archived = false
+
+          // Delete linked accomplishment when un-completing
+          await tx.accomplishment.deleteMany({
+            where: { todoId: current.id },
+          })
         }
       }
 
@@ -186,6 +192,17 @@ export async function PATCH(
       return updatedTodo
     })
 
+    // If the task was just completed, evaluate it for accomplishment
+    if (validatedData.status === 'COMPLETED') {
+      evaluateAccomplishment({
+        id: todo.id,
+        title: todo.title,
+        description: todo.description,
+        labels: todo.labels,
+        completedAt: new Date(),
+      })
+    }
+
     emit('todos')
     return NextResponse.json(todo)
   } catch (error) {
@@ -231,9 +248,18 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    await db.todo.delete({
-      where: todoWhere(id),
-    })
+    const where = todoWhere(id)
+
+    // Resolve the actual id (could be a taskNumber lookup)
+    const todo = await db.todo.findUnique({ where, select: { id: true } })
+    if (!todo) {
+      return NextResponse.json({ error: 'Todo not found' }, { status: 404 })
+    }
+
+    // Delete linked accomplishment before deleting the todo
+    await db.accomplishment.deleteMany({ where: { todoId: todo.id } })
+
+    await db.todo.delete({ where: { id: todo.id } })
 
     emit('todos')
     return NextResponse.json({ success: true })
