@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { z } from 'zod'
 
-const CATEGORIES = ['DELIVERY', 'HIRING', 'MENTORING', 'COLLABORATION', 'GROWTH'] as const
+const CATEGORIES = ['DELIVERY', 'HIRING', 'MENTORING', 'COLLABORATION', 'GROWTH', 'OTHER'] as const
 
 const createSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),

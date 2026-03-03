@@ -122,6 +122,7 @@ enum AccomplishmentCategory {
   MENTORING
   COLLABORATION
   GROWTH
+  OTHER
 }
 
 model Accomplishment {

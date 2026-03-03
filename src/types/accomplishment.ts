@@ -4,6 +4,7 @@ export type AccomplishmentCategory =
   | 'MENTORING'
   | 'COLLABORATION'
   | 'GROWTH'
+  | 'OTHER'
 
 export interface Accomplishment {
   id: string
