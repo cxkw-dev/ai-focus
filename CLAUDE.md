@@ -17,6 +17,11 @@ A Next.js 16 productivity app with todos, notebook, and year-in-review stats. Bu
 - **Never include "Co-authored-by" or AI attribution in commits**
 - Keep messages concise and descriptive
 
+### Push & Deploy Rules
+- **Push directly to main** — this is a personal project, no PRs needed
+- **Never create branches or pull requests** unless explicitly asked
+- When asked to push, just `git push origin main`
+
 ### Important Notes
 - This repo uses the **personal SSH key** (`github-personal` host), not the work key
 - Git user is configured locally (not globally) to avoid conflicts with other repos
