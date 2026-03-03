@@ -38,6 +38,19 @@ export interface Todo {
   azureDepUrls: string[]
 }
 
+export interface TodoContact {
+  id: string
+  role: string
+  order: number
+  todoId: string
+  personId: string
+  person: {
+    id: string
+    name: string
+    email: string
+  }
+}
+
 export interface AzureWorkItemLink {
   name: string
   url: string

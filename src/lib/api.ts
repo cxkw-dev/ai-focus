@@ -1,4 +1,4 @@
-import type { Todo, CreateTodoInput, UpdateTodoInput, Label, GitHubPrStatus, AzureWorkItemStatus, PaginatedTodosResponse } from '@/types/todo'
+import type { Todo, TodoContact, CreateTodoInput, UpdateTodoInput, Label, GitHubPrStatus, AzureWorkItemStatus, PaginatedTodosResponse } from '@/types/todo'
 import type { YearStats } from '@/types/stats'
 import type { NotebookNote, CreateNotebookNoteInput, UpdateNotebookNoteInput } from '@/types/notebook'
 import type { Person } from '@/types/person'
@@ -154,6 +154,28 @@ export const peopleApi = {
 
   delete: (id: string): Promise<{ success: boolean }> =>
     fetch(`/api/people/${id}`, { method: 'DELETE' }).then(r => json(r)),
+}
+
+export const todoContactsApi = {
+  list: (todoId: string): Promise<TodoContact[]> =>
+    fetch(`/api/todos/${todoId}/contacts`).then(r => json(r)),
+
+  add: (todoId: string, data: { personId: string; role: string }): Promise<TodoContact> =>
+    fetch(`/api/todos/${todoId}/contacts`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data),
+    }).then(r => json(r)),
+
+  update: (todoId: string, contactId: string, data: { role?: string; order?: number }): Promise<TodoContact> =>
+    fetch(`/api/todos/${todoId}/contacts/${contactId}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify(data),
+    }).then(r => json(r)),
+
+  remove: (todoId: string, contactId: string): Promise<{ success: boolean }> =>
+    fetch(`/api/todos/${todoId}/contacts/${contactId}`, { method: 'DELETE' }).then(r => json(r)),
 }
 
 export const accomplishmentsApi = {
