@@ -8,6 +8,7 @@ const CATEGORY_CONFIG: Record<AccomplishmentCategory, { label: string; cssVar: s
   MENTORING: { label: 'Mentoring', cssVar: '--category-mentoring' },
   COLLABORATION: { label: 'Collaboration', cssVar: '--category-collaboration' },
   GROWTH: { label: 'Growth', cssVar: '--category-growth' },
+  OTHER: { label: 'Other', cssVar: '--category-other' },
 }
 
 export function getCategoryLabel(category: AccomplishmentCategory): string {

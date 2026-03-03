@@ -16,6 +16,7 @@ const CATEGORIES: { value: AccomplishmentCategory; label: string }[] = [
   { value: 'MENTORING', label: 'Mentoring' },
   { value: 'COLLABORATION', label: 'Collaboration' },
   { value: 'GROWTH', label: 'Growth' },
+  { value: 'OTHER', label: 'Other' },
 ]
 
 interface AccomplishmentDialogProps {

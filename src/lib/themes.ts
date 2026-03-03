@@ -54,6 +54,7 @@ export interface ThemeColors {
   categoryMentoring: string
   categoryCollaboration: string
   categoryGrowth: string
+  categoryOther: string
 }
 
 export interface ThemeFonts {
@@ -123,6 +124,7 @@ export const themes: Theme[] = [
       categoryMentoring: '#FFCB8E',
       categoryCollaboration: '#7DD3A8',
       categoryGrowth: '#C9B6AE',
+      categoryOther: '#E8B4B8',
     },
   },
   {
@@ -178,6 +180,7 @@ export const themes: Theme[] = [
       categoryMentoring: '#FEE75C',
       categoryCollaboration: '#57F287',
       categoryGrowth: '#949BA4',
+      categoryOther: '#A0A0A0',
     },
   },
   {
@@ -237,6 +240,7 @@ export const themes: Theme[] = [
       categoryMentoring: '#DDA15E',
       categoryCollaboration: '#8FB67A',
       categoryGrowth: '#A39990',
+      categoryOther: '#B8A99A',
     },
   },
   {
@@ -292,6 +296,7 @@ export const themes: Theme[] = [
       categoryMentoring: '#E5C07B',
       categoryCollaboration: '#98C379',
       categoryGrowth: '#7F848E',
+      categoryOther: '#ABB2BF',
     },
   },
   {
@@ -350,6 +355,7 @@ export const themes: Theme[] = [
       categoryMentoring: '#DF740C',
       categoryCollaboration: '#7AD4A0',
       categoryGrowth: '#6B7A8D',
+      categoryOther: '#8899AA',
     },
   },
 ]
@@ -402,6 +408,7 @@ export function applyTheme(theme: Theme): void {
   root.style.setProperty('--category-mentoring', colors.categoryMentoring)
   root.style.setProperty('--category-collaboration', colors.categoryCollaboration)
   root.style.setProperty('--category-growth', colors.categoryGrowth)
+  root.style.setProperty('--category-other', colors.categoryOther)
 
   // Fonts — override --font-sans (used by Tailwind's font-sans class on body)
   // and --font-heading (used by h1-h6 rule in globals.css)
