@@ -863,7 +863,7 @@ export function TodoItem({
       {/* Card */}
       <div
         className={cn(
-          'group flex-1 min-w-0 rounded-lg px-3 py-2.5 transition-all duration-150 todo-card relative',
+          'group flex-1 min-w-0 rounded-lg px-3 py-2.5 transition-all duration-150 todo-card relative overflow-visible',
           dragging && 'shadow-lg z-50',
           (isCompleted || viewMode !== 'active') && 'opacity-50'
         )}
@@ -887,28 +887,26 @@ export function TodoItem({
           viewMode={viewMode}
         />
 
-        {/* Contacts drawer tab — flush inside right edge */}
-        {!dragging && (
-          <>
-            <button
-              onClick={(e) => { e.stopPropagation(); setContactsOpen(prev => !prev) }}
-              className={cn(
-                'todo-contacts-tab absolute top-0 bottom-0 right-0 w-5 flex items-center justify-center rounded-r-lg transition-all duration-150 z-20',
-                contactsOpen && 'todo-contacts-tab-active'
-              )}
-              title="Contacts"
-            >
-              <Users className="h-3 w-3" />
-            </button>
-
-            <ContactsDrawer
-              todoId={todo.id}
-              open={contactsOpen}
-              onClose={() => setContactsOpen(false)}
-            />
-          </>
-        )}
+        <ContactsDrawer
+          todoId={todo.id}
+          open={contactsOpen}
+          onClose={() => setContactsOpen(false)}
+        />
       </div>
+
+      {/* Contacts tab — sits beside the card like the drag handle */}
+      {!dragging && (
+        <button
+          onClick={(e) => { e.stopPropagation(); setContactsOpen(prev => !prev) }}
+          className={cn(
+            'todo-contacts-tab flex-shrink-0 self-stretch w-5 flex items-center justify-center rounded-r-lg transition-all duration-150',
+            contactsOpen && 'todo-contacts-tab-active'
+          )}
+          title="Contacts"
+        >
+          <Users className="h-3 w-3" />
+        </button>
+      )}
       </div>
       {dropIndicator === 'below' && dropLine}
     </motion.div>
