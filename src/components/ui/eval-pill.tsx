@@ -5,67 +5,72 @@ import { Check, Loader2, Minus } from 'lucide-react'
 import { useEvalEntries, type EvalEntry } from '@/lib/eval-store'
 import { CategoryBadge } from '@/components/review/category-badge'
 
-function EvalEntryContent({ entry }: { entry: EvalEntry }) {
+function ResultCard({ entry }: { entry: EvalEntry }) {
+  if (entry.outcome?.created && entry.outcome.title && entry.outcome.category) {
+    return (
+      <div className="flex items-center gap-2 w-full">
+        <Check className="size-3.5 shrink-0" style={{ color: 'var(--status-done)' }} />
+        <span className="truncate text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
+          {entry.outcome.title}
+        </span>
+        <CategoryBadge category={entry.outcome.category} />
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-2 w-full">
+      <Minus className="size-3.5 shrink-0 opacity-60" />
+      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Not an accomplishment</span>
+    </div>
+  )
+}
+
+function CardContent({ entry }: { entry: EvalEntry }) {
   if (entry.stage === 'analyzing') {
     return (
-      <>
+      <div className="flex items-center gap-2 w-full">
         <Loader2 className="size-3.5 shrink-0 animate-spin" style={{ color: 'var(--primary)' }} />
-        <span className="truncate">Analyzing task…</span>
-      </>
+        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Analyzing task...</span>
+      </div>
     )
   }
 
   if (entry.stage === 'classifying') {
     return (
-      <>
+      <div className="flex items-center gap-2 w-full">
         <Loader2 className="size-3.5 shrink-0 animate-spin" style={{ color: 'var(--primary)' }} />
-        <span className="truncate">Classifying…</span>
-      </>
+        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Classifying...</span>
+      </div>
     )
   }
 
-  // result stage
-  if (entry.outcome?.created && entry.outcome.title && entry.outcome.category) {
-    return (
-      <>
-        <Check className="size-3.5 shrink-0" style={{ color: 'var(--status-done)' }} />
-        <span className="truncate max-w-64">{entry.outcome.title}</span>
-        <CategoryBadge category={entry.outcome.category} />
-      </>
-    )
-  }
-
-  return (
-    <>
-      <Minus className="size-3.5 shrink-0 opacity-60" />
-      <span className="truncate">Not an accomplishment</span>
-    </>
-  )
+  return <ResultCard entry={entry} />
 }
 
 export function EvalStatus() {
   const entries = useEvalEntries()
-
   const latest = entries.size > 0 ? Array.from(entries.values()).pop()! : null
 
   return (
-    <div className="fixed top-3 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+    <div className="fixed top-4 right-4 z-50 pointer-events-none" style={{ maxWidth: '320px' }}>
       <AnimatePresence mode="wait">
         {latest && (
           <motion.div
-            key={latest.todoId + latest.stage}
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            key={latest.todoId}
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -12, scale: 0.95 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
             transition={{ duration: 0.25, ease: 'easeOut' }}
-            className="pointer-events-auto flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-medium shadow-lg backdrop-blur-md"
+            layout
+            className="pointer-events-auto rounded-xl border shadow-xl backdrop-blur-md"
             style={{
-              backgroundColor: 'color-mix(in srgb, var(--surface) 90%, transparent)',
+              backgroundColor: 'color-mix(in srgb, var(--surface) 95%, transparent)',
               borderColor: 'var(--border-color)',
-              color: 'var(--text-secondary)',
+              padding: '10px 14px',
             }}
           >
-            <EvalEntryContent entry={latest} />
+            <CardContent entry={latest} />
           </motion.div>
         )}
       </AnimatePresence>

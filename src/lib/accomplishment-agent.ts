@@ -2,7 +2,7 @@ import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
 
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434'
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'mistral:7b'
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'gemma3:latest'
 
 const PROMPT = `You are a performance review assistant. A developer just completed a task. Decide if it belongs in their performance review and categorize it.
 
@@ -56,9 +56,9 @@ export function evaluateAccomplishment(task: CompletedTaskInfo): void {
   })
 }
 
-function emitEval(stage: string, task: CompletedTaskInfo, outcome?: Record<string, unknown>) {
+function emitEval(stage: string, task: CompletedTaskInfo, extra?: Record<string, unknown>) {
   const payload: Record<string, unknown> = { stage, todoId: task.id, taskTitle: task.title }
-  if (outcome) payload.outcome = outcome
+  if (extra) Object.assign(payload, extra)
   console.log('[accomplishment-agent] emitEval:', stage, task.title)
   emit('eval', payload)
 }
@@ -79,32 +79,32 @@ async function doEvaluate(task: CompletedTaskInfo): Promise<void> {
       body: JSON.stringify({
         model: OLLAMA_MODEL,
         prompt,
-        stream: false,
+        stream: true,
         options: { temperature: 0.1 },
       }),
     })
   } catch {
     console.error('[accomplishment-agent] Cannot reach Ollama at', OLLAMA_URL)
-    emitEval('result', task, { created: false })
+    emitEval('result', task, { outcome: { created: false } })
     return
   }
 
-  if (!response.ok) {
+  if (!response.ok || !response.body) {
     console.error('[accomplishment-agent] Ollama returned', response.status)
-    emitEval('result', task, { created: false })
+    emitEval('result', task, { outcome: { created: false } })
     return
   }
+
+  // Stream and collect the response
+  const responseText = await streamOllamaResponse(response.body)
 
   emitEval('classifying', task)
 
-  const result = await response.json() as { response: string }
-  const text = result.response.trim()
-
-  // Extract JSON from the response (handle potential markdown wrapping)
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
+  // Extract JSON from the response text (handle potential markdown wrapping)
+  const jsonMatch = responseText.match(/\{[\s\S]*\}/)
   if (!jsonMatch) {
-    console.error('[accomplishment-agent] Could not parse JSON from:', text)
-    emitEval('result', task, { created: false })
+    console.error('[accomplishment-agent] Could not parse JSON from:', responseText)
+    emitEval('result', task, { outcome: { created: false } })
     return
   }
 
@@ -113,18 +113,17 @@ async function doEvaluate(task: CompletedTaskInfo): Promise<void> {
     parsed = JSON.parse(jsonMatch[0])
   } catch {
     console.error('[accomplishment-agent] Invalid JSON:', jsonMatch[0])
-    emitEval('result', task, { created: false })
+    emitEval('result', task, { outcome: { created: false } })
     return
   }
 
   if (!parsed.accomplishment) {
     console.log('[accomplishment-agent] Task not an accomplishment:', task.title)
-    emitEval('result', task, { created: false })
+    emitEval('result', task, { outcome: { created: false } })
     return
   }
 
   // Race condition defense: re-check that the todo is still COMPLETED
-  // The user may have clicked "Undo" while Ollama was thinking
   const currentTodo = await db.todo.findUnique({
     where: { id: task.id },
     select: { status: true },
@@ -132,7 +131,7 @@ async function doEvaluate(task: CompletedTaskInfo): Promise<void> {
 
   if (!currentTodo || currentTodo.status !== 'COMPLETED') {
     console.log('[accomplishment-agent] Task no longer completed, skipping:', task.title)
-    emitEval('result', task, { created: false })
+    emitEval('result', task, { outcome: { created: false } })
     return
   }
 
@@ -157,8 +156,41 @@ async function doEvaluate(task: CompletedTaskInfo): Promise<void> {
     },
   })
 
-  emitEval('result', task, { created: true, title, category })
+  emitEval('result', task, { outcome: { created: true, title, category } })
   console.log(`[accomplishment-agent] Created accomplishment: [${category}] ${title}`)
+}
+
+async function streamOllamaResponse(
+  body: ReadableStream<Uint8Array>,
+): Promise<string> {
+  const reader = body.getReader()
+  const decoder = new TextDecoder()
+  let fullText = ''
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      const chunk = decoder.decode(value, { stream: true })
+
+      for (const line of chunk.split('\n')) {
+        if (!line.trim()) continue
+        try {
+          const obj = JSON.parse(line) as { response?: string; done?: boolean }
+          if (obj.response) {
+            fullText += obj.response
+          }
+        } catch {
+          // skip malformed NDJSON lines
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock()
+  }
+
+  return fullText.trim()
 }
 
 function stripHtml(html: string): string {

@@ -23,7 +23,7 @@ export function useSSE() {
 
           // Forward eval events to the shared store
           if (entity === 'eval' && payload) {
-            pushEvalEntry(payload)
+            pushEvalEntry(payload as Parameters<typeof pushEvalEntry>[0])
           }
 
           // Invalidate React Query caches for data entities

@@ -32,6 +32,7 @@ export function pushEvalEntry(payload: {
   outcome?: { created: boolean; title?: string; category?: string }
 }) {
   entries = new Map(entries)
+  const existing = entries.get(payload.todoId)
   entries.set(payload.todoId, {
     todoId: payload.todoId,
     taskTitle: payload.taskTitle,
