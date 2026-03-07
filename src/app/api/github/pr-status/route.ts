@@ -91,6 +91,29 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Check how far behind the base branch this PR is
+    let behindBy: number | undefined
+    if (pr.state === 'open' && !pr.merged) {
+      try {
+        const compareRes = await fetch(
+          `https://api.github.com/repos/${owner}/${repo}/compare/${pr.head.sha}...${pr.base.label}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/vnd.github.v3+json',
+            },
+            cache: 'no-store',
+          }
+        )
+        if (compareRes.ok) {
+          const compare = await compareRes.json()
+          behindBy = compare.ahead_by ?? 0
+        }
+      } catch {
+        // Silently fall back to undefined
+      }
+    }
+
     return NextResponse.json({
       state: pr.merged ? 'merged' : pr.state,
       merged: pr.merged ?? false,
@@ -102,6 +125,7 @@ export async function GET(request: NextRequest) {
       reviewStatus,
       approvedCount,
       reviewerCount,
+      behindBy,
     })
   } catch {
     return NextResponse.json({ error: 'Failed to fetch PR status' }, { status: 502 })

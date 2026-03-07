@@ -83,6 +83,7 @@ export interface GitHubPrStatus {
   reviewStatus: 'review_requested' | 'approved' | 'changes_requested' | null
   approvedCount?: number
   reviewerCount?: number
+  behindBy?: number
 }
 
 export interface GitHubIssueLabel {

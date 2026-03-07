@@ -1,6 +1,6 @@
 'use client'
 
-import { GitPullRequest, GitMerge, Check, Loader2, CircleDot } from 'lucide-react'
+import { GitPullRequest, GitMerge, Check, Loader2, CircleDot, ArrowDown, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useGithubPrStatus, useGithubPrStatuses } from '@/hooks/use-github-pr-status'
 import type { GitHubPrStatus } from '@/types/todo'
@@ -88,6 +88,16 @@ export function GitHubPrBadge({ url, showTitle }: GitHubPrBadgeProps) {
     >
       <Icon className="h-3 w-3" />
       <span className="truncate max-w-[7rem]">{config.label}</span>
+      {data.behindBy != null && data.state === 'open' && (
+        data.behindBy > 0 ? (
+          <span className="shrink-0 inline-flex items-center gap-px font-semibold" style={{ color: '#d29922' }}>
+            <ArrowDown className="h-2.5 w-2.5" />
+            {data.behindBy}
+          </span>
+        ) : (
+          <ShieldCheck className="h-3 w-3 shrink-0" style={{ color: '#58a6ff' }} />
+        )
+      )}
       <span className="shrink-0">#{data.number}</span>
     </a>
   )
