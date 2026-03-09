@@ -42,6 +42,7 @@ export function SubtaskMentionInput({
   const onCommitRef = React.useRef(onCommit)
   const onFocusChangeRef = React.useRef(onFocusChange)
   const peopleRef = React.useRef<MentionSuggestionItem[]>(mentions ?? [])
+  const mentionActiveRef = React.useRef(false)
 
   React.useEffect(() => {
     onCommitRef.current = onCommit
@@ -56,7 +57,7 @@ export function SubtaskMentionInput({
   }, [mentions])
 
   const mentionSuggestion = React.useMemo(
-    () => (mentions ? createMentionSuggestion(peopleRef) : null),
+    () => (mentions ? createMentionSuggestion(peopleRef, mentionActiveRef) : null),
     // Only compute once based on whether mentions is provided
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [!!mentions]
@@ -128,6 +129,10 @@ export function SubtaskMentionInput({
         ...(ariaLabel ? { 'aria-label': ariaLabel } : {}),
       },
       handleKeyDown: (_view, event) => {
+        // Let the mention suggestion dropdown handle keys when it's active
+        if (mentionActiveRef.current) {
+          return false
+        }
         if (event.key === 'Enter') {
           event.preventDefault()
           onCommitRef.current?.()

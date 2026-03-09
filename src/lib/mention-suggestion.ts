@@ -10,7 +10,8 @@ import {
 type SuggestionConfig = Omit<SuggestionOptions<MentionSuggestionItem>, 'editor'>
 
 export function createMentionSuggestion(
-  peopleRef: React.RefObject<MentionSuggestionItem[]>
+  peopleRef: React.RefObject<MentionSuggestionItem[]>,
+  activeRef?: React.RefObject<boolean>
 ): SuggestionConfig {
   return {
     items: ({ query }) => {
@@ -33,6 +34,7 @@ export function createMentionSuggestion(
 
       return {
         onStart: (props: SuggestionProps<MentionSuggestionItem>) => {
+          if (activeRef) activeRef.current = true
           component = new ReactRenderer(MentionSuggestionList, {
             props,
             editor: props.editor,
@@ -71,6 +73,7 @@ export function createMentionSuggestion(
         },
 
         onExit() {
+          if (activeRef) activeRef.current = false
           popup?.[0]?.destroy()
           component?.destroy()
         },
