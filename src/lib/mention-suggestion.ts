@@ -73,9 +73,15 @@ export function createMentionSuggestion(
         },
 
         onExit() {
-          if (activeRef) activeRef.current = false
           popup?.[0]?.destroy()
           component?.destroy()
+          // Delay clearing the active flag so that the blur/keydown events
+          // triggered by tippy destruction don't commit the subtask
+          if (activeRef) {
+            setTimeout(() => {
+              activeRef.current = false
+            }, 150)
+          }
         },
       }
     },

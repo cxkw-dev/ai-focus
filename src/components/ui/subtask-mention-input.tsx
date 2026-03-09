@@ -112,6 +112,8 @@ export function SubtaskMentionInput({
           suppressBlurCommit.current = false
           return
         }
+        // Don't commit if a mention was just selected (popup closing causes blur)
+        if (mentionActiveRef.current) return
         onCommitRef.current?.()
       }
     },
