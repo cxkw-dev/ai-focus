@@ -4,7 +4,7 @@ import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
 import { z } from 'zod'
 
-const statusSchema = z.enum(['TODO', 'IN_PROGRESS', 'WAITING', 'ON_HOLD', 'COMPLETED'])
+const statusSchema = z.enum(['TODO', 'IN_PROGRESS', 'WAITING', 'UNDER_REVIEW', 'ON_HOLD', 'COMPLETED'])
 const prioritySchema = z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT'])
 
 const subtaskSchema = z.object({

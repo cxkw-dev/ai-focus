@@ -488,6 +488,7 @@ export function EditTodoDialog({
                       <SelectItem value="TODO">To Do</SelectItem>
                       <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
                       <SelectItem value="WAITING">Waiting</SelectItem>
+                      <SelectItem value="UNDER_REVIEW">Under Review</SelectItem>
                       <SelectItem value="ON_HOLD">On Hold</SelectItem>
                       <SelectItem value="COMPLETED">Completed</SelectItem>
                     </SelectContent>

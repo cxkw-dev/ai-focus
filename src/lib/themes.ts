@@ -39,6 +39,7 @@ export interface ThemeColors {
   statusTodo: string
   statusInProgress: string
   statusWaiting: string
+  statusUnderReview: string
   statusOnHold: string
   statusDone: string
 
@@ -109,6 +110,7 @@ export const themes: Theme[] = [
       statusTodo: '#C9B6AE',
       statusInProgress: '#FFB199',
       statusWaiting: '#FFCB8E',
+      statusUnderReview: '#D4A5FF',
       statusOnHold: '#FF7D8C',
       statusDone: '#7DD3A8',
 
@@ -165,6 +167,7 @@ export const themes: Theme[] = [
       statusTodo: '#949BA4',
       statusInProgress: '#5865F2',
       statusWaiting: '#FEE75C',
+      statusUnderReview: '#A78BFA',
       statusOnHold: '#EB459E',
       statusDone: '#57F287',
 
@@ -222,6 +225,7 @@ export const themes: Theme[] = [
       statusTodo: '#A39990',
       statusInProgress: '#D97757',
       statusWaiting: '#DDA15E',
+      statusUnderReview: '#C49DD8',
       statusOnHold: '#BC6C5A',
       statusDone: '#8FB67A',
 
@@ -278,7 +282,8 @@ export const themes: Theme[] = [
       statusTodo: '#7F848E',
       statusInProgress: '#61AFEF',
       statusWaiting: '#E5C07B',
-      statusOnHold: '#C678DD',
+      statusUnderReview: '#C678DD',
+      statusOnHold: '#BE5046',
       statusDone: '#98C379',
 
       // Priority colors
@@ -337,7 +342,8 @@ export const themes: Theme[] = [
       statusTodo: '#6B7A8D',
       statusInProgress: '#6FC3DF',
       statusWaiting: '#DF740C',
-      statusOnHold: '#9A5CCF',
+      statusUnderReview: '#9A5CCF',
+      statusOnHold: '#DF3B57',
       statusDone: '#7AD4A0',
 
       // Priority colors
@@ -394,6 +400,7 @@ export function applyTheme(theme: Theme): void {
   root.style.setProperty('--status-todo', colors.statusTodo)
   root.style.setProperty('--status-in-progress', colors.statusInProgress)
   root.style.setProperty('--status-waiting', colors.statusWaiting)
+  root.style.setProperty('--status-under-review', colors.statusUnderReview)
   root.style.setProperty('--status-on-hold', colors.statusOnHold)
   root.style.setProperty('--status-done', colors.statusDone)
   root.style.setProperty('--priority-low', colors.priorityLow)

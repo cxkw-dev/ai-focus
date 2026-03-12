@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
     for (const todo of todosCreated) {
       statusMap.set(todo.status, (statusMap.get(todo.status) || 0) + 1)
     }
-    const byStatus = ['TODO', 'IN_PROGRESS', 'WAITING', 'ON_HOLD', 'COMPLETED'].map(status => ({
+    const byStatus = ['TODO', 'IN_PROGRESS', 'WAITING', 'UNDER_REVIEW', 'ON_HOLD', 'COMPLETED'].map(status => ({
       status,
       count: statusMap.get(status) || 0,
     }))

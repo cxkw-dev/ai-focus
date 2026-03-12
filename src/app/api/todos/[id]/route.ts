@@ -15,7 +15,7 @@ const subtaskSchema = z.object({
 const updateTodoSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   description: z.string().max(10000).optional().nullable(),
-  status: z.enum(['TODO', 'IN_PROGRESS', 'WAITING', 'ON_HOLD', 'COMPLETED']).optional(),
+  status: z.enum(['TODO', 'IN_PROGRESS', 'WAITING', 'UNDER_REVIEW', 'ON_HOLD', 'COMPLETED']).optional(),
   archived: z.boolean().optional(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
   dueDate: z.string().datetime().optional().nullable(),

@@ -28,6 +28,7 @@ import {
   Circle,
   Play,
   Clock,
+  Eye,
   Pause,
   CheckCircle2,
   ChevronDown,
@@ -67,6 +68,7 @@ const STATUS_CONFIG: Record<Status, { label: string; icon: React.ElementType; co
   TODO: { label: 'To Do', icon: Circle, colorVar: 'var(--status-todo)', bgVar: 'var(--status-todo)' },
   IN_PROGRESS: { label: 'In Progress', icon: Play, colorVar: 'var(--status-in-progress)', bgVar: 'var(--status-in-progress)' },
   WAITING: { label: 'Waiting', icon: Clock, colorVar: 'var(--status-waiting)', bgVar: 'var(--status-waiting)' },
+  UNDER_REVIEW: { label: 'Under Review', icon: Eye, colorVar: 'var(--status-under-review)', bgVar: 'var(--status-under-review)' },
   ON_HOLD: { label: 'On Hold', icon: Pause, colorVar: 'var(--status-on-hold)', bgVar: 'var(--status-on-hold)' },
   COMPLETED: { label: 'Done', icon: CheckCircle2, colorVar: 'var(--status-done)', bgVar: 'var(--status-done)' },
 }
@@ -892,7 +894,9 @@ export function TodoItem({
         style={{
           backgroundColor: todo.status === 'WAITING'
             ? 'color-mix(in srgb, var(--status-waiting) 8%, var(--surface-2))'
-            : 'var(--surface-2)',
+            : todo.status === 'UNDER_REVIEW'
+              ? 'color-mix(in srgb, var(--status-under-review) 8%, var(--surface-2))'
+              : 'var(--surface-2)',
           ...(dragging ? { boxShadow: '0 0 0 2px color-mix(in srgb, var(--primary) 30%, transparent)' } : {}),
         }}
       >
@@ -928,7 +932,9 @@ export function TodoItem({
           style={{
             backgroundColor: todo.status === 'WAITING'
               ? 'color-mix(in srgb, var(--status-waiting) 8%, var(--surface-2))'
-              : undefined,
+              : todo.status === 'UNDER_REVIEW'
+                ? 'color-mix(in srgb, var(--status-under-review) 8%, var(--surface-2))'
+                : undefined,
           }}
           title="Contacts"
         >

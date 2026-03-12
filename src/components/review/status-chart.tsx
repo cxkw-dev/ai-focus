@@ -15,6 +15,7 @@ const STATUS_LABELS: Record<string, string> = {
   TODO: 'Todo',
   IN_PROGRESS: 'In Progress',
   WAITING: 'Waiting',
+  UNDER_REVIEW: 'Under Review',
   ON_HOLD: 'On Hold',
   COMPLETED: 'Completed',
 }
@@ -23,6 +24,7 @@ const STATUS_COLOR_KEYS: Record<string, string> = {
   TODO: 'statusTodo',
   IN_PROGRESS: 'statusInProgress',
   WAITING: 'statusWaiting',
+  UNDER_REVIEW: 'statusUnderReview',
   ON_HOLD: 'statusOnHold',
   COMPLETED: 'statusDone',
 }

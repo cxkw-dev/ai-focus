@@ -151,7 +151,7 @@ server.tool(
   "List todos/tasks from AI Focus. Returns a compact summary by default. Use verbose=true for full JSON.",
   {
     status: z
-      .enum(["TODO", "IN_PROGRESS", "WAITING", "ON_HOLD", "COMPLETED"])
+      .enum(["TODO", "IN_PROGRESS", "WAITING", "UNDER_REVIEW", "ON_HOLD", "COMPLETED"])
       .optional()
       .describe("Filter by status"),
     priority: z
@@ -212,7 +212,7 @@ server.tool(
       .optional()
       .describe("Priority level (default MEDIUM)"),
     status: z
-      .enum(["TODO", "IN_PROGRESS", "WAITING", "ON_HOLD", "COMPLETED"])
+      .enum(["TODO", "IN_PROGRESS", "WAITING", "UNDER_REVIEW", "ON_HOLD", "COMPLETED"])
       .optional()
       .describe("Initial status (default TODO)"),
     dueDate: z
@@ -291,7 +291,7 @@ IMPORTANT — Description handling:
       .optional()
       .describe("How to handle description updates. 'append' (default) adds to existing content. 'replace' overwrites it entirely."),
     status: z
-      .enum(["TODO", "IN_PROGRESS", "WAITING", "ON_HOLD", "COMPLETED"])
+      .enum(["TODO", "IN_PROGRESS", "WAITING", "UNDER_REVIEW", "ON_HOLD", "COMPLETED"])
       .optional()
       .describe("New status"),
     priority: z
