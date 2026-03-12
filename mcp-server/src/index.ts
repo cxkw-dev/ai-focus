@@ -2,6 +2,7 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { marked } from "marked";
 import { z } from "zod";
 
 const API_BASE = process.env.AI_FOCUS_API_URL || "http://localhost:4444";
@@ -38,35 +39,14 @@ function isApiError(data: unknown): data is { _error: true; message: string; sta
   return Boolean(data && typeof data === "object" && "_error" in data);
 }
 
-// Convert plain text to HTML paragraphs for the rich text editor.
-// Supports basic markdown-like syntax: **bold**, *italic*, - bullet lists.
-function toHtml(text: string): string {
-  return text
-    .split(/\n{2,}/)
-    .map((block) => {
-      const trimmed = block.trim();
-      if (!trimmed) return "";
-      // Check if block is a bullet list
-      const lines = trimmed.split("\n");
-      const isList = lines.every((l) => /^[-*]\s/.test(l.trim()));
-      if (isList) {
-        const items = lines
-          .map((l) => `<li>${inlineFormat(l.replace(/^[-*]\s+/, ""))}</li>`)
-          .join("");
-        return `<ul>${items}</ul>`;
-      }
-      // Regular paragraph
-      return `<p>${inlineFormat(trimmed.replace(/\n/g, "<br/>"))}</p>`;
-    })
-    .filter(Boolean)
-    .join("");
-}
+// Configure marked for TipTap-compatible HTML output.
+marked.setOptions({ breaks: true, gfm: true });
 
-function inlineFormat(text: string): string {
-  return text
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\*(.+?)\*/g, "<em>$1</em>")
-    .replace(/`(.+?)`/g, "<code>$1</code>");
+// Convert markdown text to HTML for the rich text editor.
+function toHtml(text: string): string {
+  // If already HTML, return as-is
+  if (text.trimStart().startsWith("<")) return text;
+  return marked.parse(text, { async: false }) as string;
 }
 
 interface SubtaskResponse {
@@ -546,12 +526,14 @@ server.tool(
   "Create a new notebook note.",
   {
     title: z.string().max(200).optional().describe("Note title"),
-    content: z.string().max(100000).optional().describe("Note content"),
+    content: z.string().max(100000).optional().describe("Note content (supports markdown)"),
   },
   async (params) => {
+    const body = { ...params };
+    if (body.content) body.content = toHtml(body.content);
     const data = await apiFetch("/api/notebook", {
       method: "POST",
-      body: JSON.stringify(params),
+      body: JSON.stringify(body),
     });
     return textResult(data);
   }
@@ -563,10 +545,11 @@ server.tool(
   {
     id: z.string().describe("The note ID"),
     title: z.string().max(200).optional().describe("New title"),
-    content: z.string().max(100000).optional().describe("New content"),
+    content: z.string().max(100000).optional().describe("New content (supports markdown)"),
     pinned: z.boolean().optional().describe("Pin or unpin the note"),
   },
   async ({ id, ...updates }) => {
+    if (updates.content) updates.content = toHtml(updates.content);
     const data = await apiFetch(`/api/notebook/${id}`, {
       method: "PATCH",
       body: JSON.stringify(updates),
@@ -603,12 +586,13 @@ server.tool(
   "update_scratchpad",
   "Update the scratch pad content. Useful for leaving yourself reminders or quick notes.",
   {
-    content: z.string().max(20000).describe("New scratch pad content"),
+    content: z.string().max(20000).describe("New scratch pad content (supports markdown)"),
   },
   async (params) => {
+    const body = { content: toHtml(params.content) };
     const data = await apiFetch("/api/note", {
       method: "PUT",
-      body: JSON.stringify(params),
+      body: JSON.stringify(body),
     });
     return textResult(data);
   }
@@ -764,16 +748,18 @@ server.tool(
   "Create a new accomplishment entry for performance review tracking.",
   {
     title: z.string().min(1).max(200).describe("Accomplishment title"),
-    description: z.string().max(1000).optional().describe("Details about the accomplishment"),
+    description: z.string().max(1000).optional().describe("Details about the accomplishment (supports markdown)"),
     category: z
       .enum(["DELIVERY", "HIRING", "MENTORING", "COLLABORATION", "GROWTH", "OTHER"])
       .describe("Category: DELIVERY (features/PRs), HIRING (interviews), MENTORING (coaching), COLLABORATION (cross-team), GROWTH (learning), OTHER (doesn't fit above)"),
     date: z.string().describe("Date of accomplishment (ISO string, e.g. 2026-01-15)"),
   },
   async (params) => {
+    const body: Record<string, unknown> = { ...params };
+    if (body.description) body.description = toHtml(body.description as string);
     const data = await apiFetch("/api/accomplishments", {
       method: "POST",
-      body: JSON.stringify(params),
+      body: JSON.stringify(body),
     });
     return textResult(data);
   }
@@ -785,7 +771,7 @@ server.tool(
   {
     id: z.string().describe("The accomplishment ID"),
     title: z.string().min(1).max(200).optional().describe("New title"),
-    description: z.string().max(1000).nullable().optional().describe("New description"),
+    description: z.string().max(1000).nullable().optional().describe("New description (supports markdown)"),
     category: z
       .enum(["DELIVERY", "HIRING", "MENTORING", "COLLABORATION", "GROWTH", "OTHER"])
       .optional()
@@ -793,6 +779,7 @@ server.tool(
     date: z.string().optional().describe("New date (ISO string)"),
   },
   async ({ id, ...updates }) => {
+    if (updates.description) updates.description = toHtml(updates.description);
     const data = await apiFetch(`/api/accomplishments/${id}`, {
       method: "PATCH",
       body: JSON.stringify(updates),

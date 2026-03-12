@@ -478,6 +478,29 @@ h1, h2, h3, h4, h5, h6 {
   text-decoration: underline;
 }
 
+.rich-text-display code {
+  background-color: color-mix(in srgb, var(--text-muted) 15%, transparent);
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+  font-size: 0.9em;
+  font-family: var(--font-geist-mono), monospace;
+}
+
+.rich-text-display pre {
+  background-color: color-mix(in srgb, var(--text-muted) 12%, transparent);
+  padding: 0.5em 0.75em;
+  border-radius: 6px;
+  margin: 0.3em 0;
+  overflow-x: auto;
+}
+
+.rich-text-display pre code {
+  background: none;
+  padding: 0;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
 .rich-text-display .mention {
   color: var(--primary);
   font-weight: 500;

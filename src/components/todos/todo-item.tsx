@@ -672,12 +672,12 @@ function TodoItemContent({
             {todo.description && (
               todo.description.startsWith('<') ? (
                 <div
-                  className="mt-1.5 break-words rich-text-display"
+                  className="mt-1.5 max-h-48 overflow-y-auto break-words rich-text-display"
                   dangerouslySetInnerHTML={{ __html: linkifyHtml(mentionifyHtml(todo.description)) }}
                 />
               ) : (
                 <p
-                  className="mt-1.5 text-[11px] break-words leading-snug whitespace-pre-wrap"
+                  className="mt-1.5 max-h-48 overflow-y-auto text-[11px] break-words leading-snug whitespace-pre-wrap"
                   style={{ color: 'var(--text-muted)' }}
                 >
                   {renderTextWithLinks(todo.description)}

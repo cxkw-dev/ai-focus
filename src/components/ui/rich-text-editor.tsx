@@ -302,7 +302,7 @@ export function RichTextEditor({
       </div>
 
       {/* Editor content */}
-      <EditorContent editor={editor} className={cn(fullHeight && 'flex-1')} />
+      <EditorContent editor={editor} className={cn(fullHeight && 'flex-1 min-h-0 overflow-y-auto')} />
     </div>
   )
 }
