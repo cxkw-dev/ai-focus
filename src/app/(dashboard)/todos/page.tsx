@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, Rows3 } from 'lucide-react'
 import { TodoColumn } from '@/components/todos/todo-column'
 import { EditTodoDialog } from '@/components/todos/edit-todo-dialog'
 import { CreateTodoModal } from '@/components/todos/create-todo-modal'
@@ -44,6 +44,18 @@ export default function TodosPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false)
   const [mobileCategory, setMobileCategory] = React.useState<TodoCategory>('kaf')
   const [openNote, setOpenNote] = React.useState<{ todoId: string; noteId: string; todoTitle: string } | null>(null)
+  const [compact, setCompact] = React.useState(() => {
+    if (typeof window === 'undefined') return false
+    return localStorage.getItem('ai-focus-compact-mode') === 'true'
+  })
+
+  const toggleCompact = React.useCallback(() => {
+    setCompact(prev => {
+      const next = !prev
+      localStorage.setItem('ai-focus-compact-mode', String(next))
+      return next
+    })
+  }, [])
 
   const handleMobileCategoryKeyDown = React.useCallback(
     (event: React.KeyboardEvent<HTMLButtonElement>, currentCategory: TodoCategory) => {
@@ -198,6 +210,20 @@ export default function TodosPage() {
           }}
         >
           <div className="flex gap-1.5 overflow-x-auto scrollbar-hide" role="tablist" aria-label="Task categories">
+            <button
+              type="button"
+              onClick={toggleCompact}
+              className="flex-shrink-0 flex items-center justify-center rounded-lg px-2 py-2 transition-all"
+              style={{
+                backgroundColor: compact ? 'color-mix(in srgb, var(--primary) 16%, var(--surface-2) 84%)' : 'transparent',
+                color: compact ? 'var(--primary)' : 'var(--text-muted)',
+                border: compact ? '1px solid color-mix(in srgb, var(--primary) 45%, var(--border-color))' : '1px solid transparent',
+              }}
+              title={compact ? 'Switch to comfortable view' : 'Switch to compact view'}
+              aria-label={compact ? 'Switch to comfortable view' : 'Switch to compact view'}
+            >
+              <Rows3 className="h-3.5 w-3.5" />
+            </button>
             {COLUMNS.map((col) => {
               const count = categorizedActive[col.key].length
               const isActive = mobileCategory === col.key
@@ -281,6 +307,7 @@ export default function TodosPage() {
             defaultLabelIds={defaultLabelIdsMap[mobileCategory]}
             showInlineForm={false}
             animateListTransitions={false}
+            compact={compact}
           />
         </div>
 
@@ -288,6 +315,23 @@ export default function TodosPage() {
 
       {/* Desktop View (>= 1280px) */}
       <div className="hidden xl:flex xl:flex-col flex-1 min-h-0 gap-4">
+        <div className="flex justify-end flex-shrink-0">
+          <button
+            type="button"
+            onClick={toggleCompact}
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all"
+            style={{
+              backgroundColor: compact ? 'color-mix(in srgb, var(--primary) 16%, var(--surface-2) 84%)' : 'var(--surface-2)',
+              color: compact ? 'var(--primary)' : 'var(--text-muted)',
+              border: compact ? '1px solid color-mix(in srgb, var(--primary) 30%, transparent)' : '1px solid var(--border-color)',
+            }}
+            title={compact ? 'Switch to comfortable view' : 'Switch to compact view'}
+            aria-label={compact ? 'Switch to comfortable view' : 'Switch to compact view'}
+          >
+            <Rows3 className="h-3.5 w-3.5" />
+            <span>{compact ? 'Compact' : 'Comfortable'}</span>
+          </button>
+        </div>
         <div className="grid grid-cols-3 gap-6 flex-1 min-h-0">
           {COLUMNS.map((col) => (
             <TodoColumn
@@ -311,6 +355,7 @@ export default function TodosPage() {
               onCreateTodo={handleCreate}
               isSaving={isSaving}
               showInlineForm={false}
+              compact={compact}
             />
           ))}
         </div>

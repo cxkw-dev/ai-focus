@@ -125,6 +125,7 @@ interface TodoItemProps {
   viewMode?: ViewMode
   dropIndicator?: 'above' | 'below' | null
   animateTransitions?: boolean
+  compact?: boolean
 }
 
 function toSubtaskInput(subtasks: Subtask[]): SubtaskInput[] {
@@ -401,6 +402,7 @@ function TodoItemContent({
   onOpenNote,
   isDragging,
   viewMode = 'active',
+  compact = false,
 }: TodoItemProps) {
   const isCompleted = todo.status === 'COMPLETED'
   const canInlineEditSubtasks = viewMode === 'active' && !isDragging
@@ -648,7 +650,7 @@ function TodoItemContent({
           </div>
 
           <div
-            className="rounded-md px-2.5 py-2"
+            className={cn('rounded-md', compact ? 'px-2 py-1.5' : 'px-2.5 py-2')}
             style={{ backgroundColor: 'color-mix(in srgb, var(--background) 50%, transparent)' }}
           >
             <div className="flex items-center gap-2">
@@ -661,6 +663,15 @@ function TodoItemContent({
               >
                 {renderTextWithLinks(todo.title)}
               </h3>
+              {compact && subtasks.length > 0 && (
+                <span
+                  className="text-[10px] font-medium inline-flex items-center gap-0.5 flex-shrink-0"
+                  style={{ color: allDone ? 'var(--status-done)' : 'var(--text-muted)' }}
+                >
+                  {completedCount}/{subtasks.length}
+                  <CheckSquare className="h-2.5 w-2.5" />
+                </span>
+              )}
               {todo.dueDate && (
                 <span
                   className="text-[10px] inline-flex items-center gap-1 flex-shrink-0"
@@ -671,7 +682,7 @@ function TodoItemContent({
                 </span>
               )}
             </div>
-            {todo.description && (
+            {!compact && todo.description && (
               todo.description.startsWith('<') ? (
                 <div
                   className="mt-1.5 max-h-48 overflow-y-auto break-words rich-text-display"
@@ -703,7 +714,7 @@ function TodoItemContent({
       )}
 
       {/* Subtasks */}
-      {shouldShowSubtasks && (
+      {!compact && shouldShowSubtasks && (
         <div
           className="pt-1.5"
           style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)' }}
@@ -829,6 +840,7 @@ export function TodoItem({
   viewMode = 'active',
   dropIndicator,
   animateTransitions = true,
+  compact = false,
 }: TodoItemProps) {
   const {
     attributes,
@@ -886,7 +898,8 @@ export function TodoItem({
       {/* Card */}
       <div
         className={cn(
-          'group flex-1 min-w-0 px-3 py-2.5 transition-all duration-150 todo-card relative overflow-visible',
+          'group flex-1 min-w-0 transition-all duration-150 todo-card relative overflow-visible',
+          compact ? 'px-2.5 py-1.5' : 'px-3 py-2.5',
           dragging ? 'rounded-lg' : 'rounded-l-lg',
           dragging && 'shadow-lg z-50',
           (isCompleted || viewMode !== 'active') && 'opacity-50'
@@ -912,6 +925,7 @@ export function TodoItem({
           onOpenNote={onOpenNote}
           isDragging={dragging}
           viewMode={viewMode}
+          compact={compact}
         />
 
         <ContactsDrawer
@@ -947,7 +961,7 @@ export function TodoItem({
   )
 }
 
-export function TodoItemOverlay({ todo, onStatusChange, onPriorityChange, onDelete, onEdit }: Omit<TodoItemProps, 'isDragging' | 'viewMode' | 'dropIndicator'>) {
+export function TodoItemOverlay({ todo, onStatusChange, onPriorityChange, onDelete, onEdit, compact = false }: Omit<TodoItemProps, 'isDragging' | 'viewMode' | 'dropIndicator'>) {
   const isCompleted = todo.status === 'COMPLETED'
 
   return (
@@ -960,7 +974,8 @@ export function TodoItemOverlay({ todo, onStatusChange, onPriorityChange, onDele
 
       <div
         className={cn(
-          'group flex-1 rounded-lg px-3 py-2.5 shadow-2xl',
+          'group flex-1 rounded-lg shadow-2xl',
+          compact ? 'px-2.5 py-1.5' : 'px-3 py-2.5',
           isCompleted && 'opacity-50'
         )}
         style={{
@@ -975,6 +990,7 @@ export function TodoItemOverlay({ todo, onStatusChange, onPriorityChange, onDele
           onDelete={onDelete}
           onEdit={onEdit}
           isDragging={true}
+          compact={compact}
         />
       </div>
     </div>
