@@ -22,7 +22,7 @@ export default function ReviewPage() {
   const hasData = stats && (stats.summary.totalCreated > 0 || (stats.accomplishments?.total ?? 0) > 0 || accomplishments.length > 0)
 
   return (
-    <div className="flex flex-col gap-6 pb-8">
+    <div className="flex flex-col gap-4 sm:gap-6 pb-8">
       {/* Year Selector */}
       <div className="flex items-center gap-3">
         <div className="relative">
@@ -83,7 +83,7 @@ export default function ReviewPage() {
             onDelete={(id) => remove.mutate(id)}
           />
 
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4 sm:gap-6">
             <LabelsChart data={stats.topLabels} colors={colors} />
             <HighlightsPanel highlights={stats.highlights} />
           </div>

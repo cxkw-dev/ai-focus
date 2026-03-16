@@ -80,7 +80,7 @@ function OllamaStatus() {
 export function Header({ title, onMenuClick, showMenuButton, actions }: HeaderProps) {
   return (
     <header
-      className="sticky top-0 z-30 flex h-16 items-center justify-between border-b backdrop-blur-lg px-6"
+      className="sticky top-0 z-30 flex h-16 items-center justify-between border-b backdrop-blur-lg px-3 sm:px-6"
       style={{
         backgroundColor: 'color-mix(in srgb, var(--background) 80%, transparent)',
         borderColor: 'var(--border-color)',

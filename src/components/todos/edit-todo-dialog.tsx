@@ -366,18 +366,18 @@ export function EditTodoDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="w-[96vw] max-w-[1040px] max-h-[85vh] flex flex-col overflow-hidden p-0">
+      <DialogContent className="w-[98vw] sm:w-[96vw] max-w-[1040px] max-h-[90vh] sm:max-h-[85vh] flex flex-col overflow-hidden p-0">
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
           {/* Header */}
           <div
-            className="px-6 py-5 border-b shrink-0"
+            className="px-4 sm:px-6 py-4 sm:py-5 border-b shrink-0"
             style={{
               borderColor: 'var(--border-color)',
               background: 'linear-gradient(135deg, color-mix(in srgb, var(--primary) 8%, transparent), color-mix(in srgb, var(--accent) 8%, transparent))',
             }}
           >
             <DialogHeader className="space-y-1.5">
-              <DialogTitle className="text-xl">Edit Task</DialogTitle>
+              <DialogTitle className="text-lg sm:text-xl">Edit Task</DialogTitle>
               <DialogDescription className="text-sm">
                 Changes are saved when you close this dialog
               </DialogDescription>
@@ -385,7 +385,7 @@ export function EditTodoDialog({
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto px-6 py-6">
+          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6">
             <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-0 md:gap-0">
               {/* Left column - Content */}
               <div className="space-y-4 md:pr-6">
@@ -837,7 +837,7 @@ export function EditTodoDialog({
 
           {/* Footer */}
           <div
-            className="px-6 py-4 border-t shrink-0"
+            className="px-4 sm:px-6 py-3 sm:py-4 border-t shrink-0"
             style={{ borderColor: 'var(--border-color)' }}
           >
             <DialogFooter>

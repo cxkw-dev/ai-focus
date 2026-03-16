@@ -124,7 +124,7 @@ function SettingsPageContent() {
                 aria-selected={isActive}
                 onClick={() => changeTab(tab.id)}
                 onKeyDown={(event) => handleTabKeyDown(event, tab.id)}
-                className="flex min-w-[170px] flex-1 items-center justify-between gap-2 rounded-lg px-3 py-2 text-left transition-colors"
+                className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-lg px-2.5 sm:px-3 py-2 text-left transition-colors"
                 style={{
                   backgroundColor: isActive
                     ? 'color-mix(in srgb, var(--primary) 20%, var(--surface-2) 80%)'
@@ -132,11 +132,11 @@ function SettingsPageContent() {
                   color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
                 }}
               >
-                <span className="flex items-center gap-2">
-                  <Icon className="h-4 w-4" style={{ color: isActive ? 'var(--primary)' : 'var(--text-muted)' }} />
-                  <span className="leading-tight">
-                    <span className="block text-sm font-semibold">{tab.label}</span>
-                    <span className="block text-[11px]">{tab.hint}</span>
+                <span className="flex items-center gap-2 min-w-0">
+                  <Icon className="h-4 w-4 shrink-0" style={{ color: isActive ? 'var(--primary)' : 'var(--text-muted)' }} />
+                  <span className="leading-tight min-w-0">
+                    <span className="block text-sm font-semibold truncate">{tab.label}</span>
+                    <span className="hidden sm:block text-[11px]">{tab.hint}</span>
                   </span>
                 </span>
                 <span
@@ -171,7 +171,7 @@ function SettingsPageContent() {
           }}
         >
           <div
-            className="px-6 py-5 border-b"
+            className="px-4 sm:px-6 py-4 sm:py-5 border-b"
             style={{
               borderColor: 'var(--border-color)',
               background:
@@ -200,7 +200,7 @@ function SettingsPageContent() {
             </p>
           </div>
 
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {labelsLoading ? (
               <LoadingSpinner />
             ) : (
@@ -231,7 +231,7 @@ function SettingsPageContent() {
           }}
         >
           <div
-            className="px-6 py-5 border-b"
+            className="px-4 sm:px-6 py-4 sm:py-5 border-b"
             style={{
               borderColor: 'var(--border-color)',
               background:
@@ -260,7 +260,7 @@ function SettingsPageContent() {
             </p>
           </div>
 
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {peopleLoading ? (
               <LoadingSpinner />
             ) : (
@@ -291,7 +291,7 @@ function SettingsPageContent() {
           }}
         >
           <div
-            className="px-6 py-5 border-b"
+            className="px-4 sm:px-6 py-4 sm:py-5 border-b"
             style={{
               borderColor: 'var(--border-color)',
               background:
@@ -309,7 +309,7 @@ function SettingsPageContent() {
             </p>
           </div>
 
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {themes.map((t) => {
                 const isActive = theme.id === t.id

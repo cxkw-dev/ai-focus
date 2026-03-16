@@ -594,7 +594,8 @@ h1, h2, h3, h4, h5, h6 {
   top: 0;
   bottom: 0;
   width: 1.5px;
-  background-color: var(--border-color);
+  background-color: var(--text-muted);
+  opacity: 0.5;
 }
 
 /* Horizontal arm at center */
@@ -607,7 +608,8 @@ h1, h2, h3, h4, h5, h6 {
   top: 50%;
   width: 12px;
   height: 1.5px;
-  background-color: var(--border-color);
+  background-color: var(--text-muted);
+  opacity: 0.5;
 }
 
 /* Last branch — vertical stops at center */
@@ -737,24 +739,3 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: bold;
 }
 
-/* Urgent priority — rotating border lightning */
-@property --urgent-angle {
-  syntax: "<angle>";
-  initial-value: 0deg;
-  inherits: false;
-}
-
-@keyframes urgent-border-spin {
-  to {
-    --urgent-angle: 360deg;
-  }
-}
-
-.urgent-border {
-  --urgent-color: var(--priority-urgent);
-  border: 1.5px solid transparent;
-  background:
-    linear-gradient(var(--surface), var(--surface)) padding-box,
-    conic-gradient(from var(--urgent-angle), transparent 50%, var(--urgent-color) 80%, transparent 100%) border-box;
-  animation: urgent-border-spin 2s linear infinite;
-}

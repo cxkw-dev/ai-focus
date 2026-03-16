@@ -24,14 +24,12 @@ import { Circle, CheckCircle2, Trash2, Inbox, Search, X } from 'lucide-react'
 import { TodoItem, TodoItemOverlay } from './todo-item'
 import { InlineTodoForm } from './inline-todo-form'
 import type { Todo, Status, Priority, CreateTodoInput, SubtaskInput } from '@/types/todo'
-import type { TodoCategory } from '@/lib/categorize-todos'
 
 type Filter = 'active' | 'completed' | 'deleted'
 
 interface TodoColumnProps {
   title: string
   color: string
-  category: TodoCategory
   activeTodos: Todo[]
   completedTodos: Todo[]
   deletedTodos: Todo[]

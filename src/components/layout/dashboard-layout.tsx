@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Sidebar } from './sidebar'
 import { Header } from './header'
+import { HeaderActionsProvider, useHeaderActions } from './header-actions-context'
 
 const pageTitles: Record<string, string> = {
   '/todos': 'Todos',
@@ -18,8 +19,17 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
+  return (
+    <HeaderActionsProvider>
+      <DashboardLayoutInner>{children}</DashboardLayoutInner>
+    </HeaderActionsProvider>
+  )
+}
+
+function DashboardLayoutInner({ children }: DashboardLayoutProps) {
   const pathname = usePathname()
   const title = pageTitles[pathname] || 'Focus'
+  const { actions } = useHeaderActions()
 
   const [collapsed, setCollapsed] = React.useState(false)
   const [isMobile, setIsMobile] = React.useState(false)
@@ -94,8 +104,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           title={title}
           showMenuButton={isMobile}
           onMenuClick={() => setMobileMenuOpen(true)}
+          actions={actions}
         />
-        <div className="flex-1 p-4 flex flex-col min-h-0">{children}</div>
+        <div className="flex-1 px-3 py-3 sm:p-4 flex flex-col min-h-0">{children}</div>
       </motion.main>
     </div>
   )

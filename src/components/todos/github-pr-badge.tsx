@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import { useGithubPrStatus, useGithubPrStatuses } from '@/hooks/use-github-pr-status'
 import type { GitHubPrStatus } from '@/types/todo'
 
-const CHIP_BASE = 'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors min-w-0 max-w-full'
+const CHIP_BASE = 'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors min-w-0 max-w-full whitespace-nowrap'
 
 function getBadgeConfig(data: GitHubPrStatus) {
   if (data.state === 'merged') return { color: '#a371f7', icon: GitMerge, label: 'Merged' }

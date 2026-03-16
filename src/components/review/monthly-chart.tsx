@@ -23,14 +23,15 @@ export function MonthlyChart({ data, colors }: MonthlyChartProps) {
 
   return (
     <div
-      className="rounded-xl border p-5"
+      className="rounded-xl border p-3 sm:p-5"
       style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-color)' }}
     >
       <div className="flex items-center gap-2 mb-4">
         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--primary)' }} />
         <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Monthly Activity</h3>
       </div>
-      <ResponsiveContainer width="100%" height={280}>
+      <div className="h-[220px] sm:h-[280px]">
+      <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
           <defs>
             <linearGradient id="gradCreated" x1="0" y1="0" x2="0" y2="1">
@@ -79,6 +80,7 @@ export function MonthlyChart({ data, colors }: MonthlyChartProps) {
           />
         </AreaChart>
       </ResponsiveContainer>
+      </div>
     </div>
   )
 }

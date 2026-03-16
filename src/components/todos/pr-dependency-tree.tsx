@@ -71,7 +71,7 @@ function GitHubSection({ myPrUrls = [], githubPrUrls, showHeader, noBorder }: { 
 
       {/* My PRs */}
       {hasMyPrs && myPrUrls.map((url) => (
-        <div key={url} className="flex w-full min-w-0 items-center gap-1.5">
+        <div key={url} className="flex w-full min-w-0 items-center gap-1.5 py-0.5">
           <GitHubPrBadge url={url} showTitle />
         </div>
       ))}
@@ -137,7 +137,7 @@ function AzureSection({ azureWorkItemUrl, azureDepUrls, showHeader, noBorder }: 
 
       {/* My work item */}
       {azureWorkItemUrl && (
-        <div className="flex w-full min-w-0 items-center gap-1.5">
+        <div className="flex w-full min-w-0 items-center gap-1.5 py-0.5">
           <AzureWorkItemBadge url={azureWorkItemUrl} showTitle />
         </div>
       )}
@@ -204,7 +204,7 @@ function GitHubIssuesSection({ myIssueUrls = [], githubIssueUrls, showHeader, no
 
       {/* My Issues */}
       {hasMyIssues && myIssueUrls.map((url) => (
-        <div key={url} className="flex w-full min-w-0 items-center gap-1.5">
+        <div key={url} className="flex w-full min-w-0 items-center gap-1.5 py-0.5">
           <GitHubIssueBadge url={url} showTitle />
         </div>
       ))}

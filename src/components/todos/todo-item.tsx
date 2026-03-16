@@ -32,6 +32,7 @@ import {
   Pause,
   CheckCircle2,
   ChevronDown,
+  ChevronRight,
   ListChecks,
   Square,
   CheckSquare,
@@ -62,7 +63,7 @@ import { PrDependencyTree } from './pr-dependency-tree'
 import { ContactsDrawer } from './contacts-drawer'
 import type { Todo, Status, Priority, Subtask, SubtaskInput } from '@/types/todo'
 
-const CHIP_BASE = 'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors'
+const CHIP_BASE = 'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors whitespace-nowrap'
 
 const STATUS_CONFIG: Record<Status, { label: string; icon: React.ElementType; colorVar: string; bgVar: string }> = {
   TODO: { label: 'To Do', icon: Circle, colorVar: 'var(--status-todo)', bgVar: 'var(--status-todo)' },
@@ -286,15 +287,15 @@ function StatusDropdown({ todo, onStatusChange }: { todo: Todo; onStatusChange: 
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className={cn(CHIP_BASE, 'hover:brightness-110 cursor-pointer')}
+          className={cn(CHIP_BASE, 'hover:brightness-110 cursor-pointer min-w-0')}
           style={{
             backgroundColor: `color-mix(in srgb, ${config.bgVar} 15%, transparent)`,
             color: config.colorVar,
           }}
         >
-          <Icon className="h-3 w-3" />
-          <span className="hidden sm:inline">{config.label}</span>
-          <ChevronDown className="h-2.5 w-2.5 opacity-50" />
+          <Icon className="h-3 w-3 flex-shrink-0" />
+          <span className="truncate">{config.label}</span>
+          <ChevronDown className="h-2.5 w-2.5 opacity-50 flex-shrink-0" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
@@ -342,17 +343,17 @@ function PriorityDropdown({ todo, onPriorityChange }: { todo: Todo; onPriorityCh
         <button
           className={cn(
             CHIP_BASE,
-            'hover:brightness-110 cursor-pointer',
-            config.pulse && 'urgent-border'
+            'hover:brightness-110 cursor-pointer min-w-0',
           )}
           style={{
-            backgroundColor: config.pulse ? undefined : `color-mix(in srgb, ${config.bgVar} 15%, transparent)`,
-            color: config.colorVar,
+            backgroundColor: config.pulse ? config.colorVar : `color-mix(in srgb, ${config.bgVar} 15%, transparent)`,
+            color: config.pulse ? 'var(--background)' : config.colorVar,
+            fontWeight: config.pulse ? 700 : undefined,
           }}
         >
-          <Icon className="h-3 w-3" />
-          <span>{config.label}</span>
-          <ChevronDown className="h-2.5 w-2.5 opacity-50" />
+          <Icon className="h-3 w-3 flex-shrink-0" />
+          <span className="truncate">{config.label}</span>
+          <ChevronDown className="h-2.5 w-2.5 opacity-50 flex-shrink-0" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
@@ -409,6 +410,7 @@ function TodoItemContent({
   const [subtasks, setSubtasks] = React.useState<Subtask[]>(todo.subtasks ?? [])
   const [isAddingSubtask, setIsAddingSubtask] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
+  const [subtasksExpanded, setSubtasksExpanded] = React.useState(false)
   const { people } = usePeople()
   const subtaskMentions = React.useMemo(
     () => people.map((person) => ({ id: person.id, name: person.name, email: person.email })),
@@ -545,7 +547,7 @@ function TodoItemContent({
     <div className="flex flex-col gap-2 w-full min-w-0">
       <div className="flex items-start gap-2 min-w-0">
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start justify-between gap-1">
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-1 mb-2">
                 {viewMode === 'active' && (
@@ -556,14 +558,14 @@ function TodoItemContent({
                   const Icon = config.icon
                   return (
                     <span
-                      className={cn(CHIP_BASE)}
+                      className={cn(CHIP_BASE, 'min-w-0')}
                       style={{
                         backgroundColor: `color-mix(in srgb, ${config.bgVar} 15%, transparent)`,
                         color: config.colorVar,
                       }}
                     >
-                      <Icon className="h-3 w-3" />
-                      <span className="hidden sm:inline">{config.label}</span>
+                      <Icon className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate">{config.label}</span>
                     </span>
                   )
                 })()}
@@ -571,10 +573,11 @@ function TodoItemContent({
                   <PriorityDropdown todo={todo} onPriorityChange={onPriorityChange} />
                 ) : (
                   <span
-                    className={cn(CHIP_BASE, PRIORITY_CONFIG[todo.priority].pulse && 'urgent-border')}
+                    className={cn(CHIP_BASE)}
                     style={{
-                      backgroundColor: PRIORITY_CONFIG[todo.priority].pulse ? undefined : `color-mix(in srgb, ${PRIORITY_CONFIG[todo.priority].bgVar} 15%, transparent)`,
-                      color: PRIORITY_CONFIG[todo.priority].colorVar,
+                      backgroundColor: PRIORITY_CONFIG[todo.priority].pulse ? PRIORITY_CONFIG[todo.priority].colorVar : `color-mix(in srgb, ${PRIORITY_CONFIG[todo.priority].bgVar} 15%, transparent)`,
+                      color: PRIORITY_CONFIG[todo.priority].pulse ? 'var(--background)' : PRIORITY_CONFIG[todo.priority].colorVar,
+                      fontWeight: PRIORITY_CONFIG[todo.priority].pulse ? 700 : undefined,
                     }}
                   >
                     {PRIORITY_CONFIG[todo.priority].label}
@@ -583,7 +586,7 @@ function TodoItemContent({
                 {todo.labels?.map((label) => (
                   <span
                     key={label.id}
-                    className={cn(CHIP_BASE, 'font-semibold')}
+                    className={cn(CHIP_BASE, 'font-semibold max-w-[8rem] truncate')}
                     style={{
                       backgroundColor: `color-mix(in srgb, ${label.color} 15%, transparent)`,
                       color: label.color,
@@ -720,10 +723,20 @@ function TodoItemContent({
           style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)' }}
         >
           <div className="flex items-center gap-1.5 mb-1">
-            <ListChecks className="h-3 w-3" style={{ color: 'var(--text-muted)', opacity: 0.6 }} />
-            <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>
-              Subtasks
-            </span>
+            <button
+              type="button"
+              onClick={() => setSubtasksExpanded(prev => !prev)}
+              className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity"
+            >
+              {subtasksExpanded ? (
+                <ChevronDown className="h-3 w-3" style={{ color: 'var(--text-muted)', opacity: 0.6 }} />
+              ) : (
+                <ChevronRight className="h-3 w-3" style={{ color: 'var(--text-muted)', opacity: 0.6 }} />
+              )}
+              <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>
+                Subtasks
+              </span>
+            </button>
             {hasSubtasks && (
               <span
                 className="text-[10px] font-medium"
@@ -732,7 +745,7 @@ function TodoItemContent({
                 {completedCount}/{subtasks.length}
               </span>
             )}
-            {canAddSubtasks && !isAddingSubtask && (
+            {canAddSubtasks && !isAddingSubtask && subtasksExpanded && (
               <button
                 type="button"
                 onClick={() => setIsAddingSubtask(true)}
@@ -744,81 +757,85 @@ function TodoItemContent({
               </button>
             )}
           </div>
-          {hasSubtasks && (
-            canInlineEditSubtasks ? (
-              <DndContext
-                sensors={subtaskSensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleSubtaskDragEnd}
-              >
-                <SortableContext
-                  items={subtasks.map(subtask => subtaskDndId(subtask.id))}
-                  strategy={verticalListSortingStrategy}
-                >
+          {subtasksExpanded && (
+            <>
+              {hasSubtasks && (
+                canInlineEditSubtasks ? (
+                  <DndContext
+                    sensors={subtaskSensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleSubtaskDragEnd}
+                  >
+                    <SortableContext
+                      items={subtasks.map(subtask => subtaskDndId(subtask.id))}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="space-y-0.5">
+                        {subtasks.map((subtask) => (
+                          <SortableEditableSubtaskRow
+                            key={subtask.id}
+                            subtask={subtask}
+                            onToggle={() => handleSubtaskToggle(subtask.id, !subtask.completed)}
+                            onTitleChange={(title) => handleSubtaskTitleChange(subtask.id, title)}
+                            onTitleCommit={() => handleSubtaskTitleCommit(subtask.id)}
+                            onDelete={() => handleSubtaskDelete(subtask.id)}
+                            mentions={subtaskMentions}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
+                ) : (
                   <div className="space-y-0.5">
                     {subtasks.map((subtask) => (
-                      <SortableEditableSubtaskRow
+                      <div
                         key={subtask.id}
-                        subtask={subtask}
-                        onToggle={() => handleSubtaskToggle(subtask.id, !subtask.completed)}
-                        onTitleChange={(title) => handleSubtaskTitleChange(subtask.id, title)}
-                        onTitleCommit={() => handleSubtaskTitleCommit(subtask.id)}
-                        onDelete={() => handleSubtaskDelete(subtask.id)}
-                        mentions={subtaskMentions}
-                      />
+                        className="flex items-center gap-2 w-full text-left py-0.5 px-0.5 rounded"
+                      >
+                        {subtask.completed ? (
+                          <CheckSquare className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--status-done)' }} />
+                        ) : (
+                          <Square className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                        )}
+                        <div
+                          className="text-[11px] leading-snug"
+                          style={{
+                            color: subtask.completed ? 'var(--text-muted)' : 'var(--text-primary)',
+                            textDecoration: subtask.completed ? 'line-through' : 'none',
+                          }}
+                        >
+                          {isHtmlContent(subtask.title) ? (
+                            <div
+                              className="[&_p]:my-0 [&_p]:leading-snug [&_.mention]:font-medium [&_.mention:hover]:underline [&_a]:text-[var(--primary)] [&_a:hover]:underline"
+                              dangerouslySetInnerHTML={{ __html: linkifyHtml(mentionifyHtml(subtask.title)) }}
+                            />
+                          ) : (
+                            subtask.title
+                          )}
+                        </div>
+                      </div>
                     ))}
                   </div>
-                </SortableContext>
-              </DndContext>
-            ) : (
-              <div className="space-y-0.5">
-                {subtasks.map((subtask) => (
-                  <div
-                    key={subtask.id}
-                    className="flex items-center gap-2 w-full text-left py-0.5 px-0.5 rounded"
-                  >
-                    {subtask.completed ? (
-                      <CheckSquare className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--status-done)' }} />
-                    ) : (
-                      <Square className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
-                    )}
-                    <div
-                      className="text-[11px] leading-snug"
-                      style={{
-                        color: subtask.completed ? 'var(--text-muted)' : 'var(--text-primary)',
-                        textDecoration: subtask.completed ? 'line-through' : 'none',
-                      }}
-                    >
-                      {isHtmlContent(subtask.title) ? (
-                        <div
-                          className="[&_p]:my-0 [&_p]:leading-snug [&_.mention]:font-medium [&_.mention:hover]:underline [&_a]:text-[var(--primary)] [&_a:hover]:underline"
-                          dangerouslySetInnerHTML={{ __html: linkifyHtml(mentionifyHtml(subtask.title)) }}
-                        />
-                      ) : (
-                        subtask.title
-                      )}
-                    </div>
+                )
+              )}
+              {canAddSubtasks && isAddingSubtask && (
+                <div className="mt-1 rounded px-1 py-0.5" style={{ backgroundColor: 'color-mix(in srgb, var(--surface) 45%, transparent)' }}>
+                  <div className="flex items-center gap-1.5">
+                    <Plus className="h-3 w-3 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                    <SubtaskMentionInput
+                      value={newSubtaskTitle}
+                      onChange={setNewSubtaskTitle}
+                      onCommit={handleAddSubtaskCommit}
+                      commitOnBlur={false}
+                      mentions={subtaskMentions}
+                      placeholder="Add a subtask..."
+                      className="!text-[11px] !leading-snug text-[var(--text-primary)]"
+                      ariaLabel="New subtask title"
+                    />
                   </div>
-                ))}
-              </div>
-            )
-          )}
-          {canAddSubtasks && isAddingSubtask && (
-            <div className="mt-1 rounded px-1 py-0.5" style={{ backgroundColor: 'color-mix(in srgb, var(--surface) 45%, transparent)' }}>
-              <div className="flex items-center gap-1.5">
-                <Plus className="h-3 w-3 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
-                <SubtaskMentionInput
-                  value={newSubtaskTitle}
-                  onChange={setNewSubtaskTitle}
-                  onCommit={handleAddSubtaskCommit}
-                  commitOnBlur={false}
-                  mentions={subtaskMentions}
-                  placeholder="Add a subtask..."
-                  className="!text-[11px] !leading-snug text-[var(--text-primary)]"
-                  ariaLabel="New subtask title"
-                />
-              </div>
-            </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
@@ -905,12 +922,14 @@ export function TodoItem({
           (isCompleted || viewMode !== 'active') && 'opacity-50'
         )}
         style={{
-          backgroundColor: todo.status === 'WAITING'
-            ? 'color-mix(in srgb, var(--status-waiting) 8%, var(--surface-2))'
-            : todo.status === 'UNDER_REVIEW'
-              ? 'color-mix(in srgb, var(--status-under-review) 8%, var(--surface-2))'
-              : 'var(--surface-2)',
-          ...(dragging ? { boxShadow: '0 0 0 2px color-mix(in srgb, var(--primary) 30%, transparent)' } : {}),
+          backgroundColor: todo.status === 'IN_PROGRESS'
+            ? `color-mix(in srgb, ${STATUS_CONFIG[todo.status].colorVar} 14%, var(--surface-2))`
+            : `color-mix(in srgb, ${STATUS_CONFIG[todo.status].colorVar} 8%, var(--surface-2))`,
+          boxShadow: dragging
+            ? '0 0 0 2px color-mix(in srgb, var(--primary) 30%, transparent)'
+            : todo.status === 'IN_PROGRESS'
+              ? `0 0 12px color-mix(in srgb, ${STATUS_CONFIG[todo.status].colorVar} 12%, transparent)`
+              : undefined,
         }}
       >
         <TodoItemContent
@@ -944,11 +963,9 @@ export function TodoItem({
             contactsOpen && 'todo-contacts-tab-active'
           )}
           style={{
-            backgroundColor: todo.status === 'WAITING'
-              ? 'color-mix(in srgb, var(--status-waiting) 8%, var(--surface-2))'
-              : todo.status === 'UNDER_REVIEW'
-                ? 'color-mix(in srgb, var(--status-under-review) 8%, var(--surface-2))'
-                : undefined,
+            backgroundColor: todo.status === 'IN_PROGRESS'
+              ? `color-mix(in srgb, ${STATUS_CONFIG[todo.status].colorVar} 14%, var(--surface-2))`
+              : `color-mix(in srgb, ${STATUS_CONFIG[todo.status].colorVar} 8%, var(--surface-2))`,
           }}
           title="Contacts"
         >

@@ -73,7 +73,7 @@ export function AccomplishmentsSection({
 
   return (
     <div
-      className="rounded-xl border p-5"
+      className="rounded-xl border p-3 sm:p-5"
       style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-color)' }}
     >
       {/* Header */}

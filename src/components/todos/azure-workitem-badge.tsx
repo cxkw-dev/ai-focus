@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import { useAzureWorkItemStatus, useAzureWorkItemStatuses } from '@/hooks/use-azure-workitem-status'
 import type { AzureWorkItemStatus } from '@/types/todo'
 
-const CHIP_BASE = 'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors min-w-0 max-w-full'
+const CHIP_BASE = 'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors min-w-0 max-w-full whitespace-nowrap'
 
 function getBadgeConfig(data: AzureWorkItemStatus) {
   const state = data.state.toLowerCase()

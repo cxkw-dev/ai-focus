@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { Plus, Rows3 } from 'lucide-react'
+import { HeaderActions } from '@/components/layout/header-actions-context'
 import { TodoColumn } from '@/components/todos/todo-column'
 import { EditTodoDialog } from '@/components/todos/edit-todo-dialog'
 import { CreateTodoModal } from '@/components/todos/create-todo-modal'
@@ -9,15 +10,9 @@ import { NoteDrawer } from '@/components/todos/note-drawer'
 import { useToast } from '@/components/ui/use-toast'
 import { useTodos } from '@/hooks/use-todos'
 import { useLabels } from '@/hooks/use-labels'
-import { categorizeTodos, type TodoCategory } from '@/lib/categorize-todos'
+import { buildColumns, categorizeTodosByLabel } from '@/lib/categorize-todos'
 import { todosApi } from '@/lib/api'
 import type { Todo, UpdateTodoInput, CreateTodoInput, SubtaskInput } from '@/types/todo'
-
-const COLUMNS: { key: TodoCategory; title: string; color: string }[] = [
-  { key: 'kaf', title: 'KAF', color: 'var(--accent)' },
-  { key: 'projects', title: 'Projects', color: 'var(--primary)' },
-  { key: 'others', title: 'Others', color: 'var(--status-waiting)' },
-]
 
 export default function TodosPage() {
   const {
@@ -42,7 +37,6 @@ export default function TodosPage() {
   const [editingTodo, setEditingTodo] = React.useState<Todo | null>(null)
   const [isFormOpen, setIsFormOpen] = React.useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false)
-  const [mobileCategory, setMobileCategory] = React.useState<TodoCategory>('kaf')
   const [openNote, setOpenNote] = React.useState<{ todoId: string; noteId: string; todoTitle: string } | null>(null)
   const [compact, setCompact] = React.useState(() => {
     if (typeof window === 'undefined') return false
@@ -57,34 +51,40 @@ export default function TodosPage() {
     })
   }, [])
 
+  // Build dynamic columns from labels
+  const columns = React.useMemo(() => buildColumns(labels), [labels])
+
+  // Mobile category defaults to first column
+  const [mobileCategory, setMobileCategory] = React.useState<string>('')
+  React.useEffect(() => {
+    if (columns.length > 0 && (!mobileCategory || !columns.some(c => c.key === mobileCategory))) {
+      setMobileCategory(columns[0].key)
+    }
+  }, [columns, mobileCategory])
+
   const handleMobileCategoryKeyDown = React.useCallback(
-    (event: React.KeyboardEvent<HTMLButtonElement>, currentCategory: TodoCategory) => {
+    (event: React.KeyboardEvent<HTMLButtonElement>, currentKey: string) => {
       if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
       event.preventDefault()
 
-      const currentIndex = COLUMNS.findIndex((column) => column.key === currentCategory)
+      const currentIndex = columns.findIndex((col) => col.key === currentKey)
       const offset = event.key === 'ArrowRight' ? 1 : -1
-      const nextIndex = (currentIndex + offset + COLUMNS.length) % COLUMNS.length
-      setMobileCategory(COLUMNS[nextIndex].key)
+      const nextIndex = (currentIndex + offset + columns.length) % columns.length
+      setMobileCategory(columns[nextIndex].key)
     },
-    []
+    [columns]
   )
 
-  // Find label IDs for default auto-labeling
-  const kafLabelId = React.useMemo(
-    () => labels.find(l => l.name.toLowerCase() === 'kaf')?.id,
-    [labels]
+  // Categorize all todo lists by label
+  const categorizedActive = React.useMemo(
+    () => categorizeTodosByLabel(todos, columns), [todos, columns]
   )
-  const defaultLabelIdsMap = React.useMemo<Record<TodoCategory, string[]>>(() => ({
-    kaf: kafLabelId ? [kafLabelId] : [],
-    projects: [],
-    others: [],
-  }), [kafLabelId])
-
-  // Categorize all todo lists
-  const categorizedActive = React.useMemo(() => categorizeTodos(todos), [todos])
-  const categorizedCompleted = React.useMemo(() => categorizeTodos(completedTodos), [completedTodos])
-  const categorizedDeleted = React.useMemo(() => categorizeTodos(deletedTodos), [deletedTodos])
+  const categorizedCompleted = React.useMemo(
+    () => categorizeTodosByLabel(completedTodos, columns), [completedTodos, columns]
+  )
+  const categorizedDeleted = React.useMemo(
+    () => categorizeTodosByLabel(deletedTodos, columns), [deletedTodos, columns]
+  )
 
   const handleCreate = React.useCallback(async (data: CreateTodoInput) => {
     try {
@@ -197,8 +197,29 @@ export default function TodosPage() {
     )
   }
 
+  const mobileCol = columns.find(c => c.key === mobileCategory) ?? columns[0]
+
   return (
     <div className="h-[calc(100vh-120px)] flex flex-col">
+      {/* Portal compact toggle into header */}
+      <HeaderActions>
+        <button
+          type="button"
+          onClick={toggleCompact}
+          className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all"
+          style={{
+            backgroundColor: compact ? 'color-mix(in srgb, var(--primary) 16%, var(--surface-2) 84%)' : 'var(--surface-2)',
+            color: compact ? 'var(--primary)' : 'var(--text-muted)',
+            border: compact ? '1px solid color-mix(in srgb, var(--primary) 30%, transparent)' : '1px solid var(--border-color)',
+          }}
+          title={compact ? 'Switch to comfortable view' : 'Switch to compact view'}
+          aria-label={compact ? 'Switch to comfortable view' : 'Switch to compact view'}
+        >
+          <Rows3 className="h-3.5 w-3.5" />
+          <span>{compact ? 'Compact' : 'Comfortable'}</span>
+        </button>
+      </HeaderActions>
+
       {/* Mobile/Narrow View (< 1280px) */}
       <div className="flex flex-col h-full xl:hidden">
         {/* Category tab switcher */}
@@ -210,22 +231,8 @@ export default function TodosPage() {
           }}
         >
           <div className="flex gap-1.5 overflow-x-auto scrollbar-hide" role="tablist" aria-label="Task categories">
-            <button
-              type="button"
-              onClick={toggleCompact}
-              className="flex-shrink-0 flex items-center justify-center rounded-lg px-2 py-2 transition-all"
-              style={{
-                backgroundColor: compact ? 'color-mix(in srgb, var(--primary) 16%, var(--surface-2) 84%)' : 'transparent',
-                color: compact ? 'var(--primary)' : 'var(--text-muted)',
-                border: compact ? '1px solid color-mix(in srgb, var(--primary) 45%, var(--border-color))' : '1px solid transparent',
-              }}
-              title={compact ? 'Switch to comfortable view' : 'Switch to compact view'}
-              aria-label={compact ? 'Switch to comfortable view' : 'Switch to compact view'}
-            >
-              <Rows3 className="h-3.5 w-3.5" />
-            </button>
-            {COLUMNS.map((col) => {
-              const count = categorizedActive[col.key].length
+            {columns.map((col) => {
+              const count = (categorizedActive[col.key] ?? []).length
               const isActive = mobileCategory === col.key
 
               return (
@@ -238,7 +245,7 @@ export default function TodosPage() {
                   aria-selected={isActive}
                   onClick={() => setMobileCategory(col.key)}
                   onKeyDown={(event) => handleMobileCategoryKeyDown(event, col.key)}
-                  className="flex min-w-[112px] flex-1 items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold transition-all active:scale-[0.99]"
+                  className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-semibold transition-all active:scale-[0.99]"
                   style={{
                     border: `1px solid ${isActive
                       ? `color-mix(in srgb, ${col.color} 45%, var(--border-color))`
@@ -249,7 +256,7 @@ export default function TodosPage() {
                     color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
                   }}
                 >
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center gap-2 min-w-0">
                     <span
                       className="h-2 w-2 rounded-full flex-shrink-0"
                       style={{
@@ -259,7 +266,7 @@ export default function TodosPage() {
                           : 'none',
                       }}
                     />
-                    <span className="leading-none">{col.title}</span>
+                    <span className="leading-none truncate">{col.title}</span>
                   </span>
 
                   <span
@@ -279,69 +286,19 @@ export default function TodosPage() {
           </div>
         </div>
 
-        <div
-          className="flex-1 min-h-0"
-          role="tabpanel"
-          id={`todos-category-panel-${mobileCategory}`}
-          aria-labelledby={`todos-category-tab-${mobileCategory}`}
-        >
-          <TodoColumn
-            title={COLUMNS.find(c => c.key === mobileCategory)!.title}
-            color={COLUMNS.find(c => c.key === mobileCategory)!.color}
-            category={mobileCategory}
-            activeTodos={categorizedActive[mobileCategory]}
-            completedTodos={categorizedCompleted[mobileCategory]}
-            deletedTodos={categorizedDeleted[mobileCategory]}
-            onEdit={handleEdit}
-            onStatusChange={handleStatusChange}
-            onPriorityChange={handlePriorityChange}
-            onDelete={handleDelete}
-            onPermanentDelete={handlePermanentDelete}
-            onRestore={handleRestore}
-            onToggleSubtask={handleToggleSubtask}
-            onUpdateSubtasks={handleUpdateSubtasks}
-            onOpenNote={handleOpenNote}
-            onReorder={handleReorder}
-            onCreateTodo={handleCreate}
-            isSaving={isSaving}
-            defaultLabelIds={defaultLabelIdsMap[mobileCategory]}
-            showInlineForm={false}
-            animateListTransitions={false}
-            compact={compact}
-          />
-        </div>
-
-      </div>
-
-      {/* Desktop View (>= 1280px) */}
-      <div className="hidden xl:flex xl:flex-col flex-1 min-h-0 gap-4">
-        <div className="flex justify-end flex-shrink-0">
-          <button
-            type="button"
-            onClick={toggleCompact}
-            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all"
-            style={{
-              backgroundColor: compact ? 'color-mix(in srgb, var(--primary) 16%, var(--surface-2) 84%)' : 'var(--surface-2)',
-              color: compact ? 'var(--primary)' : 'var(--text-muted)',
-              border: compact ? '1px solid color-mix(in srgb, var(--primary) 30%, transparent)' : '1px solid var(--border-color)',
-            }}
-            title={compact ? 'Switch to comfortable view' : 'Switch to compact view'}
-            aria-label={compact ? 'Switch to comfortable view' : 'Switch to compact view'}
+        {mobileCol && (
+          <div
+            className="flex-1 min-h-0"
+            role="tabpanel"
+            id={`todos-category-panel-${mobileCategory}`}
+            aria-labelledby={`todos-category-tab-${mobileCategory}`}
           >
-            <Rows3 className="h-3.5 w-3.5" />
-            <span>{compact ? 'Compact' : 'Comfortable'}</span>
-          </button>
-        </div>
-        <div className="grid grid-cols-3 gap-6 flex-1 min-h-0">
-          {COLUMNS.map((col) => (
             <TodoColumn
-              key={col.key}
-              title={col.title}
-              color={col.color}
-              category={col.key}
-              activeTodos={categorizedActive[col.key]}
-              completedTodos={categorizedCompleted[col.key]}
-              deletedTodos={categorizedDeleted[col.key]}
+              title={mobileCol.title}
+              color={mobileCol.color}
+              activeTodos={categorizedActive[mobileCol.key] ?? []}
+              completedTodos={categorizedCompleted[mobileCol.key] ?? []}
+              deletedTodos={categorizedDeleted[mobileCol.key] ?? []}
               onEdit={handleEdit}
               onStatusChange={handleStatusChange}
               onPriorityChange={handlePriorityChange}
@@ -354,6 +311,46 @@ export default function TodosPage() {
               onReorder={handleReorder}
               onCreateTodo={handleCreate}
               isSaving={isSaving}
+              defaultLabelIds={mobileCol.labelId ? [mobileCol.labelId] : []}
+              showInlineForm={false}
+              animateListTransitions={false}
+              compact={compact}
+            />
+          </div>
+        )}
+
+      </div>
+
+      {/* Desktop View (>= 1280px) */}
+      <div className="hidden xl:flex xl:flex-col flex-1 min-h-0">
+        <div
+          className="gap-6 flex-1 min-h-0"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))`,
+          }}
+        >
+          {columns.map((col) => (
+            <TodoColumn
+              key={col.key}
+              title={col.title}
+              color={col.color}
+              activeTodos={categorizedActive[col.key] ?? []}
+              completedTodos={categorizedCompleted[col.key] ?? []}
+              deletedTodos={categorizedDeleted[col.key] ?? []}
+              onEdit={handleEdit}
+              onStatusChange={handleStatusChange}
+              onPriorityChange={handlePriorityChange}
+              onDelete={handleDelete}
+              onPermanentDelete={handlePermanentDelete}
+              onRestore={handleRestore}
+              onToggleSubtask={handleToggleSubtask}
+              onUpdateSubtasks={handleUpdateSubtasks}
+              onOpenNote={handleOpenNote}
+              onReorder={handleReorder}
+              onCreateTodo={handleCreate}
+              isSaving={isSaving}
+              defaultLabelIds={col.labelId ? [col.labelId] : []}
               showInlineForm={false}
               compact={compact}
             />
@@ -390,7 +387,7 @@ export default function TodosPage() {
       <button
         type="button"
         onClick={() => setIsCreateModalOpen(true)}
-        className="group fixed bottom-6 right-6 z-50 flex items-center rounded-full active:scale-95 transition-transform"
+        className="group fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex items-center rounded-full active:scale-95 transition-transform"
         style={{
           backgroundColor: 'var(--surface-2)',
           boxShadow: '0 4px 20px color-mix(in srgb, var(--background) 70%, transparent)',

@@ -50,7 +50,7 @@ export function HighlightsPanel({ highlights }: HighlightsPanelProps) {
 
   return (
     <div
-      className="rounded-xl border p-5"
+      className="rounded-xl border p-3 sm:p-5"
       style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-color)' }}
     >
       <div className="flex items-center gap-2 mb-4">
