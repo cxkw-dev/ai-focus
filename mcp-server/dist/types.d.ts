@@ -1,0 +1,27 @@
+export interface SubtaskResponse {
+    id: string;
+    title: string;
+    completed: boolean;
+    order: number;
+}
+export interface TodoResponse {
+    id?: string;
+    taskNumber: number;
+    title: string;
+    status: string;
+    priority: string;
+    description?: string | null;
+    dueDate?: string | null;
+    archived?: boolean;
+    labels?: {
+        name: string;
+    }[];
+    subtasks?: SubtaskResponse[];
+    myPrUrls?: string[];
+    githubPrUrls?: string[];
+    azureWorkItemUrl?: string | null;
+    azureDepUrls?: string[];
+    myIssueUrls?: string[];
+    githubIssueUrls?: string[];
+    notebookNoteId?: string | null;
+}
