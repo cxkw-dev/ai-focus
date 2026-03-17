@@ -40,7 +40,7 @@ export async function POST(
       },
       include: { person: { select: { id: true, name: true, email: true } } },
     })
-    emit('todos')
+    emit('todoContacts', { todoId: id })
     return NextResponse.json(contact, { status: 201 })
   } catch (err: unknown) {
     if (err && typeof err === 'object' && 'code' in err && err.code === 'P2002') {

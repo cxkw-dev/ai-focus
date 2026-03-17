@@ -3,6 +3,14 @@
 import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { pushEvalEntry } from '@/lib/eval-store'
+import { queryKeys } from '@/lib/query-keys'
+
+function getTodoContactsTodoId(payload: unknown) {
+  if (!payload || typeof payload !== 'object') return null
+
+  const todoId = (payload as { todoId?: unknown }).todoId
+  return typeof todoId === 'string' && todoId.length > 0 ? todoId : null
+}
 
 export function useSSE() {
   const queryClient = useQueryClient()
@@ -28,9 +36,17 @@ export function useSSE() {
 
           // Invalidate React Query caches for data entities
           if (entity === 'todos') {
-            queryClient.invalidateQueries({ queryKey: ['todos'] })
+            queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
           } else if (entity === 'people') {
-            queryClient.invalidateQueries({ queryKey: ['people'] })
+            queryClient.invalidateQueries({ queryKey: queryKeys.people })
+          } else if (entity === 'labels') {
+            queryClient.invalidateQueries({ queryKey: queryKeys.labels })
+            queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
+          } else if (entity === 'todoContacts') {
+            const todoId = getTodoContactsTodoId(payload)
+            if (todoId) {
+              queryClient.invalidateQueries({ queryKey: queryKeys.todoContacts(todoId) })
+            }
           }
         } catch {
           // ignore malformed events

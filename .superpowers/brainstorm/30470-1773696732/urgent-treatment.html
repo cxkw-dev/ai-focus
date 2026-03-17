@@ -1,0 +1,139 @@
+<h2>How should Urgent priority stand out?</h2>
+<p class="subtitle">Replacing the spinning border on the chip. Each shows the urgent chip next to a normal "High" chip for contrast.</p>
+
+<style>
+  .demo-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 18px;
+    background: #2a2420;
+    border-radius: 8px;
+    margin: 8px 0;
+  }
+  .chip {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+  }
+  .chip-high {
+    background: rgba(255,177,153,0.15);
+    color: #FFB199;
+  }
+  .chip-label {
+    font-size: 11px;
+    color: #8a7e76;
+    min-width: 50px;
+  }
+  .title-text {
+    color: #e8ddd4;
+    font-size: 13px;
+    flex: 1;
+  }
+  .divider {
+    width: 1px;
+    height: 20px;
+    background: rgba(255,255,255,0.08);
+  }
+
+  /* A: Static bold — solid red bg, white text */
+  .chip-a {
+    background: #FF6B6B;
+    color: #1a1210;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  /* B: Red tint + left bar accent */
+  .chip-b {
+    background: rgba(255,107,107,0.18);
+    color: #FF6B6B;
+    border-left: 2.5px solid #FF6B6B;
+    padding-left: 6px;
+  }
+
+  /* C: Double ring — inset shadow creates a second border feel */
+  .chip-c {
+    background: rgba(255,107,107,0.15);
+    color: #FF6B6B;
+    box-shadow: 0 0 0 1.5px rgba(255,107,107,0.5), 0 0 8px rgba(255,107,107,0.15);
+  }
+
+  /* D: Elevated glow — same idea as in-progress card treatment */
+  .chip-d {
+    background: rgba(255,107,107,0.2);
+    color: #FF6B6B;
+    box-shadow: 0 0 10px rgba(255,107,107,0.25);
+  }
+</style>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Solid Fill</h3>
+      <p>Inverted colors — solid red background with dark text. Maximum contrast, unmistakable.</p>
+      <div class="demo-row">
+        <span class="chip chip-a">&#9888; Urgent</span>
+        <span class="title-text">Fix production database connection timeout</span>
+      </div>
+      <div class="demo-row" style="opacity:0.6">
+        <span class="chip chip-high">&#9650; High</span>
+        <span class="title-text">Implement user authentication flow</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Left Bar Accent</h3>
+      <p>A thick left edge on the chip — like a mini flag. Adds visual weight without filling the whole chip.</p>
+      <div class="demo-row">
+        <span class="chip chip-b">&#9888; Urgent</span>
+        <span class="title-text">Fix production database connection timeout</span>
+      </div>
+      <div class="demo-row" style="opacity:0.6">
+        <span class="chip chip-high">&#9650; High</span>
+        <span class="title-text">Implement user authentication flow</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Double Ring</h3>
+      <p>A visible outline ring around the chip with a subtle outer glow. Feels "highlighted" and important.</p>
+      <div class="demo-row">
+        <span class="chip chip-c">&#9888; Urgent</span>
+        <span class="title-text">Fix production database connection timeout</span>
+      </div>
+      <div class="demo-row" style="opacity:0.6">
+        <span class="chip chip-high">&#9650; High</span>
+        <span class="title-text">Implement user authentication flow</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="d" onclick="toggleSelect(this)">
+    <div class="letter">D</div>
+    <div class="content">
+      <h3>Elevated Glow</h3>
+      <p>Stronger red tint with a soft glow halo — same language as the in-progress elevated treatment, but red.</p>
+      <div class="demo-row">
+        <span class="chip chip-d">&#9888; Urgent</span>
+        <span class="title-text">Fix production database connection timeout</span>
+      </div>
+      <div class="demo-row" style="opacity:0.6">
+        <span class="chip chip-high">&#9650; High</span>
+        <span class="title-text">Implement user authentication flow</span>
+      </div>
+    </div>
+  </div>
+</div>

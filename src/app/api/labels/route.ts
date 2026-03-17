@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { emit } from '@/lib/events'
 import { z } from 'zod'
 
 const createLabelSchema = z.object({
@@ -31,6 +32,7 @@ export async function POST(request: NextRequest) {
       data: validatedData,
     })
 
+    emit('labels')
     return NextResponse.json(label, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {

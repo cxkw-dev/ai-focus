@@ -1,4 +1,4 @@
-import type { Todo, TodoContact, CreateTodoInput, UpdateTodoInput, Label, GitHubPrStatus, GitHubIssueStatus, AzureWorkItemStatus, PaginatedTodosResponse } from '@/types/todo'
+import type { Todo, TodoBoardResponse, TodoContact, CreateTodoInput, UpdateTodoInput, Label, GitHubPrStatus, GitHubIssueStatus, AzureWorkItemStatus, PaginatedTodosResponse } from '@/types/todo'
 import type { YearStats } from '@/types/stats'
 import type { NotebookNote, CreateNotebookNoteInput, UpdateNotebookNoteInput } from '@/types/notebook'
 import type { Person } from '@/types/person'
@@ -12,6 +12,9 @@ async function json<T>(res: Response): Promise<T> {
 const headers = { 'Content-Type': 'application/json' } as const
 
 export const todosApi = {
+  board: (): Promise<TodoBoardResponse> =>
+    fetch('/api/todos/board').then(r => json(r)),
+
   list: (params?: { archived?: boolean; excludeStatus?: string; status?: string }): Promise<Todo[]> => {
     const sp = new URLSearchParams()
     if (params?.archived !== undefined) sp.set('archived', String(params.archived))

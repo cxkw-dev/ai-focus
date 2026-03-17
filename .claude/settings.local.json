@@ -28,7 +28,18 @@
       "mcp__ai-focus__list_todo_contacts",
       "mcp__ai-focus__add_todo_contact",
       "Bash(gh issue:*)",
-      "mcp__ai-focus__update_todo"
+      "mcp__ai-focus__update_todo",
+      "mcp__ai-focus__search_todos",
+      "Bash(export:*)",
+      "mcp__ai-focus__create_todo",
+      "mcp__ai-focus__get_note",
+      "mcp__ai-focus__update_note",
+      "Bash(cd /tmp/orchestration-tests && uv run pytest tests/unit -v 2>&1)",
+      "mcp__ai-focus__list_labels",
+      "Bash(/Users/andynguyen/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.1/scripts/start-server.sh --project-dir /Users/andynguyen/ai-focus)",
+      "Bash(bash /Users/andynguyen/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.1/skills/brainstorming/scripts/start-server.sh --project-dir /Users/andynguyen/ai-focus)",
+      "Bash(git add:*)",
+      "Bash(find:*)"
     ]
   }
 }

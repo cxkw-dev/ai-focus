@@ -57,13 +57,14 @@ import { LabelMultiSelect, LabelManagerDialog } from './label-multi-select'
 import { PrioritySelector } from './priority-selector'
 import { SingleUrlField, UrlListField, AzureIcon, GitHubIcon } from './url-fields'
 import { useLabels } from '@/hooks/use-labels'
-import { usePeople } from '@/hooks/use-people'
 import { useTodoContacts } from '@/hooks/use-todo-contacts'
 import { useTodoForm } from '@/hooks/use-todo-form'
 import { hasMeaningfulText, normalizeSubtaskTitle } from '@/lib/rich-text'
 import { todosApi, notebookApi } from '@/lib/api'
+import { queryKeys } from '@/lib/query-keys'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Todo, UpdateTodoInput, Status } from '@/types/todo'
+import type { Person } from '@/types/person'
 
 function getSubtaskDndId(subtaskId: string | undefined, index: number): string {
   return subtaskId ?? `new-subtask-${index}`
@@ -198,6 +199,7 @@ interface EditTodoDialogProps {
   ) => void
   todo?: Todo | null
   isLoading?: boolean
+  people: Person[]
 }
 
 export function EditTodoDialog({
@@ -206,9 +208,9 @@ export function EditTodoDialog({
   onSubmit,
   todo,
   isLoading,
+  people,
 }: EditTodoDialogProps) {
   const { labels, handleCreate: onCreateLabel, handleUpdate: onUpdateLabel, handleDelete: onDeleteLabel } = useLabels()
-  const { people } = usePeople()
   const form = useTodoForm(todo)
   const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
@@ -227,7 +229,7 @@ export function EditTodoDialog({
   const [editingContactRole, setEditingContactRole] = React.useState('')
   const queryClient = useQueryClient()
   const { data: allNotes } = useQuery({
-    queryKey: ['notebook'],
+    queryKey: queryKeys.notebook,
     queryFn: () => notebookApi.list(),
   })
   const unlinkedNotes = React.useMemo(
@@ -239,22 +241,22 @@ export function EditTodoDialog({
     if (!todo) return
     const note = await notebookApi.create({ title: `Note for #${todo.taskNumber}` })
     await todosApi.update(todo.id, { notebookNoteId: note.id })
-    queryClient.invalidateQueries({ queryKey: ['todos'] })
-    queryClient.invalidateQueries({ queryKey: ['notebook'] })
+    queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
+    queryClient.invalidateQueries({ queryKey: queryKeys.notebook })
   }, [todo, queryClient])
 
   const handleLinkExistingNote = React.useCallback(async (noteId: string) => {
     if (!noteId || !todo) return
     await todosApi.update(todo.id, { notebookNoteId: noteId })
-    queryClient.invalidateQueries({ queryKey: ['todos'] })
-    queryClient.invalidateQueries({ queryKey: ['notebook'] })
+    queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
+    queryClient.invalidateQueries({ queryKey: queryKeys.notebook })
   }, [todo, queryClient])
 
   const handleUnlinkNote = React.useCallback(async () => {
     if (!todo) return
     await todosApi.update(todo.id, { notebookNoteId: null })
-    queryClient.invalidateQueries({ queryKey: ['todos'] })
-    queryClient.invalidateQueries({ queryKey: ['notebook'] })
+    queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
+    queryClient.invalidateQueries({ queryKey: queryKeys.notebook })
   }, [todo, queryClient])
   const subtaskMentions = React.useMemo(
     () => people.map((person) => ({ id: person.id, name: person.name, email: person.email })),

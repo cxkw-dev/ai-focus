@@ -49,7 +49,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { SubtaskMentionInput } from '@/components/ui/subtask-mention-input'
-import { usePeople } from '@/hooks/use-people'
 import {
   cleanUrlEnd,
   ensureProtocol,
@@ -62,6 +61,7 @@ import {
 import { PrDependencyTree } from './pr-dependency-tree'
 import { ContactsDrawer } from './contacts-drawer'
 import type { Todo, Status, Priority, Subtask, SubtaskInput } from '@/types/todo'
+import type { Person } from '@/types/person'
 
 const CHIP_BASE = 'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors whitespace-nowrap'
 
@@ -122,6 +122,8 @@ interface TodoItemProps {
   onToggleSubtask?: (todoId: string, subtaskId: string, completed: boolean) => void
   onUpdateSubtasks?: (todoId: string, subtasks: SubtaskInput[]) => void
   onOpenNote?: (todoId: string, noteId: string) => void
+  people: Person[]
+  subtaskMentions: Array<Pick<Person, 'id' | 'name' | 'email'>>
   isDragging?: boolean
   viewMode?: ViewMode
   dropIndicator?: 'above' | 'below' | null
@@ -401,6 +403,7 @@ function TodoItemContent({
   onToggleSubtask,
   onUpdateSubtasks,
   onOpenNote,
+  subtaskMentions,
   isDragging,
   viewMode = 'active',
   compact = false,
@@ -411,11 +414,6 @@ function TodoItemContent({
   const [isAddingSubtask, setIsAddingSubtask] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
   const [subtasksExpanded, setSubtasksExpanded] = React.useState(false)
-  const { people } = usePeople()
-  const subtaskMentions = React.useMemo(
-    () => people.map((person) => ({ id: person.id, name: person.name, email: person.email })),
-    [people]
-  )
   const subtaskSensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 6 },
@@ -853,6 +851,8 @@ export function TodoItem({
   onToggleSubtask,
   onUpdateSubtasks,
   onOpenNote,
+  people,
+  subtaskMentions,
   isDragging: isOverlay,
   viewMode = 'active',
   dropIndicator,
@@ -898,19 +898,21 @@ export function TodoItem({
       >
       {dropIndicator === 'above' && dropLine}
       <div className="flex items-center gap-0.5">
-      {/* Drag Handle — CSS hover class */}
-      {viewMode === 'active' && (
-        <button
-          {...attributes}
-          {...listeners}
-          className={cn(
-            'todo-drag-handle flex-shrink-0 cursor-grab touch-none p-0.5 rounded transition-colors self-center',
-            dragging && 'cursor-grabbing'
-          )}
-        >
-          <GripVertical className="h-3.5 w-3.5" />
-        </button>
-      )}
+      {/* Reserve a consistent gutter so the card body stays aligned across filters */}
+      <div className="flex w-[18px] flex-shrink-0 justify-center">
+        {viewMode === 'active' && (
+          <button
+            {...attributes}
+            {...listeners}
+            className={cn(
+              'todo-drag-handle cursor-grab touch-none p-0.5 rounded transition-colors self-center',
+              dragging && 'cursor-grabbing'
+            )}
+          >
+            <GripVertical className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
 
       {/* Card */}
       <div
@@ -942,6 +944,8 @@ export function TodoItem({
           onToggleSubtask={onToggleSubtask}
           onUpdateSubtasks={onUpdateSubtasks}
           onOpenNote={onOpenNote}
+          people={people}
+          subtaskMentions={subtaskMentions}
           isDragging={dragging}
           viewMode={viewMode}
           compact={compact}
@@ -951,6 +955,7 @@ export function TodoItem({
           todoId={todo.id}
           open={contactsOpen}
           onClose={() => setContactsOpen(false)}
+          people={people}
         />
       </div>
 
@@ -978,7 +983,16 @@ export function TodoItem({
   )
 }
 
-export function TodoItemOverlay({ todo, onStatusChange, onPriorityChange, onDelete, onEdit, compact = false }: Omit<TodoItemProps, 'isDragging' | 'viewMode' | 'dropIndicator'>) {
+export function TodoItemOverlay({
+  todo,
+  onStatusChange,
+  onPriorityChange,
+  onDelete,
+  onEdit,
+  people,
+  subtaskMentions,
+  compact = false,
+}: Omit<TodoItemProps, 'isDragging' | 'viewMode' | 'dropIndicator'>) {
   const isCompleted = todo.status === 'COMPLETED'
 
   return (
@@ -1006,6 +1020,8 @@ export function TodoItemOverlay({ todo, onStatusChange, onPriorityChange, onDele
           onPriorityChange={onPriorityChange}
           onDelete={onDelete}
           onEdit={onEdit}
+          people={people}
+          subtaskMentions={subtaskMentions}
           isDragging={true}
           compact={compact}
         />

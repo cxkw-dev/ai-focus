@@ -10,6 +10,7 @@ import { NoteDrawer } from '@/components/todos/note-drawer'
 import { useToast } from '@/components/ui/use-toast'
 import { useTodos } from '@/hooks/use-todos'
 import { useLabels } from '@/hooks/use-labels'
+import { usePeople } from '@/hooks/use-people'
 import { buildColumns, categorizeTodosByLabel } from '@/lib/categorize-todos'
 import { todosApi } from '@/lib/api'
 import type { Todo, UpdateTodoInput, CreateTodoInput, SubtaskInput } from '@/types/todo'
@@ -32,6 +33,7 @@ export default function TodosPage() {
     toggleSubtask,
   } = useTodos()
   const { labels } = useLabels()
+  const { people } = usePeople()
   const { toast } = useToast()
 
   const [editingTodo, setEditingTodo] = React.useState<Todo | null>(null)
@@ -84,6 +86,14 @@ export default function TodosPage() {
   )
   const categorizedDeleted = React.useMemo(
     () => categorizeTodosByLabel(deletedTodos, columns), [deletedTodos, columns]
+  )
+  const subtaskMentions = React.useMemo(
+    () => people.map((person) => ({ id: person.id, name: person.name, email: person.email })),
+    [people]
+  )
+  const todoTitleById = React.useMemo(
+    () => new Map([...todos, ...completedTodos, ...deletedTodos].map((todo) => [todo.id, todo.title])),
+    [todos, completedTodos, deletedTodos]
   )
 
   const handleCreate = React.useCallback(async (data: CreateTodoInput) => {
@@ -168,11 +178,9 @@ export default function TodosPage() {
 
   const handleOpenNote = React.useCallback(
     (todoId: string, noteId: string) => {
-      const allTodos = [...todos, ...completedTodos, ...deletedTodos]
-      const todo = allTodos.find(t => t.id === todoId)
-      setOpenNote({ todoId, noteId, todoTitle: todo?.title ?? 'Note' })
+      setOpenNote({ todoId, noteId, todoTitle: todoTitleById.get(todoId) ?? 'Note' })
     },
-    [todos, completedTodos, deletedTodos]
+    [todoTitleById]
   )
 
   const handleUnlinkNote = React.useCallback(async () => {
@@ -245,18 +253,18 @@ export default function TodosPage() {
                   aria-selected={isActive}
                   onClick={() => setMobileCategory(col.key)}
                   onKeyDown={(event) => handleMobileCategoryKeyDown(event, col.key)}
-                  className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-semibold transition-all active:scale-[0.99]"
+                  className="flex min-w-[152px] flex-1 items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left transition-all active:scale-[0.99]"
                   style={{
                     border: `1px solid ${isActive
                       ? `color-mix(in srgb, ${col.color} 45%, var(--border-color))`
                       : 'transparent'}`,
                     backgroundColor: isActive
-                      ? `color-mix(in srgb, ${col.color} 16%, var(--surface-2) 84%)`
+                      ? 'color-mix(in srgb, var(--surface-2) 82%, transparent)'
                       : 'transparent',
                     color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
                   }}
                 >
-                  <span className="flex items-center gap-2 min-w-0">
+                  <span className="flex min-w-0 flex-1 items-center gap-2">
                     <span
                       className="h-2 w-2 rounded-full flex-shrink-0"
                       style={{
@@ -266,7 +274,12 @@ export default function TodosPage() {
                           : 'none',
                       }}
                     />
-                    <span className="leading-none truncate">{col.title}</span>
+                    <span
+                      className="block min-w-0 truncate text-xs font-semibold leading-none"
+                      style={{ color: 'var(--text-primary)' }}
+                    >
+                      {col.title}
+                    </span>
                   </span>
 
                   <span
@@ -312,6 +325,8 @@ export default function TodosPage() {
               onCreateTodo={handleCreate}
               isSaving={isSaving}
               defaultLabelIds={mobileCol.labelId ? [mobileCol.labelId] : []}
+              people={people}
+              subtaskMentions={subtaskMentions}
               showInlineForm={false}
               animateListTransitions={false}
               compact={compact}
@@ -351,6 +366,8 @@ export default function TodosPage() {
               onCreateTodo={handleCreate}
               isSaving={isSaving}
               defaultLabelIds={col.labelId ? [col.labelId] : []}
+              people={people}
+              subtaskMentions={subtaskMentions}
               showInlineForm={false}
               compact={compact}
             />
@@ -365,6 +382,7 @@ export default function TodosPage() {
         onSubmit={handleUpdate}
         todo={editingTodo}
         isLoading={isSaving}
+        people={people}
       />
 
       {/* Create Modal */}
@@ -373,6 +391,7 @@ export default function TodosPage() {
         onOpenChange={setIsCreateModalOpen}
         onSubmit={handleCreate}
         isLoading={isSaving}
+        people={people}
       />
 
       {/* Note Drawer */}

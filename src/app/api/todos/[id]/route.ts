@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Prisma } from '@prisma/client'
+import { Prisma, Priority as PrismaPriority, Status as PrismaStatus } from '@prisma/client'
 import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
 import { evaluateAccomplishment } from '@/lib/accomplishment-agent'
+import { todoInclude, todoWhere } from '@/lib/todo-queries'
 import { z } from 'zod'
 
 const subtaskSchema = z.object({
@@ -30,15 +31,6 @@ const updateTodoSchema = z.object({
   notebookNoteId: z.string().optional().nullable(),
 })
 
-// Resolve an id param that could be a cuid or a task number (e.g. "7")
-function todoWhere(id: string) {
-  const num = Number(id)
-  if (Number.isInteger(num) && num > 0) {
-    return { taskNumber: num }
-  }
-  return { id }
-}
-
 function isNotFoundError(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025'
 }
@@ -51,11 +43,7 @@ export async function GET(
     const { id } = await params
     const todo = await db.todo.findUnique({
       where: todoWhere(id),
-      include: {
-        labels: { orderBy: { name: 'asc' } },
-        subtasks: { orderBy: { order: 'asc' } },
-        notebookNote: { select: { id: true, title: true } },
-      },
+      include: todoInclude,
     })
 
     if (!todo) {
@@ -80,49 +68,49 @@ export async function PATCH(
     const { id } = await params
     const body = await request.json()
     const validatedData = updateTodoSchema.parse(body)
-    const { labelIds, subtasks, ...todoData } = validatedData
+    const { labelIds, subtasks, notebookNoteId, dueDate, ...todoData } = validatedData
 
     const todo = await db.$transaction(async (tx) => {
       let resolvedTodoId: string | null = null
+      let completedAt: Date | null | undefined
+
+      const needsExistingTodo = todoData.status !== undefined || subtasks !== undefined
+      const existingTodo = needsExistingTodo
+        ? await tx.todo.findUnique({
+            where: todoWhere(id),
+            select: {
+              id: true,
+              status: true,
+              subtasks: { select: { id: true } },
+            },
+          })
+        : null
+
+      if (needsExistingTodo && !existingTodo) {
+        throw new Error('TODO_NOT_FOUND')
+      }
+
+      resolvedTodoId = existingTodo?.id ?? null
 
       // Handle completedAt + auto-archive when status changes
       if (todoData.status !== undefined) {
-        const current = await tx.todo.findUnique({
-          where: todoWhere(id),
-          select: { id: true, status: true },
-        })
-
-        if (!current) throw new Error('TODO_NOT_FOUND')
-        resolvedTodoId = current.id
-
         if (todoData.status === 'COMPLETED') {
           todoData.archived = true
-          ;(todoData as Record<string, unknown>).completedAt = new Date()
-        } else if (current.status === 'COMPLETED') {
-          ;(todoData as Record<string, unknown>).completedAt = null
+          completedAt = new Date()
+        } else if (existingTodo?.status === 'COMPLETED') {
+          completedAt = null
           todoData.archived = false
 
           // Delete linked accomplishment when un-completing
           await tx.accomplishment.deleteMany({
-            where: { todoId: current.id },
+            where: { todoId: existingTodo.id },
           })
         }
       }
 
       // If subtasks are provided, do a declarative sync with ownership validation.
-      if (subtasks !== undefined) {
-        const existing = await tx.todo.findUnique({
-          where: todoWhere(id),
-          select: { id: true, subtasks: { select: { id: true } } },
-        })
-
-        if (!existing) {
-          throw new Error('TODO_NOT_FOUND')
-        }
-
-        resolvedTodoId = existing.id
-
-        const existingSubtaskIds = new Set(existing.subtasks.map((subtask) => subtask.id))
+      if (subtasks !== undefined && existingTodo) {
+        const existingSubtaskIds = new Set(existingTodo.subtasks.map((subtask) => subtask.id))
         const incomingSubtaskIds = new Set(
           subtasks
             .map((subtask) => subtask.id)
@@ -145,14 +133,14 @@ export async function PATCH(
           await tx.subtask.deleteMany({
             where: {
               id: { in: subtaskIdsToDelete },
-              todoId: existing.id,
+              todoId: existingTodo.id,
             },
           })
         }
 
-        for (const subtask of subtasks) {
+        await Promise.all(subtasks.map((subtask) => {
           if (subtask.id) {
-            await tx.subtask.update({
+            return tx.subtask.update({
               where: { id: subtask.id },
               data: {
                 title: subtask.title,
@@ -160,38 +148,55 @@ export async function PATCH(
                 order: subtask.order,
               },
             })
-            continue
           }
 
-          await tx.subtask.create({
+          return tx.subtask.create({
             data: {
               title: subtask.title,
               completed: subtask.completed ?? false,
               order: subtask.order,
-              todoId: existing.id,
+              todoId: existingTodo.id,
             },
           })
-        }
+        }))
+      }
+
+      const updateData: Prisma.TodoUpdateInput = {}
+
+      if (todoData.title !== undefined) updateData.title = todoData.title
+      if (todoData.description !== undefined) updateData.description = todoData.description
+      if (todoData.status !== undefined) updateData.status = todoData.status as PrismaStatus
+      if (todoData.archived !== undefined) updateData.archived = todoData.archived
+      if (todoData.priority !== undefined) updateData.priority = todoData.priority as PrismaPriority
+      if (todoData.myPrUrls !== undefined) updateData.myPrUrls = todoData.myPrUrls
+      if (todoData.githubPrUrls !== undefined) updateData.githubPrUrls = todoData.githubPrUrls
+      if (todoData.azureWorkItemUrl !== undefined) updateData.azureWorkItemUrl = todoData.azureWorkItemUrl
+      if (todoData.azureDepUrls !== undefined) updateData.azureDepUrls = todoData.azureDepUrls
+      if (todoData.myIssueUrls !== undefined) updateData.myIssueUrls = todoData.myIssueUrls
+      if (todoData.githubIssueUrls !== undefined) updateData.githubIssueUrls = todoData.githubIssueUrls
+
+      if (completedAt !== undefined) {
+        updateData.completedAt = completedAt
+      }
+
+      if (labelIds !== undefined) {
+        updateData.labels = { set: labelIds.map((labelId) => ({ id: labelId })) }
+      }
+
+      if (dueDate !== undefined) {
+        updateData.dueDate = dueDate ? new Date(dueDate) : null
+      }
+
+      if (notebookNoteId !== undefined) {
+        updateData.notebookNote = notebookNoteId === null
+          ? { disconnect: true }
+          : { connect: { id: notebookNoteId } }
       }
 
       const updatedTodo = await tx.todo.update({
         where: resolvedTodoId ? { id: resolvedTodoId } : todoWhere(id),
-        data: {
-          ...todoData,
-          ...(labelIds
-            ? { labels: { set: labelIds.map((labelId) => ({ id: labelId })) } }
-            : {}),
-          dueDate: validatedData.dueDate
-            ? new Date(validatedData.dueDate)
-            : validatedData.dueDate === null
-              ? null
-              : undefined,
-        },
-        include: {
-          labels: { orderBy: { name: 'asc' } },
-          subtasks: { orderBy: { order: 'asc' } },
-          notebookNote: { select: { id: true, title: true } },
-        },
+        data: updateData,
+        include: todoInclude,
       })
 
       return updatedTodo
@@ -248,7 +253,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {

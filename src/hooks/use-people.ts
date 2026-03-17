@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/components/ui/use-toast'
 import { peopleApi } from '@/lib/api'
+import { queryKeys } from '@/lib/query-keys'
 import type { Person } from '@/types/person'
 
 export function usePeople() {
@@ -10,14 +11,14 @@ export function usePeople() {
   const { toast } = useToast()
 
   const peopleQuery = useQuery({
-    queryKey: ['people'],
+    queryKey: queryKeys.people,
     queryFn: peopleApi.list,
   })
 
   const create = useMutation({
     mutationFn: peopleApi.create,
     onSuccess: (newPerson) => {
-      queryClient.setQueryData<Person[]>(['people'], (prev = []) =>
+      queryClient.setQueryData<Person[]>(queryKeys.people, (prev = []) =>
         [...prev, newPerson].sort((a, b) => a.name.localeCompare(b.name))
       )
       toast({ title: 'Person added', description: newPerson.name })
@@ -31,7 +32,7 @@ export function usePeople() {
     mutationFn: ({ id, data }: { id: string; data: Partial<Pick<Person, 'name' | 'email'>> }) =>
       peopleApi.update(id, data),
     onSuccess: (updatedPerson) => {
-      queryClient.setQueryData<Person[]>(['people'], (prev = []) =>
+      queryClient.setQueryData<Person[]>(queryKeys.people, (prev = []) =>
         prev
           .map(p => (p.id === updatedPerson.id ? updatedPerson : p))
           .sort((a, b) => a.name.localeCompare(b.name))
@@ -46,7 +47,7 @@ export function usePeople() {
   const remove = useMutation({
     mutationFn: peopleApi.delete,
     onSuccess: (_data, id) => {
-      queryClient.setQueryData<Person[]>(['people'], (prev = []) =>
+      queryClient.setQueryData<Person[]>(queryKeys.people, (prev = []) =>
         prev.filter(p => p.id !== id)
       )
       toast({ title: 'Person removed' })

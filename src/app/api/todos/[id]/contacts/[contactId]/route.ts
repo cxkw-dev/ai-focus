@@ -16,12 +16,20 @@ export async function PATCH(
   const body = await request.json()
   const data = updateContactSchema.parse(body)
 
-  const contact = await db.todoContact.update({
+  const updated = await db.todoContact.updateMany({
     where: { id: contactId, todoId: id },
     data,
+  })
+
+  if (updated.count === 0) {
+    return NextResponse.json({ error: 'Contact not found' }, { status: 404 })
+  }
+
+  const contact = await db.todoContact.findUniqueOrThrow({
+    where: { id: contactId },
     include: { person: { select: { id: true, name: true, email: true } } },
   })
-  emit('todos')
+  emit('todoContacts', { todoId: id })
   return NextResponse.json(contact)
 }
 
@@ -30,9 +38,14 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; contactId: string }> }
 ) {
   const { id, contactId } = await params
-  await db.todoContact.delete({
+  const deleted = await db.todoContact.deleteMany({
     where: { id: contactId, todoId: id },
   })
-  emit('todos')
+
+  if (deleted.count === 0) {
+    return NextResponse.json({ error: 'Contact not found' }, { status: 404 })
+  }
+
+  emit('todoContacts', { todoId: id })
   return NextResponse.json({ success: true })
 }

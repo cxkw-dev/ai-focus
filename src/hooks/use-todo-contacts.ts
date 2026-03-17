@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/components/ui/use-toast'
 import { todoContactsApi } from '@/lib/api'
+import { queryKeys } from '@/lib/query-keys'
 import type { TodoContact } from '@/types/todo'
 
 export function useTodoContacts(todoId: string, enabled = true) {
@@ -10,7 +11,7 @@ export function useTodoContacts(todoId: string, enabled = true) {
   const { toast } = useToast()
 
   const contactsQuery = useQuery({
-    queryKey: ['todos', todoId, 'contacts'],
+    queryKey: queryKeys.todoContacts(todoId),
     queryFn: () => todoContactsApi.list(todoId),
     enabled,
   })
@@ -20,7 +21,7 @@ export function useTodoContacts(todoId: string, enabled = true) {
       todoContactsApi.add(todoId, data),
     onSuccess: (newContact) => {
       queryClient.setQueryData<TodoContact[]>(
-        ['todos', todoId, 'contacts'],
+        queryKeys.todoContacts(todoId),
         (prev = []) => [...prev, newContact]
       )
       toast({ title: 'Contact added', description: newContact.person.name })
@@ -35,7 +36,7 @@ export function useTodoContacts(todoId: string, enabled = true) {
       todoContactsApi.update(todoId, contactId, data),
     onSuccess: (updatedContact) => {
       queryClient.setQueryData<TodoContact[]>(
-        ['todos', todoId, 'contacts'],
+        queryKeys.todoContacts(todoId),
         (prev = []) => prev.map(c => c.id === updatedContact.id ? updatedContact : c)
       )
     },
@@ -49,7 +50,7 @@ export function useTodoContacts(todoId: string, enabled = true) {
       todoContactsApi.remove(todoId, contactId),
     onSuccess: (_data, contactId) => {
       queryClient.setQueryData<TodoContact[]>(
-        ['todos', todoId, 'contacts'],
+        queryKeys.todoContacts(todoId),
         (prev = []) => prev.filter(c => c.id !== contactId)
       )
       toast({ title: 'Contact removed' })

@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/components/ui/use-toast'
 import { notebookApi } from '@/lib/api'
+import { queryKeys } from '@/lib/query-keys'
 import type { NotebookNote, CreateNotebookNoteInput, UpdateNotebookNoteInput } from '@/types/notebook'
 
 function pickNewestNote(current: NotebookNote, incoming: NotebookNote) {
@@ -16,14 +17,14 @@ export function useNotebook() {
   const { toast } = useToast()
 
   const notesQuery = useQuery({
-    queryKey: ['notebook'],
+    queryKey: queryKeys.notebook,
     queryFn: () => notebookApi.list(),
   })
 
   const create = useMutation({
     mutationFn: (data: CreateNotebookNoteInput | void) => notebookApi.create(data ?? undefined),
     onSuccess: (newNote) => {
-      queryClient.setQueryData<NotebookNote[]>(['notebook'], (prev = []) =>
+      queryClient.setQueryData<NotebookNote[]>(queryKeys.notebook, (prev = []) =>
         [newNote, ...prev.filter(note => note.id !== newNote.id)]
       )
     },
@@ -36,7 +37,7 @@ export function useNotebook() {
     mutationFn: ({ id, data }: { id: string; data: UpdateNotebookNoteInput }) =>
       notebookApi.update(id, data),
     onSuccess: (updatedNote) => {
-      queryClient.setQueryData<NotebookNote[]>(['notebook'], (prev = []) =>
+      queryClient.setQueryData<NotebookNote[]>(queryKeys.notebook, (prev = []) =>
         prev.map(note => {
           if (note.id !== updatedNote.id) return note
           return pickNewestNote(note, updatedNote)
@@ -53,7 +54,7 @@ export function useNotebook() {
     mutationFn: ({ id, content }: { id: string; content: string }) =>
       notebookApi.update(id, { content }),
     onSuccess: (updatedNote) => {
-      queryClient.setQueryData<NotebookNote[]>(['notebook'], (prev = []) =>
+      queryClient.setQueryData<NotebookNote[]>(queryKeys.notebook, (prev = []) =>
         prev.map(note => {
           if (note.id !== updatedNote.id) return note
           return pickNewestNote(note, updatedNote)
@@ -65,21 +66,21 @@ export function useNotebook() {
   const remove = useMutation({
     mutationFn: notebookApi.delete,
     onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: ['notebook'] })
-      const prev = queryClient.getQueryData<NotebookNote[]>(['notebook'])
-      queryClient.setQueryData<NotebookNote[]>(['notebook'], (old = []) =>
+      await queryClient.cancelQueries({ queryKey: queryKeys.notebook })
+      const prev = queryClient.getQueryData<NotebookNote[]>(queryKeys.notebook)
+      queryClient.setQueryData<NotebookNote[]>(queryKeys.notebook, (old = []) =>
         old.filter(n => n.id !== id)
       )
       return { prev }
     },
     onError: (_err, _id, context) => {
       if (context?.prev) {
-        queryClient.setQueryData(['notebook'], context.prev)
+        queryClient.setQueryData(queryKeys.notebook, context.prev)
       }
       toast({ title: 'Error', description: 'Failed to delete note.', variant: 'destructive' })
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['notebook'] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.notebook })
     },
   })
 

@@ -24,6 +24,7 @@ import { Circle, CheckCircle2, Trash2, Inbox, Search, X } from 'lucide-react'
 import { TodoItem, TodoItemOverlay } from './todo-item'
 import { InlineTodoForm } from './inline-todo-form'
 import type { Todo, Status, Priority, CreateTodoInput, SubtaskInput } from '@/types/todo'
+import type { Person } from '@/types/person'
 
 type Filter = 'active' | 'completed' | 'deleted'
 
@@ -46,6 +47,8 @@ interface TodoColumnProps {
   onCreateTodo: (data: CreateTodoInput) => Promise<boolean>
   isSaving?: boolean
   defaultLabelIds?: string[]
+  people: Person[]
+  subtaskMentions: Array<Pick<Person, 'id' | 'name' | 'email'>>
   showInlineForm?: boolean
   animateListTransitions?: boolean
   compact?: boolean
@@ -70,6 +73,8 @@ export function TodoColumn({
   onCreateTodo,
   isSaving,
   defaultLabelIds,
+  people,
+  subtaskMentions,
   showInlineForm = true,
   animateListTransitions = true,
   compact = false,
@@ -148,6 +153,10 @@ export function TodoColumn({
     { value: 'completed' as Filter, label: 'Completed', icon: CheckCircle2, count: completedTodos.length, color: 'var(--status-done)' },
     { value: 'deleted' as Filter, label: 'Deleted', icon: Trash2, count: deletedTodos.length, color: 'var(--status-on-hold)' },
   ]
+  const headerInsetStyle = {
+    marginLeft: '20px',
+    marginRight: '22px',
+  }
 
   const emptyMessage = filter === 'active'
     ? 'No active tasks'
@@ -193,47 +202,69 @@ export function TodoColumn({
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Column header */}
-      <div className="flex items-center justify-between mb-2 flex-shrink-0">
-        <div className="flex items-center gap-2">
+      <div className="mb-3 shrink-0" style={headerInsetStyle}>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 items-center">
+              <h2
+                className="truncate text-[11px] font-bold leading-none"
+                style={{
+                  color: 'var(--text-primary)',
+                }}
+              >
+                {title}
+              </h2>
+            </div>
+          </div>
+
           <div
-            className="w-1 h-4 rounded-full"
+            className="flex items-center gap-0.5 self-start sm:self-auto"
+          >
+            {tabs.map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => setFilter(tab.value)}
+                className="todo-filter-btn flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px] font-medium transition-colors"
+                style={filter === tab.value ? {
+                  backgroundColor: 'color-mix(in srgb, var(--surface-2) 78%, transparent)',
+                  color: tab.color,
+                } : {
+                  color: 'var(--text-muted)',
+                }}
+                data-color={tab.color}
+                data-active={filter === tab.value ? 'true' : undefined}
+                onMouseEnter={(e) => {
+                  if (filter !== tab.value) {
+                    e.currentTarget.style.color = tab.color
+                    e.currentTarget.style.backgroundColor = `color-mix(in srgb, ${tab.color} 10%, transparent)`
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (filter !== tab.value) {
+                    e.currentTarget.style.color = 'var(--text-muted)'
+                    e.currentTarget.style.backgroundColor = 'transparent'
+                  }
+                }}
+              >
+                <tab.icon className="h-2.5 w-2.5" />
+                {tab.count > 0 && (
+                  <span className="tabular-nums">{tab.count}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="mt-2 flex items-center gap-2">
+          <div
+            className="h-px w-8 flex-shrink-0"
             style={{ backgroundColor: color }}
           />
-          <h2 className="text-xs font-medium uppercase tracking-wide" style={{ color }}>{title}</h2>
-        </div>
-        <div className="flex items-center gap-0.5">
-          {tabs.map((tab) => (
-            <button
-              key={tab.value}
-              onClick={() => setFilter(tab.value)}
-              className="todo-filter-btn flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] font-medium transition-colors"
-              style={filter === tab.value ? {
-                backgroundColor: `color-mix(in srgb, ${tab.color} 15%, transparent)`,
-                color: tab.color,
-              } : {
-                color: 'var(--text-muted)',
-              }}
-              data-color={tab.color}
-              data-active={filter === tab.value ? 'true' : undefined}
-              onMouseEnter={(e) => {
-                if (filter !== tab.value) {
-                  e.currentTarget.style.color = tab.color
-                  e.currentTarget.style.backgroundColor = `color-mix(in srgb, ${tab.color} 10%, transparent)`
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (filter !== tab.value) {
-                  e.currentTarget.style.color = 'var(--text-muted)'
-                  e.currentTarget.style.backgroundColor = 'transparent'
-                }
-              }}
-            >
-              <tab.icon className="h-2.5 w-2.5" />
-              {tab.count > 0 && (
-                <span className="tabular-nums">{tab.count}</span>
-              )}
-            </button>
-          ))}
+          <div
+            className="h-px flex-1"
+            style={{
+              background: `linear-gradient(90deg, color-mix(in srgb, ${color} 20%, transparent) 0%, transparent 100%)`,
+            }}
+          />
         </div>
       </div>
 
@@ -244,6 +275,7 @@ export function TodoColumn({
             onSubmit={onCreateTodo}
             isLoading={isSaving}
             defaultLabelIds={defaultLabelIds}
+            subtaskMentions={subtaskMentions}
           />
         </div>
       )}
@@ -334,6 +366,8 @@ export function TodoColumn({
                             onToggleSubtask={onToggleSubtask}
                             onUpdateSubtasks={onUpdateSubtasks}
                             onOpenNote={onOpenNote}
+                            people={people}
+                            subtaskMentions={subtaskMentions}
                             viewMode={filter}
                             dropIndicator={dropIndicator}
                             animateTransitions={true}
@@ -363,6 +397,8 @@ export function TodoColumn({
                           onRestore={onRestore}
                           onToggleSubtask={onToggleSubtask}
                           onUpdateSubtasks={onUpdateSubtasks}
+                          people={people}
+                          subtaskMentions={subtaskMentions}
                           viewMode={filter}
                           dropIndicator={dropIndicator}
                           animateTransitions={false}
@@ -383,6 +419,8 @@ export function TodoColumn({
                   onPriorityChange={() => {}}
                   onDelete={() => {}}
                   onEdit={() => {}}
+                  people={people}
+                  subtaskMentions={subtaskMentions}
                   compact={compact}
                 />
               ) : null}

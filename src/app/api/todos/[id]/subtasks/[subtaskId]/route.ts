@@ -2,19 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
+import { todoInclude, todoWhere } from '@/lib/todo-queries'
 import { z } from 'zod'
 
 const toggleSchema = z.object({
   completed: z.boolean(),
 })
-
-function todoWhere(id: string) {
-  const num = Number(id)
-  if (Number.isInteger(num) && num > 0) {
-    return { taskNumber: num }
-  }
-  return { id }
-}
 
 function isNotFoundError(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025'
@@ -59,10 +52,7 @@ export async function PATCH(
     // Return the full parent todo for cache update
     const updatedTodo = await db.todo.findUniqueOrThrow({
       where: { id: todo.id },
-      include: {
-        labels: { orderBy: { name: 'asc' } },
-        subtasks: { orderBy: { order: 'asc' } },
-      },
+      include: todoInclude,
     })
 
     emit('todos')

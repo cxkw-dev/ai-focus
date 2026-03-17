@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { emit } from '@/lib/events'
 import { z } from 'zod'
 
 const updateLabelSchema = z.object({
@@ -21,6 +22,7 @@ export async function PATCH(
       data: validatedData,
     })
 
+    emit('labels')
     return NextResponse.json(label)
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -39,12 +41,13 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
     await db.label.delete({ where: { id } })
+    emit('labels')
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error deleting label:', error)

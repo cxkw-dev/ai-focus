@@ -26,7 +26,6 @@ import { LabelMultiSelect, LabelManagerDialog } from './label-multi-select'
 import { PrioritySelector } from './priority-selector'
 import { SingleUrlField, UrlListField, AzureIcon, GitHubIcon } from './url-fields'
 import { useLabels } from '@/hooks/use-labels'
-import { usePeople } from '@/hooks/use-people'
 import { useTodoForm } from '@/hooks/use-todo-form'
 import {
   hasMeaningfulText,
@@ -36,6 +35,7 @@ import {
   normalizeSubtaskTitle,
 } from '@/lib/rich-text'
 import type { CreateTodoInput } from '@/types/todo'
+import type { Person } from '@/types/person'
 
 interface CreateTodoModalProps {
   open: boolean
@@ -43,6 +43,7 @@ interface CreateTodoModalProps {
   onSubmit: (data: CreateTodoInput) => Promise<boolean>
   isLoading?: boolean
   defaultLabelIds?: string[]
+  people: Person[]
 }
 
 export function CreateTodoModal({
@@ -51,9 +52,9 @@ export function CreateTodoModal({
   onSubmit,
   isLoading,
   defaultLabelIds,
+  people,
 }: CreateTodoModalProps) {
   const { labels, handleCreate: onCreateLabel, handleUpdate: onUpdateLabel, handleDelete: onDeleteLabel } = useLabels()
-  const { people } = usePeople()
   const form = useTodoForm(null, { initialLabelIds: defaultLabelIds })
   const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')

@@ -4,17 +4,17 @@ import * as React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Plus, Users, Trash2 } from 'lucide-react'
 import { useTodoContacts } from '@/hooks/use-todo-contacts'
-import { usePeople } from '@/hooks/use-people'
+import type { Person } from '@/types/person'
 
 interface ContactsDrawerProps {
   todoId: string
   open: boolean
   onClose: () => void
+  people: Person[]
 }
 
-export function ContactsDrawer({ todoId, open, onClose }: ContactsDrawerProps) {
+export function ContactsDrawer({ todoId, open, onClose, people }: ContactsDrawerProps) {
   const { contacts, isLoading, addContact, updateContact, removeContact } = useTodoContacts(todoId, open)
-  const { people } = usePeople()
   const [selectedPersonId, setSelectedPersonId] = React.useState('')
   const [role, setRole] = React.useState('')
   const [editingContactId, setEditingContactId] = React.useState<string | null>(null)

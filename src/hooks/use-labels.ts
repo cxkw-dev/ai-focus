@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/components/ui/use-toast'
 import { labelsApi } from '@/lib/api'
+import { queryKeys } from '@/lib/query-keys'
 import type { Label } from '@/types/todo'
 
 export function useLabels() {
@@ -10,17 +11,17 @@ export function useLabels() {
   const { toast } = useToast()
 
   const labelsQuery = useQuery({
-    queryKey: ['labels'],
+    queryKey: queryKeys.labels,
     queryFn: labelsApi.list,
   })
 
   const create = useMutation({
     mutationFn: labelsApi.create,
     onSuccess: (newLabel) => {
-      queryClient.setQueryData<Label[]>(['labels'], (prev = []) =>
+      queryClient.setQueryData<Label[]>(queryKeys.labels, (prev = []) =>
         [...prev, newLabel].sort((a, b) => a.name.localeCompare(b.name))
       )
-      queryClient.invalidateQueries({ queryKey: ['todos'] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
       toast({ title: 'Label created', description: newLabel.name })
     },
     onError: () => {
@@ -32,12 +33,12 @@ export function useLabels() {
     mutationFn: ({ id, data }: { id: string; data: Partial<Pick<Label, 'name' | 'color'>> }) =>
       labelsApi.update(id, data),
     onSuccess: (updatedLabel) => {
-      queryClient.setQueryData<Label[]>(['labels'], (prev = []) =>
+      queryClient.setQueryData<Label[]>(queryKeys.labels, (prev = []) =>
         prev
           .map(l => (l.id === updatedLabel.id ? updatedLabel : l))
           .sort((a, b) => a.name.localeCompare(b.name))
       )
-      queryClient.invalidateQueries({ queryKey: ['todos'] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
       toast({ title: 'Label updated', description: updatedLabel.name })
     },
     onError: () => {
@@ -48,10 +49,10 @@ export function useLabels() {
   const remove = useMutation({
     mutationFn: labelsApi.delete,
     onSuccess: (_data, id) => {
-      queryClient.setQueryData<Label[]>(['labels'], (prev = []) =>
+      queryClient.setQueryData<Label[]>(queryKeys.labels, (prev = []) =>
         prev.filter(l => l.id !== id)
       )
-      queryClient.invalidateQueries({ queryKey: ['todos'] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
       toast({ title: 'Label deleted' })
     },
     onError: () => {

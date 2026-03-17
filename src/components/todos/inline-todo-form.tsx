@@ -13,7 +13,6 @@ import { LabelMultiSelect, LabelManagerDialog } from './label-multi-select'
 import { SubtaskMentionInput } from '@/components/ui/subtask-mention-input'
 import { UrlListField } from './url-fields'
 import { useLabels } from '@/hooks/use-labels'
-import { usePeople } from '@/hooks/use-people'
 import { useTodoForm } from '@/hooks/use-todo-form'
 import {
   hasMeaningfulText,
@@ -23,30 +22,28 @@ import {
   normalizeSubtaskTitle,
 } from '@/lib/rich-text'
 import type { CreateTodoInput, Priority } from '@/types/todo'
+import type { Person } from '@/types/person'
 
 interface InlineTodoFormProps {
   onSubmit: (data: CreateTodoInput) => Promise<boolean>
   isLoading?: boolean
   defaultLabelIds?: string[]
+  subtaskMentions: Array<Pick<Person, 'id' | 'name' | 'email'>>
 }
 
 export function InlineTodoForm({
   onSubmit,
   isLoading,
   defaultLabelIds,
+  subtaskMentions,
 }: InlineTodoFormProps) {
   const { labels, handleCreate: onCreateLabel, handleUpdate: onUpdateLabel, handleDelete: onDeleteLabel } = useLabels()
-  const { people } = usePeople()
   const form = useTodoForm(null, { initialLabelIds: defaultLabelIds })
   const [isExpanded, setIsExpanded] = React.useState(false)
   const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
   const [newPrUrl, setNewPrUrl] = React.useState('')
   const [newAzureDepUrl, setNewAzureDepUrl] = React.useState('')
-  const subtaskMentions = React.useMemo(
-    () => people.map((person) => ({ id: person.id, name: person.name, email: person.email })),
-    [people]
-  )
   const resetForm = form.reset
 
   const submitCurrentTodo = React.useCallback(async () => {

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Prisma } from '@prisma/client'
+import { Prisma, Priority as PrismaPriority, Status as PrismaStatus } from '@prisma/client'
 import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
+import { activeTodoOrderBy, todoInclude } from '@/lib/todo-queries'
 import { z } from 'zod'
 
 const statusSchema = z.enum(['TODO', 'IN_PROGRESS', 'WAITING', 'UNDER_REVIEW', 'ON_HOLD', 'COMPLETED'])
@@ -66,18 +67,23 @@ export async function GET(request: NextRequest) {
     }
 
     if (validatedQuery.status) {
-      where.status = validatedQuery.status
+      where.status = validatedQuery.status as PrismaStatus
     } else if (validatedQuery.completed !== undefined) {
       // For backwards compatibility, map completed=true to COMPLETED status
-      where.status = validatedQuery.completed === 'true' ? 'COMPLETED' : { not: 'COMPLETED' }
+      where.status = validatedQuery.completed === 'true'
+        ? PrismaStatus.COMPLETED
+        : { not: PrismaStatus.COMPLETED }
     }
 
     if (validatedQuery.priority) {
-      where.priority = validatedQuery.priority
+      where.priority = validatedQuery.priority as PrismaPriority
     }
 
     if (validatedQuery.excludeStatus) {
-      where.status = { ...((where.status as object) ?? {}), not: validatedQuery.excludeStatus }
+      where.status = {
+        ...((where.status as object) ?? {}),
+        not: validatedQuery.excludeStatus as PrismaStatus,
+      }
     }
 
     if (validatedQuery.search) {
@@ -87,21 +93,15 @@ export async function GET(request: NextRequest) {
     const orderBy: Prisma.TodoOrderByWithRelationInput[] =
       validatedQuery.sortBy === 'completedAt'
         ? [{ completedAt: 'desc' }]
-        : validatedQuery.sortBy === 'updatedAt'
+      : validatedQuery.sortBy === 'updatedAt'
           ? [{ updatedAt: 'desc' }]
-          : [{ order: 'asc' }, { createdAt: 'desc' }]
-
-    const include = {
-      labels: { orderBy: { name: 'asc' } as const },
-      subtasks: { orderBy: { order: 'asc' } as const },
-      notebookNote: { select: { id: true, title: true } },
-    }
+          : activeTodoOrderBy
 
     if (validatedQuery.limit !== undefined) {
       const [todos, total] = await Promise.all([
         db.todo.findMany({
           where,
-          include,
+          include: todoInclude,
           orderBy,
           take: validatedQuery.limit,
           skip: validatedQuery.offset ?? 0,
@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ todos, total })
     }
 
-    const todos = await db.todo.findMany({ where, include, orderBy })
+    const todos = await db.todo.findMany({ where, include: todoInclude, orderBy })
 
     return NextResponse.json(todos)
   } catch (error) {
@@ -157,9 +157,7 @@ export async function POST(request: NextRequest) {
         order: newOrder,
       },
       include: {
-        labels: { orderBy: { name: 'asc' } },
-        subtasks: { orderBy: { order: 'asc' } },
-        notebookNote: { select: { id: true, title: true } },
+        ...todoInclude,
       },
     })
 

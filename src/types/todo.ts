@@ -107,6 +107,12 @@ export interface PaginatedTodosResponse {
   total: number
 }
 
+export interface TodoBoardResponse {
+  active: Todo[]
+  completed: Todo[]
+  deleted: Todo[]
+}
+
 export interface SubtaskInput {
   id?: string
   title: string

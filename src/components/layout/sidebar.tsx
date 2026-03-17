@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -111,11 +112,12 @@ export function Sidebar({ collapsed, onCollapse, transition = { duration: 0.2, e
                 backgroundColor: 'var(--primary)',
               }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src="/icon-192.png"
                 alt="Focus"
-                className="w-full h-full"
+                width={40}
+                height={40}
+                className="h-full w-full"
                 style={{ imageRendering: 'pixelated' }}
               />
             </div>
