@@ -10,8 +10,8 @@ import {
   CheckSquare,
   ChevronLeft,
   FileText,
+  PenLine,
   Settings,
-  StickyNote,
 } from 'lucide-react'
 import {
   Tooltip,
@@ -28,7 +28,7 @@ interface SidebarProps {
 
 const topNavItems = [
   { title: 'Todos', href: '/todos', icon: CheckSquare },
-  { title: 'Scratch Pad', href: '/scratchpad', icon: StickyNote },
+  { title: 'Scratch Pad', href: '/scratchpad', icon: PenLine },
   { title: 'Notes', href: '/notes', icon: FileText },
 ]
 
