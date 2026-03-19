@@ -4,25 +4,34 @@ export interface ColumnConfig {
   key: string       // label id or 'others'
   title: string
   color: string
-  labelId?: string  // undefined for 'others'
+  labelId?: string  // primary label for this column (undefined for 'others')
+  labelIds?: string[] // all label ids that map to this column
 }
+
+/** Labels that share the "Others" column instead of getting their own. */
+const MERGED_INTO_OTHERS = ['training']
 
 /**
  * Build column configs from labels. Projects is always centered,
  * other labels are split alphabetically around it, Others is last.
+ * Labels in MERGED_INTO_OTHERS are folded into the Others column.
  */
 export function buildColumns(labels: Label[]): ColumnConfig[] {
   const projectsLabel = labels.find(l => l.name.toLowerCase() === 'projects')
-  const otherLabels = labels
-    .filter(l => l !== projectsLabel)
+
+  const mergedLabels = labels.filter(l =>
+    MERGED_INTO_OTHERS.includes(l.name.toLowerCase())
+  )
+  const columnLabels = labels
+    .filter(l => l !== projectsLabel && !mergedLabels.includes(l))
     .sort((a, b) => a.name.localeCompare(b.name))
 
   const columns: ColumnConfig[] = []
 
-  // Split other labels into left and right of projects
-  const midpoint = Math.ceil(otherLabels.length / 2)
-  const leftLabels = otherLabels.slice(0, midpoint)
-  const rightLabels = otherLabels.slice(midpoint)
+  // Split labels into left and right of projects
+  const midpoint = Math.ceil(columnLabels.length / 2)
+  const leftLabels = columnLabels.slice(0, midpoint)
+  const rightLabels = columnLabels.slice(midpoint)
 
   for (const label of leftLabels) {
     columns.push({ key: label.id, title: label.name, color: label.color, labelId: label.id })
@@ -36,8 +45,13 @@ export function buildColumns(labels: Label[]): ColumnConfig[] {
     columns.push({ key: label.id, title: label.name, color: label.color, labelId: label.id })
   }
 
-  // Others always last
-  columns.push({ key: 'others', title: 'Others', color: 'var(--status-waiting)' })
+  // Others column includes merged labels
+  columns.push({
+    key: 'others',
+    title: 'Others',
+    color: 'var(--status-waiting)',
+    labelIds: mergedLabels.map(l => l.id),
+  })
 
   return columns
 }
@@ -45,7 +59,7 @@ export function buildColumns(labels: Label[]): ColumnConfig[] {
 /**
  * Group todos into buckets matching the columns.
  * Each todo goes into the column of its first matching label.
- * Unlabeled todos go to "others".
+ * Unlabeled todos and todos whose only labels are merged go to "others".
  */
 export function categorizeTodosByLabel(
   todos: Todo[],
@@ -54,6 +68,12 @@ export function categorizeTodosByLabel(
   const labelIdToKey = new Map<string, string>()
   for (const col of columns) {
     if (col.labelId) labelIdToKey.set(col.labelId, col.key)
+    // Map merged labels to the others column
+    if (col.labelIds) {
+      for (const id of col.labelIds) {
+        labelIdToKey.set(id, col.key)
+      }
+    }
   }
 
   const result: Record<string, Todo[]> = {}

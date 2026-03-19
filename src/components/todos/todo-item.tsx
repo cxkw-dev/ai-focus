@@ -1020,31 +1020,30 @@ export function TodoItem({
         />
       </div>
 
-      {/* Side tab — contacts */}
+      {/* Side tabs — stacked vertically */}
       {!dragging && (
-        <button
-          onClick={(e) => { e.stopPropagation(); setContactsOpen(prev => !prev); setTimelineOpen(false) }}
-          className={cn(
-            'todo-contacts-tab flex-shrink-0 self-stretch w-5 flex items-center justify-center transition-all duration-150',
-            contactsOpen && 'todo-contacts-tab-active'
-          )}
-          title="Contacts"
-        >
-          <Users className="h-3 w-3" />
-        </button>
-      )}
-      {/* Side tab — timeline */}
-      {!dragging && (
-        <button
-          onClick={(e) => { e.stopPropagation(); setTimelineOpen(prev => !prev); setContactsOpen(false) }}
-          className={cn(
-            'todo-timeline-tab flex-shrink-0 self-stretch w-5 flex items-center justify-center rounded-r-lg transition-all duration-150',
-            timelineOpen && 'todo-timeline-tab-active'
-          )}
-          title="Timeline"
-        >
-          <Clock className="h-3 w-3" />
-        </button>
+        <div className="flex flex-col flex-shrink-0 self-stretch rounded-r-lg overflow-hidden">
+          <button
+            onClick={(e) => { e.stopPropagation(); setContactsOpen(prev => !prev); setTimelineOpen(false) }}
+            className={cn(
+              'todo-contacts-tab flex-1 w-5 flex items-center justify-center transition-all duration-150',
+              contactsOpen && 'todo-contacts-tab-active'
+            )}
+            title="Contacts"
+          >
+            <Users className="h-3 w-3" />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); setTimelineOpen(prev => !prev); setContactsOpen(false) }}
+            className={cn(
+              'todo-timeline-tab flex-1 w-5 flex items-center justify-center transition-all duration-150',
+              timelineOpen && 'todo-timeline-tab-active'
+            )}
+            title="Timeline"
+          >
+            <Clock className="h-3 w-3" />
+          </button>
+        </div>
       )}
       </div>
       {dropIndicator === 'below' && dropLine}
