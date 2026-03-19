@@ -1033,7 +1033,7 @@ export function TodoItem({
           >
             <Users className="h-3 w-3" />
           </button>
-          <div className="h-px w-3 mx-auto" style={{ backgroundColor: 'var(--border-color)' }} />
+          <div className="h-px w-3.5 mx-auto" style={{ backgroundColor: 'var(--text-muted)', opacity: 0.4 }} />
           <button
             onClick={(e) => { e.stopPropagation(); setTimelineOpen(prev => !prev); setContactsOpen(false) }}
             className={cn(
