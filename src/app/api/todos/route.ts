@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Prisma, Priority as PrismaPriority, Status as PrismaStatus } from '@prisma/client'
 import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
+import { evaluateAccomplishment } from '@/lib/accomplishment-agent'
 import { activeTodoOrderBy, todoInclude } from '@/lib/todo-queries'
 import { z } from 'zod'
 
@@ -19,6 +20,7 @@ const createTodoSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
   description: z.string().max(10000).optional(),
   priority: prioritySchema.optional(),
+  status: statusSchema.optional(),
   dueDate: z.string().datetime().optional().nullable(),
   labelIds: z.array(z.string()).optional(),
   subtasks: z.array(subtaskSchema).optional(),
@@ -135,6 +137,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const validatedData = createTodoSchema.parse(body)
     const { labelIds, subtasks, ...todoData } = validatedData
+    const initialStatus = validatedData.status || 'TODO'
+    const isInitiallyCompleted = initialStatus === 'COMPLETED'
 
     // Get the minimum order value to place new todo at the top
     const minOrderTodo = await db.todo.findFirst({
@@ -147,6 +151,9 @@ export async function POST(request: NextRequest) {
       data: {
         ...todoData,
         priority: validatedData.priority || 'MEDIUM',
+        status: initialStatus,
+        archived: isInitiallyCompleted,
+        completedAt: isInitiallyCompleted ? new Date() : null,
         dueDate: validatedData.dueDate ? new Date(validatedData.dueDate) : null,
         labels: labelIds?.length
           ? { connect: labelIds.map((id) => ({ id })) }
@@ -160,6 +167,16 @@ export async function POST(request: NextRequest) {
         ...todoInclude,
       },
     })
+
+    if (isInitiallyCompleted) {
+      evaluateAccomplishment({
+        id: todo.id,
+        title: todo.title,
+        description: todo.description,
+        labels: todo.labels,
+        completedAt: todo.completedAt ?? new Date(),
+      })
+    }
 
     emit('todos')
     return NextResponse.json(todo, { status: 201 })

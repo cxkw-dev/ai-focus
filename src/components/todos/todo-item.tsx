@@ -74,6 +74,9 @@ const STATUS_CONFIG: Record<Status, { label: string; icon: React.ElementType; co
   COMPLETED: { label: 'Done', icon: CheckCircle2, colorVar: 'var(--status-done)', bgVar: 'var(--status-done)' },
 }
 
+const CARD_OVERLAY_STATUSES = new Set<Status>(['WAITING', 'UNDER_REVIEW', 'ON_HOLD'])
+const DAY_MS = 86_400_000
+
 const PRIORITY_CONFIG: Record<Priority, { label: string; colorVar: string; bgVar: string; icon: React.ElementType; pulse?: boolean }> = Object.fromEntries(
   Object.entries(PRIORITY_MAP).map(([key, p]) => [
     key,
@@ -108,6 +111,18 @@ function renderTextWithLinks(text: string) {
     }
     return part
   })
+}
+
+function getDaysInStatus(timestamp: string | null | undefined) {
+  const parsed = timestamp ? Date.parse(timestamp) : Number.NaN
+  if (Number.isNaN(parsed)) return 0
+  return Math.max(0, Math.floor((Date.now() - parsed) / DAY_MS))
+}
+
+function formatStatusAge(daysInStatus: number) {
+  if (daysInStatus <= 0) return 'today'
+  if (daysInStatus === 1) return '1 day in status'
+  return `${daysInStatus} days in status`
 }
 
 type ViewMode = 'active' | 'completed' | 'deleted'
@@ -393,6 +408,49 @@ function PriorityDropdown({ todo, onPriorityChange }: { todo: Todo; onPriorityCh
   )
 }
 
+function TodoStatusOverlay({ todo, compact = false }: { todo: Todo; compact?: boolean }) {
+  if (!CARD_OVERLAY_STATUSES.has(todo.status)) return null
+
+  const config = STATUS_CONFIG[todo.status]
+  const daysInStatus = getDaysInStatus(todo.statusChangedAt ?? todo.createdAt)
+
+  return (
+    <div
+      aria-hidden="true"
+      className={cn(
+        'pointer-events-none absolute z-10 flex items-center justify-center rounded-md border',
+        compact ? 'inset-1' : 'inset-1.5'
+      )}
+      style={{
+        backgroundColor: 'color-mix(in srgb, var(--surface) 82%, transparent)',
+        borderColor: `color-mix(in srgb, ${config.colorVar} 22%, transparent)`,
+      }}
+    >
+      <div className="flex flex-col items-center gap-1 px-3 text-center">
+        <span
+          className={cn(
+            'font-semibold uppercase leading-none',
+            compact ? 'text-[11px] tracking-[0.2em]' : 'text-[13px] tracking-[0.24em]'
+          )}
+          style={{ color: `color-mix(in srgb, ${config.colorVar} 72%, var(--text-primary))` }}
+        >
+          {config.label}
+        </span>
+        <span
+          className={cn(
+            'inline-flex items-center gap-1 font-medium leading-none',
+            compact ? 'text-[9px] tracking-[0.14em]' : 'text-[10px] tracking-[0.18em]'
+          )}
+          style={{ color: `color-mix(in srgb, ${config.colorVar} 52%, var(--text-muted))` }}
+        >
+          <Clock className="h-3 w-3" />
+          {formatStatusAge(daysInStatus)}
+        </span>
+      </div>
+    </div>
+  )
+}
+
 function TodoItemContent({
   todo,
   onStatusChange,
@@ -651,7 +709,7 @@ function TodoItemContent({
           </div>
 
           <div
-            className={cn('rounded-md', compact ? 'px-2 py-1.5' : 'px-2.5 py-2')}
+            className={cn('relative rounded-md', compact ? 'px-2 py-1.5' : 'px-2.5 py-2')}
             style={{ backgroundColor: 'color-mix(in srgb, var(--background) 50%, transparent)' }}
           >
             <div className="flex items-center gap-2">
@@ -698,6 +756,7 @@ function TodoItemContent({
                 </p>
               )
             )}
+            <TodoStatusOverlay todo={todo} compact={compact} />
           </div>
         </div>
       </div>
@@ -924,14 +983,10 @@ export function TodoItem({
           (isCompleted || viewMode !== 'active') && 'opacity-50'
         )}
         style={{
-          backgroundColor: todo.status === 'IN_PROGRESS'
-            ? `color-mix(in srgb, ${STATUS_CONFIG[todo.status].colorVar} 14%, var(--surface-2))`
-            : `color-mix(in srgb, ${STATUS_CONFIG[todo.status].colorVar} 8%, var(--surface-2))`,
+          backgroundColor: 'var(--surface-2)',
           boxShadow: dragging
             ? '0 0 0 2px color-mix(in srgb, var(--primary) 30%, transparent)'
-            : todo.status === 'IN_PROGRESS'
-              ? `0 0 12px color-mix(in srgb, ${STATUS_CONFIG[todo.status].colorVar} 12%, transparent)`
-              : undefined,
+            : undefined,
         }}
       >
         <TodoItemContent
@@ -950,7 +1005,6 @@ export function TodoItem({
           viewMode={viewMode}
           compact={compact}
         />
-
         <ContactsDrawer
           todoId={todo.id}
           open={contactsOpen}
@@ -967,11 +1021,6 @@ export function TodoItem({
             'todo-contacts-tab flex-shrink-0 self-stretch w-5 flex items-center justify-center rounded-r-lg transition-all duration-150',
             contactsOpen && 'todo-contacts-tab-active'
           )}
-          style={{
-            backgroundColor: todo.status === 'IN_PROGRESS'
-              ? `color-mix(in srgb, ${STATUS_CONFIG[todo.status].colorVar} 14%, var(--surface-2))`
-              : `color-mix(in srgb, ${STATUS_CONFIG[todo.status].colorVar} 8%, var(--surface-2))`,
-          }}
           title="Contacts"
         >
           <Users className="h-3 w-3" />
@@ -1005,7 +1054,7 @@ export function TodoItemOverlay({
 
       <div
         className={cn(
-          'group flex-1 rounded-lg shadow-2xl',
+          'group relative flex-1 rounded-lg shadow-2xl overflow-visible',
           compact ? 'px-2.5 py-1.5' : 'px-3 py-2.5',
           isCompleted && 'opacity-50'
         )}

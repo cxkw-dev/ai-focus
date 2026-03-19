@@ -48,6 +48,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/ensure-status-changed-at.js ./scripts/ensure-status-changed-at.js
 
 USER nextjs
 
@@ -59,4 +60,4 @@ ENV HOSTNAME="0.0.0.0"
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD wget -q --spider "http://127.0.0.1:${PORT}/" || exit 1
 
-CMD ["node", "server.js"]
+CMD ["sh", "-c", "node scripts/ensure-status-changed-at.js && node server.js"]

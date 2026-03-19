@@ -137,6 +137,7 @@ export function useTodos() {
       const previousBoard = queryClient.getQueryData<TodoBoardResponse>(queryKeys.todoBoard)
       const todo = findTodo(previousBoard, id)
       const previousStatus = todo?.status
+      const nextStatusChangedAt = new Date().toISOString()
 
       if (status === 'COMPLETED') {
         setBoardData((board) => ({
@@ -145,7 +146,11 @@ export function useTodos() {
         }))
       } else {
         setBoardData((board) =>
-          updateBoardTodo(board, id, (currentTodo) => ({ ...currentTodo, status }))
+          updateBoardTodo(board, id, (currentTodo) => ({
+            ...currentTodo,
+            status,
+            statusChangedAt: currentTodo.status === status ? currentTodo.statusChangedAt : nextStatusChangedAt,
+          }))
         )
       }
 

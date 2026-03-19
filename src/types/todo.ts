@@ -30,6 +30,7 @@ export interface Todo {
   createdAt: string
   updatedAt: string
   completedAt: string | null
+  statusChangedAt: string
   labels: Label[]
   subtasks: Subtask[]
   myPrUrls: string[]

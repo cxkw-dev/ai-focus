@@ -41,8 +41,24 @@ export function SubtaskMentionInput({
   const suppressBlurCommit = React.useRef(false)
   const onCommitRef = React.useRef(onCommit)
   const onFocusChangeRef = React.useRef(onFocusChange)
+  const latestValueRef = React.useRef(value)
   const peopleRef = React.useRef<MentionSuggestionItem[]>(mentions ?? [])
   const mentionActiveRef = React.useRef(false)
+  const lastCommitRef = React.useRef<{ value: string; at: number } | null>(null)
+
+  const commitIfNeeded = React.useCallback(() => {
+    const currentValue = latestValueRef.current
+    const now = Date.now()
+    const lastCommit = lastCommitRef.current
+
+    // Guard against duplicate Enter events from the rich-text editor lifecycle.
+    if (lastCommit && lastCommit.value === currentValue && now - lastCommit.at < 250) {
+      return
+    }
+
+    lastCommitRef.current = { value: currentValue, at: now }
+    onCommitRef.current?.()
+  }, [])
 
   React.useEffect(() => {
     onCommitRef.current = onCommit
@@ -102,8 +118,10 @@ export function SubtaskMentionInput({
     editable: !disabled,
     onUpdate: ({ editor: editorInstance }) => {
       const html = editorInstance.getHTML()
+      const normalized = html === '<p></p>' ? '' : html
       isInternalUpdate.current = true
-      onChange(html === '<p></p>' ? '' : html)
+      latestValueRef.current = normalized
+      onChange(normalized)
     },
     onBlur: () => {
       onFocusChangeRef.current?.(false)
@@ -114,7 +132,7 @@ export function SubtaskMentionInput({
         }
         // Don't commit if a mention was just selected (popup closing causes blur)
         if (mentionActiveRef.current) return
-        onCommitRef.current?.()
+        commitIfNeeded()
       }
     },
     onFocus: () => {
@@ -137,7 +155,7 @@ export function SubtaskMentionInput({
         }
         if (event.key === 'Enter') {
           event.preventDefault()
-          onCommitRef.current?.()
+          commitIfNeeded()
           if (commitOnBlur) {
             suppressBlurCommit.current = true
             _view.dom.blur()
@@ -148,6 +166,10 @@ export function SubtaskMentionInput({
       },
     },
   })
+
+  React.useEffect(() => {
+    latestValueRef.current = value
+  }, [value])
 
   React.useEffect(() => {
     if (!editor) return

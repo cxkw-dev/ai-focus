@@ -73,6 +73,7 @@ export async function PATCH(
     const todo = await db.$transaction(async (tx) => {
       let resolvedTodoId: string | null = null
       let completedAt: Date | null | undefined
+      let statusChangedAt: Date | undefined
 
       const needsExistingTodo = todoData.status !== undefined || subtasks !== undefined
       const existingTodo = needsExistingTodo
@@ -94,6 +95,10 @@ export async function PATCH(
 
       // Handle completedAt + auto-archive when status changes
       if (todoData.status !== undefined) {
+        if (existingTodo?.status !== todoData.status) {
+          statusChangedAt = new Date()
+        }
+
         if (todoData.status === 'COMPLETED') {
           todoData.archived = true
           completedAt = new Date()
@@ -177,6 +182,10 @@ export async function PATCH(
 
       if (completedAt !== undefined) {
         updateData.completedAt = completedAt
+      }
+
+      if (statusChangedAt !== undefined) {
+        updateData.statusChangedAt = statusChangedAt
       }
 
       if (labelIds !== undefined) {
