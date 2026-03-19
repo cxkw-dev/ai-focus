@@ -4,6 +4,13 @@ export interface SubtaskResponse {
     completed: boolean;
     order: number;
 }
+export interface StatusUpdateResponse {
+    id: string;
+    content: string;
+    status: string | null;
+    todoId: string;
+    createdAt: string;
+}
 export interface TodoResponse {
     id?: string;
     taskNumber: number;

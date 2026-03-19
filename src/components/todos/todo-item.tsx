@@ -60,6 +60,7 @@ import {
 } from '@/lib/rich-text'
 import { PrDependencyTree } from './pr-dependency-tree'
 import { ContactsDrawer } from './contacts-drawer'
+import { StatusUpdatesDrawer } from './status-updates-drawer'
 import type { Todo, Status, Priority, Subtask, SubtaskInput } from '@/types/todo'
 import type { Person } from '@/types/person'
 
@@ -928,6 +929,7 @@ export function TodoItem({
   } = useSortable({ id: todo.id, disabled: viewMode !== 'active' })
 
   const [contactsOpen, setContactsOpen] = React.useState(false)
+  const [timelineOpen, setTimelineOpen] = React.useState(false)
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -1011,19 +1013,37 @@ export function TodoItem({
           onClose={() => setContactsOpen(false)}
           people={people}
         />
+        <StatusUpdatesDrawer
+          todoId={todo.id}
+          open={timelineOpen}
+          onClose={() => setTimelineOpen(false)}
+        />
       </div>
 
       {/* Side tab — contacts */}
       {!dragging && (
         <button
-          onClick={(e) => { e.stopPropagation(); setContactsOpen(prev => !prev) }}
+          onClick={(e) => { e.stopPropagation(); setContactsOpen(prev => !prev); setTimelineOpen(false) }}
           className={cn(
-            'todo-contacts-tab flex-shrink-0 self-stretch w-5 flex items-center justify-center rounded-r-lg transition-all duration-150',
+            'todo-contacts-tab flex-shrink-0 self-stretch w-5 flex items-center justify-center transition-all duration-150',
             contactsOpen && 'todo-contacts-tab-active'
           )}
           title="Contacts"
         >
           <Users className="h-3 w-3" />
+        </button>
+      )}
+      {/* Side tab — timeline */}
+      {!dragging && (
+        <button
+          onClick={(e) => { e.stopPropagation(); setTimelineOpen(prev => !prev); setContactsOpen(false) }}
+          className={cn(
+            'todo-timeline-tab flex-shrink-0 self-stretch w-5 flex items-center justify-center rounded-r-lg transition-all duration-150',
+            timelineOpen && 'todo-timeline-tab-active'
+          )}
+          title="Timeline"
+        >
+          <Clock className="h-3 w-3" />
         </button>
       )}
       </div>

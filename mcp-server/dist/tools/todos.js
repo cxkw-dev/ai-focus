@@ -83,7 +83,11 @@ export function registerTodoTools(server) {
     });
     server.tool("update_todo", `Update an existing todo. Supports changing any field: title, description, status, priority, labels, subtasks, PRs, etc.
 
-IMPORTANT — Description handling:
+IMPORTANT — Status updates and progress notes:
+- Do NOT append status/progress updates to the description. Use add_status_update instead — it logs to the todo's dedicated timeline.
+- The description field is for the task's static context/requirements, not a running log.
+
+Description handling:
 - By default, descriptionMode is "append" which ADDS to the existing description (preserving all prior content).
 - Use descriptionMode "replace" ONLY when the user explicitly asks to overwrite/replace the entire description.
 - When appending, the new text is added below the existing content with a date separator.

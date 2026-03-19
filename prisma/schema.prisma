@@ -31,6 +31,7 @@ model Todo {
   subtasks        Subtask[]
   accomplishment  Accomplishment?
   contacts        TodoContact[]
+  statusUpdates   StatusUpdate[]
   notebookNoteId  String?        @unique
   notebookNote    NotebookNote?  @relation(fields: [notebookNoteId], references: [id], onDelete: SetNull)
 
@@ -121,6 +122,18 @@ model TodoContact {
   @@unique([todoId, personId])
   @@index([todoId])
   @@index([personId])
+}
+
+model StatusUpdate {
+  id        String   @id @default(cuid())
+  content   String
+  status    Status?
+  todoId    String
+  todo      Todo     @relation(fields: [todoId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([todoId])
+  @@index([createdAt])
 }
 
 enum AccomplishmentCategory {

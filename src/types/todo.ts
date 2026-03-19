@@ -43,6 +43,14 @@ export interface Todo {
   notebookNote?: { id: string; title: string } | null
 }
 
+export interface StatusUpdate {
+  id: string
+  content: string
+  status: Status | null
+  todoId: string
+  createdAt: string
+}
+
 export interface TodoContact {
   id: string
   role: string

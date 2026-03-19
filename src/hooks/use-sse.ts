@@ -47,6 +47,11 @@ export function useSSE() {
             if (todoId) {
               queryClient.invalidateQueries({ queryKey: queryKeys.todoContacts(todoId) })
             }
+          } else if (entity === 'todoUpdates') {
+            const todoId = getTodoContactsTodoId(payload)
+            if (todoId) {
+              queryClient.invalidateQueries({ queryKey: queryKeys.todoUpdates(todoId) })
+            }
           }
         } catch {
           // ignore malformed events

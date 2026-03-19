@@ -1,6 +1,7 @@
 export const queryKeys = {
   todoBoard: ['todo-board'] as const,
   todoContacts: (todoId: string) => ['todo-contacts', todoId] as const,
+  todoUpdates: (todoId: string) => ['todo-updates', todoId] as const,
   labels: ['labels'] as const,
   people: ['people'] as const,
   notebook: ['notebook'] as const,
