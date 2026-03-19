@@ -1022,22 +1022,21 @@ export function TodoItem({
 
       {/* Side tabs — stacked vertically */}
       {!dragging && (
-        <div className="flex flex-col flex-shrink-0 self-stretch rounded-r-lg overflow-hidden">
+        <div className="flex flex-col gap-px flex-shrink-0 self-stretch">
           <button
             onClick={(e) => { e.stopPropagation(); setContactsOpen(prev => !prev); setTimelineOpen(false) }}
             className={cn(
-              'todo-contacts-tab flex-1 w-5 flex items-center justify-center transition-all duration-150',
+              'todo-contacts-tab flex-1 w-5 flex items-center justify-center rounded-tr-lg transition-all duration-150',
               contactsOpen && 'todo-contacts-tab-active'
             )}
             title="Contacts"
           >
             <Users className="h-3 w-3" />
           </button>
-          <div className="w-3 mx-auto" style={{ height: '1px', backgroundColor: 'var(--border-color)' }} />
           <button
             onClick={(e) => { e.stopPropagation(); setTimelineOpen(prev => !prev); setContactsOpen(false) }}
             className={cn(
-              'todo-timeline-tab flex-1 w-5 flex items-center justify-center transition-all duration-150',
+              'todo-timeline-tab flex-1 w-5 flex items-center justify-center rounded-br-lg transition-all duration-150',
               timelineOpen && 'todo-timeline-tab-active'
             )}
             title="Timeline"
