@@ -5,7 +5,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { pushEvalEntry } from '@/lib/eval-store'
 import { queryKeys } from '@/lib/query-keys'
 
-function getTodoContactsTodoId(payload: unknown) {
+function getPayloadTodoId(payload: unknown) {
   if (!payload || typeof payload !== 'object') return null
 
   const todoId = (payload as { todoId?: unknown }).todoId
@@ -43,12 +43,12 @@ export function useSSE() {
             queryClient.invalidateQueries({ queryKey: queryKeys.labels })
             queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
           } else if (entity === 'todoContacts') {
-            const todoId = getTodoContactsTodoId(payload)
+            const todoId = getPayloadTodoId(payload)
             if (todoId) {
               queryClient.invalidateQueries({ queryKey: queryKeys.todoContacts(todoId) })
             }
           } else if (entity === 'todoUpdates') {
-            const todoId = getTodoContactsTodoId(payload)
+            const todoId = getPayloadTodoId(payload)
             if (todoId) {
               queryClient.invalidateQueries({ queryKey: queryKeys.todoUpdates(todoId) })
             }

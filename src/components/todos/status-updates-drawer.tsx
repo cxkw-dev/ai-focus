@@ -55,8 +55,12 @@ export function StatusUpdatesDrawer({ todoId, open, onClose }: StatusUpdatesDraw
   const handleAdd = async () => {
     const text = newContent.trim()
     if (!text) return
-    await addUpdate({ content: text })
-    setNewContent('')
+    try {
+      await addUpdate({ content: text })
+      setNewContent('')
+    } catch {
+      // onError toast handles user feedback
+    }
   }
 
   // Close on click outside
@@ -169,7 +173,7 @@ export function StatusUpdatesDrawer({ todoId, open, onClose }: StatusUpdatesDraw
                               {formatTimestamp(update.createdAt)}
                             </span>
                             <button
-                              onClick={() => removeUpdate(update.id)}
+                              onClick={() => { removeUpdate(update.id).catch(() => {}) }}
                               className="p-0.5 rounded opacity-0 group-hover/update:opacity-100 transition-opacity"
                               title="Remove update"
                             >

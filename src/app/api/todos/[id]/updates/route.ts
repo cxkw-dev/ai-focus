@@ -24,17 +24,29 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params
-  const body = await request.json()
-  const data = createSchema.parse(body)
+  try {
+    const { id } = await params
+    const body = await request.json()
+    const data = createSchema.parse(body)
 
-  const update = await db.statusUpdate.create({
-    data: {
-      todoId: id,
-      content: data.content,
-      status: data.status ?? null,
-    },
-  })
-  emit('todoUpdates', { todoId: id })
-  return NextResponse.json(update, { status: 201 })
+    const todo = await db.todo.findUnique({ where: { id }, select: { id: true } })
+    if (!todo) {
+      return NextResponse.json({ error: 'Todo not found' }, { status: 404 })
+    }
+
+    const update = await db.statusUpdate.create({
+      data: {
+        todoId: id,
+        content: data.content,
+        status: data.status ?? null,
+      },
+    })
+    emit('todoUpdates', { todoId: id })
+    return NextResponse.json(update, { status: 201 })
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return NextResponse.json({ error: err.issues }, { status: 400 })
+    }
+    throw err
+  }
 }

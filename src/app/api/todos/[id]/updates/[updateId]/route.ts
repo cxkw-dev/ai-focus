@@ -7,9 +7,16 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; updateId: string }> }
 ) {
   const { id, updateId } = await params
-  await db.statusUpdate.delete({
-    where: { id: updateId, todoId: id },
-  })
+  try {
+    await db.statusUpdate.delete({
+      where: { id: updateId, todoId: id },
+    })
+  } catch (err: unknown) {
+    if (err && typeof err === 'object' && 'code' in err && err.code === 'P2025') {
+      return NextResponse.json({ error: 'Update not found' }, { status: 404 })
+    }
+    throw err
+  }
   emit('todoUpdates', { todoId: id })
   return NextResponse.json({ success: true })
 }
