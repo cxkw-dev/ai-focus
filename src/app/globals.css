@@ -632,6 +632,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 .todo-contacts-tab:hover {
   color: var(--primary);
+  background-color: color-mix(in srgb, var(--primary) 10%, var(--surface-2));
 }
 .todo-contacts-tab-active {
   color: var(--primary);
@@ -656,6 +657,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 .todo-timeline-tab:hover {
   color: var(--primary);
+  background-color: color-mix(in srgb, var(--primary) 10%, var(--surface-2));
 }
 .todo-timeline-tab-active {
   color: var(--primary);
