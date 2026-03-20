@@ -20,9 +20,9 @@ const PROMPT = `You are a performance review assistant. A developer just complet
 3. Reject trivial tasks: typos, tiny config tweaks, version bumps, dependency updates.
 
 ## Categories
-- DELIVERY: Features, PRs, technical contributions, bug fixes, architecture work
+- DELIVERY: Features, PRs, code reviews, PR reviews, technical contributions, bug fixes, architecture work
 - HIRING: Interviews, candidate evaluation, hiring process improvements
-- MENTORING: Onboarding, coaching, code review guidance, helping team members grow
+- MENTORING: Onboarding, coaching, helping team members grow
 - COLLABORATION: Cross-team work, stakeholder coordination, driving alignment
 - GROWTH: Learning new technologies, certifications, skill development, conference talks, courses, reading, exploration
 - OTHER: Meaningful accomplishments that don't fit the above categories

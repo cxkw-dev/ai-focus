@@ -39,7 +39,13 @@
       "Bash(/Users/andynguyen/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.1/scripts/start-server.sh --project-dir /Users/andynguyen/ai-focus)",
       "Bash(bash /Users/andynguyen/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.1/skills/brainstorming/scripts/start-server.sh --project-dir /Users/andynguyen/ai-focus)",
       "Bash(git add:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(find . -type f \\\\\\(-name *.ts -o -name *.tsx -o -name *.js -o -name *.jsx -o -name *.json -o -name *.yml -o -name *.yaml -o -name Dockerfile -o -name .env* -o -name *.md \\\\\\) ! -path ./node_modules/* ! -path ./.next/* ! -path ./dist/* ! -path ./.git/*)",
+      "Bash(grep:*)",
+      "Bash(python3 -m json.tool)",
+      "Bash(git diff:*)",
+      "Bash(/Users/andynguyen/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.5/skills/brainstorming/scripts/start-server.sh --project-dir /Users/andynguyen/ai-focus)",
+      "Bash(git checkout:*)"
     ]
   }
 }
