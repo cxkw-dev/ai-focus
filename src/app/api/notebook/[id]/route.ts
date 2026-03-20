@@ -17,7 +17,7 @@ export async function GET(
     const note = await db.notebookNote.findUnique({
       where: { id },
       include: {
-        todo: { select: { id: true, taskNumber: true, title: true } },
+        todo: { select: { id: true, taskNumber: true, title: true, status: true, priority: true, dueDate: true, labels: { select: { id: true, name: true, color: true } } } },
       },
     })
 
@@ -48,7 +48,7 @@ export async function PATCH(
       where: { id },
       data: validatedData,
       include: {
-        todo: { select: { id: true, taskNumber: true, title: true } },
+        todo: { select: { id: true, taskNumber: true, title: true, status: true, priority: true, dueDate: true, labels: { select: { id: true, name: true, color: true } } } },
       },
     })
 

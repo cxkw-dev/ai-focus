@@ -188,7 +188,7 @@ export function NoteEditor({ note, onSaveContent, onSaveTitle }: NoteEditorProps
           value={title}
           onChange={handleTitleChange}
           placeholder="Untitled"
-          className="flex-1 bg-transparent text-lg font-semibold outline-none placeholder:opacity-40"
+          className="flex-1 bg-transparent text-lg font-semibold outline-none placeholder:opacity-40 uppercase"
           style={{ color: 'var(--text-primary)' }}
         />
         <span

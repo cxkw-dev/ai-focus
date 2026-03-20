@@ -1,11 +1,22 @@
+export interface NotebookNoteTodo {
+  id: string
+  taskNumber: number
+  title: string
+  status: import('@/types/todo').Status
+  priority: import('@/types/todo').Priority
+  dueDate: string | null
+  labels: { id: string; name: string; color: string }[]
+}
+
 export interface NotebookNote {
   id: string
   title: string
   content: string
   pinned: boolean
+  archived: boolean
   createdAt: string
   updatedAt: string
-  todo?: { id: string; taskNumber: number; title: string } | null
+  todo?: NotebookNoteTodo | null
 }
 
 export interface CreateNotebookNoteInput {

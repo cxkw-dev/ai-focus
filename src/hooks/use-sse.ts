@@ -52,6 +52,8 @@ export function useSSE() {
             if (todoId) {
               queryClient.invalidateQueries({ queryKey: queryKeys.todoUpdates(todoId) })
             }
+          } else if (entity === 'notebook') {
+            queryClient.invalidateQueries({ queryKey: queryKeys.notebook })
           }
         } catch {
           // ignore malformed events

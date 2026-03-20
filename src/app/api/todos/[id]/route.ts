@@ -82,6 +82,7 @@ export async function PATCH(
             select: {
               id: true,
               status: true,
+              notebookNoteId: true,
               subtasks: { select: { id: true } },
             },
           })
@@ -102,6 +103,14 @@ export async function PATCH(
         if (todoData.status === 'COMPLETED') {
           todoData.archived = true
           completedAt = new Date()
+
+          // Archive linked notebook note when completing
+          if (existingTodo?.notebookNoteId) {
+            await tx.notebookNote.update({
+              where: { id: existingTodo.notebookNoteId },
+              data: { archived: true },
+            })
+          }
         } else if (existingTodo?.status === 'COMPLETED') {
           completedAt = null
           todoData.archived = false
@@ -110,6 +119,14 @@ export async function PATCH(
           await tx.accomplishment.deleteMany({
             where: { todoId: existingTodo.id },
           })
+
+          // Unarchive linked notebook note when un-completing
+          if (existingTodo?.notebookNoteId) {
+            await tx.notebookNote.update({
+              where: { id: existingTodo.notebookNoteId },
+              data: { archived: false },
+            })
+          }
         }
       }
 
@@ -223,6 +240,7 @@ export async function PATCH(
     }
 
     emit('todos')
+    if (validatedData.status !== undefined) emit('notebook')
     return NextResponse.json(todo)
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -270,7 +288,7 @@ export async function DELETE(
     const where = todoWhere(id)
 
     // Resolve the actual id (could be a taskNumber lookup)
-    const todo = await db.todo.findUnique({ where, select: { id: true } })
+    const todo = await db.todo.findUnique({ where, select: { id: true, notebookNoteId: true } })
     if (!todo) {
       return NextResponse.json({ error: 'Todo not found' }, { status: 404 })
     }
@@ -278,9 +296,15 @@ export async function DELETE(
     // Delete linked accomplishment before deleting the todo
     await db.accomplishment.deleteMany({ where: { todoId: todo.id } })
 
+    // Delete linked notebook note before deleting the todo
+    if (todo.notebookNoteId) {
+      await db.notebookNote.delete({ where: { id: todo.notebookNoteId } }).catch(() => {})
+    }
+
     await db.todo.delete({ where: { id: todo.id } })
 
     emit('todos')
+    if (todo.notebookNoteId) emit('notebook')
     return NextResponse.json({ success: true })
   } catch (error) {
     if (isNotFoundError(error)) {

@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     const notes = await db.notebookNote.findMany({
       where,
       include: {
-        todo: { select: { id: true, taskNumber: true, title: true } },
+        todo: { select: { id: true, taskNumber: true, title: true, status: true, priority: true, dueDate: true, labels: { select: { id: true, name: true, color: true } } } },
       },
       orderBy: [
         { pinned: 'desc' },
