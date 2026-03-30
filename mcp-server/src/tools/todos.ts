@@ -62,14 +62,19 @@ export function registerTodoTools(server: McpServer) {
 
   server.tool(
     "create_todo",
-    "Create a new todo in AI Focus. The todo appears at the top of the list.",
+    `Create a new todo in AI Focus. The todo appears at the top of the list.
+
+PATTERN — description brevity:
+- The description MUST be a single sentence (~150 chars max) summarizing the task.
+- For detailed context, requirements, phases, or notes: first call create_note to create a notebook note, then pass its ID as notebookNoteId.
+- For timeline/deadline info, use the dueDate field — never put dates or deadlines in the description.`,
     {
       title: z.string().min(1).max(200).describe("Task title"),
       description: z
         .string()
         .max(10000)
         .optional()
-        .describe("Task description (supports markdown — converted to HTML for the rich text editor)"),
+        .describe("One-sentence summary of the task (~150 chars). Do NOT put detailed context, requirements, phases, or timelines here — use a linked notebook note for details and dueDate for deadlines."),
       priority: z
         .enum(["LOW", "MEDIUM", "HIGH", "URGENT"])
         .optional()
@@ -87,6 +92,7 @@ export function registerTodoTools(server: McpServer) {
       azureDepUrls: z.array(z.string()).optional().describe("Dependent Azure DevOps work item URLs"),
       myIssueUrls: z.array(z.string()).optional().describe("GitHub Issue URLs for this task's own issues"),
       githubIssueUrls: z.array(z.string()).optional().describe("Dependency GitHub Issue URLs to wait on"),
+      notebookNoteId: z.string().optional().describe("Notebook note ID to link. Create a note first via create_note, then pass its ID here for detailed context."),
     },
     async (params) => {
       const { subtasks: subtaskTitles, ...rest } = params;
@@ -111,6 +117,10 @@ IMPORTANT — Status updates and progress notes:
 - Do NOT append status/progress updates to the description. Use add_status_update instead — it logs to the todo's dedicated timeline.
 - The description field is for the task's static context/requirements, not a running log.
 
+Description brevity:
+- Descriptions MUST be a single sentence (~150 chars). Detailed context, requirements, or notes belong in a linked notebook note (use notebookNoteId or create one via create_note first).
+- Timeline/deadline info should use the dueDate field, not the description.
+
 Description handling:
 - By default, descriptionMode is "append" which ADDS to the existing description (preserving all prior content).
 - Use descriptionMode "replace" ONLY when the user explicitly asks to overwrite/replace the entire description.
@@ -120,7 +130,7 @@ Description handling:
       taskNumber: z.number().int().positive().optional().describe("The task number (e.g. 7)"),
       id: z.string().optional().describe("The todo cuid (use taskNumber instead when possible)"),
       title: z.string().min(1).max(200).optional().describe("New title"),
-      description: z.string().max(10000).optional().describe("Description content (behavior depends on descriptionMode)"),
+      description: z.string().max(10000).optional().describe("One-sentence summary (behavior depends on descriptionMode). Keep brief — detailed context belongs in a linked notebook note."),
       descriptionMode: z
         .enum(["append", "replace"])
         .optional()

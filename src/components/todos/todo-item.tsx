@@ -409,7 +409,7 @@ function PriorityDropdown({ todo, onPriorityChange }: { todo: Todo; onPriorityCh
   )
 }
 
-function TodoStatusOverlay({ todo, compact = false }: { todo: Todo; compact?: boolean }) {
+function TodoStatusBanner({ todo, compact = false }: { todo: Todo; compact?: boolean }) {
   if (!CARD_OVERLAY_STATUSES.has(todo.status)) return null
 
   const config = STATUS_CONFIG[todo.status]
@@ -417,37 +417,34 @@ function TodoStatusOverlay({ todo, compact = false }: { todo: Todo; compact?: bo
 
   return (
     <div
-      aria-hidden="true"
       className={cn(
-        'pointer-events-none absolute z-10 flex items-center justify-center rounded-md border',
-        compact ? 'inset-1' : 'inset-1.5'
+        'mt-1.5 flex items-center gap-1.5 rounded px-2 py-1',
+        compact && 'mt-1 px-1.5 py-0.5'
       )}
       style={{
-        backgroundColor: 'color-mix(in srgb, var(--surface) 82%, transparent)',
-        borderColor: `color-mix(in srgb, ${config.colorVar} 22%, transparent)`,
+        backgroundColor: `color-mix(in srgb, ${config.colorVar} 10%, transparent)`,
+        border: `1px solid color-mix(in srgb, ${config.colorVar} 20%, transparent)`,
       }}
     >
-      <div className="flex flex-col items-center gap-1 px-3 text-center">
-        <span
-          className={cn(
-            'font-semibold uppercase leading-none',
-            compact ? 'text-[11px] tracking-[0.2em]' : 'text-[13px] tracking-[0.24em]'
-          )}
-          style={{ color: `color-mix(in srgb, ${config.colorVar} 72%, var(--text-primary))` }}
-        >
-          {config.label}
-        </span>
-        <span
-          className={cn(
-            'inline-flex items-center gap-1 font-medium leading-none',
-            compact ? 'text-[9px] tracking-[0.14em]' : 'text-[10px] tracking-[0.18em]'
-          )}
-          style={{ color: `color-mix(in srgb, ${config.colorVar} 52%, var(--text-muted))` }}
-        >
-          <Clock className="h-3 w-3" />
-          {formatStatusAge(daysInStatus)}
-        </span>
-      </div>
+      <span
+        className={cn(
+          'font-semibold uppercase leading-none',
+          compact ? 'text-[9px] tracking-[0.15em]' : 'text-[10px] tracking-[0.18em]'
+        )}
+        style={{ color: `color-mix(in srgb, ${config.colorVar} 80%, var(--text-primary))` }}
+      >
+        {config.label}
+      </span>
+      <span
+        className={cn(
+          'inline-flex items-center gap-0.5 font-medium leading-none',
+          compact ? 'text-[8px]' : 'text-[9px]'
+        )}
+        style={{ color: `color-mix(in srgb, ${config.colorVar} 55%, var(--text-muted))` }}
+      >
+        <Clock className="h-2.5 w-2.5" />
+        {formatStatusAge(daysInStatus)}
+      </span>
     </div>
   )
 }
@@ -745,19 +742,19 @@ function TodoItemContent({
             {!compact && todo.description && (
               todo.description.startsWith('<') ? (
                 <div
-                  className="mt-1.5 max-h-48 overflow-y-auto break-words rich-text-display"
+                  className="mt-1.5 break-words leading-snug line-clamp-2 rich-text-display"
                   dangerouslySetInnerHTML={{ __html: linkifyHtml(mentionifyHtml(todo.description)) }}
                 />
               ) : (
                 <p
-                  className="mt-1.5 max-h-48 overflow-y-auto text-[11px] break-words leading-snug whitespace-pre-wrap"
+                  className="mt-1.5 text-[11px] break-words leading-snug line-clamp-2"
                   style={{ color: 'var(--text-muted)' }}
                 >
                   {renderTextWithLinks(todo.description)}
                 </p>
               )
             )}
-            <TodoStatusOverlay todo={todo} compact={compact} />
+            <TodoStatusBanner todo={todo} compact={compact} />
           </div>
         </div>
       </div>

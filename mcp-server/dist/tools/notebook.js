@@ -15,7 +15,7 @@ export function registerNotebookTools(server) {
         const data = await apiFetch(`/api/notebook/${id}`);
         return textResult(data);
     });
-    server.tool("create_note", "Create a new notebook note. Content supports markdown (converted to HTML for the rich text editor).", {
+    server.tool("create_note", "Create a new notebook note. Content supports markdown (converted to HTML for the rich text editor). TIP: Use this to store detailed context for a todo — create the note first, then pass its ID as notebookNoteId when calling create_todo or update_todo.", {
         title: z.string().max(200).optional().describe("Note title"),
         content: z.string().max(100000).optional().describe("Note content (supports markdown)"),
     }, async (params) => {
