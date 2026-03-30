@@ -45,7 +45,13 @@
       "Bash(python3 -m json.tool)",
       "Bash(git diff:*)",
       "Bash(/Users/andynguyen/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.5/skills/brainstorming/scripts/start-server.sh --project-dir /Users/andynguyen/ai-focus)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "mcp__ai-focus__complete_todo",
+      "mcp__ai-focus__list_todos",
+      "Bash(system_profiler SPHardwareDataType 2>/dev/null)",
+      "Bash(sysctl -n machdep.cpu.brand_string)",
+      "Bash(sysctl -n hw.memsize)",
+      "Bash(brew list:*)"
     ]
   }
 }

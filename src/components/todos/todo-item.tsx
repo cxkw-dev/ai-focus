@@ -422,8 +422,8 @@ function TodoStatusBanner({ todo, compact = false }: { todo: Todo; compact?: boo
         compact && 'mt-1 px-1.5 py-0.5'
       )}
       style={{
-        backgroundColor: `color-mix(in srgb, ${config.colorVar} 10%, transparent)`,
-        border: `1px solid color-mix(in srgb, ${config.colorVar} 20%, transparent)`,
+        backgroundColor: config.colorVar,
+        border: `1px solid ${config.colorVar}`,
       }}
     >
       <span
@@ -431,16 +431,16 @@ function TodoStatusBanner({ todo, compact = false }: { todo: Todo; compact?: boo
           'font-semibold uppercase leading-none',
           compact ? 'text-[9px] tracking-[0.15em]' : 'text-[10px] tracking-[0.18em]'
         )}
-        style={{ color: `color-mix(in srgb, ${config.colorVar} 80%, var(--text-primary))` }}
+        style={{ color: 'var(--surface)' }}
       >
         {config.label}
       </span>
       <span
         className={cn(
-          'inline-flex items-center gap-0.5 font-medium leading-none',
+          'inline-flex items-center gap-0.5 font-medium leading-none opacity-80',
           compact ? 'text-[8px]' : 'text-[9px]'
         )}
-        style={{ color: `color-mix(in srgb, ${config.colorVar} 55%, var(--text-muted))` }}
+        style={{ color: 'var(--surface)' }}
       >
         <Clock className="h-2.5 w-2.5" />
         {formatStatusAge(daysInStatus)}
