@@ -41,6 +41,7 @@ export interface Todo {
   githubIssueUrls: string[]
   notebookNoteId: string | null
   notebookNote?: { id: string; title: string } | null
+  sessions: Session[]
 }
 
 export interface StatusUpdate {
@@ -48,6 +49,14 @@ export interface StatusUpdate {
   content: string
   status: Status | null
   todoId: string
+  createdAt: string
+}
+
+export interface Session {
+  id: string
+  tool: 'claude' | 'codex'
+  command: string
+  workingPath: string
   createdAt: string
 }
 

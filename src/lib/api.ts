@@ -1,4 +1,4 @@
-import type { Todo, TodoBoardResponse, TodoContact, StatusUpdate, CreateTodoInput, UpdateTodoInput, Label, GitHubPrStatus, GitHubIssueStatus, AzureWorkItemStatus, PaginatedTodosResponse } from '@/types/todo'
+import type { Todo, TodoBoardResponse, TodoContact, StatusUpdate, Session, CreateTodoInput, UpdateTodoInput, Label, GitHubPrStatus, GitHubIssueStatus, AzureWorkItemStatus, PaginatedTodosResponse } from '@/types/todo'
 import type { YearStats } from '@/types/stats'
 import type { NotebookNote, CreateNotebookNoteInput, UpdateNotebookNoteInput } from '@/types/notebook'
 import type { Person } from '@/types/person'
@@ -74,6 +74,16 @@ export const todosApi = {
       headers,
       body: JSON.stringify({ completed }),
     }).then(r => json(r)),
+
+  createSession: (todoId: string, data: { tool: string; command: string; workingPath: string }): Promise<Session> =>
+    fetch(`/api/todos/${todoId}/sessions`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data),
+    }).then(r => json(r)),
+
+  deleteSession: (sessionId: string): Promise<{ success: boolean }> =>
+    fetch(`/api/sessions/${sessionId}`, { method: 'DELETE' }).then(r => json(r)),
 }
 
 export const labelsApi = {

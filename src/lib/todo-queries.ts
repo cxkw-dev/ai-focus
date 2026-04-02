@@ -4,6 +4,7 @@ export const todoInclude = Prisma.validator<Prisma.TodoInclude>()({
   labels: { orderBy: { name: 'asc' } },
   subtasks: { orderBy: { order: 'asc' } },
   notebookNote: { select: { id: true, title: true } },
+  sessions: { orderBy: { createdAt: 'desc' } },
 })
 
 export const activeTodoOrderBy = Prisma.validator<Prisma.TodoOrderByWithRelationInput[]>()([
