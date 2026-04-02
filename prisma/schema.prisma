@@ -32,6 +32,7 @@ model Todo {
   accomplishment  Accomplishment?
   contacts        TodoContact[]
   statusUpdates   StatusUpdate[]
+  sessions        Session[]
   notebookNoteId  String?        @unique
   notebookNote    NotebookNote?  @relation(fields: [notebookNoteId], references: [id], onDelete: SetNull)
 
@@ -133,6 +134,19 @@ model StatusUpdate {
   todoId    String
   todo      Todo     @relation(fields: [todoId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+
+  @@index([todoId])
+  @@index([createdAt])
+}
+
+model Session {
+  id          String   @id @default(cuid())
+  tool        String   // "claude" | "codex"
+  command     String
+  workingPath String
+  createdAt   DateTime @default(now())
+  todoId      String
+  todo        Todo     @relation(fields: [todoId], references: [id], onDelete: Cascade)
 
   @@index([todoId])
   @@index([createdAt])
