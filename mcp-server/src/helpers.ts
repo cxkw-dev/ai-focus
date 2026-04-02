@@ -105,6 +105,12 @@ export function formatTodoSummary(todos: TodoResponse[]) {
       if (t.myIssueUrls?.length) parts.push(`   my issues: ${t.myIssueUrls.join(", ")}`);
       if (t.githubIssueUrls?.length) parts.push(`   waiting on issues: ${t.githubIssueUrls.join(", ")}`);
       if (t.notebookNoteId) parts.push(`   note: ${t.notebookNoteId}`);
+      if (t.sessions?.length) {
+        const sessionLines = t.sessions.map(
+          (s) => `     ${s.tool}: ${s.command} (${s.workingPath})`
+        );
+        parts.push(`   sessions:\n${sessionLines.join("\n")}`);
+      }
       return parts.join("\n");
     })
     .join("\n\n");

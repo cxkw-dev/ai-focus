@@ -96,6 +96,10 @@ export function formatTodoSummary(todos) {
             parts.push(`   waiting on issues: ${t.githubIssueUrls.join(", ")}`);
         if (t.notebookNoteId)
             parts.push(`   note: ${t.notebookNoteId}`);
+        if (t.sessions?.length) {
+            const sessionLines = t.sessions.map((s) => `     ${s.tool}: ${s.command} (${s.workingPath})`);
+            parts.push(`   sessions:\n${sessionLines.join("\n")}`);
+        }
         return parts.join("\n");
     })
         .join("\n\n");

@@ -31,4 +31,11 @@ export interface TodoResponse {
     myIssueUrls?: string[];
     githubIssueUrls?: string[];
     notebookNoteId?: string | null;
+    sessions?: {
+        id: string;
+        tool: string;
+        command: string;
+        workingPath: string;
+        createdAt: string;
+    }[];
 }
