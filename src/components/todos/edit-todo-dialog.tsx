@@ -54,6 +54,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { LabelMultiSelect, LabelManagerDialog } from './label-multi-select'
+import { SessionList } from './session-list'
 import { PrioritySelector } from './priority-selector'
 import { SingleUrlField, UrlListField, AzureIcon, GitHubIcon } from './url-fields'
 import { useLabels } from '@/hooks/use-labels'
@@ -258,6 +259,12 @@ export function EditTodoDialog({
     queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
     queryClient.invalidateQueries({ queryKey: queryKeys.notebook })
   }, [todo, queryClient])
+
+  const handleDeleteSession = React.useCallback(async (sessionId: string) => {
+    await todosApi.deleteSession(sessionId)
+    queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
+  }, [queryClient])
+
   const subtaskMentions = React.useMemo(
     () => people.map((person) => ({ id: person.id, name: person.name, email: person.email })),
     [people]
@@ -696,6 +703,17 @@ export function EditTodoDialog({
                     </div>
                   )}
                 </div>
+
+                {/* Sessions */}
+                {todo?.sessions && todo.sessions.length > 0 && (
+                  <div className="space-y-2">
+                    <SessionList
+                      sessions={todo.sessions}
+                      onDelete={handleDeleteSession}
+                      compact
+                    />
+                  </div>
+                )}
 
                 {/* Contacts */}
                 <div className="space-y-2">
