@@ -61,6 +61,7 @@ import {
 import { PrDependencyTree } from './pr-dependency-tree'
 import { ContactsDrawer } from './contacts-drawer'
 import { StatusUpdatesDrawer } from './status-updates-drawer'
+import { SessionList } from './session-list'
 import type { Todo, Status, Priority, Subtask, SubtaskInput } from '@/types/todo'
 import type { Person } from '@/types/person'
 
@@ -893,6 +894,10 @@ function TodoItemContent({
             </>
           )}
         </div>
+      )}
+
+      {!compact && todo.sessions && todo.sessions.length > 0 && (
+        <SessionList sessions={todo.sessions} />
       )}
     </div>
   )
