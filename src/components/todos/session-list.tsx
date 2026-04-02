@@ -68,7 +68,6 @@ export function SessionList({ sessions, onDelete, compact = false }: SessionList
           ) : (
             <ChevronRight className="h-3 w-3" style={{ color: 'var(--text-muted)', opacity: 0.6 }} />
           )}
-          <Terminal className="h-3 w-3" style={{ color: 'var(--text-muted)', opacity: 0.6 }} />
           <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>
             Sessions
           </span>

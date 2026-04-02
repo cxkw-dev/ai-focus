@@ -375,7 +375,7 @@ export function EditTodoDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="w-[98vw] sm:w-[96vw] max-w-[1040px] max-h-[90vh] sm:max-h-[85vh] flex flex-col overflow-hidden p-0">
+      <DialogContent className="w-[98vw] sm:w-[96vw] max-w-[1320px] max-h-[90vh] sm:max-h-[85vh] flex flex-col overflow-hidden p-0">
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
           {/* Header */}
           <div
@@ -395,7 +395,7 @@ export function EditTodoDialog({
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6">
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-0 md:gap-0">
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_300px] gap-0 md:gap-0">
               {/* Left column - Content */}
               <div className="space-y-4 md:pr-6">
                 <div className="space-y-2">
@@ -476,11 +476,114 @@ export function EditTodoDialog({
                     </div>
                   </div>
                 </div>
+
+                {/* Links & Integrations - below subtasks, uses empty left column space */}
+                <div className="grid grid-cols-2 gap-4 mt-4 pt-4" style={{ borderTop: '1px solid var(--border-color)' }}>
+                  {/* Azure */}
+                  <div className="space-y-3">
+                    <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                      <AzureIcon className="h-3.5 w-3.5" />
+                      Azure
+                    </Label>
+
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>My Work Item</span>
+                      <SingleUrlField
+                        value={form.azureWorkItemUrl}
+                        onChange={form.setAzureWorkItemUrl}
+                        type="azure"
+                        disabled={isLoading}
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Waiting On</span>
+                      <UrlListField
+                        type="azure"
+                        urls={form.azureDepUrls}
+                        onAdd={(url) => form.addAzureDepUrl(url)}
+                        onRemove={(i) => form.removeAzureDepUrl(i)}
+                        inputValue={newAzureDepUrl}
+                        onInputChange={setNewAzureDepUrl}
+                        disabled={isLoading}
+                      />
+                    </div>
+                  </div>
+
+                  {/* GitHub */}
+                  <div className="space-y-3">
+                    <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                      <GitHubIcon className="h-3.5 w-3.5" />
+                      GitHub PRs
+                    </Label>
+
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>My PRs</span>
+                      <UrlListField
+                        type="github"
+                        urls={form.myPrUrls}
+                        onAdd={(url) => form.addMyPrUrl(url)}
+                        onRemove={(i) => form.removeMyPrUrl(i)}
+                        inputValue={newMyPrUrl}
+                        onInputChange={setNewMyPrUrl}
+                        disabled={isLoading}
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Waiting On</span>
+                      <UrlListField
+                        type="github"
+                        urls={form.githubPrUrls}
+                        onAdd={(url) => form.addGithubPrUrl(url)}
+                        onRemove={(i) => form.removeGithubPrUrl(i)}
+                        inputValue={newPrUrl}
+                        onInputChange={setNewPrUrl}
+                        disabled={isLoading}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* GitHub Issues */}
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2 mb-2" style={{ color: 'var(--text-muted)' }}>
+                      <GitHubIcon className="h-3.5 w-3.5" />
+                      My Issues
+                    </Label>
+                    <UrlListField
+                      type="github-issue"
+                      urls={form.myIssueUrls}
+                      onAdd={(url) => form.addMyIssueUrl(url)}
+                      onRemove={(i) => form.removeMyIssueUrl(i)}
+                      inputValue={newMyIssueUrl}
+                      onInputChange={setNewMyIssueUrl}
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2 mb-2" style={{ color: 'var(--text-muted)' }}>
+                      <GitHubIcon className="h-3.5 w-3.5" />
+                      Waiting On Issues
+                    </Label>
+                    <UrlListField
+                      type="github-issue"
+                      urls={form.githubIssueUrls}
+                      onAdd={(url) => form.addGithubIssueUrl(url)}
+                      onRemove={(i) => form.removeGithubIssueUrl(i)}
+                      inputValue={newIssueUrl}
+                      onInputChange={setNewIssueUrl}
+                      disabled={isLoading}
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Right column - Meta */}
               <div
-                className="space-y-5 pt-6 md:pt-0 md:pl-6 md:border-l"
+                className="pt-6 md:pt-0 md:pl-6 md:border-l space-y-4"
                 style={{ borderColor: 'var(--border-color)' }}
               >
                 {/* Status */}
@@ -530,105 +633,6 @@ export function EditTodoDialog({
                     onChange={(e) => form.setDueDate(e.target.value)}
                     className="h-10 text-sm"
                   />
-                </div>
-
-                {/* Azure */}
-                <div className="space-y-3">
-                  <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
-                    <AzureIcon className="h-3.5 w-3.5" />
-                    Azure
-                  </Label>
-
-                  <div className="space-y-1.5">
-                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>My Work Item</span>
-                    <SingleUrlField
-                      value={form.azureWorkItemUrl}
-                      onChange={form.setAzureWorkItemUrl}
-                      type="azure"
-                      disabled={isLoading}
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Waiting On</span>
-                    <UrlListField
-                      type="azure"
-                      urls={form.azureDepUrls}
-                      onAdd={(url) => form.addAzureDepUrl(url)}
-                      onRemove={(i) => form.removeAzureDepUrl(i)}
-                      inputValue={newAzureDepUrl}
-                      onInputChange={setNewAzureDepUrl}
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-
-                {/* GitHub */}
-                <div className="space-y-3">
-                  <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
-                    <GitHubIcon className="h-3.5 w-3.5" />
-                    GitHub
-                  </Label>
-
-                  <div className="space-y-1.5">
-                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>My PRs</span>
-                    <UrlListField
-                      type="github"
-                      urls={form.myPrUrls}
-                      onAdd={(url) => form.addMyPrUrl(url)}
-                      onRemove={(i) => form.removeMyPrUrl(i)}
-                      inputValue={newMyPrUrl}
-                      onInputChange={setNewMyPrUrl}
-                      disabled={isLoading}
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Waiting On</span>
-                    <UrlListField
-                      type="github"
-                      urls={form.githubPrUrls}
-                      onAdd={(url) => form.addGithubPrUrl(url)}
-                      onRemove={(i) => form.removeGithubPrUrl(i)}
-                      inputValue={newPrUrl}
-                      onInputChange={setNewPrUrl}
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-
-                {/* GitHub Issues */}
-                <div className="space-y-3">
-                  <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
-                    <GitHubIcon className="h-3.5 w-3.5" />
-                    GitHub Issues
-                  </Label>
-
-                  <div className="space-y-1.5">
-                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>My Issues</span>
-                    <UrlListField
-                      type="github-issue"
-                      urls={form.myIssueUrls}
-                      onAdd={(url) => form.addMyIssueUrl(url)}
-                      onRemove={(i) => form.removeMyIssueUrl(i)}
-                      inputValue={newMyIssueUrl}
-                      onInputChange={setNewMyIssueUrl}
-                      disabled={isLoading}
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Waiting On</span>
-                    <UrlListField
-                      type="github-issue"
-                      urls={form.githubIssueUrls}
-                      onAdd={(url) => form.addGithubIssueUrl(url)}
-                      onRemove={(i) => form.removeGithubIssueUrl(i)}
-                      inputValue={newIssueUrl}
-                      onInputChange={setNewIssueUrl}
-                      disabled={isLoading}
-                    />
-                  </div>
                 </div>
 
                 {/* Labels */}
