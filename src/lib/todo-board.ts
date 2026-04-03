@@ -52,7 +52,7 @@ export function sortTodosByBoardPosition(todos: Todo[]) {
 }
 
 function getBoardSection(todo: Todo) {
-  if (todo.status === 'COMPLETED') {
+  if (todo.status === 'COMPLETED' || todo.status === 'CANCELLED') {
     return 'completed' as const
   }
 

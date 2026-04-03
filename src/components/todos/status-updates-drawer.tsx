@@ -13,6 +13,7 @@ const STATUS_LABELS: Record<Status, string> = {
   UNDER_REVIEW: 'Under Review',
   ON_HOLD: 'On Hold',
   COMPLETED: 'Completed',
+  CANCELLED: 'Cancelled',
 }
 
 const STATUS_COLORS: Record<Status, string> = {
@@ -22,6 +23,7 @@ const STATUS_COLORS: Record<Status, string> = {
   UNDER_REVIEW: 'var(--status-under-review)',
   ON_HOLD: 'var(--status-on-hold)',
   COMPLETED: 'var(--status-done)',
+  CANCELLED: 'var(--status-on-hold)',
 }
 
 function formatTimestamp(iso: string) {

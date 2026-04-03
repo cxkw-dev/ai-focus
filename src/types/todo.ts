@@ -8,6 +8,7 @@ export const TODO_STATUS_VALUES = [
   'UNDER_REVIEW',
   'ON_HOLD',
   'COMPLETED',
+  'CANCELLED',
 ] as const
 export type Status = (typeof TODO_STATUS_VALUES)[number]
 

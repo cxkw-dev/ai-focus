@@ -1,4 +1,4 @@
-import type { TodoResponse } from "./types.js";
+import type { TodoResponse } from './types.js';
 export declare function apiFetch(path: string, init?: RequestInit): Promise<any>;
 export declare function textResult(data: unknown): {
     content: {

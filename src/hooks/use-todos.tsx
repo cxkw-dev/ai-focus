@@ -131,7 +131,7 @@ export function useTodos() {
       const previousStatus = todo?.status
       const nextStatusChangedAt = new Date().toISOString()
 
-      if (status === 'COMPLETED') {
+      if (status === 'COMPLETED' || status === 'CANCELLED') {
         setBoardData((board) => ({
           ...board,
           active: removeTodoFromList(board.active, id),

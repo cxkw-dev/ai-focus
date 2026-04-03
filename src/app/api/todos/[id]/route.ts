@@ -129,9 +129,15 @@ async function applyStatusTransition(
     transition.statusChangedAt = new Date()
   }
 
-  if (nextStatus === PrismaStatus.COMPLETED) {
+  const terminalStatuses = [PrismaStatus.COMPLETED, PrismaStatus.CANCELLED] as const
+  const isTerminal = terminalStatuses.includes(nextStatus as (typeof terminalStatuses)[number])
+  const wasTerminal = terminalStatuses.includes(todo.status as (typeof terminalStatuses)[number])
+
+  if (isTerminal) {
     transition.archived = true
-    transition.completedAt = new Date()
+    if (nextStatus === PrismaStatus.COMPLETED) {
+      transition.completedAt = new Date()
+    }
 
     if (todo.notebookNoteId) {
       await tx.notebookNote.update({
@@ -143,7 +149,7 @@ async function applyStatusTransition(
     return transition
   }
 
-  if (todo.status === PrismaStatus.COMPLETED) {
+  if (wasTerminal) {
     transition.archived = false
     transition.completedAt = null
 

@@ -99,6 +99,7 @@ enum Status {
   UNDER_REVIEW
   ON_HOLD
   COMPLETED
+  CANCELLED
 }
 
 model NotebookNote {

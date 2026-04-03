@@ -23,6 +23,7 @@ export function registerTodoTools(server: McpServer) {
           'UNDER_REVIEW',
           'ON_HOLD',
           'COMPLETED',
+          'CANCELLED',
         ])
         .optional()
         .describe('Filter by status'),

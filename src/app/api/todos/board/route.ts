@@ -9,7 +9,7 @@ export async function GET() {
       db.todo.findMany({
         where: {
           archived: false,
-          status: { not: 'COMPLETED' },
+          status: { notIn: ['COMPLETED', 'CANCELLED'] },
         },
         include: todoInclude,
         orderBy: activeTodoOrderBy,
@@ -17,7 +17,7 @@ export async function GET() {
       db.todo.findMany({
         where: {
           archived: true,
-          status: 'COMPLETED',
+          status: { in: ['COMPLETED', 'CANCELLED'] },
         },
         include: todoInclude,
         orderBy: activeTodoOrderBy,
@@ -25,7 +25,7 @@ export async function GET() {
       db.todo.findMany({
         where: {
           archived: true,
-          status: { not: 'COMPLETED' },
+          status: { notIn: ['COMPLETED', 'CANCELLED'] },
         },
         include: todoInclude,
         orderBy: activeTodoOrderBy,

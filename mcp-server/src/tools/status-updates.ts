@@ -56,6 +56,7 @@ Examples:
           'UNDER_REVIEW',
           'ON_HOLD',
           'COMPLETED',
+          'CANCELLED',
         ])
         .optional()
         .describe(

@@ -40,6 +40,7 @@ import {
   Users,
   FileText,
   DollarSign,
+  XCircle,
 } from 'lucide-react'
 import { cn, formatRelativeDate } from '@/lib/utils'
 import { getBillingCodeEntries } from '@/lib/labels'
@@ -122,6 +123,12 @@ const STATUS_CONFIG: Record<
     icon: CheckCircle2,
     colorVar: 'var(--status-done)',
     bgVar: 'var(--status-done)',
+  },
+  CANCELLED: {
+    label: 'Cancelled',
+    icon: XCircle,
+    colorVar: 'var(--status-on-hold)',
+    bgVar: 'var(--status-on-hold)',
   },
 }
 

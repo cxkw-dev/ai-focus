@@ -1,12 +1,12 @@
-import { marked } from "marked";
-const API_BASE = process.env.AI_FOCUS_API_URL || "http://localhost:4444";
+import { marked } from 'marked';
+const API_BASE = process.env.AI_FOCUS_API_URL || 'http://localhost:4444';
 // --- API helpers ---
 export async function apiFetch(path, init) {
     let res;
     try {
         res = await fetch(`${API_BASE}${path}`, {
             ...init,
-            headers: { "Content-Type": "application/json", ...init?.headers },
+            headers: { 'Content-Type': 'application/json', ...init?.headers },
         });
     }
     catch (err) {
@@ -24,16 +24,16 @@ export async function apiFetch(path, init) {
 }
 export function textResult(data) {
     return {
-        content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+        content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
     };
 }
 export function isApiError(data) {
-    return Boolean(data && typeof data === "object" && "_error" in data);
+    return Boolean(data && typeof data === 'object' && '_error' in data);
 }
 // --- Markdown ---
 marked.setOptions({ breaks: true, gfm: true });
 export function toHtml(text) {
-    if (text.trimStart().startsWith("<"))
+    if (text.trimStart().startsWith('<'))
         return text;
     return marked.parse(text, { async: false });
 }
@@ -45,7 +45,7 @@ export function toHtml(text) {
 export function resolveKey(params) {
     const key = params.taskNumber?.toString() ?? params.id;
     if (!key)
-        throw new Error("Provide either taskNumber or id");
+        throw new Error('Provide either taskNumber or id');
     return key;
 }
 /**
@@ -58,7 +58,9 @@ export async function resolveTodoId(params) {
         return { resolvedId: params.id };
     }
     if (!params.taskNumber && !params.id) {
-        return { error: textResult({ _error: true, message: "Provide taskNumber or id" }) };
+        return {
+            error: textResult({ _error: true, message: 'Provide taskNumber or id' }),
+        };
     }
     const todo = await apiFetch(`/api/todos/${params.taskNumber}`);
     if (isApiError(todo)) {
@@ -69,40 +71,40 @@ export async function resolveTodoId(params) {
 // --- Formatting ---
 export function formatTodoSummary(todos) {
     if (todos.length === 0)
-        return "No todos found.";
+        return 'No todos found.';
     return todos
         .map((t) => {
         const parts = [`#${t.taskNumber} | ${t.title}`];
         parts.push(`   status: ${t.status} | priority: ${t.priority}`);
         if (t.labels?.length)
-            parts.push(`   labels: ${t.labels.map((l) => l.name).join(", ")}`);
+            parts.push(`   labels: ${t.labels.map((l) => l.name).join(', ')}`);
         if (t.dueDate)
-            parts.push(`   due: ${t.dueDate.split("T")[0]}`);
+            parts.push(`   due: ${t.dueDate.split('T')[0]}`);
         if (t.subtasks?.length) {
             const done = t.subtasks.filter((s) => s.completed).length;
             parts.push(`   subtasks: ${done}/${t.subtasks.length} done`);
         }
         if (t.myPrUrls?.length)
-            parts.push(`   my prs: ${t.myPrUrls.join(", ")}`);
+            parts.push(`   my prs: ${t.myPrUrls.join(', ')}`);
         if (t.githubPrUrls?.length)
-            parts.push(`   waiting on: ${t.githubPrUrls.join(", ")}`);
+            parts.push(`   waiting on: ${t.githubPrUrls.join(', ')}`);
         if (t.azureWorkItemUrl)
             parts.push(`   azure: ${t.azureWorkItemUrl}`);
         if (t.azureDepUrls?.length)
-            parts.push(`   azure deps: ${t.azureDepUrls.join(", ")}`);
+            parts.push(`   azure deps: ${t.azureDepUrls.join(', ')}`);
         if (t.myIssueUrls?.length)
-            parts.push(`   my issues: ${t.myIssueUrls.join(", ")}`);
+            parts.push(`   my issues: ${t.myIssueUrls.join(', ')}`);
         if (t.githubIssueUrls?.length)
-            parts.push(`   waiting on issues: ${t.githubIssueUrls.join(", ")}`);
+            parts.push(`   waiting on issues: ${t.githubIssueUrls.join(', ')}`);
         if (t.notebookNoteId)
             parts.push(`   note: ${t.notebookNoteId}`);
         if (t.sessions?.length) {
             const sessionLines = t.sessions.map((s) => `     ${s.tool}: ${s.command} (${s.workingPath})`);
-            parts.push(`   sessions:\n${sessionLines.join("\n")}`);
+            parts.push(`   sessions:\n${sessionLines.join('\n')}`);
         }
-        return parts.join("\n");
+        return parts.join('\n');
     })
-        .join("\n\n");
+        .join('\n\n');
 }
 // --- Azure helpers ---
 export const AZURE_WORK_ITEM_URL_REGEX = /^https?:\/\/dev\.azure\.com\/[^/]+\/[^/]+\/_workitems\/edit\/(\d+)(?:[/?#]|$)/i;
@@ -119,9 +121,9 @@ export function parseAzureWorkItemId(url) {
 }
 export function buildAzureContextQuery(params) {
     const query = new URLSearchParams();
-    query.set("includeComments", String(params.includeComments));
-    query.set("includeUpdates", String(params.includeUpdates));
-    query.set("maxComments", String(params.maxComments));
-    query.set("maxUpdates", String(params.maxUpdates));
+    query.set('includeComments', String(params.includeComments));
+    query.set('includeUpdates', String(params.includeUpdates));
+    query.set('maxComments', String(params.maxComments));
+    query.set('maxUpdates', String(params.maxUpdates));
     return query.toString();
 }
