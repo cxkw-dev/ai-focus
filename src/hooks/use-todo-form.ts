@@ -3,6 +3,7 @@
 import * as React from 'react'
 import type { Todo, Priority, Status, SubtaskInput } from '@/types/todo'
 import { hasMeaningfulText, normalizeSubtaskTitle } from '@/lib/rich-text'
+import { createClientSubtaskId } from '@/lib/subtask-ids'
 
 interface TodoFormState {
   title: string
@@ -135,7 +136,12 @@ export function useTodoForm(
     if (!hasMeaningfulText(normalized)) return
     setSubtasks((prev) => [
       ...prev,
-      { title: normalized, completed: false, order: prev.length },
+      {
+        id: createClientSubtaskId(),
+        title: normalized,
+        completed: false,
+        order: prev.length,
+      },
     ])
   }, [])
 

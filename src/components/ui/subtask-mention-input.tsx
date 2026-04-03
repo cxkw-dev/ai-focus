@@ -6,6 +6,11 @@ import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import Link from '@tiptap/extension-link'
 import { cn } from '@/lib/utils'
+import {
+  isRapidDuplicateSubtaskCommit,
+  normalizeSubtaskCommitValue,
+  type RecentSubtaskCommit,
+} from '@/lib/subtask-commit'
 import { CustomMention } from '@/lib/tiptap-mention'
 import { createMentionSuggestion } from '@/lib/mention-suggestion'
 import type { MentionSuggestionItem } from '@/components/ui/mention-suggestion'
@@ -44,23 +49,21 @@ export function SubtaskMentionInput({
   const latestValueRef = React.useRef(value)
   const peopleRef = React.useRef<MentionSuggestionItem[]>(mentions ?? [])
   const mentionActiveRef = React.useRef(false)
-  const lastCommitRef = React.useRef<{ value: string; at: number } | null>(null)
+  const lastCommitRef = React.useRef<RecentSubtaskCommit | null>(null)
 
   const commitIfNeeded = React.useCallback(() => {
     const currentValue = latestValueRef.current
+    const normalizedValue = normalizeSubtaskCommitValue(currentValue)
     const now = Date.now()
     const lastCommit = lastCommitRef.current
 
-    // Guard against duplicate Enter events from the rich-text editor lifecycle.
-    if (
-      lastCommit &&
-      lastCommit.value === currentValue &&
-      now - lastCommit.at < 250
-    ) {
+    // Guard against duplicate Enter/blur commits that serialize the same text
+    // slightly differently across the editor lifecycle.
+    if (isRapidDuplicateSubtaskCommit(lastCommit, currentValue, now)) {
       return
     }
 
-    lastCommitRef.current = { value: currentValue, at: now }
+    lastCommitRef.current = { value: normalizedValue, at: now }
     onCommitRef.current?.()
   }, [])
 

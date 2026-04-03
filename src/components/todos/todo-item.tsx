@@ -45,6 +45,12 @@ import { cn, formatRelativeDate } from '@/lib/utils'
 import { getBillingCodeEntries } from '@/lib/labels'
 import { PRIORITY_MAP } from '@/lib/priority'
 import {
+  isRapidDuplicateSubtaskCommit,
+  normalizeSubtaskCommitValue,
+  type RecentSubtaskCommit,
+} from '@/lib/subtask-commit'
+import { createClientSubtaskId } from '@/lib/subtask-ids'
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -224,7 +230,7 @@ interface TodoItemProps {
 
 function toSubtaskInput(subtasks: Subtask[]): SubtaskInput[] {
   return subtasks.map((subtask, index) => ({
-    ...(isTemporarySubtaskId(subtask.id) ? {} : { id: subtask.id }),
+    id: subtask.id,
     title: subtask.title,
     completed: subtask.completed,
     order: index,
@@ -233,20 +239,6 @@ function toSubtaskInput(subtasks: Subtask[]): SubtaskInput[] {
 
 function subtaskDndId(subtaskId: string) {
   return `subtask-${subtaskId}`
-}
-
-function createTempSubtaskId() {
-  if (
-    typeof crypto !== 'undefined' &&
-    typeof crypto.randomUUID === 'function'
-  ) {
-    return `new-${crypto.randomUUID()}`
-  }
-  return `new-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-}
-
-function isTemporarySubtaskId(subtaskId: string) {
-  return subtaskId.startsWith('new-')
 }
 
 function SortableEditableSubtaskRow({
@@ -603,6 +595,7 @@ function TodoItemContent({
   const [isAddingSubtask, setIsAddingSubtask] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
   const [subtasksExpanded, setSubtasksExpanded] = React.useState(false)
+  const lastAddedSubtaskRef = React.useRef<RecentSubtaskCommit | null>(null)
   const subtaskSensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 6 },
@@ -730,6 +723,7 @@ function TodoItemContent({
 
   const handleAddSubtaskCommit = React.useCallback(() => {
     const normalized = normalizeSubtaskTitle(newSubtaskTitle)
+    const now = Date.now()
 
     if (!hasMeaningfulText(normalized)) {
       setNewSubtaskTitle('')
@@ -737,11 +731,28 @@ function TodoItemContent({
       return
     }
 
+    if (
+      isRapidDuplicateSubtaskCommit(
+        lastAddedSubtaskRef.current,
+        normalized,
+        now,
+      )
+    ) {
+      setNewSubtaskTitle('')
+      setIsAddingSubtask(false)
+      return
+    }
+
+    lastAddedSubtaskRef.current = {
+      value: normalizeSubtaskCommitValue(normalized),
+      at: now,
+    }
+
     setSubtasks((prev) => {
       const nextSubtasks: Subtask[] = [
         ...prev,
         {
-          id: createTempSubtaskId(),
+          id: createClientSubtaskId(),
           title: normalized,
           completed: false,
           order: prev.length,

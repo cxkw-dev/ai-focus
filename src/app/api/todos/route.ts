@@ -156,6 +156,7 @@ export async function POST(request: Request) {
         subtasks: subtasks?.length
           ? {
               create: subtasks.map((subtask) => ({
+                ...(subtask.id ? { id: subtask.id } : {}),
                 title: subtask.title,
                 completed: subtask.completed ?? false,
                 order: subtask.order,

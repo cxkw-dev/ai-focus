@@ -22,6 +22,19 @@ export const subtaskInputSchema = z.object({
   order: z.number().int(),
 })
 
+const subtaskArraySchema = z
+  .array(subtaskInputSchema)
+  .refine(
+    (subtasks) => {
+      const ids = subtasks
+        .map((subtask) => subtask.id)
+        .filter((subtaskId): subtaskId is string => Boolean(subtaskId))
+
+      return new Set(ids).size === ids.length
+    },
+    { message: 'Subtask ids must be unique' },
+  )
+
 export const createTodoSchema = z.object({
   title: z.string().trim().min(1, 'Title is required').max(200),
   description: z.string().max(10000).optional(),
@@ -29,7 +42,7 @@ export const createTodoSchema = z.object({
   status: todoStatusSchema.optional(),
   dueDate: z.string().datetime().optional().nullable(),
   labelIds: z.array(z.string()).optional(),
-  subtasks: z.array(subtaskInputSchema).optional(),
+  subtasks: subtaskArraySchema.optional(),
   myPrUrls: z.array(z.string().url()).optional(),
   githubPrUrls: z.array(z.string().url()).optional(),
   azureWorkItemUrl: z.string().url().optional().nullable(),
@@ -47,7 +60,7 @@ export const updateTodoSchema = z.object({
   priority: todoPrioritySchema.optional(),
   dueDate: z.string().datetime().optional().nullable(),
   labelIds: z.array(z.string()).optional(),
-  subtasks: z.array(subtaskInputSchema).optional(),
+  subtasks: subtaskArraySchema.optional(),
   myPrUrls: z.array(z.string().url()).optional(),
   githubPrUrls: z.array(z.string().url()).optional(),
   azureWorkItemUrl: z.string().url().optional().nullable(),

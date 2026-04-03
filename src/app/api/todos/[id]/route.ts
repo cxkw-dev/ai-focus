@@ -18,6 +18,7 @@ import {
 import { isPrismaErrorCode } from '@/lib/server/prisma-errors'
 import { validateTodoForResponse } from '@/lib/server/todo-response'
 import { updateTodoSchema } from '@/lib/validation/todo'
+import { isClientSubtaskId } from '@/lib/subtask-ids'
 import { ZodError, z } from 'zod'
 
 const TODO_ROUTE_ERRORS = {
@@ -62,7 +63,8 @@ async function syncSubtasks(
   )
 
   const unknownSubtaskIds = Array.from(incomingSubtaskIds).filter(
-    (subtaskId) => !existingSubtaskIds.has(subtaskId),
+    (subtaskId) =>
+      !existingSubtaskIds.has(subtaskId) && !isClientSubtaskId(subtaskId),
   )
 
   if (unknownSubtaskIds.length > 0) {
@@ -84,7 +86,7 @@ async function syncSubtasks(
 
   await Promise.all(
     subtasks.map((subtask) => {
-      if (subtask.id) {
+      if (subtask.id && existingSubtaskIds.has(subtask.id)) {
         return tx.subtask.update({
           where: { id: subtask.id },
           data: {
@@ -97,6 +99,7 @@ async function syncSubtasks(
 
       return tx.subtask.create({
         data: {
+          ...(subtask.id ? { id: subtask.id } : {}),
           title: subtask.title,
           completed: subtask.completed ?? false,
           order: subtask.order,
