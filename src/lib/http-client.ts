@@ -8,9 +8,9 @@ function normalizeQueryValue(value: QueryValue) {
   return String(value)
 }
 
-export function buildUrl(
+export function buildUrl<T extends { [K in keyof T]: QueryValue }>(
   pathname: string,
-  params?: Record<string, QueryValue>,
+  params?: T,
 ) {
   if (!params) {
     return pathname
@@ -18,7 +18,9 @@ export function buildUrl(
 
   const searchParams = new URLSearchParams()
 
-  for (const [key, rawValue] of Object.entries(params)) {
+  for (const [key, rawValue] of Object.entries(params) as Array<
+    [string, QueryValue]
+  >) {
     const value = normalizeQueryValue(rawValue)
     if (value !== null) {
       searchParams.set(key, value)

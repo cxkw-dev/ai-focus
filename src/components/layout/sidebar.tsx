@@ -12,6 +12,7 @@ import {
   FileText,
   PenLine,
   Settings,
+  Tags,
 } from 'lucide-react'
 import {
   Tooltip,
@@ -31,6 +32,7 @@ interface SidebarProps {
 
 const topNavItems = [
   { title: 'Todos', href: '/todos', icon: CheckSquare },
+  { title: 'Labels', href: '/labels', icon: Tags },
   { title: 'Scratch Pad', href: '/scratchpad', icon: PenLine },
   { title: 'Notes', href: '/notes', icon: FileText },
 ]

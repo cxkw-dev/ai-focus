@@ -5,9 +5,11 @@ import { ChevronDown, ChevronRight, Terminal, X } from 'lucide-react'
 import type { IconType } from 'react-icons'
 import { SiAnthropic, SiOpenai } from 'react-icons/si'
 import { cn, formatRelativeTime } from '@/lib/utils'
-import type { Session } from '@/types/todo'
-
-type SessionTool = Session['tool']
+import {
+  SESSION_TOOL_VALUES,
+  type Session,
+  type SessionTool,
+} from '@/types/todo'
 
 const TOOL_CONFIG = {
   claude: {
@@ -55,18 +57,21 @@ export function SessionList({
     null,
   )
 
-  const groupedSessions = React.useMemo(() => {
-    const groups: Partial<Record<SessionTool, Session[]>> = {}
+  const sessionGroups = React.useMemo(() => {
+    const groups = Object.fromEntries(
+      SESSION_TOOL_VALUES.map((tool) => [tool, [] as Session[]]),
+    ) as Record<SessionTool, Session[]>
 
     for (const session of sessions) {
-      if (!groups[session.tool]) {
-        groups[session.tool] = []
-      }
-
-      groups[session.tool]!.push(session)
+      groups[session.tool].push(session)
     }
 
-    return groups
+    return SESSION_TOOL_VALUES.flatMap((tool) => {
+      const toolSessions = groups[tool]
+      return toolSessions.length > 0
+        ? [{ tool, toolSessions }]
+        : []
+    })
   }, [sessions])
 
   const handleCopy = React.useCallback(async (session: Session) => {
@@ -141,12 +146,8 @@ export function SessionList({
 
       {expanded && (
         <div className="mt-1 flex flex-col gap-2.5">
-          {Object.entries(groupedSessions).map(([tool, toolSessions]) => {
-            if (!toolSessions) {
-              return null
-            }
-
-            const config = TOOL_CONFIG[tool as SessionTool]
+          {sessionGroups.map(({ tool, toolSessions }) => {
+            const config = TOOL_CONFIG[tool]
             const Icon = config.icon
 
             return (

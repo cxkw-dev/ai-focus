@@ -1,19 +1,58 @@
-export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
+export const TODO_PRIORITY_VALUES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const
+export type Priority = (typeof TODO_PRIORITY_VALUES)[number]
 
-export type Status =
-  | 'TODO'
-  | 'IN_PROGRESS'
-  | 'WAITING'
-  | 'UNDER_REVIEW'
-  | 'ON_HOLD'
-  | 'COMPLETED'
+export const TODO_STATUS_VALUES = [
+  'TODO',
+  'IN_PROGRESS',
+  'WAITING',
+  'UNDER_REVIEW',
+  'ON_HOLD',
+  'COMPLETED',
+] as const
+export type Status = (typeof TODO_STATUS_VALUES)[number]
+
+export const TODO_SORT_VALUES = ['order', 'completedAt', 'updatedAt'] as const
+export type TodoSortBy = (typeof TODO_SORT_VALUES)[number]
+
+export const SESSION_TOOL_VALUES = ['claude', 'codex'] as const
+export type SessionTool = (typeof SESSION_TOOL_VALUES)[number]
+
+export interface BillingCode {
+  id: string
+  type: string
+  code: string
+  description: string | null
+  order: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface BillingCodeInput {
+  type: string
+  code: string
+  description?: string | null
+  order: number
+}
 
 export interface Label {
   id: string
   name: string
   color: string
+  billingCodes: BillingCode[]
   createdAt: string
   updatedAt: string
+}
+
+export interface CreateLabelInput {
+  name: string
+  color?: string
+  billingCodes?: BillingCodeInput[]
+}
+
+export interface UpdateLabelInput {
+  name?: string
+  color?: string
+  billingCodes?: BillingCodeInput[]
 }
 
 export interface Subtask {
@@ -60,7 +99,7 @@ export interface StatusUpdate {
 
 export interface Session {
   id: string
-  tool: 'claude' | 'codex'
+  tool: SessionTool
   command: string
   workingPath: string
   createdAt: string

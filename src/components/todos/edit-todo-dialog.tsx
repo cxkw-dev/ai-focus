@@ -53,7 +53,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { LabelMultiSelect, LabelManagerDialog } from './label-multi-select'
+import { openLabelsRoute } from '@/lib/labels'
+import { LabelMultiSelect } from './label-multi-select'
 import { SessionList } from './session-list'
 import { PrioritySelector } from './priority-selector'
 import {
@@ -234,20 +235,17 @@ export function EditTodoDialog({
   isLoading,
   people,
 }: EditTodoDialogProps) {
-  const {
-    labels,
-    handleCreate: onCreateLabel,
-    handleUpdate: onUpdateLabel,
-    handleDelete: onDeleteLabel,
-  } = useLabels()
+  const { labels } = useLabels()
   const form = useTodoForm(todo)
-  const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
   const [newMyPrUrl, setNewMyPrUrl] = React.useState('')
   const [newPrUrl, setNewPrUrl] = React.useState('')
   const [newAzureDepUrl, setNewAzureDepUrl] = React.useState('')
   const [newMyIssueUrl, setNewMyIssueUrl] = React.useState('')
   const [newIssueUrl, setNewIssueUrl] = React.useState('')
+  const handleManageLabels = React.useCallback(() => {
+    openLabelsRoute()
+  }, [])
   const { contacts, addContact, updateContact, removeContact } =
     useTodoContacts(todo?.id ?? '', !!todo)
   const [newContactPersonId, setNewContactPersonId] = React.useState('')
@@ -787,7 +785,7 @@ export function EditTodoDialog({
                     </Label>
                     <button
                       type="button"
-                      onClick={() => setIsLabelManagerOpen(true)}
+                      onClick={handleManageLabels}
                       className="text-[11px] font-medium underline transition-all hover:no-underline"
                       style={{ color: 'var(--primary)' }}
                     >
@@ -798,7 +796,7 @@ export function EditTodoDialog({
                     labels={labels}
                     value={form.labelIds}
                     onChange={form.setLabelIds}
-                    onManage={() => setIsLabelManagerOpen(true)}
+                    onManage={handleManageLabels}
                     disabled={isLoading}
                     showQuickPick
                   />
@@ -1091,15 +1089,6 @@ export function EditTodoDialog({
           </div>
         </form>
       </DialogContent>
-      <LabelManagerDialog
-        open={isLabelManagerOpen}
-        onOpenChange={setIsLabelManagerOpen}
-        labels={labels}
-        onCreateLabel={onCreateLabel}
-        onUpdateLabel={onUpdateLabel}
-        onDeleteLabel={onDeleteLabel}
-        disabled={isLoading}
-      />
     </Dialog>
   )
 }

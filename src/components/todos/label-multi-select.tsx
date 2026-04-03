@@ -4,13 +4,6 @@ import * as React from 'react'
 import { Tags } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
@@ -18,82 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { LabelManager } from '@/components/settings/label-manager'
 import type { Label as TodoLabel } from '@/types/todo'
-
-/* ── Label Manager Dialog ──────────────────────────────── */
-
-interface LabelManagerDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  labels: TodoLabel[]
-  onCreateLabel: (data: Pick<TodoLabel, 'name' | 'color'>) => Promise<boolean>
-  onUpdateLabel: (
-    id: string,
-    data: Partial<Pick<TodoLabel, 'name' | 'color'>>,
-  ) => Promise<boolean>
-  onDeleteLabel: (id: string) => Promise<boolean>
-  disabled?: boolean
-}
-
-export function LabelManagerDialog({
-  open,
-  onOpenChange,
-  labels,
-  onCreateLabel,
-  onUpdateLabel,
-  onDeleteLabel,
-  disabled,
-}: LabelManagerDialogProps) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="overflow-hidden p-0 sm:max-w-[640px]">
-        <div
-          className="border-b px-6 py-5"
-          style={{
-            borderColor: 'var(--border-color)',
-            background:
-              'linear-gradient(135deg, color-mix(in srgb, var(--primary) 18%, transparent), color-mix(in srgb, var(--accent) 18%, transparent))',
-          }}
-        >
-          <DialogHeader className="space-y-2">
-            <div className="flex items-center justify-between gap-3">
-              <DialogTitle className="text-lg font-semibold">
-                Label Studio
-              </DialogTitle>
-              <div
-                className="rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-wide uppercase"
-                style={{
-                  backgroundColor:
-                    'color-mix(in srgb, var(--surface-2) 70%, transparent)',
-                  color: 'var(--text-muted)',
-                }}
-              >
-                {labels.length} total
-              </div>
-            </div>
-            <DialogDescription>
-              Craft reusable labels for your tasks. Colors show up as chips on
-              the card.
-            </DialogDescription>
-          </DialogHeader>
-        </div>
-
-        <div className="p-6">
-          <LabelManager
-            labels={labels}
-            onCreateLabel={onCreateLabel}
-            onUpdateLabel={onUpdateLabel}
-            onDeleteLabel={onDeleteLabel}
-            disabled={disabled}
-          />
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-/* ── Label Multi-Select ────────────────────────────────── */
 
 interface LabelMultiSelectProps {
   labels: TodoLabel[]

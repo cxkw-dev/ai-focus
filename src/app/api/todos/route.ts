@@ -8,6 +8,10 @@ import { emit } from '@/lib/events'
 import { evaluateAccomplishment } from '@/lib/accomplishment-agent'
 import { activeTodoOrderBy, todoInclude } from '@/lib/todo-queries'
 import {
+  validateTodoForResponse,
+  validateTodosForResponse,
+} from '@/lib/server/todo-response'
+import {
   created,
   internalError,
   ok,
@@ -112,7 +116,7 @@ export async function GET(request: NextRequest) {
         db.todo.count({ where }),
       ])
 
-      return ok({ todos, total })
+      return ok({ todos: validateTodosForResponse(todos), total })
     }
 
     const todos = await db.todo.findMany({
@@ -121,7 +125,7 @@ export async function GET(request: NextRequest) {
       orderBy,
     })
 
-    return ok(todos)
+    return ok(validateTodosForResponse(todos))
   } catch (error) {
     if (error instanceof ZodError) {
       return validationError(error)
@@ -178,7 +182,7 @@ export async function POST(request: Request) {
       emit('notebook')
     }
 
-    return created(todo)
+    return created(validateTodoForResponse(todo))
   } catch (error) {
     if (error instanceof ZodError) {
       return validationError(error)

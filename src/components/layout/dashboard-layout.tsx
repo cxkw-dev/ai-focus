@@ -12,6 +12,7 @@ import {
 
 const pageTitles: Record<string, string> = {
   '/todos': 'Todos',
+  '/labels': 'Labels',
   '/notes': 'Notes',
   '/review': 'Year in Review',
   '/settings': 'Settings',

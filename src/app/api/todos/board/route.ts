@@ -1,4 +1,5 @@
 import { db } from '@/lib/db'
+import { validateTodoBoardForResponse } from '@/lib/server/todo-response'
 import { activeTodoOrderBy, todoInclude } from '@/lib/todo-queries'
 import { internalError, ok } from '@/lib/server/api-responses'
 
@@ -31,7 +32,7 @@ export async function GET() {
       }),
     ])
 
-    return ok({ active, completed, deleted })
+    return ok(validateTodoBoardForResponse({ active, completed, deleted }))
   } catch (error) {
     return internalError(
       'Failed to fetch todo board',

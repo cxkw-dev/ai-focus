@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/components/ui/use-toast'
 import { labelsApi } from '@/lib/api'
 import { queryKeys } from '@/lib/query-keys'
-import type { Label } from '@/types/todo'
+import type { CreateLabelInput, Label, UpdateLabelInput } from '@/types/todo'
 
 export function useLabels() {
   const queryClient = useQueryClient()
@@ -39,7 +39,7 @@ export function useLabels() {
       data,
     }: {
       id: string
-      data: Partial<Pick<Label, 'name' | 'color'>>
+      data: UpdateLabelInput
     }) => labelsApi.update(id, data),
     onSuccess: (updatedLabel) => {
       queryClient.setQueryData<Label[]>(queryKeys.labels, (prev = []) =>
@@ -80,7 +80,7 @@ export function useLabels() {
   const isMutating = create.isPending || update.isPending || remove.isPending
 
   // Adapter callbacks matching the LabelManager props interface
-  const handleCreate = async (data: Pick<Label, 'name' | 'color'>) => {
+  const handleCreate = async (data: CreateLabelInput) => {
     try {
       await create.mutateAsync(data)
       return true
@@ -91,7 +91,7 @@ export function useLabels() {
 
   const handleUpdate = async (
     id: string,
-    data: Partial<Pick<Label, 'name' | 'color'>>,
+    data: UpdateLabelInput,
   ) => {
     try {
       await update.mutateAsync({ id, data })

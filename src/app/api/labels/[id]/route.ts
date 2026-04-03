@@ -1,5 +1,6 @@
 import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
+import { labelInclude } from '@/lib/label-queries'
 import {
   internalError,
   notFound,
@@ -18,7 +19,36 @@ export async function PATCH(
   try {
     const { id } = await params
     const data = await parseJsonBody(request, updateLabelSchema)
-    const label = await db.label.update({ where: { id }, data })
+    const label = await db.$transaction(async (tx) => {
+      await tx.label.update({
+        where: { id },
+        data: {
+          ...(data.name !== undefined ? { name: data.name } : {}),
+          ...(data.color !== undefined ? { color: data.color } : {}),
+        },
+      })
+
+      if (data.billingCodes !== undefined) {
+        await tx.billingCode.deleteMany({ where: { labelId: id } })
+
+        if (data.billingCodes.length > 0) {
+          await tx.billingCode.createMany({
+            data: data.billingCodes.map((billingCode) => ({
+              type: billingCode.type,
+              code: billingCode.code,
+              description: billingCode.description ?? null,
+              order: billingCode.order,
+              labelId: id,
+            })),
+          })
+        }
+      }
+
+      return tx.label.findUniqueOrThrow({
+        where: { id },
+        include: labelInclude,
+      })
+    })
 
     emit('labels')
     return ok(label)

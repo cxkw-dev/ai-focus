@@ -58,12 +58,31 @@ model Subtask {
 }
 
 model Label {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  color     String   @default("#22c55e")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  todos     Todo[]   @relation("LabelToTodo")
+  id                 String   @id @default(cuid())
+  name               String   @unique
+  color              String   @default("#22c55e")
+  billingType        String?
+  billingCode        String?
+  billingDescription String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  todos              Todo[]   @relation("LabelToTodo")
+  billingCodes       BillingCode[]
+}
+
+model BillingCode {
+  id          String   @id @default(cuid())
+  type        String
+  code        String
+  description String?
+  order       Int      @default(0)
+  labelId     String
+  label       Label    @relation(fields: [labelId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([labelId, order])
+  @@unique([labelId, code])
 }
 
 model Note {

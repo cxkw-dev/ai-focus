@@ -1,16 +1,22 @@
 import type {
   AzureWorkItemStatus,
+  CreateLabelInput,
   CreateTodoInput,
   GitHubIssueStatus,
   GitHubPrStatus,
   Label,
   PaginatedTodosResponse,
+  Priority,
   Session,
+  SessionTool,
+  Status,
   StatusUpdate,
   Todo,
   TodoBoardResponse,
+  TodoSortBy,
   TodoContact,
   UpdateTodoInput,
+  UpdateLabelInput,
 } from '@/types/todo'
 import type { YearStats } from '@/types/stats'
 import type {
@@ -26,24 +32,40 @@ import type {
 } from '@/types/accomplishment'
 import { buildUrl, requestJson, withJsonBody } from '@/lib/http-client'
 
+export interface ListTodosParams {
+  archived?: boolean
+  excludeStatus?: Status
+  priority?: Priority
+  status?: Status
+}
+
+export interface ListPaginatedTodosParams extends ListTodosParams {
+  search?: string
+  limit: number
+  offset: number
+  sortBy?: TodoSortBy
+}
+
+export interface CreateSessionInput {
+  tool: SessionTool
+  command: string
+  workingPath: string
+}
+
+export interface CreateStatusUpdateInput {
+  content: string
+  status?: Status
+}
+
 export const todosApi = {
   board: (): Promise<TodoBoardResponse> => requestJson('/api/todos/board'),
 
-  list: (params?: {
-    archived?: boolean
-    excludeStatus?: string
-    status?: string
-  }): Promise<Todo[]> => requestJson(buildUrl('/api/todos', params)),
+  list: (params?: ListTodosParams): Promise<Todo[]> =>
+    requestJson(buildUrl('/api/todos', params)),
 
-  listPaginated: (params: {
-    status?: string
-    archived?: boolean
-    excludeStatus?: string
-    search?: string
-    limit: number
-    offset: number
-    sortBy?: string
-  }): Promise<PaginatedTodosResponse> =>
+  listPaginated: (
+    params: ListPaginatedTodosParams,
+  ): Promise<PaginatedTodosResponse> =>
     requestJson(buildUrl('/api/todos', params)),
 
   create: (data: CreateTodoInput): Promise<Todo> =>
@@ -76,7 +98,7 @@ export const todosApi = {
 
   createSession: (
     todoId: string,
-    data: { tool: string; command: string; workingPath: string },
+    data: CreateSessionInput,
   ): Promise<Session> =>
     requestJson(
       `/api/todos/${todoId}/sessions`,
@@ -90,13 +112,10 @@ export const todosApi = {
 export const labelsApi = {
   list: (): Promise<Label[]> => requestJson('/api/labels'),
 
-  create: (data: Pick<Label, 'name' | 'color'>): Promise<Label> =>
+  create: (data: CreateLabelInput): Promise<Label> =>
     requestJson('/api/labels', withJsonBody(data, { method: 'POST' })),
 
-  update: (
-    id: string,
-    data: Partial<Pick<Label, 'name' | 'color'>>,
-  ): Promise<Label> =>
+  update: (id: string, data: UpdateLabelInput): Promise<Label> =>
     requestJson(`/api/labels/${id}`, withJsonBody(data, { method: 'PATCH' })),
 
   delete: (id: string): Promise<{ success: boolean }> =>
@@ -184,7 +203,7 @@ export const statusUpdatesApi = {
 
   create: (
     todoId: string,
-    data: { content: string; status?: string },
+    data: CreateStatusUpdateInput,
   ): Promise<StatusUpdate> =>
     requestJson(
       `/api/todos/${todoId}/updates`,

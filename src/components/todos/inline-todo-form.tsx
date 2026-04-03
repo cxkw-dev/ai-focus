@@ -3,8 +3,9 @@
 import * as React from 'react'
 import { CalendarDays, Loader2, Plus, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { openLabelsRoute } from '@/lib/labels'
 import { PRIORITIES } from '@/lib/priority'
-import { LabelMultiSelect, LabelManagerDialog } from './label-multi-select'
+import { LabelMultiSelect } from './label-multi-select'
 import { SubtaskMentionInput } from '@/components/ui/subtask-mention-input'
 import { UrlListField } from './url-fields'
 import { useLabels } from '@/hooks/use-labels'
@@ -32,19 +33,16 @@ export function InlineTodoForm({
   defaultLabelIds,
   subtaskMentions,
 }: InlineTodoFormProps) {
-  const {
-    labels,
-    handleCreate: onCreateLabel,
-    handleUpdate: onUpdateLabel,
-    handleDelete: onDeleteLabel,
-  } = useLabels()
+  const { labels } = useLabels()
   const form = useTodoForm(null, { initialLabelIds: defaultLabelIds })
   const [isExpanded, setIsExpanded] = React.useState(false)
-  const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
   const [newPrUrl, setNewPrUrl] = React.useState('')
   const [newAzureDepUrl, setNewAzureDepUrl] = React.useState('')
   const resetForm = form.reset
+  const handleManageLabels = React.useCallback(() => {
+    openLabelsRoute()
+  }, [])
 
   const submitCurrentTodo = React.useCallback(async () => {
     if (!form.title.trim()) return false
@@ -259,7 +257,7 @@ export function InlineTodoForm({
                     labels={labels}
                     value={form.labelIds}
                     onChange={form.setLabelIds}
-                    onManage={() => setIsLabelManagerOpen(true)}
+                    onManage={handleManageLabels}
                     disabled={isLoading}
                     showChips={false}
                   />
@@ -442,15 +440,6 @@ export function InlineTodoForm({
         </div>
       </div>
 
-      <LabelManagerDialog
-        open={isLabelManagerOpen}
-        onOpenChange={setIsLabelManagerOpen}
-        labels={labels}
-        onCreateLabel={onCreateLabel}
-        onUpdateLabel={onUpdateLabel}
-        onDeleteLabel={onDeleteLabel}
-        disabled={isLoading}
-      />
     </form>
   )
 }

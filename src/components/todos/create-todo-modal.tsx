@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import { SubtaskMentionInput } from '@/components/ui/subtask-mention-input'
+import { openLabelsRoute } from '@/lib/labels'
 import {
   Dialog,
   DialogContent,
@@ -15,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { LabelMultiSelect, LabelManagerDialog } from './label-multi-select'
+import { LabelMultiSelect } from './label-multi-select'
 import { PrioritySelector } from './priority-selector'
 import {
   SingleUrlField,
@@ -52,14 +53,8 @@ export function CreateTodoModal({
   defaultLabelIds,
   people,
 }: CreateTodoModalProps) {
-  const {
-    labels,
-    handleCreate: onCreateLabel,
-    handleUpdate: onUpdateLabel,
-    handleDelete: onDeleteLabel,
-  } = useLabels()
+  const { labels } = useLabels()
   const form = useTodoForm(null, { initialLabelIds: defaultLabelIds })
-  const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
   const [newMyPrUrl, setNewMyPrUrl] = React.useState('')
   const [newPrUrl, setNewPrUrl] = React.useState('')
@@ -76,6 +71,9 @@ export function CreateTodoModal({
       })),
     [people],
   )
+  const handleManageLabels = React.useCallback(() => {
+    openLabelsRoute()
+  }, [])
 
   React.useEffect(() => {
     if (!open) resetForm()
@@ -443,7 +441,7 @@ export function CreateTodoModal({
                     </Label>
                     <button
                       type="button"
-                      onClick={() => setIsLabelManagerOpen(true)}
+                      onClick={handleManageLabels}
                       className="text-[11px] font-medium underline transition-all hover:no-underline"
                       style={{ color: 'var(--primary)' }}
                     >
@@ -454,7 +452,7 @@ export function CreateTodoModal({
                     labels={labels}
                     value={form.labelIds}
                     onChange={form.setLabelIds}
-                    onManage={() => setIsLabelManagerOpen(true)}
+                    onManage={handleManageLabels}
                     disabled={isLoading}
                     showQuickPick
                   />
@@ -488,16 +486,6 @@ export function CreateTodoModal({
           </div>
         </form>
       </DialogContent>
-
-      <LabelManagerDialog
-        open={isLabelManagerOpen}
-        onOpenChange={setIsLabelManagerOpen}
-        labels={labels}
-        onCreateLabel={onCreateLabel}
-        onUpdateLabel={onUpdateLabel}
-        onDeleteLabel={onDeleteLabel}
-        disabled={isLoading}
-      />
     </Dialog>
   )
 }

@@ -1,15 +1,10 @@
 import { z } from 'zod'
-
-const TODO_STATUS_VALUES = [
-  'TODO',
-  'IN_PROGRESS',
-  'WAITING',
-  'UNDER_REVIEW',
-  'ON_HOLD',
-  'COMPLETED',
-] as const
-
-const TODO_PRIORITY_VALUES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const
+import {
+  SESSION_TOOL_VALUES,
+  TODO_PRIORITY_VALUES,
+  TODO_SORT_VALUES,
+  TODO_STATUS_VALUES,
+} from '@/types/todo'
 
 const optionalSearchParam = (value: string | null) => {
   const trimmedValue = value?.trim()
@@ -18,6 +13,7 @@ const optionalSearchParam = (value: string | null) => {
 
 export const todoStatusSchema = z.enum(TODO_STATUS_VALUES)
 export const todoPrioritySchema = z.enum(TODO_PRIORITY_VALUES)
+export const sessionToolSchema = z.enum(SESSION_TOOL_VALUES)
 
 export const subtaskInputSchema = z.object({
   id: z.string().optional(),
@@ -70,7 +66,7 @@ export const listTodosQuerySchema = z.object({
   search: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(100).optional(),
   offset: z.coerce.number().int().min(0).optional(),
-  sortBy: z.enum(['order', 'completedAt', 'updatedAt']).optional(),
+  sortBy: z.enum(TODO_SORT_VALUES).optional(),
 })
 
 export const reorderTodosSchema = z.object({
@@ -98,7 +94,7 @@ export const createStatusUpdateSchema = z.object({
 })
 
 export const createSessionSchema = z.object({
-  tool: z.enum(['claude', 'codex']),
+  tool: sessionToolSchema,
   command: z.string().trim().min(1),
   workingPath: z.string().trim().min(1),
 })

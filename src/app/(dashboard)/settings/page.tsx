@@ -3,20 +3,18 @@
 import * as React from 'react'
 import { Suspense } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { Tags, Users, Palette, Check } from 'lucide-react'
-import { LabelManager } from '@/components/settings/label-manager'
+import { Users, Palette, Check } from 'lucide-react'
 import { PeopleManager } from '@/components/settings/people-manager'
-import { useLabels } from '@/hooks/use-labels'
 import { usePeople } from '@/hooks/use-people'
 import { useAppTheme } from '@/components/providers/theme-provider'
 
-type SettingsTab = 'labels' | 'contacts' | 'appearance'
+type SettingsTab = 'contacts' | 'appearance'
 
 const TAB_QUERY_KEY = 'tab'
-const TAB_ORDER: SettingsTab[] = ['contacts', 'labels', 'appearance']
+const TAB_ORDER: SettingsTab[] = ['contacts', 'appearance']
 
 const isSettingsTab = (value: string | null): value is SettingsTab =>
-  value === 'labels' || value === 'contacts' || value === 'appearance'
+  value === 'contacts' || value === 'appearance'
 
 function LoadingSpinner() {
   return (
@@ -30,14 +28,6 @@ function LoadingSpinner() {
 }
 
 function SettingsPageContent() {
-  const {
-    labels,
-    isLoading: labelsLoading,
-    isMutating: labelsMutating,
-    handleCreate: handleCreateLabel,
-    handleUpdate: handleUpdateLabel,
-    handleDelete: handleDeleteLabel,
-  } = useLabels()
   const {
     people,
     isLoading: peopleLoading,
@@ -60,10 +50,14 @@ function SettingsPageContent() {
       setActiveTab(queryTab)
       return
     }
+
     if (queryTab !== null) {
       setActiveTab('contacts')
+      const params = new URLSearchParams(searchParams.toString())
+      params.set(TAB_QUERY_KEY, 'contacts')
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false })
     }
-  }, [queryTab])
+  }, [pathname, queryTab, router, searchParams])
 
   const tabs = React.useMemo(
     () => [
@@ -75,13 +69,6 @@ function SettingsPageContent() {
         icon: Users,
       },
       {
-        id: 'labels' as const,
-        label: 'Labels',
-        hint: 'Reusable tags',
-        count: labels.length,
-        icon: Tags,
-      },
-      {
         id: 'appearance' as const,
         label: 'Appearance',
         hint: 'Theme & colors',
@@ -89,7 +76,7 @@ function SettingsPageContent() {
         icon: Palette,
       },
     ],
-    [labels.length, people.length, themes.length],
+    [people.length, themes.length],
   )
 
   const changeTab = React.useCallback(
@@ -187,75 +174,6 @@ function SettingsPageContent() {
           })}
         </div>
       </div>
-
-      {/* Labels Tab Panel */}
-      <section
-        id="settings-panel-labels"
-        role="tabpanel"
-        aria-labelledby="settings-tab-labels"
-        hidden={activeTab !== 'labels'}
-      >
-        <div
-          className="overflow-hidden rounded-xl border"
-          style={{
-            borderColor: 'var(--border-color)',
-            backgroundColor:
-              'color-mix(in srgb, var(--surface) 80%, transparent)',
-          }}
-        >
-          <div
-            className="border-b px-4 py-4 sm:px-6 sm:py-5"
-            style={{
-              borderColor: 'var(--border-color)',
-              background:
-                'linear-gradient(135deg, color-mix(in srgb, var(--primary) 12%, transparent), color-mix(in srgb, var(--accent) 12%, transparent))',
-            }}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <Tags className="h-5 w-5" style={{ color: 'var(--primary)' }} />
-                <h2
-                  className="text-lg font-semibold"
-                  style={{ color: 'var(--text-primary)' }}
-                >
-                  Labels
-                </h2>
-              </div>
-              <div
-                className="rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-wide uppercase"
-                style={{
-                  backgroundColor:
-                    'color-mix(in srgb, var(--surface-2) 70%, transparent)',
-                  color: 'var(--text-muted)',
-                }}
-              >
-                {labels.length} total
-              </div>
-            </div>
-            <p
-              className="mt-1.5 text-sm"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              Manage reusable labels for your tasks. Colors show up as chips on
-              the card.
-            </p>
-          </div>
-
-          <div className="p-4 sm:p-6">
-            {labelsLoading ? (
-              <LoadingSpinner />
-            ) : (
-              <LabelManager
-                labels={labels}
-                onCreateLabel={handleCreateLabel}
-                onUpdateLabel={handleUpdateLabel}
-                onDeleteLabel={handleDeleteLabel}
-                disabled={labelsMutating}
-              />
-            )}
-          </div>
-        </div>
-      </section>
 
       {/* Contacts Tab Panel */}
       <section

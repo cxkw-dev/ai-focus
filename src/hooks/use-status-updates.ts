@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/components/ui/use-toast'
 import { statusUpdatesApi } from '@/lib/api'
+import type { CreateStatusUpdateInput } from '@/lib/api'
 import { queryKeys } from '@/lib/query-keys'
 import type { StatusUpdate } from '@/types/todo'
 
@@ -17,7 +18,7 @@ export function useStatusUpdates(todoId: string, enabled = true) {
   })
 
   const add = useMutation({
-    mutationFn: (data: { content: string; status?: string }) =>
+    mutationFn: (data: CreateStatusUpdateInput) =>
       statusUpdatesApi.create(todoId, data),
     onSuccess: (newUpdate) => {
       queryClient.setQueryData<StatusUpdate[]>(

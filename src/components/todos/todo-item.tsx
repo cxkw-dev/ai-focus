@@ -39,8 +39,10 @@ import {
   Plus,
   Users,
   FileText,
+  DollarSign,
 } from 'lucide-react'
 import { cn, formatRelativeDate } from '@/lib/utils'
+import { getBillingCodeEntries } from '@/lib/labels'
 import { PRIORITY_MAP } from '@/lib/priority'
 import {
   DropdownMenu,
@@ -62,6 +64,7 @@ import { PrDependencyTree } from './pr-dependency-tree'
 import { ContactsDrawer } from './contacts-drawer'
 import { StatusUpdatesDrawer } from './status-updates-drawer'
 import { SessionList } from './session-list'
+import { BillingCodesDrawer } from './billing-codes-drawer'
 import type {
   Todo,
   Status,
@@ -1173,6 +1176,12 @@ export function TodoItem({
     isDragging,
   } = useSortable({ id: todo.id, disabled: viewMode !== 'active' })
 
+  const billingEntries = React.useMemo(
+    () => getBillingCodeEntries(todo.labels ?? []),
+    [todo.labels],
+  )
+  const hasBillingEntries = billingEntries.length > 0
+  const [billingOpen, setBillingOpen] = React.useState(false)
   const [contactsOpen, setContactsOpen] = React.useState(false)
   const [timelineOpen, setTimelineOpen] = React.useState(false)
 
@@ -1183,6 +1192,12 @@ export function TodoItem({
 
   const dragging = isOverlay || isDragging
   const isCompleted = todo.status === 'COMPLETED'
+
+  React.useEffect(() => {
+    if (!hasBillingEntries) {
+      setBillingOpen(false)
+    }
+  }, [hasBillingEntries])
 
   const dropLine = (
     <div
@@ -1264,6 +1279,11 @@ export function TodoItem({
             viewMode={viewMode}
             compact={compact}
           />
+          <BillingCodesDrawer
+            entries={billingEntries}
+            open={billingOpen}
+            onClose={() => setBillingOpen(false)}
+          />
           <ContactsDrawer
             todoId={todo.id}
             open={contactsOpen}
@@ -1280,14 +1300,33 @@ export function TodoItem({
         {/* Side tabs — stacked vertically */}
         {!dragging && (
           <div className="flex flex-shrink-0 flex-col gap-px self-stretch">
+            {hasBillingEntries && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setBillingOpen((prev) => !prev)
+                  setContactsOpen(false)
+                  setTimelineOpen(false)
+                }}
+                className={cn(
+                  'todo-billing-tab flex w-5 flex-1 items-center justify-center rounded-tr-lg transition-all duration-150',
+                  billingOpen && 'todo-billing-tab-active',
+                )}
+                title="Billing codes"
+              >
+                <DollarSign className="h-3 w-3" />
+              </button>
+            )}
             <button
               onClick={(e) => {
                 e.stopPropagation()
                 setContactsOpen((prev) => !prev)
+                setBillingOpen(false)
                 setTimelineOpen(false)
               }}
               className={cn(
-                'todo-contacts-tab flex w-5 flex-1 items-center justify-center rounded-tr-lg transition-all duration-150',
+                'todo-contacts-tab flex w-5 flex-1 items-center justify-center transition-all duration-150',
+                !hasBillingEntries && 'rounded-tr-lg',
                 contactsOpen && 'todo-contacts-tab-active',
               )}
               title="Contacts"
@@ -1298,6 +1337,7 @@ export function TodoItem({
               onClick={(e) => {
                 e.stopPropagation()
                 setTimelineOpen((prev) => !prev)
+                setBillingOpen(false)
                 setContactsOpen(false)
               }}
               className={cn(

@@ -16,6 +16,7 @@ import {
   validationError,
 } from '@/lib/server/api-responses'
 import { isPrismaErrorCode } from '@/lib/server/prisma-errors'
+import { validateTodoForResponse } from '@/lib/server/todo-response'
 import { updateTodoSchema } from '@/lib/validation/todo'
 import { ZodError, z } from 'zod'
 
@@ -247,7 +248,7 @@ export async function GET(
       return notFound('Todo not found')
     }
 
-    return ok(todo)
+    return ok(validateTodoForResponse(todo))
   } catch (error) {
     return internalError('Failed to fetch todo', error, 'Error fetching todo')
   }
@@ -298,7 +299,7 @@ export async function PATCH(
       emit('notebook')
     }
 
-    return ok(todo)
+    return ok(validateTodoForResponse(todo))
   } catch (error) {
     if (error instanceof ZodError) {
       return validationError(error)

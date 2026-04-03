@@ -9,6 +9,7 @@ import {
   validationError,
 } from '@/lib/server/api-responses'
 import { isPrismaErrorCode } from '@/lib/server/prisma-errors'
+import { validateTodoForResponse } from '@/lib/server/todo-response'
 import { toggleSubtaskSchema } from '@/lib/validation/todo'
 import { ZodError } from 'zod'
 
@@ -47,7 +48,7 @@ export async function PATCH(
     })
 
     emit('todos')
-    return ok(updatedTodo)
+    return ok(validateTodoForResponse(updatedTodo))
   } catch (error) {
     if (error instanceof ZodError) {
       return validationError(error)

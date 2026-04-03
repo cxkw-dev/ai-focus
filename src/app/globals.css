@@ -653,6 +653,18 @@ h6 {
 }
 
 /* Contacts drawer tab — part of the card shape */
+.todo-billing-tab {
+  background-color: var(--surface-2);
+  color: color-mix(in srgb, var(--text-muted) 40%, transparent);
+}
+.todo-billing-tab:hover {
+  color: var(--primary);
+  background-color: color-mix(in srgb, var(--primary) 10%, var(--surface-2));
+}
+.todo-billing-tab-active {
+  color: var(--primary);
+}
+
 .todo-contacts-tab {
   background-color: var(--surface-2);
   color: color-mix(in srgb, var(--text-muted) 40%, transparent);
