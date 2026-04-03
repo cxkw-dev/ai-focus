@@ -44,6 +44,7 @@ const STATUS_LABELS: Record<Status, string> = {
   UNDER_REVIEW: 'Under Review',
   ON_HOLD: 'On Hold',
   COMPLETED: 'Completed',
+  CANCELLED: 'Cancelled',
 }
 
 const STATUS_COLORS: Record<Status, string> = {
@@ -53,6 +54,7 @@ const STATUS_COLORS: Record<Status, string> = {
   UNDER_REVIEW: 'var(--status-in-progress)',
   ON_HOLD: 'var(--status-on-hold)',
   COMPLETED: 'var(--status-done)',
+  CANCELLED: 'var(--status-on-hold)',
 }
 
 const PRIORITY_LABELS: Record<Priority, string> = {
