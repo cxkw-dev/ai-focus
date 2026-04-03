@@ -1223,11 +1223,7 @@ export function TodoItem({
       style={style}
       layout={animateTransitions && !dragging}
       initial={animateTransitions ? { opacity: 0, y: 8 } : false}
-      animate={
-        animateTransitions
-          ? { opacity: dragging ? 0.5 : 1, y: 0 }
-          : { opacity: dragging ? 0.5 : 1 }
-      }
+      animate={animateTransitions ? { opacity: 1, y: 0 } : { opacity: 1 }}
       exit={
         animateTransitions
           ? { opacity: 0, x: -12, transition: { duration: 0.16 } }
@@ -1238,7 +1234,7 @@ export function TodoItem({
           ? { duration: 0.16, ease: 'easeOut' }
           : { duration: 0.01 }
       }
-      className="min-w-0"
+      className={cn('min-w-0 transition-opacity duration-150', dragging && 'opacity-50')}
     >
       {dropIndicator === 'above' && dropLine}
       <div className="flex items-center gap-0.5">

@@ -358,7 +358,7 @@ export default function TodosPage() {
 
         {mobileCol && (
           <div
-            className="min-h-0 flex-1"
+            className="min-h-0 flex-1 lg:mx-auto lg:w-full lg:max-w-2xl"
             role="tabpanel"
             id={`todos-category-panel-${mobileCategory}`}
             aria-labelledby={`todos-category-tab-${mobileCategory}`}
@@ -398,36 +398,77 @@ export default function TodosPage() {
           className="min-h-0 flex-1 gap-6"
           style={{
             display: 'grid',
-            gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))`,
+            gridTemplateColumns: columns
+              .map((col) =>
+                (categorizedActive[col.key] ?? []).length === 0
+                  ? '48px'
+                  : 'minmax(0, 1fr)',
+              )
+              .join(' '),
           }}
         >
-          {columns.map((col) => (
-            <TodoColumn
-              key={col.key}
-              title={col.title}
-              color={col.color}
-              activeTodos={categorizedActive[col.key] ?? []}
-              completedTodos={categorizedCompleted[col.key] ?? []}
-              deletedTodos={categorizedDeleted[col.key] ?? []}
-              onEdit={handleEdit}
-              onStatusChange={handleStatusChange}
-              onPriorityChange={handlePriorityChange}
-              onDelete={handleDelete}
-              onPermanentDelete={handlePermanentDelete}
-              onRestore={handleRestore}
-              onToggleSubtask={handleToggleSubtask}
-              onUpdateSubtasks={handleUpdateSubtasks}
-              onOpenNote={handleOpenNote}
-              onReorder={handleReorder}
-              onCreateTodo={handleCreate}
-              isSaving={isSaving}
-              defaultLabelIds={col.labelId ? [col.labelId] : []}
-              people={people}
-              subtaskMentions={subtaskMentions}
-              showInlineForm={false}
-              compact={compact}
-            />
-          ))}
+          {columns.map((col) => {
+            const active = categorizedActive[col.key] ?? []
+            if (active.length === 0) {
+              return (
+                <div
+                  key={col.key}
+                  className="flex flex-col items-center gap-2 rounded-lg pt-2"
+                  style={{
+                    borderRight: '1px solid var(--border-color)',
+                  }}
+                >
+                  <div
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: col.color }}
+                  />
+                  <span
+                    className="text-[9px] font-bold uppercase tracking-wide"
+                    style={{
+                      writingMode: 'vertical-rl',
+                      color: col.color,
+                      opacity: 0.7,
+                    }}
+                  >
+                    {col.title}
+                  </span>
+                  <span
+                    className="mt-auto mb-2 text-[9px]"
+                    style={{ color: 'var(--text-muted)', opacity: 0.5 }}
+                  >
+                    0
+                  </span>
+                </div>
+              )
+            }
+            return (
+              <TodoColumn
+                key={col.key}
+                title={col.title}
+                color={col.color}
+                activeTodos={active}
+                completedTodos={categorizedCompleted[col.key] ?? []}
+                deletedTodos={categorizedDeleted[col.key] ?? []}
+                onEdit={handleEdit}
+                onStatusChange={handleStatusChange}
+                onPriorityChange={handlePriorityChange}
+                onDelete={handleDelete}
+                onPermanentDelete={handlePermanentDelete}
+                onRestore={handleRestore}
+                onToggleSubtask={handleToggleSubtask}
+                onUpdateSubtasks={handleUpdateSubtasks}
+                onOpenNote={handleOpenNote}
+                onReorder={handleReorder}
+                onCreateTodo={handleCreate}
+                isSaving={isSaving}
+                defaultLabelIds={col.labelId ? [col.labelId] : []}
+                people={people}
+                subtaskMentions={subtaskMentions}
+                showInlineForm={false}
+                compact={compact}
+              />
+            )
+          })}
         </div>
       </div>
 
