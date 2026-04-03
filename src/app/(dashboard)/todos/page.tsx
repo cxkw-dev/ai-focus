@@ -13,7 +13,12 @@ import { useLabels } from '@/hooks/use-labels'
 import { usePeople } from '@/hooks/use-people'
 import { buildColumns, categorizeTodosByLabel } from '@/lib/categorize-todos'
 import { todosApi } from '@/lib/api'
-import type { Todo, UpdateTodoInput, CreateTodoInput, SubtaskInput } from '@/types/todo'
+import type {
+  Todo,
+  UpdateTodoInput,
+  CreateTodoInput,
+  SubtaskInput,
+} from '@/types/todo'
 
 export default function TodosPage() {
   const {
@@ -39,14 +44,18 @@ export default function TodosPage() {
   const [editingTodo, setEditingTodo] = React.useState<Todo | null>(null)
   const [isFormOpen, setIsFormOpen] = React.useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false)
-  const [openNote, setOpenNote] = React.useState<{ todoId: string; noteId: string; todoTitle: string } | null>(null)
+  const [openNote, setOpenNote] = React.useState<{
+    todoId: string
+    noteId: string
+    todoTitle: string
+  } | null>(null)
   const [compact, setCompact] = React.useState(() => {
     if (typeof window === 'undefined') return false
     return localStorage.getItem('ai-focus-compact-mode') === 'true'
   })
 
   const toggleCompact = React.useCallback(() => {
-    setCompact(prev => {
+    setCompact((prev) => {
       const next = !prev
       localStorage.setItem('ai-focus-compact-mode', String(next))
       return next
@@ -59,7 +68,10 @@ export default function TodosPage() {
   // Mobile category defaults to first column
   const [mobileCategory, setMobileCategory] = React.useState<string>('')
   React.useEffect(() => {
-    if (columns.length > 0 && (!mobileCategory || !columns.some(c => c.key === mobileCategory))) {
+    if (
+      columns.length > 0 &&
+      (!mobileCategory || !columns.some((c) => c.key === mobileCategory))
+    ) {
       setMobileCategory(columns[0].key)
     }
   }, [columns, mobileCategory])
@@ -71,58 +83,79 @@ export default function TodosPage() {
 
       const currentIndex = columns.findIndex((col) => col.key === currentKey)
       const offset = event.key === 'ArrowRight' ? 1 : -1
-      const nextIndex = (currentIndex + offset + columns.length) % columns.length
+      const nextIndex =
+        (currentIndex + offset + columns.length) % columns.length
       setMobileCategory(columns[nextIndex].key)
     },
-    [columns]
+    [columns],
   )
 
   // Categorize all todo lists by label
   const categorizedActive = React.useMemo(
-    () => categorizeTodosByLabel(todos, columns), [todos, columns]
+    () => categorizeTodosByLabel(todos, columns),
+    [todos, columns],
   )
   const categorizedCompleted = React.useMemo(
-    () => categorizeTodosByLabel(completedTodos, columns), [completedTodos, columns]
+    () => categorizeTodosByLabel(completedTodos, columns),
+    [completedTodos, columns],
   )
   const categorizedDeleted = React.useMemo(
-    () => categorizeTodosByLabel(deletedTodos, columns), [deletedTodos, columns]
+    () => categorizeTodosByLabel(deletedTodos, columns),
+    [deletedTodos, columns],
   )
   const subtaskMentions = React.useMemo(
-    () => people.map((person) => ({ id: person.id, name: person.name, email: person.email })),
-    [people]
+    () =>
+      people.map((person) => ({
+        id: person.id,
+        name: person.name,
+        email: person.email,
+      })),
+    [people],
   )
   const todoTitleById = React.useMemo(
-    () => new Map([...todos, ...completedTodos, ...deletedTodos].map((todo) => [todo.id, todo.title])),
-    [todos, completedTodos, deletedTodos]
+    () =>
+      new Map(
+        [...todos, ...completedTodos, ...deletedTodos].map((todo) => [
+          todo.id,
+          todo.title,
+        ]),
+      ),
+    [todos, completedTodos, deletedTodos],
   )
 
-  const handleCreate = React.useCallback(async (data: CreateTodoInput) => {
-    try {
-      await create.mutateAsync(data)
-      return true
-    } catch {
-      return false
-    }
-  }, [create])
+  const handleCreate = React.useCallback(
+    async (data: CreateTodoInput) => {
+      try {
+        await create.mutateAsync(data)
+        return true
+      } catch {
+        return false
+      }
+    },
+    [create],
+  )
 
-  const handleUpdate = React.useCallback(async (
-    data: UpdateTodoInput,
-    options?: { silent?: boolean; close?: boolean }
-  ) => {
-    if (!editingTodo) return
-    try {
-      await update.mutateAsync({ id: editingTodo.id, data })
-      if (options?.close !== false) {
-        setEditingTodo(null)
-        setIsFormOpen(false)
+  const handleUpdate = React.useCallback(
+    async (
+      data: UpdateTodoInput,
+      options?: { silent?: boolean; close?: boolean },
+    ) => {
+      if (!editingTodo) return
+      try {
+        await update.mutateAsync({ id: editingTodo.id, data })
+        if (options?.close !== false) {
+          setEditingTodo(null)
+          setIsFormOpen(false)
+        }
+        if (!options?.silent) {
+          toast({ title: 'Updated', description: 'Changes saved.' })
+        }
+      } catch {
+        // Error handled by mutation
       }
-      if (!options?.silent) {
-        toast({ title: 'Updated', description: 'Changes saved.' })
-      }
-    } catch {
-      // Error handled by mutation
-    }
-  }, [editingTodo, update, toast])
+    },
+    [editingTodo, update, toast],
+  )
 
   const handleEdit = React.useCallback((todo: Todo) => {
     setEditingTodo(todo)
@@ -136,51 +169,56 @@ export default function TodosPage() {
 
   const handleStatusChange = React.useCallback(
     (id: string, status: Todo['status']) => updateStatus.mutate({ id, status }),
-    [updateStatus]
+    [updateStatus],
   )
 
   const handlePriorityChange = React.useCallback(
-    (id: string, priority: Todo['priority']) => updatePriority.mutate({ id, priority }),
-    [updatePriority]
+    (id: string, priority: Todo['priority']) =>
+      updatePriority.mutate({ id, priority }),
+    [updatePriority],
   )
 
   const handleDelete = React.useCallback(
     (id: string) => archive.mutate(id),
-    [archive]
+    [archive],
   )
 
   const handlePermanentDelete = React.useCallback(
     (id: string) => permanentDelete.mutate(id),
-    [permanentDelete]
+    [permanentDelete],
   )
 
   const handleRestore = React.useCallback(
     (id: string) => restore.mutate(id),
-    [restore]
+    [restore],
   )
 
   const handleToggleSubtask = React.useCallback(
     (todoId: string, subtaskId: string, completed: boolean) =>
       toggleSubtask.mutate({ todoId, subtaskId, completed }),
-    [toggleSubtask]
+    [toggleSubtask],
   )
 
   const handleUpdateSubtasks = React.useCallback(
     (todoId: string, subtasks: SubtaskInput[]) =>
       update.mutate({ id: todoId, data: { subtasks } }),
-    [update]
+    [update],
   )
 
   const handleReorder = React.useCallback(
     (reorderedTodos: Todo[]) => reorder.mutate(reorderedTodos),
-    [reorder]
+    [reorder],
   )
 
   const handleOpenNote = React.useCallback(
     (todoId: string, noteId: string) => {
-      setOpenNote({ todoId, noteId, todoTitle: todoTitleById.get(todoId) ?? 'Note' })
+      setOpenNote({
+        todoId,
+        noteId,
+        todoTitle: todoTitleById.get(todoId) ?? 'Note',
+      })
     },
-    [todoTitleById]
+    [todoTitleById],
   )
 
   const handleUnlinkNote = React.useCallback(async () => {
@@ -191,12 +229,12 @@ export default function TodosPage() {
 
   if (isLoading) {
     return (
-      <div className="h-[calc(100vh-120px)] flex items-center justify-center">
-        <div className="space-y-2 w-full max-w-md">
+      <div className="flex h-[calc(100vh-120px)] items-center justify-center">
+        <div className="w-full max-w-md space-y-2">
           {[...Array(3)].map((_, i) => (
             <div
               key={i}
-              className="h-16 rounded-lg animate-pulse"
+              className="h-16 animate-pulse rounded-lg"
               style={{ backgroundColor: 'var(--surface-2)' }}
             />
           ))}
@@ -205,10 +243,10 @@ export default function TodosPage() {
     )
   }
 
-  const mobileCol = columns.find(c => c.key === mobileCategory) ?? columns[0]
+  const mobileCol = columns.find((c) => c.key === mobileCategory) ?? columns[0]
 
   return (
-    <div className="h-[calc(100vh-120px)] flex flex-col">
+    <div className="flex h-[calc(100vh-120px)] flex-col">
       {/* Portal compact toggle into header */}
       <HeaderActions>
         <button
@@ -216,12 +254,20 @@ export default function TodosPage() {
           onClick={toggleCompact}
           className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all"
           style={{
-            backgroundColor: compact ? 'color-mix(in srgb, var(--primary) 16%, var(--surface-2) 84%)' : 'var(--surface-2)',
+            backgroundColor: compact
+              ? 'color-mix(in srgb, var(--primary) 16%, var(--surface-2) 84%)'
+              : 'var(--surface-2)',
             color: compact ? 'var(--primary)' : 'var(--text-muted)',
-            border: compact ? '1px solid color-mix(in srgb, var(--primary) 30%, transparent)' : '1px solid var(--border-color)',
+            border: compact
+              ? '1px solid color-mix(in srgb, var(--primary) 30%, transparent)'
+              : '1px solid var(--border-color)',
           }}
-          title={compact ? 'Switch to comfortable view' : 'Switch to compact view'}
-          aria-label={compact ? 'Switch to comfortable view' : 'Switch to compact view'}
+          title={
+            compact ? 'Switch to comfortable view' : 'Switch to compact view'
+          }
+          aria-label={
+            compact ? 'Switch to comfortable view' : 'Switch to compact view'
+          }
         >
           <Rows3 className="h-3.5 w-3.5" />
           <span>{compact ? 'Compact' : 'Comfortable'}</span>
@@ -229,16 +275,21 @@ export default function TodosPage() {
       </HeaderActions>
 
       {/* Mobile/Narrow View (< 1280px) */}
-      <div className="flex flex-col h-full xl:hidden">
+      <div className="flex h-full flex-col xl:hidden">
         {/* Category tab switcher */}
         <div
           className="mb-3 rounded-xl border p-1.5"
           style={{
             borderColor: 'var(--border-color)',
-            backgroundColor: 'color-mix(in srgb, var(--surface) 72%, transparent)',
+            backgroundColor:
+              'color-mix(in srgb, var(--surface) 72%, transparent)',
           }}
         >
-          <div className="flex gap-1.5 overflow-x-auto scrollbar-hide" role="tablist" aria-label="Task categories">
+          <div
+            className="scrollbar-hide flex gap-1.5 overflow-x-auto"
+            role="tablist"
+            aria-label="Task categories"
+          >
             {columns.map((col) => {
               const count = (categorizedActive[col.key] ?? []).length
               const isActive = mobileCategory === col.key
@@ -252,21 +303,27 @@ export default function TodosPage() {
                   aria-controls={`todos-category-panel-${col.key}`}
                   aria-selected={isActive}
                   onClick={() => setMobileCategory(col.key)}
-                  onKeyDown={(event) => handleMobileCategoryKeyDown(event, col.key)}
+                  onKeyDown={(event) =>
+                    handleMobileCategoryKeyDown(event, col.key)
+                  }
                   className="flex min-w-[152px] flex-1 items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left transition-all active:scale-[0.99]"
                   style={{
-                    border: `1px solid ${isActive
-                      ? `color-mix(in srgb, ${col.color} 45%, var(--border-color))`
-                      : 'transparent'}`,
+                    border: `1px solid ${
+                      isActive
+                        ? `color-mix(in srgb, ${col.color} 45%, var(--border-color))`
+                        : 'transparent'
+                    }`,
                     backgroundColor: isActive
                       ? 'color-mix(in srgb, var(--surface-2) 82%, transparent)'
                       : 'transparent',
-                    color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
+                    color: isActive
+                      ? 'var(--text-primary)'
+                      : 'var(--text-muted)',
                   }}
                 >
                   <span className="flex min-w-0 flex-1 items-center gap-2">
                     <span
-                      className="h-2 w-2 rounded-full flex-shrink-0"
+                      className="h-2 w-2 flex-shrink-0 rounded-full"
                       style={{
                         backgroundColor: col.color,
                         boxShadow: isActive
@@ -275,7 +332,7 @@ export default function TodosPage() {
                       }}
                     />
                     <span
-                      className="block min-w-0 truncate text-xs font-semibold leading-none"
+                      className="block min-w-0 truncate text-xs leading-none font-semibold"
                       style={{ color: 'var(--text-primary)' }}
                     >
                       {col.title}
@@ -301,7 +358,7 @@ export default function TodosPage() {
 
         {mobileCol && (
           <div
-            className="flex-1 min-h-0"
+            className="min-h-0 flex-1"
             role="tabpanel"
             id={`todos-category-panel-${mobileCategory}`}
             aria-labelledby={`todos-category-tab-${mobileCategory}`}
@@ -333,13 +390,12 @@ export default function TodosPage() {
             />
           </div>
         )}
-
       </div>
 
       {/* Desktop View (>= 1280px) */}
-      <div className="hidden xl:flex xl:flex-col flex-1 min-h-0">
+      <div className="hidden min-h-0 flex-1 xl:flex xl:flex-col">
         <div
-          className="gap-6 flex-1 min-h-0"
+          className="min-h-0 flex-1 gap-6"
           style={{
             display: 'grid',
             gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))`,
@@ -406,24 +462,29 @@ export default function TodosPage() {
       <button
         type="button"
         onClick={() => setIsCreateModalOpen(true)}
-        className="group fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex items-center rounded-full active:scale-95 transition-transform"
+        className="group fixed right-4 bottom-4 z-50 flex items-center rounded-full transition-transform active:scale-95 sm:right-6 sm:bottom-6"
         style={{
           backgroundColor: 'var(--surface-2)',
-          boxShadow: '0 4px 20px color-mix(in srgb, var(--background) 70%, transparent)',
+          boxShadow:
+            '0 4px 20px color-mix(in srgb, var(--background) 70%, transparent)',
         }}
         aria-label="Add task"
       >
         <span
-          className="w-12 h-12 flex items-center justify-center rounded-full flex-shrink-0"
+          className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full"
           style={{
             backgroundColor: 'var(--primary)',
             border: '3px solid var(--surface-2)',
           }}
         >
-          <Plus className="h-5 w-5 group-hover:animate-[spin_0.5s_ease-in-out]" strokeWidth={2.5} style={{ color: 'var(--primary-foreground)' }} />
+          <Plus
+            className="h-5 w-5 group-hover:animate-[spin_0.5s_ease-in-out]"
+            strokeWidth={2.5}
+            style={{ color: 'var(--primary-foreground)' }}
+          />
         </span>
         <span
-          className="text-xs font-semibold tracking-wide pr-4 pl-2 hidden sm:inline"
+          className="hidden pr-4 pl-2 text-xs font-semibold tracking-wide sm:inline"
           style={{ color: 'var(--text-primary)' }}
         >
           Add Task

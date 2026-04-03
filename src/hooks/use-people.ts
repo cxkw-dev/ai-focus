@@ -19,28 +19,41 @@ export function usePeople() {
     mutationFn: peopleApi.create,
     onSuccess: (newPerson) => {
       queryClient.setQueryData<Person[]>(queryKeys.people, (prev = []) =>
-        [...prev, newPerson].sort((a, b) => a.name.localeCompare(b.name))
+        [...prev, newPerson].sort((a, b) => a.name.localeCompare(b.name)),
       )
       toast({ title: 'Person added', description: newPerson.name })
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to add person.', variant: 'destructive' })
+      toast({
+        title: 'Error',
+        description: 'Failed to add person.',
+        variant: 'destructive',
+      })
     },
   })
 
   const update = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Pick<Person, 'name' | 'email'>> }) =>
-      peopleApi.update(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string
+      data: Partial<Pick<Person, 'name' | 'email'>>
+    }) => peopleApi.update(id, data),
     onSuccess: (updatedPerson) => {
       queryClient.setQueryData<Person[]>(queryKeys.people, (prev = []) =>
         prev
-          .map(p => (p.id === updatedPerson.id ? updatedPerson : p))
-          .sort((a, b) => a.name.localeCompare(b.name))
+          .map((p) => (p.id === updatedPerson.id ? updatedPerson : p))
+          .sort((a, b) => a.name.localeCompare(b.name)),
       )
       toast({ title: 'Person updated', description: updatedPerson.name })
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to update person.', variant: 'destructive' })
+      toast({
+        title: 'Error',
+        description: 'Failed to update person.',
+        variant: 'destructive',
+      })
     },
   })
 
@@ -48,12 +61,16 @@ export function usePeople() {
     mutationFn: peopleApi.delete,
     onSuccess: (_data, id) => {
       queryClient.setQueryData<Person[]>(queryKeys.people, (prev = []) =>
-        prev.filter(p => p.id !== id)
+        prev.filter((p) => p.id !== id),
       )
       toast({ title: 'Person removed' })
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to remove person.', variant: 'destructive' })
+      toast({
+        title: 'Error',
+        description: 'Failed to remove person.',
+        variant: 'destructive',
+      })
     },
   })
 
@@ -68,7 +85,10 @@ export function usePeople() {
     }
   }
 
-  const handleUpdate = async (id: string, data: Partial<Pick<Person, 'name' | 'email'>>) => {
+  const handleUpdate = async (
+    id: string,
+    data: Partial<Pick<Person, 'name' | 'email'>>,
+  ) => {
     try {
       await update.mutateAsync({ id, data })
       return true

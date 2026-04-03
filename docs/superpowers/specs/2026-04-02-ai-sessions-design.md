@@ -34,6 +34,7 @@ Todo model gets: `sessions Session[]`
 ## MCP Server
 
 New `add_session` tool:
+
 - Params: `taskNumber` (int), `tool` ("claude" | "codex"), `command` (string), `workingPath` (string)
 - Resolves taskNumber to todo ID, creates session via API
 - Called by the AI agent while working on a task
@@ -41,18 +42,21 @@ New `add_session` tool:
 ## UI Design
 
 ### Session Row
+
 - Brand icon (Anthropic for Claude via `react-icons/si`, OpenAI for Codex)
 - Command in monospace (primary text, truncated with ellipsis)
 - Working path + relative time in tiny text below command
 - Terminal icon button (Lucide `Terminal`) to copy command to clipboard
 
 ### Task Card (todo-item.tsx)
+
 - Collapsible "Sessions (N)" section, same pattern as subtasks
 - Grouped by tool: brand icon as group header with "N sessions" count
 - Session rows underneath, tinted with tool's brand color
 - Collapsed by default, click chevron to expand
 
 ### Edit Dialog (edit-todo-dialog.tsx)
+
 - Same grouped layout in right column
 - Delete button (X) on hover per session row
 - No manual add UI — sessions come from MCP only

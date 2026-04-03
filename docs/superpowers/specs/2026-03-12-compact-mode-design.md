@@ -22,21 +22,21 @@ As the task list grows, laptop screens require excessive scrolling to see all ac
 
 The rendering logic lives in `TodoItemContent` (not the outer `TodoItem` wrapper). The `compact` prop threads through: `TodosPage` → `TodoColumn` → `TodoItem` → `TodoItemContent`. `TodoItemOverlay` (drag overlay) must also receive and forward `compact` to stay visually consistent during drag.
 
-| Element | Comfortable (current) | Compact |
-|---|---|---|
-| Description | Visible | Hidden |
-| Subtasks list | Fully rendered (toggle, reorder, edit) | Hidden; replaced by inline count badge (e.g. `2/4`) next to title |
-| Card padding (`TodoItem` outer div) | `py-2.5 px-3` | `py-1.5 px-2.5` |
-| Title/description container padding | `px-2.5 py-2` | `px-2 py-1.5` |
-| Status chip | Visible | Visible |
-| Priority chip | Visible | Visible |
-| Label chips | Visible | Visible |
-| Task number | Visible | Visible |
-| Due date | Visible | Visible |
-| PR badges | Visible | Visible |
-| Action buttons (edit, delete) | Visible | Visible |
-| Drag handle | Visible | Visible |
-| Contacts tab | Visible | Visible |
+| Element                             | Comfortable (current)                  | Compact                                                           |
+| ----------------------------------- | -------------------------------------- | ----------------------------------------------------------------- |
+| Description                         | Visible                                | Hidden                                                            |
+| Subtasks list                       | Fully rendered (toggle, reorder, edit) | Hidden; replaced by inline count badge (e.g. `2/4`) next to title |
+| Card padding (`TodoItem` outer div) | `py-2.5 px-3`                          | `py-1.5 px-2.5`                                                   |
+| Title/description container padding | `px-2.5 py-2`                          | `px-2 py-1.5`                                                     |
+| Status chip                         | Visible                                | Visible                                                           |
+| Priority chip                       | Visible                                | Visible                                                           |
+| Label chips                         | Visible                                | Visible                                                           |
+| Task number                         | Visible                                | Visible                                                           |
+| Due date                            | Visible                                | Visible                                                           |
+| PR badges                           | Visible                                | Visible                                                           |
+| Action buttons (edit, delete)       | Visible                                | Visible                                                           |
+| Drag handle                         | Visible                                | Visible                                                           |
+| Contacts tab                        | Visible                                | Visible                                                           |
 
 ### Subtask Count Badge (Compact Only)
 

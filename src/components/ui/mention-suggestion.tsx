@@ -28,7 +28,7 @@ export const MentionSuggestionList = React.forwardRef<
         command({ id: item.id, label: item.name, email: item.email })
       }
     },
-    [items, command]
+    [items, command],
   )
 
   React.useImperativeHandle(ref, () => ({
@@ -66,7 +66,7 @@ export const MentionSuggestionList = React.forwardRef<
 
   return (
     <div
-      className="rounded-lg border py-1 shadow-lg overflow-hidden"
+      className="overflow-hidden rounded-lg border py-1 shadow-lg"
       style={{
         backgroundColor: 'var(--surface-2)',
         borderColor: 'var(--border-color)',
@@ -83,14 +83,16 @@ export const MentionSuggestionList = React.forwardRef<
                 ? 'color-mix(in srgb, var(--primary) 15%, transparent)'
                 : 'transparent',
             color:
-              index === selectedIndex ? 'var(--primary)' : 'var(--text-primary)',
+              index === selectedIndex
+                ? 'var(--primary)'
+                : 'var(--text-primary)',
           }}
           onClick={() => selectItem(index)}
           onMouseEnter={() => setSelectedIndex(index)}
         >
           <span className="font-medium">{item.name}</span>
           <span
-            className="text-xs truncate"
+            className="truncate text-xs"
             style={{ color: 'var(--text-muted)' }}
           >
             {item.email}

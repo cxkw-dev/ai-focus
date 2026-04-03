@@ -23,7 +23,13 @@ import {
 import { Circle, CheckCircle2, Trash2, Inbox, Search, X } from 'lucide-react'
 import { TodoItem, TodoItemOverlay } from './todo-item'
 import { InlineTodoForm } from './inline-todo-form'
-import type { Todo, Status, Priority, CreateTodoInput, SubtaskInput } from '@/types/todo'
+import type {
+  Todo,
+  Status,
+  Priority,
+  CreateTodoInput,
+  SubtaskInput,
+} from '@/types/todo'
 import type { Person } from '@/types/person'
 
 type Filter = 'active' | 'completed' | 'deleted'
@@ -40,7 +46,11 @@ interface TodoColumnProps {
   onDelete: (id: string) => void
   onPermanentDelete: (id: string) => void
   onRestore: (id: string) => void
-  onToggleSubtask: (todoId: string, subtaskId: string, completed: boolean) => void
+  onToggleSubtask: (
+    todoId: string,
+    subtaskId: string,
+    completed: boolean,
+  ) => void
   onUpdateSubtasks: (todoId: string, subtasks: SubtaskInput[]) => void
   onOpenNote?: (todoId: string, noteId: string) => void
   onReorder: (reorderedTodos: Todo[]) => void
@@ -106,13 +116,13 @@ export function TodoColumn({
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   )
 
   const filteredCompletedTodos = React.useMemo(() => {
     if (!completedSearch) return completedTodos
     const q = completedSearch.toLowerCase()
-    return completedTodos.filter(t => t.title.toLowerCase().includes(q))
+    return completedTodos.filter((t) => t.title.toLowerCase().includes(q))
   }, [completedTodos, completedSearch])
 
   const displayedTodos = React.useMemo(() => {
@@ -146,35 +156,65 @@ export function TodoColumn({
     setOverId(null)
   }
 
-  const activeTodo = activeId ? activeTodos.find((t) => t.id === activeId) : null
+  const activeTodo = activeId
+    ? activeTodos.find((t) => t.id === activeId)
+    : null
 
   const tabs = [
-    { value: 'active' as Filter, label: 'Active', icon: Circle, count: activeTodos.length, color: 'var(--status-in-progress)' },
-    { value: 'completed' as Filter, label: 'Completed', icon: CheckCircle2, count: completedTodos.length, color: 'var(--status-done)' },
-    { value: 'deleted' as Filter, label: 'Deleted', icon: Trash2, count: deletedTodos.length, color: 'var(--status-on-hold)' },
+    {
+      value: 'active' as Filter,
+      label: 'Active',
+      icon: Circle,
+      count: activeTodos.length,
+      color: 'var(--status-in-progress)',
+    },
+    {
+      value: 'completed' as Filter,
+      label: 'Completed',
+      icon: CheckCircle2,
+      count: completedTodos.length,
+      color: 'var(--status-done)',
+    },
+    {
+      value: 'deleted' as Filter,
+      label: 'Deleted',
+      icon: Trash2,
+      count: deletedTodos.length,
+      color: 'var(--status-on-hold)',
+    },
   ]
   const headerInsetStyle = {
     marginLeft: '20px',
     marginRight: '22px',
   }
 
-  const emptyMessage = filter === 'active'
-    ? 'No active tasks'
-    : filter === 'completed'
-      ? completedSearch ? 'No matching tasks' : 'No completed tasks yet'
-      : 'No deleted tasks'
+  const emptyMessage =
+    filter === 'active'
+      ? 'No active tasks'
+      : filter === 'completed'
+        ? completedSearch
+          ? 'No matching tasks'
+          : 'No completed tasks yet'
+        : 'No deleted tasks'
 
-  const emptyIcon = filter === 'completed'
-    ? <CheckCircle2 className="h-6 w-6" style={{ color: 'var(--status-done)' }} />
-    : filter === 'deleted'
-      ? <Trash2 className="h-6 w-6" style={{ color: 'var(--status-on-hold)' }} />
-      : <Inbox className="h-6 w-6" style={{ color: 'var(--accent)' }} />
+  const emptyIcon =
+    filter === 'completed' ? (
+      <CheckCircle2
+        className="h-6 w-6"
+        style={{ color: 'var(--status-done)' }}
+      />
+    ) : filter === 'deleted' ? (
+      <Trash2 className="h-6 w-6" style={{ color: 'var(--status-on-hold)' }} />
+    ) : (
+      <Inbox className="h-6 w-6" style={{ color: 'var(--accent)' }} />
+    )
 
-  const emptyBg = filter === 'completed'
-    ? 'color-mix(in srgb, var(--status-done) 15%, transparent)'
-    : filter === 'deleted'
-      ? 'color-mix(in srgb, var(--status-on-hold) 15%, transparent)'
-      : 'color-mix(in srgb, var(--accent) 15%, transparent)'
+  const emptyBg =
+    filter === 'completed'
+      ? 'color-mix(in srgb, var(--status-done) 15%, transparent)'
+      : filter === 'deleted'
+        ? 'color-mix(in srgb, var(--status-on-hold) 15%, transparent)'
+        : 'color-mix(in srgb, var(--accent) 15%, transparent)'
 
   React.useEffect(() => {
     updateBottomFade()
@@ -200,14 +240,14 @@ export function TodoColumn({
   }, [updateBottomFade])
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex h-full min-h-0 flex-col">
       {/* Column header */}
       <div className="mb-3 shrink-0" style={headerInsetStyle}>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 items-center">
               <h2
-                className="truncate text-[11px] font-bold leading-none"
+                className="truncate text-[11px] leading-none font-bold"
                 style={{
                   color: 'var(--text-primary)',
                 }}
@@ -217,20 +257,23 @@ export function TodoColumn({
             </div>
           </div>
 
-          <div
-            className="flex items-center gap-0.5 self-start sm:self-auto"
-          >
+          <div className="flex items-center gap-0.5 self-start sm:self-auto">
             {tabs.map((tab) => (
               <button
                 key={tab.value}
                 onClick={() => setFilter(tab.value)}
                 className="todo-filter-btn flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px] font-medium transition-colors"
-                style={filter === tab.value ? {
-                  backgroundColor: 'color-mix(in srgb, var(--surface-2) 78%, transparent)',
-                  color: tab.color,
-                } : {
-                  color: 'var(--text-muted)',
-                }}
+                style={
+                  filter === tab.value
+                    ? {
+                        backgroundColor:
+                          'color-mix(in srgb, var(--surface-2) 78%, transparent)',
+                        color: tab.color,
+                      }
+                    : {
+                        color: 'var(--text-muted)',
+                      }
+                }
                 data-color={tab.color}
                 data-active={filter === tab.value ? 'true' : undefined}
                 onMouseEnter={(e) => {
@@ -270,7 +313,7 @@ export function TodoColumn({
 
       {/* Inline create form (desktop only) */}
       {showInlineForm && filter === 'active' && (
-        <div className="flex-shrink-0 mb-3">
+        <div className="mb-3 flex-shrink-0">
           <InlineTodoForm
             onSubmit={onCreateTodo}
             isLoading={isSaving}
@@ -284,7 +327,7 @@ export function TodoColumn({
       {filter === 'completed' && (
         <div className="relative mb-2 flex-shrink-0">
           <Search
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5"
+            className="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2"
             style={{ color: 'var(--text-muted)' }}
           />
           <input
@@ -292,7 +335,7 @@ export function TodoColumn({
             value={completedSearch}
             onChange={(e) => setCompletedSearch(e.target.value)}
             placeholder="Search completed tasks..."
-            className="w-full h-8 pl-8 pr-8 rounded-lg text-xs outline-none border transition-colors"
+            className="h-8 w-full rounded-lg border pr-8 pl-8 text-xs transition-colors outline-none"
             style={{
               backgroundColor: 'var(--surface-2)',
               color: 'var(--text-primary)',
@@ -302,7 +345,7 @@ export function TodoColumn({
           {completedSearch && (
             <button
               onClick={() => setCompletedSearch('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-white/10 transition-colors"
+              className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded p-0.5 transition-colors hover:bg-white/10"
             >
               <X className="h-3 w-3" style={{ color: 'var(--text-muted)' }} />
             </button>
@@ -311,11 +354,11 @@ export function TodoColumn({
       )}
 
       {/* Todo items with drag and drop */}
-      <div className="relative flex-1 min-h-0">
+      <div className="relative min-h-0 flex-1">
         <div
           ref={scrollContainerRef}
           onScroll={updateBottomFade}
-          className="h-full overflow-y-auto scrollbar-hide"
+          className="scrollbar-hide h-full overflow-y-auto"
         >
           <DndContext
             sensors={sensors}
@@ -333,57 +376,37 @@ export function TodoColumn({
                 {displayedTodos.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <div
-                      className="rounded-full p-3 mb-3"
+                      className="mb-3 rounded-full p-3"
                       style={{ backgroundColor: emptyBg }}
                     >
                       {emptyIcon}
                     </div>
-                    <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                    <p
+                      className="text-sm"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
                       {emptyMessage}
                     </p>
                   </div>
-                ) : (
-                  animateListTransitions ? (
-                    <AnimatePresence mode="popLayout" initial={false}>
-                      {displayedTodos.map((todo) => {
-                        let dropIndicator: 'above' | 'below' | null = null
-                        if (activeId && overId && overId === todo.id && activeId !== overId) {
-                          const activeIndex = activeTodos.findIndex(t => t.id === activeId)
-                          const overIndex = activeTodos.findIndex(t => t.id === overId)
-                          if (activeIndex !== -1 && overIndex !== -1) {
-                            dropIndicator = activeIndex < overIndex ? 'below' : 'above'
-                          }
-                        }
-                        return (
-                          <TodoItem
-                            key={todo.id}
-                            todo={todo}
-                            onStatusChange={onStatusChange}
-                            onPriorityChange={onPriorityChange}
-                            onDelete={filter === 'active' ? onDelete : onPermanentDelete}
-                            onEdit={onEdit}
-                            onRestore={onRestore}
-                            onToggleSubtask={onToggleSubtask}
-                            onUpdateSubtasks={onUpdateSubtasks}
-                            onOpenNote={onOpenNote}
-                            people={people}
-                            subtaskMentions={subtaskMentions}
-                            viewMode={filter}
-                            dropIndicator={dropIndicator}
-                            animateTransitions={true}
-                            compact={compact}
-                          />
-                        )
-                      })}
-                    </AnimatePresence>
-                  ) : (
-                    displayedTodos.map((todo) => {
+                ) : animateListTransitions ? (
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    {displayedTodos.map((todo) => {
                       let dropIndicator: 'above' | 'below' | null = null
-                      if (activeId && overId && overId === todo.id && activeId !== overId) {
-                        const activeIndex = activeTodos.findIndex(t => t.id === activeId)
-                        const overIndex = activeTodos.findIndex(t => t.id === overId)
+                      if (
+                        activeId &&
+                        overId &&
+                        overId === todo.id &&
+                        activeId !== overId
+                      ) {
+                        const activeIndex = activeTodos.findIndex(
+                          (t) => t.id === activeId,
+                        )
+                        const overIndex = activeTodos.findIndex(
+                          (t) => t.id === overId,
+                        )
                         if (activeIndex !== -1 && overIndex !== -1) {
-                          dropIndicator = activeIndex < overIndex ? 'below' : 'above'
+                          dropIndicator =
+                            activeIndex < overIndex ? 'below' : 'above'
                         }
                       }
                       return (
@@ -392,21 +415,66 @@ export function TodoColumn({
                           todo={todo}
                           onStatusChange={onStatusChange}
                           onPriorityChange={onPriorityChange}
-                          onDelete={filter === 'active' ? onDelete : onPermanentDelete}
+                          onDelete={
+                            filter === 'active' ? onDelete : onPermanentDelete
+                          }
                           onEdit={onEdit}
                           onRestore={onRestore}
                           onToggleSubtask={onToggleSubtask}
                           onUpdateSubtasks={onUpdateSubtasks}
+                          onOpenNote={onOpenNote}
                           people={people}
                           subtaskMentions={subtaskMentions}
                           viewMode={filter}
                           dropIndicator={dropIndicator}
-                          animateTransitions={false}
+                          animateTransitions={true}
                           compact={compact}
                         />
                       )
-                    })
-                  )
+                    })}
+                  </AnimatePresence>
+                ) : (
+                  displayedTodos.map((todo) => {
+                    let dropIndicator: 'above' | 'below' | null = null
+                    if (
+                      activeId &&
+                      overId &&
+                      overId === todo.id &&
+                      activeId !== overId
+                    ) {
+                      const activeIndex = activeTodos.findIndex(
+                        (t) => t.id === activeId,
+                      )
+                      const overIndex = activeTodos.findIndex(
+                        (t) => t.id === overId,
+                      )
+                      if (activeIndex !== -1 && overIndex !== -1) {
+                        dropIndicator =
+                          activeIndex < overIndex ? 'below' : 'above'
+                      }
+                    }
+                    return (
+                      <TodoItem
+                        key={todo.id}
+                        todo={todo}
+                        onStatusChange={onStatusChange}
+                        onPriorityChange={onPriorityChange}
+                        onDelete={
+                          filter === 'active' ? onDelete : onPermanentDelete
+                        }
+                        onEdit={onEdit}
+                        onRestore={onRestore}
+                        onToggleSubtask={onToggleSubtask}
+                        onUpdateSubtasks={onUpdateSubtasks}
+                        people={people}
+                        subtaskMentions={subtaskMentions}
+                        viewMode={filter}
+                        dropIndicator={dropIndicator}
+                        animateTransitions={false}
+                        compact={compact}
+                      />
+                    )
+                  })
                 )}
               </div>
             </SortableContext>
@@ -430,9 +498,10 @@ export function TodoColumn({
         {/* Bottom fade overlay */}
         {showBottomFade && (
           <div
-            className="pointer-events-none absolute bottom-0 left-0 right-0 h-12"
+            className="pointer-events-none absolute right-0 bottom-0 left-0 h-12"
             style={{
-              background: 'linear-gradient(to top, var(--background), transparent)',
+              background:
+                'linear-gradient(to top, var(--background), transparent)',
             }}
           />
         )}

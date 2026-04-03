@@ -4,7 +4,7 @@ import { emit } from '@/lib/events'
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string; updateId: string }> }
+  { params }: { params: Promise<{ id: string; updateId: string }> },
 ) {
   const { id, updateId } = await params
   try {
@@ -12,7 +12,12 @@ export async function DELETE(
       where: { id: updateId, todoId: id },
     })
   } catch (err: unknown) {
-    if (err && typeof err === 'object' && 'code' in err && err.code === 'P2025') {
+    if (
+      err &&
+      typeof err === 'object' &&
+      'code' in err &&
+      err.code === 'P2025'
+    ) {
       return NextResponse.json({ error: 'Update not found' }, { status: 404 })
     }
     throw err

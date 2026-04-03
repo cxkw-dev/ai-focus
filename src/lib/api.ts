@@ -1,28 +1,39 @@
-import type { Todo, TodoBoardResponse, TodoContact, StatusUpdate, Session, CreateTodoInput, UpdateTodoInput, Label, GitHubPrStatus, GitHubIssueStatus, AzureWorkItemStatus, PaginatedTodosResponse } from '@/types/todo'
+import type {
+  AzureWorkItemStatus,
+  CreateTodoInput,
+  GitHubIssueStatus,
+  GitHubPrStatus,
+  Label,
+  PaginatedTodosResponse,
+  Session,
+  StatusUpdate,
+  Todo,
+  TodoBoardResponse,
+  TodoContact,
+  UpdateTodoInput,
+} from '@/types/todo'
 import type { YearStats } from '@/types/stats'
-import type { NotebookNote, CreateNotebookNoteInput, UpdateNotebookNoteInput } from '@/types/notebook'
+import type {
+  CreateNotebookNoteInput,
+  NotebookNote,
+  UpdateNotebookNoteInput,
+} from '@/types/notebook'
 import type { Person } from '@/types/person'
-import type { Accomplishment, CreateAccomplishmentInput, UpdateAccomplishmentInput } from '@/types/accomplishment'
-
-async function json<T>(res: Response): Promise<T> {
-  if (!res.ok) throw new Error(`API error: ${res.status}`)
-  return res.json()
-}
-
-const headers = { 'Content-Type': 'application/json' } as const
+import type {
+  Accomplishment,
+  CreateAccomplishmentInput,
+  UpdateAccomplishmentInput,
+} from '@/types/accomplishment'
+import { buildUrl, requestJson, withJsonBody } from '@/lib/http-client'
 
 export const todosApi = {
-  board: (): Promise<TodoBoardResponse> =>
-    fetch('/api/todos/board').then(r => json(r)),
+  board: (): Promise<TodoBoardResponse> => requestJson('/api/todos/board'),
 
-  list: (params?: { archived?: boolean; excludeStatus?: string; status?: string }): Promise<Todo[]> => {
-    const sp = new URLSearchParams()
-    if (params?.archived !== undefined) sp.set('archived', String(params.archived))
-    if (params?.excludeStatus) sp.set('excludeStatus', params.excludeStatus)
-    if (params?.status) sp.set('status', params.status)
-    const q = sp.toString()
-    return fetch(`/api/todos${q ? `?${q}` : ''}`).then(r => json(r))
-  },
+  list: (params?: {
+    archived?: boolean
+    excludeStatus?: string
+    status?: string
+  }): Promise<Todo[]> => requestJson(buildUrl('/api/todos', params)),
 
   listPaginated: (params: {
     status?: string
@@ -32,206 +43,181 @@ export const todosApi = {
     limit: number
     offset: number
     sortBy?: string
-  }): Promise<PaginatedTodosResponse> => {
-    const sp = new URLSearchParams()
-    if (params.status) sp.set('status', params.status)
-    if (params.archived !== undefined) sp.set('archived', String(params.archived))
-    if (params.excludeStatus) sp.set('excludeStatus', params.excludeStatus)
-    if (params.search) sp.set('search', params.search)
-    sp.set('limit', String(params.limit))
-    sp.set('offset', String(params.offset))
-    if (params.sortBy) sp.set('sortBy', params.sortBy)
-    return fetch(`/api/todos?${sp.toString()}`).then(r => json(r))
-  },
+  }): Promise<PaginatedTodosResponse> =>
+    requestJson(buildUrl('/api/todos', params)),
 
   create: (data: CreateTodoInput): Promise<Todo> =>
-    fetch('/api/todos', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(data),
-    }).then(r => json(r)),
+    requestJson('/api/todos', withJsonBody(data, { method: 'POST' })),
 
-  update: (id: string, data: UpdateTodoInput & { archived?: boolean }): Promise<Todo> =>
-    fetch(`/api/todos/${id}`, {
-      method: 'PATCH',
-      headers,
-      body: JSON.stringify(data),
-    }).then(r => json(r)),
+  update: (
+    id: string,
+    data: UpdateTodoInput & { archived?: boolean },
+  ): Promise<Todo> =>
+    requestJson(`/api/todos/${id}`, withJsonBody(data, { method: 'PATCH' })),
 
   delete: (id: string): Promise<{ success: boolean }> =>
-    fetch(`/api/todos/${id}`, { method: 'DELETE' }).then(r => json(r)),
+    requestJson(`/api/todos/${id}`, { method: 'DELETE' }),
 
   reorder: (orderedIds: string[]): Promise<{ success: boolean }> =>
-    fetch('/api/todos/reorder', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ orderedIds }),
-    }).then(r => json(r)),
+    requestJson(
+      '/api/todos/reorder',
+      withJsonBody({ orderedIds }, { method: 'POST' }),
+    ),
 
-  toggleSubtask: (todoId: string, subtaskId: string, completed: boolean): Promise<Todo> =>
-    fetch(`/api/todos/${todoId}/subtasks/${subtaskId}`, {
-      method: 'PATCH',
-      headers,
-      body: JSON.stringify({ completed }),
-    }).then(r => json(r)),
+  toggleSubtask: (
+    todoId: string,
+    subtaskId: string,
+    completed: boolean,
+  ): Promise<Todo> =>
+    requestJson(
+      `/api/todos/${todoId}/subtasks/${subtaskId}`,
+      withJsonBody({ completed }, { method: 'PATCH' }),
+    ),
 
-  createSession: (todoId: string, data: { tool: string; command: string; workingPath: string }): Promise<Session> =>
-    fetch(`/api/todos/${todoId}/sessions`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(data),
-    }).then(r => json(r)),
+  createSession: (
+    todoId: string,
+    data: { tool: string; command: string; workingPath: string },
+  ): Promise<Session> =>
+    requestJson(
+      `/api/todos/${todoId}/sessions`,
+      withJsonBody(data, { method: 'POST' }),
+    ),
 
   deleteSession: (sessionId: string): Promise<{ success: boolean }> =>
-    fetch(`/api/sessions/${sessionId}`, { method: 'DELETE' }).then(r => json(r)),
+    requestJson(`/api/sessions/${sessionId}`, { method: 'DELETE' }),
 }
 
 export const labelsApi = {
-  list: (): Promise<Label[]> =>
-    fetch('/api/labels').then(r => json(r)),
+  list: (): Promise<Label[]> => requestJson('/api/labels'),
 
   create: (data: Pick<Label, 'name' | 'color'>): Promise<Label> =>
-    fetch('/api/labels', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(data),
-    }).then(r => json(r)),
+    requestJson('/api/labels', withJsonBody(data, { method: 'POST' })),
 
-  update: (id: string, data: Partial<Pick<Label, 'name' | 'color'>>): Promise<Label> =>
-    fetch(`/api/labels/${id}`, {
-      method: 'PATCH',
-      headers,
-      body: JSON.stringify(data),
-    }).then(r => json(r)),
+  update: (
+    id: string,
+    data: Partial<Pick<Label, 'name' | 'color'>>,
+  ): Promise<Label> =>
+    requestJson(`/api/labels/${id}`, withJsonBody(data, { method: 'PATCH' })),
 
   delete: (id: string): Promise<{ success: boolean }> =>
-    fetch(`/api/labels/${id}`, { method: 'DELETE' }).then(r => json(r)),
+    requestJson(`/api/labels/${id}`, { method: 'DELETE' }),
 }
 
 export const notebookApi = {
-  list: (params?: { search?: string }): Promise<NotebookNote[]> => {
-    const sp = new URLSearchParams()
-    if (params?.search) sp.set('search', params.search)
-    const q = sp.toString()
-    return fetch(`/api/notebook${q ? `?${q}` : ''}`).then(r => json(r))
-  },
+  list: (params?: { search?: string }): Promise<NotebookNote[]> =>
+    requestJson(buildUrl('/api/notebook', params)),
 
   get: (id: string): Promise<NotebookNote> =>
-    fetch(`/api/notebook/${id}`).then(r => json(r)),
+    requestJson(`/api/notebook/${id}`),
 
   create: (data?: CreateNotebookNoteInput): Promise<NotebookNote> =>
-    fetch('/api/notebook', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(data ?? {}),
-    }).then(r => json(r)),
+    requestJson('/api/notebook', withJsonBody(data ?? {}, { method: 'POST' })),
 
   update: (id: string, data: UpdateNotebookNoteInput): Promise<NotebookNote> =>
-    fetch(`/api/notebook/${id}`, {
-      method: 'PATCH',
-      headers,
-      body: JSON.stringify(data),
-    }).then(r => json(r)),
+    requestJson(`/api/notebook/${id}`, withJsonBody(data, { method: 'PATCH' })),
 
   delete: (id: string): Promise<{ success: boolean }> =>
-    fetch(`/api/notebook/${id}`, { method: 'DELETE' }).then(r => json(r)),
+    requestJson(`/api/notebook/${id}`, { method: 'DELETE' }),
 }
 
 export const githubApi = {
   getPrStatus: (url: string): Promise<GitHubPrStatus> =>
-    fetch(`/api/github/pr-status?url=${encodeURIComponent(url)}`).then(r => json(r)),
+    requestJson(buildUrl('/api/github/pr-status', { url })),
 
   getIssueStatus: (url: string): Promise<GitHubIssueStatus> =>
-    fetch(`/api/github/issue-status?url=${encodeURIComponent(url)}`).then(r => json(r)),
+    requestJson(buildUrl('/api/github/issue-status', { url })),
 }
 
 export const azureApi = {
   getWorkItemStatus: (url: string): Promise<AzureWorkItemStatus> =>
-    fetch(`/api/azure/workitem-status?url=${encodeURIComponent(url)}`).then(r => json(r)),
+    requestJson(buildUrl('/api/azure/workitem-status', { url })),
 }
 
 export const peopleApi = {
-  list: (): Promise<Person[]> =>
-    fetch('/api/people').then(r => json(r)),
+  list: (): Promise<Person[]> => requestJson('/api/people'),
 
   create: (data: Pick<Person, 'name' | 'email'>): Promise<Person> =>
-    fetch('/api/people', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(data),
-    }).then(r => json(r)),
+    requestJson('/api/people', withJsonBody(data, { method: 'POST' })),
 
-  update: (id: string, data: Partial<Pick<Person, 'name' | 'email'>>): Promise<Person> =>
-    fetch(`/api/people/${id}`, {
-      method: 'PATCH',
-      headers,
-      body: JSON.stringify(data),
-    }).then(r => json(r)),
+  update: (
+    id: string,
+    data: Partial<Pick<Person, 'name' | 'email'>>,
+  ): Promise<Person> =>
+    requestJson(`/api/people/${id}`, withJsonBody(data, { method: 'PATCH' })),
 
   delete: (id: string): Promise<{ success: boolean }> =>
-    fetch(`/api/people/${id}`, { method: 'DELETE' }).then(r => json(r)),
+    requestJson(`/api/people/${id}`, { method: 'DELETE' }),
 }
 
 export const todoContactsApi = {
   list: (todoId: string): Promise<TodoContact[]> =>
-    fetch(`/api/todos/${todoId}/contacts`).then(r => json(r)),
+    requestJson(`/api/todos/${todoId}/contacts`),
 
-  add: (todoId: string, data: { personId: string; role: string }): Promise<TodoContact> =>
-    fetch(`/api/todos/${todoId}/contacts`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(data),
-    }).then(r => json(r)),
+  add: (
+    todoId: string,
+    data: { personId: string; role: string },
+  ): Promise<TodoContact> =>
+    requestJson(
+      `/api/todos/${todoId}/contacts`,
+      withJsonBody(data, { method: 'POST' }),
+    ),
 
-  update: (todoId: string, contactId: string, data: { role?: string; order?: number }): Promise<TodoContact> =>
-    fetch(`/api/todos/${todoId}/contacts/${contactId}`, {
-      method: 'PATCH',
-      headers,
-      body: JSON.stringify(data),
-    }).then(r => json(r)),
+  update: (
+    todoId: string,
+    contactId: string,
+    data: { role?: string; order?: number },
+  ): Promise<TodoContact> =>
+    requestJson(
+      `/api/todos/${todoId}/contacts/${contactId}`,
+      withJsonBody(data, { method: 'PATCH' }),
+    ),
 
   remove: (todoId: string, contactId: string): Promise<{ success: boolean }> =>
-    fetch(`/api/todos/${todoId}/contacts/${contactId}`, { method: 'DELETE' }).then(r => json(r)),
+    requestJson(`/api/todos/${todoId}/contacts/${contactId}`, {
+      method: 'DELETE',
+    }),
 }
 
 export const statusUpdatesApi = {
   list: (todoId: string): Promise<StatusUpdate[]> =>
-    fetch(`/api/todos/${todoId}/updates`).then(r => json(r)),
+    requestJson(`/api/todos/${todoId}/updates`),
 
-  create: (todoId: string, data: { content: string; status?: string }): Promise<StatusUpdate> =>
-    fetch(`/api/todos/${todoId}/updates`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(data),
-    }).then(r => json(r)),
+  create: (
+    todoId: string,
+    data: { content: string; status?: string },
+  ): Promise<StatusUpdate> =>
+    requestJson(
+      `/api/todos/${todoId}/updates`,
+      withJsonBody(data, { method: 'POST' }),
+    ),
 
   remove: (todoId: string, updateId: string): Promise<{ success: boolean }> =>
-    fetch(`/api/todos/${todoId}/updates/${updateId}`, { method: 'DELETE' }).then(r => json(r)),
+    requestJson(`/api/todos/${todoId}/updates/${updateId}`, {
+      method: 'DELETE',
+    }),
 }
 
 export const accomplishmentsApi = {
   list: (year: number): Promise<Accomplishment[]> =>
-    fetch(`/api/accomplishments?year=${year}`).then(r => json(r)),
+    requestJson(buildUrl('/api/accomplishments', { year })),
 
   create: (data: CreateAccomplishmentInput): Promise<Accomplishment> =>
-    fetch('/api/accomplishments', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(data),
-    }).then(r => json(r)),
+    requestJson('/api/accomplishments', withJsonBody(data, { method: 'POST' })),
 
-  update: (id: string, data: UpdateAccomplishmentInput): Promise<Accomplishment> =>
-    fetch(`/api/accomplishments/${id}`, {
-      method: 'PATCH',
-      headers,
-      body: JSON.stringify(data),
-    }).then(r => json(r)),
+  update: (
+    id: string,
+    data: UpdateAccomplishmentInput,
+  ): Promise<Accomplishment> =>
+    requestJson(
+      `/api/accomplishments/${id}`,
+      withJsonBody(data, { method: 'PATCH' }),
+    ),
 
   delete: (id: string): Promise<{ success: boolean }> =>
-    fetch(`/api/accomplishments/${id}`, { method: 'DELETE' }).then(r => json(r)),
+    requestJson(`/api/accomplishments/${id}`, { method: 'DELETE' }),
 }
 
 export const statsApi = {
   yearReview: (year: number): Promise<YearStats> =>
-    fetch(`/api/stats/year?year=${year}`).then(r => json(r)),
+    requestJson(buildUrl('/api/stats/year', { year })),
 }

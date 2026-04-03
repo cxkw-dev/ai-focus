@@ -7,10 +7,9 @@ export const todoInclude = Prisma.validator<Prisma.TodoInclude>()({
   sessions: { orderBy: { createdAt: 'desc' } },
 })
 
-export const activeTodoOrderBy = Prisma.validator<Prisma.TodoOrderByWithRelationInput[]>()([
-  { order: 'asc' },
-  { createdAt: 'desc' },
-])
+export const activeTodoOrderBy = Prisma.validator<
+  Prisma.TodoOrderByWithRelationInput[]
+>()([{ order: 'asc' }, { createdAt: 'desc' }])
 
 export function todoWhere(id: string): Prisma.TodoWhereUniqueInput {
   const taskNumber = Number(id)

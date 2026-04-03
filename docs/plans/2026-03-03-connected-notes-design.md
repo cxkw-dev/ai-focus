@@ -23,6 +23,7 @@ A small "Note" chip/icon on the todo card when a note is connected. Clicking ope
 ### Edit Dialog
 
 New "Connected Note" section in the right column of `EditTodoDialog`:
+
 - **Create new note** — creates a NotebookNote and links it to the todo
 - **Link existing note** — pick from unlinked notebook notes
 - **Unlink** — removes connection without deleting the note
@@ -33,11 +34,11 @@ Connected notes appear normally in the notebook. A small indicator shows which t
 
 ### Components
 
-| Component | Purpose |
-|-----------|---------|
-| `NoteDrawer` | Right-side slide-out with TipTap editor |
-| Note chip on `TodoItem` | Clickable indicator on card |
-| Note section in `EditTodoDialog` | Create/link/unlink controls |
+| Component                        | Purpose                                 |
+| -------------------------------- | --------------------------------------- |
+| `NoteDrawer`                     | Right-side slide-out with TipTap editor |
+| Note chip on `TodoItem`          | Clickable indicator on card             |
+| Note section in `EditTodoDialog` | Create/link/unlink controls             |
 
 ### API Changes
 

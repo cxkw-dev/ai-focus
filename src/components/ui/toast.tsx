@@ -15,8 +15,8 @@ const ToastViewport = React.forwardRef<
   <ToastPrimitives.Viewport
     ref={ref}
     className={cn(
-      'fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]',
-      className
+      'fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:top-auto sm:right-0 sm:bottom-0 sm:flex-col md:max-w-[420px]',
+      className,
     )}
     {...props}
   />
@@ -35,7 +35,7 @@ const toastVariants = cva(
     defaultVariants: {
       variant: 'default',
     },
-  }
+  },
 )
 
 const toastStyles: Record<string, React.CSSProperties> = {
@@ -74,8 +74,8 @@ const ToastAction = React.forwardRef<
   <ToastPrimitives.Action
     ref={ref}
     className={cn(
-      'inline-flex h-8 shrink-0 items-center justify-center rounded-lg px-3 text-sm font-medium transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
-      className
+      'inline-flex h-8 shrink-0 items-center justify-center rounded-lg px-3 text-sm font-medium transition-all focus:ring-2 focus:ring-offset-2 focus:outline-none active:scale-95 disabled:pointer-events-none disabled:opacity-50',
+      className,
     )}
     style={{
       backgroundColor: 'var(--primary)',
@@ -93,10 +93,12 @@ const ToastClose = React.forwardRef<
   <ToastPrimitives.Close
     ref={ref}
     className={cn(
-      'shrink-0 rounded-full p-1.5 transition-all focus:outline-none focus:ring-2',
-      className
+      'shrink-0 rounded-full p-1.5 transition-all focus:ring-2 focus:outline-none',
+      className,
     )}
-    style={{ color: 'color-mix(in srgb, var(--text-primary) 40%, transparent)' }}
+    style={{
+      color: 'color-mix(in srgb, var(--text-primary) 40%, transparent)',
+    }}
     toast-close=""
     {...props}
   >
@@ -111,7 +113,7 @@ const ToastTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitives.Title
     ref={ref}
-    className={cn('text-sm font-semibold leading-tight', className)}
+    className={cn('text-sm leading-tight font-semibold', className)}
     {...props}
   />
 ))
@@ -123,7 +125,7 @@ const ToastDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitives.Description
     ref={ref}
-    className={cn('text-sm truncate max-w-[200px]', className)}
+    className={cn('max-w-[200px] truncate text-sm', className)}
     style={{ color: 'var(--text-muted)' }}
     {...props}
   />

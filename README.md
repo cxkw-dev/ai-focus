@@ -30,11 +30,13 @@ A modern, minimal productivity app built with Next.js, PostgreSQL, and dynamic m
 ### Option 1: Full Docker Setup (Recommended for Colima)
 
 1. Make sure Docker/Colima is running:
+
    ```bash
    colima start
    ```
 
 2. Build and start the containers:
+
    ```bash
    # Using docker compose (plugin)
    docker compose up -d
@@ -48,17 +50,20 @@ A modern, minimal productivity app built with Next.js, PostgreSQL, and dynamic m
 ### Option 2: Local Development
 
 1. Run the setup script:
+
    ```bash
    ./scripts/setup.sh
    ```
 
    Or manually:
+
    ```bash
    npm install
    npm run db:generate
    ```
 
 2. Start PostgreSQL:
+
    ```bash
    # Using helper script (no docker-compose needed)
    ./scripts/docker-run.sh
@@ -68,11 +73,13 @@ A modern, minimal productivity app built with Next.js, PostgreSQL, and dynamic m
    ```
 
 3. Push the database schema:
+
    ```bash
    npm run db:push
    ```
 
 4. Start the development server:
+
    ```bash
    npm run dev
    ```
@@ -81,19 +88,19 @@ A modern, minimal productivity app built with Next.js, PostgreSQL, and dynamic m
 
 ## Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server on port 4444 |
-| `npm run build` | Build for production |
-| `npm run start` | Start production server |
-| `npm run db:generate` | Generate Prisma client (Prisma 7 config-aware) |
-| `npm run db:push` | Push schema to database (Prisma 7 config-aware) |
-| `npm run db:migrate` | Run migrations (Prisma 7 config-aware) |
-| `npm run db:studio` | Open Prisma Studio (Prisma 7 config-aware) |
-| `npm run docker:up` | Start Docker containers |
-| `npm run docker:down` | Stop Docker containers |
-| `npm run docker:build` | Build Docker image |
-| `npm run docker:logs` | View container logs |
+| Command                | Description                                     |
+| ---------------------- | ----------------------------------------------- |
+| `npm run dev`          | Start development server on port 4444           |
+| `npm run build`        | Build for production                            |
+| `npm run start`        | Start production server                         |
+| `npm run db:generate`  | Generate Prisma client (Prisma 7 config-aware)  |
+| `npm run db:push`      | Push schema to database (Prisma 7 config-aware) |
+| `npm run db:migrate`   | Run migrations (Prisma 7 config-aware)          |
+| `npm run db:studio`    | Open Prisma Studio (Prisma 7 config-aware)      |
+| `npm run docker:up`    | Start Docker containers                         |
+| `npm run docker:down`  | Stop Docker containers                          |
+| `npm run docker:build` | Build Docker image                              |
+| `npm run docker:logs`  | View container logs                             |
 
 ## Install as Chrome Desktop App
 

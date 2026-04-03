@@ -28,7 +28,10 @@ interface LabelManagerDialogProps {
   onOpenChange: (open: boolean) => void
   labels: TodoLabel[]
   onCreateLabel: (data: Pick<TodoLabel, 'name' | 'color'>) => Promise<boolean>
-  onUpdateLabel: (id: string, data: Partial<Pick<TodoLabel, 'name' | 'color'>>) => Promise<boolean>
+  onUpdateLabel: (
+    id: string,
+    data: Partial<Pick<TodoLabel, 'name' | 'color'>>,
+  ) => Promise<boolean>
   onDeleteLabel: (id: string) => Promise<boolean>
   disabled?: boolean
 }
@@ -44,9 +47,9 @@ export function LabelManagerDialog({
 }: LabelManagerDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[640px] p-0 overflow-hidden">
+      <DialogContent className="overflow-hidden p-0 sm:max-w-[640px]">
         <div
-          className="px-6 py-5 border-b"
+          className="border-b px-6 py-5"
           style={{
             borderColor: 'var(--border-color)',
             background:
@@ -55,11 +58,14 @@ export function LabelManagerDialog({
         >
           <DialogHeader className="space-y-2">
             <div className="flex items-center justify-between gap-3">
-              <DialogTitle className="text-lg font-semibold">Label Studio</DialogTitle>
+              <DialogTitle className="text-lg font-semibold">
+                Label Studio
+              </DialogTitle>
               <div
-                className="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide"
+                className="rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-wide uppercase"
                 style={{
-                  backgroundColor: 'color-mix(in srgb, var(--surface-2) 70%, transparent)',
+                  backgroundColor:
+                    'color-mix(in srgb, var(--surface-2) 70%, transparent)',
                   color: 'var(--text-muted)',
                 }}
               >
@@ -67,7 +73,8 @@ export function LabelManagerDialog({
               </div>
             </div>
             <DialogDescription>
-              Craft reusable labels for your tasks. Colors show up as chips on the card.
+              Craft reusable labels for your tasks. Colors show up as chips on
+              the card.
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -129,14 +136,16 @@ export function LabelMultiSelect({
               type="button"
               disabled={disabled}
               className={cn(
-                'flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] transition-colors',
-                disabled && 'opacity-50 cursor-not-allowed'
+                'flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] transition-colors',
+                disabled && 'cursor-not-allowed opacity-50',
               )}
               style={{
                 backgroundColor: selectedLabels.length
                   ? 'color-mix(in srgb, var(--primary) 12%, transparent)'
                   : 'transparent',
-                color: selectedLabels.length ? 'var(--primary)' : 'var(--text-muted)',
+                color: selectedLabels.length
+                  ? 'var(--primary)'
+                  : 'var(--text-muted)',
               }}
             >
               <Tags className="h-3 w-3" />
@@ -144,7 +153,10 @@ export function LabelMultiSelect({
               {selectedLabels.length > 0 && (
                 <span
                   className="ml-1 rounded-full px-1.5 py-0.5 text-[9px] font-semibold"
-                  style={{ backgroundColor: 'var(--primary)', color: 'var(--primary-foreground)' }}
+                  style={{
+                    backgroundColor: 'var(--primary)',
+                    color: 'var(--primary-foreground)',
+                  }}
                 >
                   {selectedLabels.length}
                 </span>
@@ -153,7 +165,10 @@ export function LabelMultiSelect({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="min-w-[220px]">
             {labels.length === 0 && (
-              <div className="px-2 py-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+              <div
+                className="px-2 py-2 text-xs"
+                style={{ color: 'var(--text-muted)' }}
+              >
                 No labels yet.
               </div>
             )}
@@ -172,10 +187,7 @@ export function LabelMultiSelect({
               </DropdownMenuCheckboxItem>
             ))}
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onSelect={onManage}
-              className="text-xs"
-            >
+            <DropdownMenuItem onSelect={onManage} className="text-xs">
               Manage labels
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -184,13 +196,19 @@ export function LabelMultiSelect({
 
       {showQuickPick && (
         <div className="space-y-2">
-          <div className="flex items-center justify-between text-[10px] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+          <div
+            className="flex items-center justify-between text-[10px] tracking-wide uppercase"
+            style={{ color: 'var(--text-muted)' }}
+          >
             <span>Selected</span>
             <span>{selectedLabels.length}</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {selectedLabels.length === 0 && (
-              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+              <span
+                className="text-[11px]"
+                style={{ color: 'var(--text-muted)' }}
+              >
                 None selected.
               </span>
             )}
@@ -201,8 +219,8 @@ export function LabelMultiSelect({
                 onClick={() => toggleLabel(label.id)}
                 disabled={disabled}
                 className={cn(
-                  'h-5 px-1.5 rounded text-[10px] font-semibold inline-flex items-center gap-1 transition-colors',
-                  disabled && 'opacity-50 cursor-not-allowed'
+                  'inline-flex h-5 items-center gap-1 rounded px-1.5 text-[10px] font-semibold transition-colors',
+                  disabled && 'cursor-not-allowed opacity-50',
                 )}
                 style={{
                   backgroundColor: `color-mix(in srgb, ${label.color} 15%, transparent)`,
@@ -216,13 +234,19 @@ export function LabelMultiSelect({
             ))}
           </div>
 
-          <div className="flex items-center justify-between text-[10px] uppercase tracking-wide pt-2" style={{ color: 'var(--text-muted)' }}>
+          <div
+            className="flex items-center justify-between pt-2 text-[10px] tracking-wide uppercase"
+            style={{ color: 'var(--text-muted)' }}
+          >
             <span>Available</span>
             <span>{labels.length - selectedLabels.length}</span>
           </div>
           <div className="grid gap-1.5">
             {labels.length === 0 && (
-              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+              <span
+                className="text-[11px]"
+                style={{ color: 'var(--text-muted)' }}
+              >
                 No labels yet.
               </span>
             )}
@@ -237,24 +261,32 @@ export function LabelMultiSelect({
                   aria-pressed={isSelected}
                   className={cn(
                     'flex w-full items-center justify-between rounded-md border px-2.5 py-2 text-[11px] transition-colors',
-                    disabled && 'opacity-50 cursor-not-allowed'
+                    disabled && 'cursor-not-allowed opacity-50',
                   )}
-                  style={isSelected ? {
-                    borderColor: `${label.color}66`,
-                    backgroundColor: `${label.color}14`,
-                    color: label.color,
-                  } : {
-                    borderColor: 'var(--border-color)',
-                    backgroundColor: 'color-mix(in srgb, var(--surface-2) 60%, transparent)',
-                    color: 'var(--text-muted)',
-                  }}
+                  style={
+                    isSelected
+                      ? {
+                          borderColor: `${label.color}66`,
+                          backgroundColor: `${label.color}14`,
+                          color: label.color,
+                        }
+                      : {
+                          borderColor: 'var(--border-color)',
+                          backgroundColor:
+                            'color-mix(in srgb, var(--surface-2) 60%, transparent)',
+                          color: 'var(--text-muted)',
+                        }
+                  }
                   title={isSelected ? 'Remove label' : 'Add label'}
                 >
                   <span className="flex items-center gap-2">
-                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: label.color }} />
+                    <span
+                      className="h-2.5 w-2.5 rounded-full"
+                      style={{ backgroundColor: label.color }}
+                    />
                     {label.name}
                   </span>
-                  <span className="text-[10px] uppercase tracking-wide">
+                  <span className="text-[10px] tracking-wide uppercase">
                     {isSelected ? 'On' : 'Add'}
                   </span>
                 </button>
@@ -267,14 +299,17 @@ export function LabelMultiSelect({
       {!showQuickPick && showChips && (
         <div className="flex flex-wrap gap-1.5">
           {selectedLabels.length === 0 && (
-            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+            <span
+              className="text-[11px]"
+              style={{ color: 'var(--text-muted)' }}
+            >
               No labels selected.
             </span>
           )}
           {selectedLabels.map((label) => (
             <span
               key={label.id}
-              className="h-5 px-1.5 rounded text-[10px] font-semibold inline-flex items-center gap-1"
+              className="inline-flex h-5 items-center gap-1 rounded px-1.5 text-[10px] font-semibold"
               style={{
                 backgroundColor: `color-mix(in srgb, ${label.color} 15%, transparent)`,
                 color: label.color,

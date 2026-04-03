@@ -15,7 +15,13 @@ interface NoteDrawerProps {
   onUnlink: () => void
 }
 
-export function NoteDrawer({ noteId, todoTitle, open, onClose, onUnlink }: NoteDrawerProps) {
+export function NoteDrawer({
+  noteId,
+  todoTitle,
+  open,
+  onClose,
+  onUnlink,
+}: NoteDrawerProps) {
   const drawerRef = React.useRef<HTMLDivElement>(null)
   const queryClient = useQueryClient()
   const [title, setTitle] = React.useState('')
@@ -35,14 +41,17 @@ export function NoteDrawer({ noteId, todoTitle, open, onClose, onUnlink }: NoteD
   }, [open, noteId])
 
   // Debounced auto-save
-  const saveNote = React.useCallback((updates: { title?: string; content?: string }) => {
-    if (!noteId) return
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-    saveTimeoutRef.current = setTimeout(async () => {
-      await notebookApi.update(noteId, updates)
-      queryClient.invalidateQueries({ queryKey: ['notebook'] })
-    }, 500)
-  }, [noteId, queryClient])
+  const saveNote = React.useCallback(
+    (updates: { title?: string; content?: string }) => {
+      if (!noteId) return
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+      saveTimeoutRef.current = setTimeout(async () => {
+        await notebookApi.update(noteId, updates)
+        queryClient.invalidateQueries({ queryKey: ['notebook'] })
+      }, 500)
+    },
+    [noteId, queryClient],
+  )
 
   // Cleanup timeout on unmount
   React.useEffect(() => {
@@ -92,7 +101,7 @@ export function NoteDrawer({ noteId, todoTitle, open, onClose, onUnlink }: NoteD
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
-            className="fixed top-0 right-0 bottom-0 z-[61] w-[720px] max-w-[90vw] flex flex-col"
+            className="fixed top-0 right-0 bottom-0 z-[61] flex w-[720px] max-w-[90vw] flex-col"
             style={{
               backgroundColor: 'var(--surface)',
               borderLeft: '1px solid var(--border-color)',
@@ -101,47 +110,64 @@ export function NoteDrawer({ noteId, todoTitle, open, onClose, onUnlink }: NoteD
           >
             {/* Header */}
             <div
-              className="flex items-center justify-between px-5 py-3 border-b shrink-0"
+              className="flex shrink-0 items-center justify-between border-b px-5 py-3"
               style={{ borderColor: 'var(--border-color)' }}
             >
-              <div className="flex items-center gap-2 min-w-0">
-                <FileText className="h-4 w-4 shrink-0" style={{ color: 'var(--primary)' }} />
-                <span className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+              <div className="flex min-w-0 items-center gap-2">
+                <FileText
+                  className="h-4 w-4 shrink-0"
+                  style={{ color: 'var(--primary)' }}
+                />
+                <span
+                  className="truncate text-xs font-semibold"
+                  style={{ color: 'var(--text-primary)' }}
+                >
                   {todoTitle || 'Note'}
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={onUnlink}
-                  className="p-1.5 rounded-md transition-colors hover:bg-white/5"
+                  className="rounded-md p-1.5 transition-colors hover:bg-white/5"
                   title="Unlink note"
                 >
-                  <Unlink className="h-3.5 w-3.5" style={{ color: 'var(--text-muted)' }} />
+                  <Unlink
+                    className="h-3.5 w-3.5"
+                    style={{ color: 'var(--text-muted)' }}
+                  />
                 </button>
                 <button
                   onClick={onClose}
-                  className="p-1.5 rounded-md transition-colors hover:bg-white/5"
+                  className="rounded-md p-1.5 transition-colors hover:bg-white/5"
                 >
-                  <X className="h-3.5 w-3.5" style={{ color: 'var(--text-muted)' }} />
+                  <X
+                    className="h-3.5 w-3.5"
+                    style={{ color: 'var(--text-muted)' }}
+                  />
                 </button>
               </div>
             </div>
 
             {/* Title */}
-            <div className="px-5 py-3 border-b" style={{ borderColor: 'var(--border-color)' }}>
+            <div
+              className="border-b px-5 py-3"
+              style={{ borderColor: 'var(--border-color)' }}
+            >
               <input
                 value={title}
                 onChange={(e) => handleTitleChange(e.target.value)}
-                className="w-full text-sm font-semibold bg-transparent outline-none"
+                className="w-full bg-transparent text-sm font-semibold outline-none"
                 style={{ color: 'var(--text-primary)' }}
                 placeholder="Note title..."
               />
             </div>
 
             {/* Editor */}
-            <div className="flex-1 min-h-0 flex flex-col px-5 py-4">
+            <div className="flex min-h-0 flex-1 flex-col px-5 py-4">
               {isLoading ? (
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Loading...</p>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  Loading...
+                </p>
               ) : (
                 <RichTextEditor
                   value={content}

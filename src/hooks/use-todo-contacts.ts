@@ -22,26 +22,40 @@ export function useTodoContacts(todoId: string, enabled = true) {
     onSuccess: (newContact) => {
       queryClient.setQueryData<TodoContact[]>(
         queryKeys.todoContacts(todoId),
-        (prev = []) => [...prev, newContact]
+        (prev = []) => [...prev, newContact],
       )
       toast({ title: 'Contact added', description: newContact.person.name })
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to add contact.', variant: 'destructive' })
+      toast({
+        title: 'Error',
+        description: 'Failed to add contact.',
+        variant: 'destructive',
+      })
     },
   })
 
   const update = useMutation({
-    mutationFn: ({ contactId, data }: { contactId: string; data: { role?: string; order?: number } }) =>
-      todoContactsApi.update(todoId, contactId, data),
+    mutationFn: ({
+      contactId,
+      data,
+    }: {
+      contactId: string
+      data: { role?: string; order?: number }
+    }) => todoContactsApi.update(todoId, contactId, data),
     onSuccess: (updatedContact) => {
       queryClient.setQueryData<TodoContact[]>(
         queryKeys.todoContacts(todoId),
-        (prev = []) => prev.map(c => c.id === updatedContact.id ? updatedContact : c)
+        (prev = []) =>
+          prev.map((c) => (c.id === updatedContact.id ? updatedContact : c)),
       )
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to update contact.', variant: 'destructive' })
+      toast({
+        title: 'Error',
+        description: 'Failed to update contact.',
+        variant: 'destructive',
+      })
     },
   })
 
@@ -51,12 +65,16 @@ export function useTodoContacts(todoId: string, enabled = true) {
     onSuccess: (_data, contactId) => {
       queryClient.setQueryData<TodoContact[]>(
         queryKeys.todoContacts(todoId),
-        (prev = []) => prev.filter(c => c.id !== contactId)
+        (prev = []) => prev.filter((c) => c.id !== contactId),
       )
       toast({ title: 'Contact removed' })
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to remove contact.', variant: 'destructive' })
+      toast({
+        title: 'Error',
+        description: 'Failed to remove contact.',
+        variant: 'destructive',
+      })
     },
   })
 

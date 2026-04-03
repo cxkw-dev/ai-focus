@@ -12,11 +12,18 @@ interface PrioritySelectorProps {
   disabled?: boolean
 }
 
-export function PrioritySelector({ value, onChange, disabled }: PrioritySelectorProps) {
+export function PrioritySelector({
+  value,
+  onChange,
+  disabled,
+}: PrioritySelectorProps) {
   return (
     <div
       className="inline-flex w-full items-center rounded-full border p-1"
-      style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--surface-2)' }}
+      style={{
+        borderColor: 'var(--border-color)',
+        backgroundColor: 'var(--surface-2)',
+      }}
     >
       {PRIORITIES.map((priority) => {
         const isSelected = value === priority.value
@@ -28,11 +35,15 @@ export function PrioritySelector({ value, onChange, disabled }: PrioritySelector
             disabled={disabled}
             onClick={() => onChange(priority.value)}
             className={cn(
-              'relative flex-1 select-none px-3 py-1.5 text-[11px] font-semibold tracking-wide transition-colors',
+              'relative flex-1 px-3 py-1.5 text-[11px] font-semibold tracking-wide transition-colors select-none',
               'rounded-full',
-              disabled && 'opacity-50 cursor-not-allowed'
+              disabled && 'cursor-not-allowed opacity-50',
             )}
-            style={{ color: isSelected ? 'var(--primary-foreground)' : 'var(--text-muted)' }}
+            style={{
+              color: isSelected
+                ? 'var(--primary-foreground)'
+                : 'var(--text-muted)',
+            }}
           >
             {isSelected && (
               <motion.span
@@ -45,7 +56,11 @@ export function PrioritySelector({ value, onChange, disabled }: PrioritySelector
             <span className="relative z-10 flex items-center justify-center gap-2">
               <span
                 className="h-2 w-2 rounded-full"
-                style={{ backgroundColor: isSelected ? 'var(--primary-foreground)' : priority.colorVar }}
+                style={{
+                  backgroundColor: isSelected
+                    ? 'var(--primary-foreground)'
+                    : priority.colorVar,
+                }}
               />
               {priority.label}
             </span>

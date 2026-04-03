@@ -56,7 +56,12 @@ import {
 import { LabelMultiSelect, LabelManagerDialog } from './label-multi-select'
 import { SessionList } from './session-list'
 import { PrioritySelector } from './priority-selector'
-import { SingleUrlField, UrlListField, AzureIcon, GitHubIcon } from './url-fields'
+import {
+  SingleUrlField,
+  UrlListField,
+  AzureIcon,
+  GitHubIcon,
+} from './url-fields'
 import { useLabels } from '@/hooks/use-labels'
 import { useTodoContacts } from '@/hooks/use-todo-contacts'
 import { useTodoForm } from '@/hooks/use-todo-form'
@@ -90,7 +95,14 @@ function SortableEditSubtaskRow({
 }) {
   const [isEditing, setIsEditing] = React.useState(false)
   const commitFxControls = useAnimationControls()
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: dndId })
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: dndId })
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -103,13 +115,9 @@ function SortableEditSubtaskRow({
   }, [commitFxControls])
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="relative py-0.5"
-    >
+    <div ref={setNodeRef} style={style} className="relative py-0.5">
       <motion.span
-        className="absolute left-0 top-1/2 h-3 w-0.5 rounded-full pointer-events-none"
+        className="pointer-events-none absolute top-1/2 left-0 h-3 w-0.5 rounded-full"
         animate={
           isEditing
             ? { opacity: [0.45, 1, 0.45], scaleY: [0.75, 1, 0.75] }
@@ -117,15 +125,21 @@ function SortableEditSubtaskRow({
         }
         transition={
           isEditing
-            ? { duration: 1.2, ease: 'easeInOut', repeat: Number.POSITIVE_INFINITY }
+            ? {
+                duration: 1.2,
+                ease: 'easeInOut',
+                repeat: Number.POSITIVE_INFINITY,
+              }
             : { duration: 0.12, ease: 'easeOut' }
         }
         style={{ backgroundColor: 'var(--primary)' }}
       />
       <motion.div
-        className="flex items-center gap-2 rounded pl-1 pr-0.5 transition-colors group/subtask hover:bg-white/5"
+        className="group/subtask flex items-center gap-2 rounded pr-0.5 pl-1 transition-colors hover:bg-white/5"
         animate={{
-          backgroundColor: isEditing ? 'color-mix(in srgb, var(--primary) 10%, transparent)' : 'transparent',
+          backgroundColor: isEditing
+            ? 'color-mix(in srgb, var(--primary) 10%, transparent)'
+            : 'transparent',
           boxShadow: isEditing
             ? 'inset 0 0 0 1px color-mix(in srgb, var(--primary) 28%, transparent)'
             : 'inset 0 0 0 1px transparent',
@@ -133,12 +147,15 @@ function SortableEditSubtaskRow({
         }}
         transition={{ type: 'spring', stiffness: 300, damping: 28, mass: 0.6 }}
       >
-        <motion.div className="flex items-center gap-2 w-full min-w-0" animate={commitFxControls}>
+        <motion.div
+          className="flex w-full min-w-0 items-center gap-2"
+          animate={commitFxControls}
+        >
           <button
             type="button"
             {...attributes}
             {...listeners}
-            className="flex-shrink-0 cursor-grab active:cursor-grabbing p-0.5 rounded transition-colors"
+            className="flex-shrink-0 cursor-grab rounded p-0.5 transition-colors active:cursor-grabbing"
             style={{
               color: 'var(--text-muted)',
               opacity: isDragging ? 1 : 0.6,
@@ -151,7 +168,9 @@ function SortableEditSubtaskRow({
             type="button"
             onClick={onToggle}
             className="flex-shrink-0 transition-colors"
-            style={{ color: completed ? 'var(--status-done)' : 'var(--text-muted)' }}
+            style={{
+              color: completed ? 'var(--status-done)' : 'var(--text-muted)',
+            }}
           >
             {completed ? (
               <CheckSquare className="h-4 w-4" />
@@ -166,11 +185,15 @@ function SortableEditSubtaskRow({
             onFocusChange={setIsEditing}
             mentions={mentions}
             completed={completed}
-            className={completed ? 'flex-1 text-sm text-[var(--text-muted)]' : 'flex-1 text-sm text-[var(--text-primary)]'}
+            className={
+              completed
+                ? 'flex-1 text-sm text-[var(--text-muted)]'
+                : 'flex-1 text-sm text-[var(--text-primary)]'
+            }
             ariaLabel="Subtask title"
           />
           <motion.span
-            className="text-[9px] uppercase tracking-wide font-semibold flex-shrink-0"
+            className="flex-shrink-0 text-[9px] font-semibold tracking-wide uppercase"
             animate={{ opacity: isEditing ? 1 : 0, x: isEditing ? 0 : -2 }}
             transition={{ duration: 0.14, ease: 'easeOut' }}
             style={{ color: 'var(--primary)' }}
@@ -180,7 +203,7 @@ function SortableEditSubtaskRow({
           <button
             type="button"
             onClick={onRemove}
-            className="flex-shrink-0 opacity-0 group-hover/subtask:opacity-100 transition-opacity"
+            className="flex-shrink-0 opacity-0 transition-opacity group-hover/subtask:opacity-100"
             style={{ color: 'var(--text-muted)' }}
           >
             <X className="h-3.5 w-3.5" />
@@ -196,7 +219,7 @@ interface EditTodoDialogProps {
   onOpenChange: (open: boolean) => void
   onSubmit: (
     data: UpdateTodoInput,
-    options?: { silent?: boolean; close?: boolean }
+    options?: { silent?: boolean; close?: boolean },
   ) => void
   todo?: Todo | null
   isLoading?: boolean
@@ -211,7 +234,12 @@ export function EditTodoDialog({
   isLoading,
   people,
 }: EditTodoDialogProps) {
-  const { labels, handleCreate: onCreateLabel, handleUpdate: onUpdateLabel, handleDelete: onDeleteLabel } = useLabels()
+  const {
+    labels,
+    handleCreate: onCreateLabel,
+    handleUpdate: onUpdateLabel,
+    handleDelete: onDeleteLabel,
+  } = useLabels()
   const form = useTodoForm(todo)
   const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
@@ -220,13 +248,13 @@ export function EditTodoDialog({
   const [newAzureDepUrl, setNewAzureDepUrl] = React.useState('')
   const [newMyIssueUrl, setNewMyIssueUrl] = React.useState('')
   const [newIssueUrl, setNewIssueUrl] = React.useState('')
-  const { contacts, addContact, updateContact, removeContact } = useTodoContacts(
-    todo?.id ?? '',
-    !!todo
-  )
+  const { contacts, addContact, updateContact, removeContact } =
+    useTodoContacts(todo?.id ?? '', !!todo)
   const [newContactPersonId, setNewContactPersonId] = React.useState('')
   const [newContactRole, setNewContactRole] = React.useState('')
-  const [editingContactId, setEditingContactId] = React.useState<string | null>(null)
+  const [editingContactId, setEditingContactId] = React.useState<string | null>(
+    null,
+  )
   const [editingContactRole, setEditingContactRole] = React.useState('')
   const queryClient = useQueryClient()
   const { data: allNotes } = useQuery({
@@ -234,24 +262,29 @@ export function EditTodoDialog({
     queryFn: () => notebookApi.list(),
   })
   const unlinkedNotes = React.useMemo(
-    () => (allNotes ?? []).filter(n => !n.todo),
-    [allNotes]
+    () => (allNotes ?? []).filter((n) => !n.todo),
+    [allNotes],
   )
 
   const handleCreateAndLinkNote = React.useCallback(async () => {
     if (!todo) return
-    const note = await notebookApi.create({ title: `Note for #${todo.taskNumber}` })
+    const note = await notebookApi.create({
+      title: `Note for #${todo.taskNumber}`,
+    })
     await todosApi.update(todo.id, { notebookNoteId: note.id })
     queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
     queryClient.invalidateQueries({ queryKey: queryKeys.notebook })
   }, [todo, queryClient])
 
-  const handleLinkExistingNote = React.useCallback(async (noteId: string) => {
-    if (!noteId || !todo) return
-    await todosApi.update(todo.id, { notebookNoteId: noteId })
-    queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
-    queryClient.invalidateQueries({ queryKey: queryKeys.notebook })
-  }, [todo, queryClient])
+  const handleLinkExistingNote = React.useCallback(
+    async (noteId: string) => {
+      if (!noteId || !todo) return
+      await todosApi.update(todo.id, { notebookNoteId: noteId })
+      queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
+      queryClient.invalidateQueries({ queryKey: queryKeys.notebook })
+    },
+    [todo, queryClient],
+  )
 
   const handleUnlinkNote = React.useCallback(async () => {
     if (!todo) return
@@ -260,14 +293,22 @@ export function EditTodoDialog({
     queryClient.invalidateQueries({ queryKey: queryKeys.notebook })
   }, [todo, queryClient])
 
-  const handleDeleteSession = React.useCallback(async (sessionId: string) => {
-    await todosApi.deleteSession(sessionId)
-    queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
-  }, [queryClient])
+  const handleDeleteSession = React.useCallback(
+    async (sessionId: string) => {
+      await todosApi.deleteSession(sessionId)
+      queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
+    },
+    [queryClient],
+  )
 
   const subtaskMentions = React.useMemo(
-    () => people.map((person) => ({ id: person.id, name: person.name, email: person.email })),
-    [people]
+    () =>
+      people.map((person) => ({
+        id: person.id,
+        name: person.name,
+        email: person.email,
+      })),
+    [people],
   )
   const subtaskSensors = useSensors(
     useSensor(PointerSensor, {
@@ -275,12 +316,15 @@ export function EditTodoDialog({
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   )
-  const normalizeDescription = React.useCallback((value: string | null | undefined) => {
-    const trimmed = value?.trim()
-    return trimmed ? trimmed : null
-  }, [])
+  const normalizeDescription = React.useCallback(
+    (value: string | null | undefined) => {
+      const trimmed = value?.trim()
+      return trimmed ? trimmed : null
+    },
+    [],
+  )
 
   const isEditing = !!todo
 
@@ -318,13 +362,14 @@ export function EditTodoDialog({
         priority: todo.priority,
         status: todo.status,
         dueDate: todo.dueDate ? new Date(todo.dueDate).toISOString() : null,
-        labelIds: todo.labels?.map(l => l.id) ?? [],
-        subtasks: todo.subtasks?.map((s, i) => ({
-          id: s.id,
-          title: s.title,
-          completed: s.completed,
-          order: i,
-        })) ?? [],
+        labelIds: todo.labels?.map((l) => l.id) ?? [],
+        subtasks:
+          todo.subtasks?.map((s, i) => ({
+            id: s.id,
+            title: s.title,
+            completed: s.completed,
+            order: i,
+          })) ?? [],
         myPrUrls: todo.myPrUrls ?? [],
         githubPrUrls: todo.githubPrUrls ?? [],
         azureWorkItemUrl: todo.azureWorkItemUrl || null,
@@ -338,7 +383,19 @@ export function EditTodoDialog({
       }
     }
     onOpenChange(false)
-  }, [isEditing, todo, form, onSubmit, onOpenChange, newMyPrUrl, newPrUrl, newAzureDepUrl, newMyIssueUrl, newIssueUrl, normalizeDescription])
+  }, [
+    isEditing,
+    todo,
+    form,
+    onSubmit,
+    onOpenChange,
+    newMyPrUrl,
+    newPrUrl,
+    newAzureDepUrl,
+    newMyIssueUrl,
+    newIssueUrl,
+    normalizeDescription,
+  ])
 
   const handleAddSubtask = React.useCallback(() => {
     const normalized = normalizeSubtaskTitle(newSubtaskTitle)
@@ -347,46 +404,55 @@ export function EditTodoDialog({
     setNewSubtaskTitle('')
   }, [newSubtaskTitle, form])
 
-  const handleOpenChange = React.useCallback((nextOpen: boolean) => {
-    if (!nextOpen) {
-      handleClose()
-    }
-  }, [handleClose])
+  const handleOpenChange = React.useCallback(
+    (nextOpen: boolean) => {
+      if (!nextOpen) {
+        handleClose()
+      }
+    },
+    [handleClose],
+  )
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
   }
 
-  const handleSubtaskDragEnd = React.useCallback((event: DragEndEvent) => {
-    const { active, over } = event
-    if (!over || active.id === over.id) return
+  const handleSubtaskDragEnd = React.useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event
+      if (!over || active.id === over.id) return
 
-    const activeIndex = form.subtasks.findIndex((subtask, index) =>
-      getSubtaskDndId(subtask.id, index) === active.id
-    )
-    const overIndex = form.subtasks.findIndex((subtask, index) =>
-      getSubtaskDndId(subtask.id, index) === over.id
-    )
+      const activeIndex = form.subtasks.findIndex(
+        (subtask, index) => getSubtaskDndId(subtask.id, index) === active.id,
+      )
+      const overIndex = form.subtasks.findIndex(
+        (subtask, index) => getSubtaskDndId(subtask.id, index) === over.id,
+      )
 
-    if (activeIndex !== -1 && overIndex !== -1) {
-      form.moveSubtask(activeIndex, overIndex)
-    }
-  }, [form])
+      if (activeIndex !== -1 && overIndex !== -1) {
+        form.moveSubtask(activeIndex, overIndex)
+      }
+    },
+    [form],
+  )
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="w-[98vw] sm:w-[96vw] max-w-[1320px] max-h-[90vh] sm:max-h-[85vh] flex flex-col overflow-hidden p-0">
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+      <DialogContent className="flex max-h-[90vh] w-[98vw] max-w-[1320px] flex-col overflow-hidden p-0 sm:max-h-[85vh] sm:w-[96vw]">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           {/* Header */}
           <div
-            className="px-4 sm:px-6 py-4 sm:py-5 border-b shrink-0"
+            className="shrink-0 border-b px-4 py-4 sm:px-6 sm:py-5"
             style={{
               borderColor: 'var(--border-color)',
-              background: 'linear-gradient(135deg, color-mix(in srgb, var(--primary) 8%, transparent), color-mix(in srgb, var(--accent) 8%, transparent))',
+              background:
+                'linear-gradient(135deg, color-mix(in srgb, var(--primary) 8%, transparent), color-mix(in srgb, var(--accent) 8%, transparent))',
             }}
           >
             <DialogHeader className="space-y-1.5">
-              <DialogTitle className="text-lg sm:text-xl">Edit Task</DialogTitle>
+              <DialogTitle className="text-lg sm:text-xl">
+                Edit Task
+              </DialogTitle>
               <DialogDescription className="text-sm">
                 Changes are saved when you close this dialog
               </DialogDescription>
@@ -394,12 +460,16 @@ export function EditTodoDialog({
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6">
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_300px] gap-0 md:gap-0">
+          <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
+            <div className="grid grid-cols-1 gap-0 md:grid-cols-[1fr_300px] md:gap-0">
               {/* Left column - Content */}
               <div className="space-y-4 md:pr-6">
                 <div className="space-y-2">
-                  <Label htmlFor="title" className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                  <Label
+                    htmlFor="title"
+                    className="text-xs font-semibold tracking-wide uppercase"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
                     Task Title
                   </Label>
                   <Input
@@ -413,7 +483,10 @@ export function EditTodoDialog({
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                  <Label
+                    className="text-xs font-semibold tracking-wide uppercase"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
                     Description
                   </Label>
                   <RichTextEditor
@@ -421,18 +494,29 @@ export function EditTodoDialog({
                     onChange={form.setDescription}
                     placeholder="Add more details, links, or notes..."
                     disabled={isLoading}
-                    mentions={people.map(p => ({ id: p.id, name: p.name, email: p.email }))}
+                    mentions={people.map((p) => ({
+                      id: p.id,
+                      name: p.name,
+                      email: p.email,
+                    }))}
                   />
                 </div>
 
                 {/* Subtasks */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                  <Label
+                    className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
                     <ListChecks className="h-3.5 w-3.5" />
                     Subtasks
                     {form.subtasks.length > 0 && (
-                      <span className="text-[10px] font-normal" style={{ color: 'var(--text-muted)' }}>
-                        {form.subtasks.filter(s => s.completed).length}/{form.subtasks.length}
+                      <span
+                        className="text-[10px] font-normal"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
+                        {form.subtasks.filter((s) => s.completed).length}/
+                        {form.subtasks.length}
                       </span>
                     )}
                   </Label>
@@ -443,7 +527,9 @@ export function EditTodoDialog({
                       onDragEnd={handleSubtaskDragEnd}
                     >
                       <SortableContext
-                        items={form.subtasks.map((subtask, index) => getSubtaskDndId(subtask.id, index))}
+                        items={form.subtasks.map((subtask, index) =>
+                          getSubtaskDndId(subtask.id, index),
+                        )}
                         strategy={verticalListSortingStrategy}
                       >
                         <div className="space-y-1">
@@ -454,7 +540,9 @@ export function EditTodoDialog({
                               completed={!!subtask.completed}
                               title={subtask.title}
                               onToggle={() => form.toggleSubtask(index)}
-                              onTitleChange={(title) => form.updateSubtaskTitle(index, title)}
+                              onTitleChange={(title) =>
+                                form.updateSubtaskTitle(index, title)
+                              }
                               onRemove={() => form.removeSubtask(index)}
                               mentions={subtaskMentions}
                             />
@@ -463,7 +551,10 @@ export function EditTodoDialog({
                       </SortableContext>
                     </DndContext>
                     <div className="flex items-center gap-2">
-                      <Plus className="h-4 w-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                      <Plus
+                        className="h-4 w-4 flex-shrink-0"
+                        style={{ color: 'var(--text-muted)' }}
+                      />
                       <SubtaskMentionInput
                         value={newSubtaskTitle}
                         onChange={setNewSubtaskTitle}
@@ -478,16 +569,27 @@ export function EditTodoDialog({
                 </div>
 
                 {/* Links & Integrations - below subtasks, uses empty left column space */}
-                <div className="grid grid-cols-2 gap-4 mt-4 pt-4" style={{ borderTop: '1px solid var(--border-color)' }}>
+                <div
+                  className="mt-4 grid grid-cols-2 gap-4 pt-4"
+                  style={{ borderTop: '1px solid var(--border-color)' }}
+                >
                   {/* Azure */}
                   <div className="space-y-3">
-                    <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                    <Label
+                      className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
                       <AzureIcon className="h-3.5 w-3.5" />
                       Azure
                     </Label>
 
                     <div className="space-y-1.5">
-                      <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>My Work Item</span>
+                      <span
+                        className="text-[10px] font-medium tracking-wide uppercase"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
+                        My Work Item
+                      </span>
                       <SingleUrlField
                         value={form.azureWorkItemUrl}
                         onChange={form.setAzureWorkItemUrl}
@@ -497,7 +599,12 @@ export function EditTodoDialog({
                     </div>
 
                     <div className="space-y-1.5">
-                      <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Waiting On</span>
+                      <span
+                        className="text-[10px] font-medium tracking-wide uppercase"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
+                        Waiting On
+                      </span>
                       <UrlListField
                         type="azure"
                         urls={form.azureDepUrls}
@@ -512,13 +619,21 @@ export function EditTodoDialog({
 
                   {/* GitHub */}
                   <div className="space-y-3">
-                    <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                    <Label
+                      className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
                       <GitHubIcon className="h-3.5 w-3.5" />
                       GitHub PRs
                     </Label>
 
                     <div className="space-y-1.5">
-                      <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>My PRs</span>
+                      <span
+                        className="text-[10px] font-medium tracking-wide uppercase"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
+                        My PRs
+                      </span>
                       <UrlListField
                         type="github"
                         urls={form.myPrUrls}
@@ -531,7 +646,12 @@ export function EditTodoDialog({
                     </div>
 
                     <div className="space-y-1.5">
-                      <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Waiting On</span>
+                      <span
+                        className="text-[10px] font-medium tracking-wide uppercase"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
+                        Waiting On
+                      </span>
                       <UrlListField
                         type="github"
                         urls={form.githubPrUrls}
@@ -546,9 +666,12 @@ export function EditTodoDialog({
                 </div>
 
                 {/* GitHub Issues */}
-                <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className="mt-4 grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2 mb-2" style={{ color: 'var(--text-muted)' }}>
+                    <Label
+                      className="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
                       <GitHubIcon className="h-3.5 w-3.5" />
                       My Issues
                     </Label>
@@ -564,7 +687,10 @@ export function EditTodoDialog({
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2 mb-2" style={{ color: 'var(--text-muted)' }}>
+                    <Label
+                      className="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
                       <GitHubIcon className="h-3.5 w-3.5" />
                       Waiting On Issues
                     </Label>
@@ -583,16 +709,23 @@ export function EditTodoDialog({
 
               {/* Right column - Meta */}
               <div
-                className="pt-6 md:pt-0 md:pl-6 md:border-l space-y-4"
+                className="space-y-4 pt-6 md:border-l md:pt-0 md:pl-6"
                 style={{ borderColor: 'var(--border-color)' }}
               >
                 {/* Status */}
                 <div className="space-y-2">
-                  <Label htmlFor="status" className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                  <Label
+                    htmlFor="status"
+                    className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
                     <TrendingUp className="h-3.5 w-3.5" />
                     Status
                   </Label>
-                  <Select value={form.status} onValueChange={(v) => form.setStatus(v as Status)}>
+                  <Select
+                    value={form.status}
+                    onValueChange={(v) => form.setStatus(v as Status)}
+                  >
                     <SelectTrigger className="h-10">
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
@@ -609,7 +742,10 @@ export function EditTodoDialog({
 
                 {/* Priority */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                  <Label
+                    className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
                     <Flame className="h-3.5 w-3.5" />
                     Priority
                   </Label>
@@ -622,7 +758,11 @@ export function EditTodoDialog({
 
                 {/* Due Date */}
                 <div className="space-y-2">
-                  <Label htmlFor="dueDate" className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                  <Label
+                    htmlFor="dueDate"
+                    className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
                     <CalendarDays className="h-3.5 w-3.5" />
                     Due Date
                   </Label>
@@ -638,14 +778,17 @@ export function EditTodoDialog({
                 {/* Labels */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                    <Label
+                      className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
                       <Tags className="h-3.5 w-3.5" />
                       Labels
                     </Label>
                     <button
                       type="button"
                       onClick={() => setIsLabelManagerOpen(true)}
-                      className="text-[11px] font-medium underline hover:no-underline transition-all"
+                      className="text-[11px] font-medium underline transition-all hover:no-underline"
                       style={{ color: 'var(--primary)' }}
                     >
                       Manage
@@ -663,13 +806,19 @@ export function EditTodoDialog({
 
                 {/* Connected Note */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                  <Label
+                    className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
                     <FileText className="h-3.5 w-3.5" />
                     Connected Note
                   </Label>
                   {todo?.notebookNoteId ? (
                     <div className="flex items-center gap-2">
-                      <span className="text-[11px] flex-1 truncate" style={{ color: 'var(--text-primary)' }}>
+                      <span
+                        className="flex-1 truncate text-[11px]"
+                        style={{ color: 'var(--text-primary)' }}
+                      >
                         {todo.notebookNote?.title || 'Untitled'}
                       </span>
                       <button
@@ -686,21 +835,31 @@ export function EditTodoDialog({
                       <button
                         type="button"
                         onClick={handleCreateAndLinkNote}
-                        className="w-full text-[11px] rounded px-2 py-1.5 border transition-colors hover:bg-white/5 text-left"
-                        style={{ borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
+                        className="w-full rounded border px-2 py-1.5 text-left text-[11px] transition-colors hover:bg-white/5"
+                        style={{
+                          borderColor: 'var(--border-color)',
+                          color: 'var(--text-primary)',
+                        }}
                       >
                         + Create new note
                       </button>
                       {unlinkedNotes.length > 0 && (
                         <select
                           value=""
-                          onChange={(e) => handleLinkExistingNote(e.target.value)}
-                          className="w-full text-[11px] rounded px-1.5 py-1 bg-transparent border outline-none"
-                          style={{ borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
+                          onChange={(e) =>
+                            handleLinkExistingNote(e.target.value)
+                          }
+                          className="w-full rounded border bg-transparent px-1.5 py-1 text-[11px] outline-none"
+                          style={{
+                            borderColor: 'var(--border-color)',
+                            color: 'var(--text-primary)',
+                          }}
                         >
                           <option value="">Link existing note...</option>
                           {unlinkedNotes.map((note) => (
-                            <option key={note.id} value={note.id}>{note.title}</option>
+                            <option key={note.id} value={note.id}>
+                              {note.title}
+                            </option>
                           ))}
                         </select>
                       )}
@@ -721,7 +880,10 @@ export function EditTodoDialog({
 
                 {/* Contacts */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                  <Label
+                    className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
                     <Users className="h-3.5 w-3.5" />
                     Contacts
                   </Label>
@@ -729,55 +891,80 @@ export function EditTodoDialog({
                     {contacts.map((contact) => (
                       <div
                         key={contact.id}
-                        className="flex items-center gap-1 rounded px-1.5 py-1 group/contact hover:bg-white/5 transition-colors"
+                        className="group/contact flex items-center gap-1 rounded px-1.5 py-1 transition-colors hover:bg-white/5"
                         title={contact.person.email}
                       >
                         {editingContactId === contact.id ? (
-                          <div className="flex-1 flex items-center gap-1 min-w-0">
-                            <span className="text-[11px] font-medium shrink-0" style={{ color: 'var(--text-primary)' }}>
+                          <div className="flex min-w-0 flex-1 items-center gap-1">
+                            <span
+                              className="shrink-0 text-[11px] font-medium"
+                              style={{ color: 'var(--text-primary)' }}
+                            >
                               {contact.person.name.split(' ')[0]}
                             </span>
-                            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>&middot;</span>
+                            <span
+                              className="text-[11px]"
+                              style={{ color: 'var(--text-muted)' }}
+                            >
+                              &middot;
+                            </span>
                             <input
                               autoFocus
                               value={editingContactRole}
-                              onChange={(e) => setEditingContactRole(e.target.value)}
+                              onChange={(e) =>
+                                setEditingContactRole(e.target.value)
+                              }
                               onBlur={() => {
                                 if (editingContactRole.trim()) {
-                                  updateContact({ contactId: contact.id, data: { role: editingContactRole.trim() } })
+                                  updateContact({
+                                    contactId: contact.id,
+                                    data: { role: editingContactRole.trim() },
+                                  })
                                 }
                                 setEditingContactId(null)
                               }}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
                                   if (editingContactRole.trim()) {
-                                    updateContact({ contactId: contact.id, data: { role: editingContactRole.trim() } })
+                                    updateContact({
+                                      contactId: contact.id,
+                                      data: { role: editingContactRole.trim() },
+                                    })
                                   }
                                   setEditingContactId(null)
                                 }
-                                if (e.key === 'Escape') setEditingContactId(null)
+                                if (e.key === 'Escape')
+                                  setEditingContactId(null)
                               }}
-                              className="flex-1 min-w-0 text-[11px] bg-transparent border-b outline-none"
-                              style={{ color: 'var(--primary)', borderColor: 'var(--primary)' }}
+                              className="min-w-0 flex-1 border-b bg-transparent text-[11px] outline-none"
+                              style={{
+                                color: 'var(--primary)',
+                                borderColor: 'var(--primary)',
+                              }}
                             />
                           </div>
                         ) : (
-                          <div className="flex-1 flex items-center gap-1 min-w-0">
+                          <div className="flex min-w-0 flex-1 items-center gap-1">
                             <a
                               href={`https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(contact.person.email)}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[11px] font-medium truncate hover:underline"
+                              className="truncate text-[11px] font-medium hover:underline"
                               style={{ color: 'var(--text-primary)' }}
                               title={`Chat with ${contact.person.name} in Teams`}
                               onClick={(e) => e.stopPropagation()}
                             >
                               {contact.person.name}
                             </a>
-                            <span className="text-[11px] shrink-0" style={{ color: 'var(--text-muted)' }}>&middot;</span>
+                            <span
+                              className="shrink-0 text-[11px]"
+                              style={{ color: 'var(--text-muted)' }}
+                            >
+                              &middot;
+                            </span>
                             <button
                               type="button"
-                              className="text-[11px] truncate italic hover:underline"
+                              className="truncate text-[11px] italic hover:underline"
                               style={{ color: 'var(--primary)' }}
                               onClick={() => {
                                 setEditingContactId(contact.id)
@@ -792,7 +979,7 @@ export function EditTodoDialog({
                         <button
                           type="button"
                           onClick={() => removeContact(contact.id)}
-                          className="p-0.5 rounded opacity-0 group-hover/contact:opacity-100 transition-opacity shrink-0"
+                          className="shrink-0 rounded p-0.5 opacity-0 transition-opacity group-hover/contact:opacity-100"
                           style={{ color: 'var(--destructive)' }}
                         >
                           <Trash2 className="h-2.5 w-2.5" />
@@ -801,19 +988,32 @@ export function EditTodoDialog({
                     ))}
 
                     {/* Always-visible add */}
-                    {people.filter((p: { id: string }) => !contacts.some(c => c.personId === p.id)).length > 0 && (
-                      <div className="pt-1 space-y-1">
+                    {people.filter(
+                      (p: { id: string }) =>
+                        !contacts.some((c) => c.personId === p.id),
+                    ).length > 0 && (
+                      <div className="space-y-1 pt-1">
                         <select
                           value={newContactPersonId}
-                          onChange={(e) => setNewContactPersonId(e.target.value)}
-                          className="w-full text-[11px] rounded px-1.5 py-1 bg-transparent border outline-none"
-                          style={{ borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
+                          onChange={(e) =>
+                            setNewContactPersonId(e.target.value)
+                          }
+                          className="w-full rounded border bg-transparent px-1.5 py-1 text-[11px] outline-none"
+                          style={{
+                            borderColor: 'var(--border-color)',
+                            color: 'var(--text-primary)',
+                          }}
                         >
                           <option value="">Add contact...</option>
                           {people
-                            .filter((p: { id: string }) => !contacts.some(c => c.personId === p.id))
+                            .filter(
+                              (p: { id: string }) =>
+                                !contacts.some((c) => c.personId === p.id),
+                            )
                             .map((p: { id: string; name: string }) => (
-                              <option key={p.id} value={p.id}>{p.name}</option>
+                              <option key={p.id} value={p.id}>
+                                {p.name}
+                              </option>
                             ))}
                         </select>
                         {newContactPersonId && (
@@ -821,29 +1021,43 @@ export function EditTodoDialog({
                             <input
                               autoFocus
                               value={newContactRole}
-                              onChange={(e) => setNewContactRole(e.target.value)}
+                              onChange={(e) =>
+                                setNewContactRole(e.target.value)
+                              }
                               placeholder="Role"
                               onKeyDown={(e) => {
-                                if (e.key === 'Enter' && newContactRole.trim()) {
-                                  addContact({ personId: newContactPersonId, role: newContactRole.trim() })
+                                if (
+                                  e.key === 'Enter' &&
+                                  newContactRole.trim()
+                                ) {
+                                  addContact({
+                                    personId: newContactPersonId,
+                                    role: newContactRole.trim(),
+                                  })
                                   setNewContactPersonId('')
                                   setNewContactRole('')
                                 }
                               }}
-                              className="flex-1 text-[11px] rounded px-1.5 py-1 bg-transparent border outline-none min-w-0"
-                              style={{ borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
+                              className="min-w-0 flex-1 rounded border bg-transparent px-1.5 py-1 text-[11px] outline-none"
+                              style={{
+                                borderColor: 'var(--border-color)',
+                                color: 'var(--text-primary)',
+                              }}
                             />
                             <button
                               type="button"
                               onClick={() => {
                                 if (newContactRole.trim()) {
-                                  addContact({ personId: newContactPersonId, role: newContactRole.trim() })
+                                  addContact({
+                                    personId: newContactPersonId,
+                                    role: newContactRole.trim(),
+                                  })
                                   setNewContactPersonId('')
                                   setNewContactRole('')
                                 }
                               }}
                               disabled={!newContactRole.trim()}
-                              className="p-1 rounded disabled:opacity-40 transition-colors"
+                              className="rounded p-1 transition-colors disabled:opacity-40"
                               style={{ color: 'var(--primary)' }}
                               title="Add contact"
                             >
@@ -861,7 +1075,7 @@ export function EditTodoDialog({
 
           {/* Footer */}
           <div
-            className="px-4 sm:px-6 py-3 sm:py-4 border-t shrink-0"
+            className="shrink-0 border-t px-4 py-3 sm:px-6 sm:py-4"
             style={{ borderColor: 'var(--border-color)' }}
           >
             <DialogFooter>

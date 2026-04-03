@@ -13,6 +13,7 @@
 ### Task 1: Add `notebookNoteId` FK to Todo schema
 
 **Files:**
+
 - Modify: `prisma/schema.prisma:10-40` (Todo model)
 - Modify: `prisma/schema.prisma:79-89` (NotebookNote model)
 
@@ -46,6 +47,7 @@ Expected: Client generated
 ### Task 2: Update TypeScript types
 
 **Files:**
+
 - Modify: `src/types/todo.ts:20-41` (Todo interface)
 - Modify: `src/types/todo.ts:114-128` (CreateTodoInput)
 - Modify: `src/types/todo.ts:130-144` (UpdateTodoInput)
@@ -81,6 +83,7 @@ In `src/types/notebook.ts`, add to the `NotebookNote` interface after `updatedAt
 ### Task 3: Update API routes to include notebookNote relation
 
 **Files:**
+
 - Modify: `src/app/api/todos/route.ts:93-96` (include in GET)
 - Modify: `src/app/api/todos/route.ts:17-30` (createTodoSchema)
 - Modify: `src/app/api/todos/route.ts:144-160` (create data)
@@ -142,10 +145,7 @@ const notes = await db.notebookNote.findMany({
   include: {
     todo: { select: { id: true, taskNumber: true, title: true } },
   },
-  orderBy: [
-    { pinned: 'desc' },
-    { updatedAt: 'desc' },
-  ],
+  orderBy: [{ pinned: 'desc' }, { updatedAt: 'desc' }],
 })
 ```
 
@@ -177,11 +177,13 @@ const note = await db.notebookNote.update({
 ### Task 4: Create the NoteDrawer component
 
 **Files:**
+
 - Create: `src/components/todos/note-drawer.tsx`
 
 **Step 1: Create the drawer component**
 
 Model after `contacts-drawer.tsx`. Key differences:
+
 - Instead of a contact list, render a `RichTextEditor` (from `src/components/ui/rich-text-editor.tsx`)
 - Use `notebookApi.get(noteId)` to fetch full note content
 - Use `notebookApi.update(noteId, { content })` to auto-save on changes (debounced)
@@ -205,7 +207,12 @@ interface NoteDrawerProps {
   onUnlink: () => void
 }
 
-export function NoteDrawer({ noteId, open, onClose, onUnlink }: NoteDrawerProps) {
+export function NoteDrawer({
+  noteId,
+  open,
+  onClose,
+  onUnlink,
+}: NoteDrawerProps) {
   const drawerRef = React.useRef<HTMLDivElement>(null)
   const queryClient = useQueryClient()
   const [title, setTitle] = React.useState('')
@@ -225,13 +232,16 @@ export function NoteDrawer({ noteId, open, onClose, onUnlink }: NoteDrawerProps)
   }, [open, noteId])
 
   // Debounced auto-save
-  const saveNote = React.useCallback((updates: { title?: string; content?: string }) => {
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-    saveTimeoutRef.current = setTimeout(async () => {
-      await notebookApi.update(noteId, updates)
-      queryClient.invalidateQueries({ queryKey: ['notebook'] })
-    }, 500)
-  }, [noteId, queryClient])
+  const saveNote = React.useCallback(
+    (updates: { title?: string; content?: string }) => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+      saveTimeoutRef.current = setTimeout(async () => {
+        await notebookApi.update(noteId, updates)
+        queryClient.invalidateQueries({ queryKey: ['notebook'] })
+      }, 500)
+    },
+    [noteId, queryClient],
+  )
 
   // Cleanup timeout on unmount
   React.useEffect(() => {
@@ -273,7 +283,7 @@ export function NoteDrawer({ noteId, open, onClose, onUnlink }: NoteDrawerProps)
           animate={{ width: 320, opacity: 1 }}
           exit={{ width: 0, opacity: 0 }}
           transition={{ duration: 0.2, ease: 'easeInOut' }}
-          className="absolute top-0 right-0 bottom-0 z-30 overflow-hidden rounded-r-lg"
+          className="absolute bottom-0 right-0 top-0 z-30 overflow-hidden rounded-r-lg"
           style={{
             backgroundColor: 'var(--surface)',
             borderLeft: '1px solid var(--border-color)',
@@ -281,41 +291,56 @@ export function NoteDrawer({ noteId, open, onClose, onUnlink }: NoteDrawerProps)
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex flex-col h-full w-[320px]">
+          <div className="flex h-full w-[320px] flex-col">
             {/* Header */}
             <div
-              className="flex items-center justify-between px-3 py-1.5 border-b shrink-0"
+              className="flex shrink-0 items-center justify-between border-b px-3 py-1.5"
               style={{ borderColor: 'var(--border-color)' }}
             >
               <div className="flex items-center gap-1.5">
-                <FileText className="h-3 w-3" style={{ color: 'var(--text-muted)' }} />
-                <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                <FileText
+                  className="h-3 w-3"
+                  style={{ color: 'var(--text-muted)' }}
+                />
+                <span
+                  className="text-[10px] font-semibold uppercase tracking-wide"
+                  style={{ color: 'var(--text-muted)' }}
+                >
                   Note
                 </span>
               </div>
               <div className="flex items-center gap-1">
                 <button
                   onClick={onUnlink}
-                  className="p-0.5 rounded transition-colors hover:bg-black/10"
+                  className="rounded p-0.5 transition-colors hover:bg-black/10"
                   title="Unlink note"
                 >
-                  <Unlink className="h-3 w-3" style={{ color: 'var(--text-muted)' }} />
+                  <Unlink
+                    className="h-3 w-3"
+                    style={{ color: 'var(--text-muted)' }}
+                  />
                 </button>
                 <button
                   onClick={onClose}
-                  className="p-0.5 rounded transition-colors hover:bg-black/10"
+                  className="rounded p-0.5 transition-colors hover:bg-black/10"
                 >
-                  <X className="h-3 w-3" style={{ color: 'var(--text-muted)' }} />
+                  <X
+                    className="h-3 w-3"
+                    style={{ color: 'var(--text-muted)' }}
+                  />
                 </button>
               </div>
             </div>
 
             {/* Title */}
-            <div className="px-3 py-1.5 border-b" style={{ borderColor: 'var(--border-color)' }}>
+            <div
+              className="border-b px-3 py-1.5"
+              style={{ borderColor: 'var(--border-color)' }}
+            >
               <input
                 value={title}
                 onChange={(e) => handleTitleChange(e.target.value)}
-                className="w-full text-xs font-semibold bg-transparent outline-none"
+                className="w-full bg-transparent text-xs font-semibold outline-none"
                 style={{ color: 'var(--text-primary)' }}
                 placeholder="Note title..."
               />
@@ -324,7 +349,12 @@ export function NoteDrawer({ noteId, open, onClose, onUnlink }: NoteDrawerProps)
             {/* Editor */}
             <div className="flex-1 overflow-y-auto px-3 py-2">
               {isLoading ? (
-                <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Loading...</p>
+                <p
+                  className="text-[11px]"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  Loading...
+                </p>
               ) : (
                 <RichTextEditor
                   value={content}
@@ -345,6 +375,7 @@ export function NoteDrawer({ noteId, open, onClose, onUnlink }: NoteDrawerProps)
 ### Task 5: Add Note chip and NoteDrawer to TodoItem
 
 **Files:**
+
 - Modify: `src/components/todos/todo-item.tsx:60` (imports)
 - Modify: `src/components/todos/todo-item.tsx:845` (state)
 - Modify: `src/components/todos/todo-item.tsx:917-921` (after ContactsDrawer)
@@ -369,17 +400,19 @@ const [noteOpen, setNoteOpen] = React.useState(false)
 After the `<ContactsDrawer>` block (line 921), add:
 
 ```tsx
-{todo.notebookNoteId && (
-  <NoteDrawer
-    noteId={todo.notebookNoteId}
-    open={noteOpen}
-    onClose={() => setNoteOpen(false)}
-    onUnlink={() => {
-      // Call update to set notebookNoteId to null
-      // This will be wired through the existing onEdit/update flow
-    }}
-  />
-)}
+{
+  todo.notebookNoteId && (
+    <NoteDrawer
+      noteId={todo.notebookNoteId}
+      open={noteOpen}
+      onClose={() => setNoteOpen(false)}
+      onUnlink={() => {
+        // Call update to set notebookNoteId to null
+        // This will be wired through the existing onEdit/update flow
+      }}
+    />
+  )
+}
 ```
 
 **Step 3: Add Note tab button next to Contacts tab**
@@ -387,18 +420,23 @@ After the `<ContactsDrawer>` block (line 921), add:
 In the tabs area (after the contacts button, before closing `</div>`), add a note tab when a note is linked:
 
 ```tsx
-{!dragging && todo.notebookNoteId && (
-  <button
-    onClick={(e) => { e.stopPropagation(); setNoteOpen(prev => !prev) }}
-    className={cn(
-      'todo-note-tab flex-shrink-0 self-stretch w-5 flex items-center justify-center transition-all duration-150',
-      noteOpen && 'todo-note-tab-active'
-    )}
-    title="Note"
-  >
-    <FileText className="h-3 w-3" />
-  </button>
-)}
+{
+  !dragging && todo.notebookNoteId && (
+    <button
+      onClick={(e) => {
+        e.stopPropagation()
+        setNoteOpen((prev) => !prev)
+      }}
+      className={cn(
+        'todo-note-tab flex w-5 flex-shrink-0 items-center justify-center self-stretch transition-all duration-150',
+        noteOpen && 'todo-note-tab-active',
+      )}
+      title="Note"
+    >
+      <FileText className="h-3 w-3" />
+    </button>
+  )
+}
 ```
 
 Note: The contacts tab currently has `rounded-r-lg`. When both tabs exist, the contacts tab loses its rounded corner and the note tab gets it instead. Adjust the className logic: if `todo.notebookNoteId` exists, contacts tab should NOT have `rounded-r-lg`, and the note tab should.
@@ -408,6 +446,7 @@ Note: The contacts tab currently has `rounded-r-lg`. When both tabs exist, the c
 ### Task 6: Add Connected Note section to EditTodoDialog
 
 **Files:**
+
 - Modify: `src/components/todos/edit-todo-dialog.tsx:614-615` (after Labels section)
 
 **Step 1: Add note management section**
@@ -415,15 +454,23 @@ Note: The contacts tab currently has `rounded-r-lg`. When both tabs exist, the c
 After the Labels section (line 614) and before the Contacts section (line 616), add:
 
 ```tsx
-{/* Connected Note */}
-<div className="space-y-2">
-  <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+{
+  /* Connected Note */
+}
+;<div className="space-y-2">
+  <Label
+    className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide"
+    style={{ color: 'var(--text-muted)' }}
+  >
     <FileText className="h-3.5 w-3.5" />
     Connected Note
   </Label>
   {todo?.notebookNoteId ? (
     <div className="flex items-center gap-2">
-      <span className="text-[11px] flex-1 truncate" style={{ color: 'var(--text-primary)' }}>
+      <span
+        className="flex-1 truncate text-[11px]"
+        style={{ color: 'var(--text-primary)' }}
+      >
         {todo.notebookNote?.title || 'Untitled'}
       </span>
       <button
@@ -440,8 +487,11 @@ After the Labels section (line 614) and before the Contacts section (line 616), 
       <button
         type="button"
         onClick={() => handleCreateAndLinkNote()}
-        className="w-full text-[11px] rounded px-2 py-1.5 border transition-colors hover:bg-white/5 text-left"
-        style={{ borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
+        className="w-full rounded border px-2 py-1.5 text-left text-[11px] transition-colors hover:bg-white/5"
+        style={{
+          borderColor: 'var(--border-color)',
+          color: 'var(--text-primary)',
+        }}
       >
         + Create new note
       </button>
@@ -449,12 +499,17 @@ After the Labels section (line 614) and before the Contacts section (line 616), 
       <select
         value=""
         onChange={(e) => handleLinkExistingNote(e.target.value)}
-        className="w-full text-[11px] rounded px-1.5 py-1 bg-transparent border outline-none"
-        style={{ borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
+        className="w-full rounded border bg-transparent px-1.5 py-1 text-[11px] outline-none"
+        style={{
+          borderColor: 'var(--border-color)',
+          color: 'var(--text-primary)',
+        }}
       >
         <option value="">Link existing note...</option>
         {unlinkedNotes.map((note) => (
-          <option key={note.id} value={note.id}>{note.title}</option>
+          <option key={note.id} value={note.id}>
+            {note.title}
+          </option>
         ))}
       </select>
     </div>
@@ -468,7 +523,9 @@ These handlers directly call the API and invalidate queries:
 
 ```typescript
 const handleCreateAndLinkNote = async () => {
-  const note = await notebookApi.create({ title: `Note for #${todo?.taskNumber}` })
+  const note = await notebookApi.create({
+    title: `Note for #${todo?.taskNumber}`,
+  })
   await todosApi.update(todo!.id, { notebookNoteId: note.id })
   queryClient.invalidateQueries({ queryKey: ['todos'] })
   queryClient.invalidateQueries({ queryKey: ['notebook'] })
@@ -497,7 +554,7 @@ const { data: allNotes } = useQuery({
   queryKey: ['notebook'],
   queryFn: () => notebookApi.list(),
 })
-const unlinkedNotes = (allNotes ?? []).filter(n => !n.linkedTodo)
+const unlinkedNotes = (allNotes ?? []).filter((n) => !n.linkedTodo)
 ```
 
 ---
@@ -505,6 +562,7 @@ const unlinkedNotes = (allNotes ?? []).filter(n => !n.linkedTodo)
 ### Task 7: Add linked todo indicator to notebook sidebar
 
 **Files:**
+
 - Modify: `src/components/notes/notes-sidebar.tsx`
 
 **Step 1: Show linked task number on notes**
@@ -512,14 +570,19 @@ const unlinkedNotes = (allNotes ?? []).filter(n => !n.linkedTodo)
 When a note has `linkedTodo`, show a small chip like `#27` next to the note title in the sidebar list. This gives users visibility that a note is connected to a task.
 
 ```tsx
-{note.linkedTodo && (
-  <span
-    className="text-[10px] font-medium px-1 rounded shrink-0"
-    style={{ color: 'var(--primary)', backgroundColor: 'color-mix(in srgb, var(--primary) 12%, transparent)' }}
-  >
-    #{note.linkedTodo.taskNumber}
-  </span>
-)}
+{
+  note.linkedTodo && (
+    <span
+      className="shrink-0 rounded px-1 text-[10px] font-medium"
+      style={{
+        color: 'var(--primary)',
+        backgroundColor: 'color-mix(in srgb, var(--primary) 12%, transparent)',
+      }}
+    >
+      #{note.linkedTodo.taskNumber}
+    </span>
+  )
+}
 ```
 
 ---
@@ -527,6 +590,7 @@ When a note has `linkedTodo`, show a small chip like `#27` next to the note titl
 ### Task 8: Update MCP server
 
 **Files:**
+
 - Modify: `mcp-server/src/index.ts`
 
 **Step 1: Add `notebookNoteId` to TodoResponse type and tool schemas**
@@ -538,6 +602,7 @@ Add `notebookNoteId` to the `TodoResponse` interface. Add it to `formatTodoSumma
 ### Task 9: CSS for note tab hover states
 
 **Files:**
+
 - Modify: `src/app/globals.css`
 
 **Step 1: Add tab hover/active styles**

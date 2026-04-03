@@ -46,8 +46,15 @@ interface StatusUpdatesDrawerProps {
   onClose: () => void
 }
 
-export function StatusUpdatesDrawer({ todoId, open, onClose }: StatusUpdatesDrawerProps) {
-  const { updates, isLoading, addUpdate, removeUpdate } = useStatusUpdates(todoId, open)
+export function StatusUpdatesDrawer({
+  todoId,
+  open,
+  onClose,
+}: StatusUpdatesDrawerProps) {
+  const { updates, isLoading, addUpdate, removeUpdate } = useStatusUpdates(
+    todoId,
+    open,
+  )
   const [newContent, setNewContent] = React.useState('')
   const drawerRef = React.useRef<HTMLDivElement>(null)
   const inputRef = React.useRef<HTMLTextAreaElement>(null)
@@ -100,21 +107,27 @@ export function StatusUpdatesDrawer({ todoId, open, onClose }: StatusUpdatesDraw
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex flex-col h-full w-[280px]">
+          <div className="flex h-full w-[280px] flex-col">
             {/* Header */}
             <div
-              className="flex items-center justify-between px-3 py-1.5 border-b shrink-0"
+              className="flex shrink-0 items-center justify-between border-b px-3 py-1.5"
               style={{ borderColor: 'var(--border-color)' }}
             >
               <div className="flex items-center gap-1.5">
-                <Clock className="h-3 w-3" style={{ color: 'var(--text-muted)' }} />
-                <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                <Clock
+                  className="h-3 w-3"
+                  style={{ color: 'var(--text-muted)' }}
+                />
+                <span
+                  className="text-[10px] font-semibold tracking-wide uppercase"
+                  style={{ color: 'var(--text-muted)' }}
+                >
                   Timeline
                 </span>
               </div>
               <button
                 onClick={onClose}
-                className="p-0.5 rounded transition-colors hover:bg-black/10"
+                className="rounded p-0.5 transition-colors hover:bg-black/10"
               >
                 <X className="h-3 w-3" style={{ color: 'var(--text-muted)' }} />
               </button>
@@ -123,30 +136,45 @@ export function StatusUpdatesDrawer({ todoId, open, onClose }: StatusUpdatesDraw
             {/* Timeline entries */}
             <div className="flex-1 overflow-y-auto px-3 py-2">
               {isLoading && (
-                <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Loading...</p>
+                <p
+                  className="text-[11px]"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  Loading...
+                </p>
               )}
               {!isLoading && updates.length === 0 && (
-                <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>No updates yet.</p>
+                <p
+                  className="text-[11px]"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  No updates yet.
+                </p>
               )}
               {!isLoading && updates.length > 0 && (
                 <div className="relative">
                   {/* Vertical line */}
                   <div
-                    className="absolute left-[5px] top-2 bottom-2 w-px"
+                    className="absolute top-2 bottom-2 left-[5px] w-px"
                     style={{ backgroundColor: 'var(--border-color)' }}
                   />
                   <div className="space-y-3">
                     {updates.map((update) => (
-                      <div key={update.id} className="relative pl-5 group/update">
+                      <div
+                        key={update.id}
+                        className="group/update relative pl-5"
+                      >
                         {/* Dot */}
                         <div
-                          className="absolute left-0 top-1.5 w-[11px] h-[11px] rounded-full border-2"
+                          className="absolute top-1.5 left-0 h-[11px] w-[11px] rounded-full border-2"
                           style={{
                             borderColor: update.status
-                              ? STATUS_COLORS[update.status as Status] ?? 'var(--border-color)'
+                              ? (STATUS_COLORS[update.status as Status] ??
+                                'var(--border-color)')
                               : 'var(--border-color)',
                             backgroundColor: update.status
-                              ? STATUS_COLORS[update.status as Status] ?? 'var(--surface)'
+                              ? (STATUS_COLORS[update.status as Status] ??
+                                'var(--surface)')
                               : 'var(--surface)',
                           }}
                         />
@@ -154,30 +182,44 @@ export function StatusUpdatesDrawer({ todoId, open, onClose }: StatusUpdatesDraw
                           {/* Status badge */}
                           {update.status && (
                             <span
-                              className="inline-block text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full mb-1"
+                              className="mb-1 inline-block rounded-full px-1.5 py-0.5 text-[9px] font-semibold tracking-wider uppercase"
                               style={{
                                 backgroundColor: `color-mix(in srgb, ${STATUS_COLORS[update.status as Status] ?? 'var(--text-muted)'} 20%, transparent)`,
-                                color: STATUS_COLORS[update.status as Status] ?? 'var(--text-muted)',
+                                color:
+                                  STATUS_COLORS[update.status as Status] ??
+                                  'var(--text-muted)',
                               }}
                             >
-                              {STATUS_LABELS[update.status as Status] ?? update.status}
+                              {STATUS_LABELS[update.status as Status] ??
+                                update.status}
                             </span>
                           )}
                           {/* Content */}
-                          <p className="text-[11px] leading-relaxed break-words" style={{ color: 'var(--text-primary)' }}>
+                          <p
+                            className="text-[11px] leading-relaxed break-words"
+                            style={{ color: 'var(--text-primary)' }}
+                          >
                             {update.content}
                           </p>
                           {/* Timestamp + delete */}
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                          <div className="mt-0.5 flex items-center gap-1.5">
+                            <span
+                              className="text-[10px]"
+                              style={{ color: 'var(--text-muted)' }}
+                            >
                               {formatTimestamp(update.createdAt)}
                             </span>
                             <button
-                              onClick={() => { removeUpdate(update.id).catch(() => {}) }}
-                              className="p-0.5 rounded opacity-0 group-hover/update:opacity-100 transition-opacity"
+                              onClick={() => {
+                                removeUpdate(update.id).catch(() => {})
+                              }}
+                              className="rounded p-0.5 opacity-0 transition-opacity group-hover/update:opacity-100"
                               title="Remove update"
                             >
-                              <Trash2 className="h-2.5 w-2.5" style={{ color: 'var(--destructive)' }} />
+                              <Trash2
+                                className="h-2.5 w-2.5"
+                                style={{ color: 'var(--destructive)' }}
+                              />
                             </button>
                           </div>
                         </div>
@@ -190,7 +232,7 @@ export function StatusUpdatesDrawer({ todoId, open, onClose }: StatusUpdatesDraw
 
             {/* Add update */}
             <div
-              className="px-3 py-2 border-t shrink-0"
+              className="shrink-0 border-t px-3 py-2"
               style={{ borderColor: 'var(--border-color)' }}
             >
               <div className="flex gap-1.5">
@@ -201,15 +243,19 @@ export function StatusUpdatesDrawer({ todoId, open, onClose }: StatusUpdatesDraw
                   placeholder="Add an update..."
                   rows={2}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleAdd()
+                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey))
+                      handleAdd()
                   }}
-                  className="flex-1 text-[11px] rounded px-2 py-1.5 bg-transparent border outline-none resize-none"
-                  style={{ borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
+                  className="flex-1 resize-none rounded border bg-transparent px-2 py-1.5 text-[11px] outline-none"
+                  style={{
+                    borderColor: 'var(--border-color)',
+                    color: 'var(--text-primary)',
+                  }}
                 />
                 <button
                   onClick={handleAdd}
                   disabled={!newContent.trim()}
-                  className="self-end p-1.5 rounded disabled:opacity-30 transition-colors"
+                  className="self-end rounded p-1.5 transition-colors disabled:opacity-30"
                   style={{ color: 'var(--primary)' }}
                   title="Add update (⌘+Enter)"
                 >

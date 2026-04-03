@@ -1,171 +1,166 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { Prisma, Priority as PrismaPriority, Status as PrismaStatus } from '@prisma/client'
+import {
+  Prisma,
+  Priority as PrismaPriority,
+  Status as PrismaStatus,
+} from '@prisma/client'
 import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
 import { evaluateAccomplishment } from '@/lib/accomplishment-agent'
 import { activeTodoOrderBy, todoInclude } from '@/lib/todo-queries'
-import { z } from 'zod'
+import {
+  created,
+  internalError,
+  ok,
+  parseJsonBody,
+  validationError,
+} from '@/lib/server/api-responses'
+import { createTodoSchema, parseListTodosQuery } from '@/lib/validation/todo'
+import { ZodError } from 'zod'
+import type { NextRequest } from 'next/server'
 
-const statusSchema = z.enum(['TODO', 'IN_PROGRESS', 'WAITING', 'UNDER_REVIEW', 'ON_HOLD', 'COMPLETED'])
-const prioritySchema = z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT'])
+type ListTodosQuery = ReturnType<typeof parseListTodosQuery>
 
-const subtaskSchema = z.object({
-  id: z.string().optional(),
-  title: z.string().min(1).max(1000),
-  completed: z.boolean().optional(),
-  order: z.number().int(),
-})
+function buildStatusFilter(query: ListTodosQuery) {
+  if (query.status) {
+    return query.status as PrismaStatus
+  }
 
-const createTodoSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(200),
-  description: z.string().max(10000).optional(),
-  priority: prioritySchema.optional(),
-  status: statusSchema.optional(),
-  dueDate: z.string().datetime().optional().nullable(),
-  labelIds: z.array(z.string()).optional(),
-  subtasks: z.array(subtaskSchema).optional(),
-  myPrUrls: z.array(z.string().url()).optional(),
-  githubPrUrls: z.array(z.string().url()).optional(),
-  azureWorkItemUrl: z.string().url().optional().nullable(),
-  azureDepUrls: z.array(z.string().url()).optional(),
-  myIssueUrls: z.array(z.string().url()).optional(),
-  githubIssueUrls: z.array(z.string().url()).optional(),
-  notebookNoteId: z.string().optional().nullable(),
-})
+  if (query.completed === undefined) {
+    return undefined
+  }
 
-const listTodosQuerySchema = z.object({
-  completed: z.enum(['true', 'false']).optional(),
-  status: statusSchema.optional(),
-  priority: prioritySchema.optional(),
-  archived: z.enum(['true', 'false']).optional(),
-  excludeStatus: statusSchema.optional(),
-  search: z.string().optional(),
-  limit: z.coerce.number().int().min(1).max(100).optional(),
-  offset: z.coerce.number().int().min(0).optional(),
-  sortBy: z.enum(['order', 'completedAt', 'updatedAt']).optional(),
-})
+  return query.completed === 'true'
+    ? PrismaStatus.COMPLETED
+    : { not: PrismaStatus.COMPLETED }
+}
+
+function buildTodoWhere(query: ListTodosQuery): Prisma.TodoWhereInput {
+  const where: Prisma.TodoWhereInput = {
+    archived: query.archived === undefined ? false : query.archived === 'true',
+  }
+
+  const statusFilter = buildStatusFilter(query)
+
+  if (query.excludeStatus) {
+    if (typeof statusFilter === 'string') {
+      if (statusFilter === query.excludeStatus) {
+        where.id = '__no_matching_todos__'
+      } else {
+        where.status = statusFilter
+      }
+    } else if (statusFilter) {
+      where.status = {
+        ...statusFilter,
+        not: query.excludeStatus as PrismaStatus,
+      }
+    } else {
+      where.status = { not: query.excludeStatus as PrismaStatus }
+    }
+  } else if (statusFilter) {
+    where.status = statusFilter
+  }
+
+  if (query.priority) {
+    where.priority = query.priority as PrismaPriority
+  }
+
+  if (query.search) {
+    where.title = { contains: query.search, mode: 'insensitive' }
+  }
+
+  return where
+}
+
+function buildTodoOrderBy(
+  sortBy: ListTodosQuery['sortBy'],
+): Prisma.TodoOrderByWithRelationInput[] {
+  if (sortBy === 'completedAt') {
+    return [{ completedAt: 'desc' }]
+  }
+
+  if (sortBy === 'updatedAt') {
+    return [{ updatedAt: 'desc' }]
+  }
+
+  return activeTodoOrderBy
+}
+
+async function getNextTodoOrder() {
+  const minOrderTodo = await db.todo.findFirst({
+    orderBy: { order: 'asc' },
+    select: { order: true },
+  })
+
+  return minOrderTodo ? minOrderTodo.order - 1 : 0
+}
 
 export async function GET(request: NextRequest) {
   try {
-    const validatedQuery = listTodosQuerySchema.parse({
-      completed: request.nextUrl.searchParams.get('completed') ?? undefined,
-      status: request.nextUrl.searchParams.get('status') ?? undefined,
-      priority: request.nextUrl.searchParams.get('priority') ?? undefined,
-      archived: request.nextUrl.searchParams.get('archived') ?? undefined,
-      excludeStatus: request.nextUrl.searchParams.get('excludeStatus') ?? undefined,
-      search: request.nextUrl.searchParams.get('search') ?? undefined,
-      limit: request.nextUrl.searchParams.get('limit') ?? undefined,
-      offset: request.nextUrl.searchParams.get('offset') ?? undefined,
-      sortBy: request.nextUrl.searchParams.get('sortBy') ?? undefined,
-    })
+    const query = parseListTodosQuery(request.nextUrl.searchParams)
+    const where = buildTodoWhere(query)
+    const orderBy = buildTodoOrderBy(query.sortBy)
 
-    const where: Prisma.TodoWhereInput = {}
-
-    // By default, don't show archived todos unless explicitly requested
-    if (validatedQuery.archived !== undefined) {
-      where.archived = validatedQuery.archived === 'true'
-    } else {
-      where.archived = false
-    }
-
-    if (validatedQuery.status) {
-      where.status = validatedQuery.status as PrismaStatus
-    } else if (validatedQuery.completed !== undefined) {
-      // For backwards compatibility, map completed=true to COMPLETED status
-      where.status = validatedQuery.completed === 'true'
-        ? PrismaStatus.COMPLETED
-        : { not: PrismaStatus.COMPLETED }
-    }
-
-    if (validatedQuery.priority) {
-      where.priority = validatedQuery.priority as PrismaPriority
-    }
-
-    if (validatedQuery.excludeStatus) {
-      where.status = {
-        ...((where.status as object) ?? {}),
-        not: validatedQuery.excludeStatus as PrismaStatus,
-      }
-    }
-
-    if (validatedQuery.search) {
-      where.title = { contains: validatedQuery.search, mode: 'insensitive' }
-    }
-
-    const orderBy: Prisma.TodoOrderByWithRelationInput[] =
-      validatedQuery.sortBy === 'completedAt'
-        ? [{ completedAt: 'desc' }]
-      : validatedQuery.sortBy === 'updatedAt'
-          ? [{ updatedAt: 'desc' }]
-          : activeTodoOrderBy
-
-    if (validatedQuery.limit !== undefined) {
+    if (query.limit !== undefined) {
       const [todos, total] = await Promise.all([
         db.todo.findMany({
           where,
           include: todoInclude,
           orderBy,
-          take: validatedQuery.limit,
-          skip: validatedQuery.offset ?? 0,
+          take: query.limit,
+          skip: query.offset ?? 0,
         }),
         db.todo.count({ where }),
       ])
-      return NextResponse.json({ todos, total })
+
+      return ok({ todos, total })
     }
 
-    const todos = await db.todo.findMany({ where, include: todoInclude, orderBy })
+    const todos = await db.todo.findMany({
+      where,
+      include: todoInclude,
+      orderBy,
+    })
 
-    return NextResponse.json(todos)
+    return ok(todos)
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.issues },
-        { status: 400 }
-      )
+    if (error instanceof ZodError) {
+      return validationError(error)
     }
 
-    console.error('Error fetching todos:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch todos' },
-      { status: 500 }
-    )
+    return internalError('Failed to fetch todos', error, 'Error fetching todos')
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const body = await request.json()
-    const validatedData = createTodoSchema.parse(body)
-    const { labelIds, subtasks, ...todoData } = validatedData
-    const initialStatus = validatedData.status || 'TODO'
-    const isInitiallyCompleted = initialStatus === 'COMPLETED'
-
-    // Get the minimum order value to place new todo at the top
-    const minOrderTodo = await db.todo.findFirst({
-      orderBy: { order: 'asc' },
-      select: { order: true },
-    })
-    const newOrder = minOrderTodo ? minOrderTodo.order - 1 : 0
+    const data = await parseJsonBody(request, createTodoSchema)
+    const { labelIds, subtasks, ...todoData } = data
+    const initialStatus = (data.status ?? 'TODO') as PrismaStatus
+    const isInitiallyCompleted = initialStatus === PrismaStatus.COMPLETED
 
     const todo = await db.todo.create({
       data: {
         ...todoData,
-        priority: validatedData.priority || 'MEDIUM',
+        priority: (data.priority ?? 'MEDIUM') as PrismaPriority,
         status: initialStatus,
         archived: isInitiallyCompleted,
         completedAt: isInitiallyCompleted ? new Date() : null,
-        dueDate: validatedData.dueDate ? new Date(validatedData.dueDate) : null,
+        dueDate: data.dueDate ? new Date(data.dueDate) : null,
         labels: labelIds?.length
           ? { connect: labelIds.map((id) => ({ id })) }
           : undefined,
         subtasks: subtasks?.length
-          ? { create: subtasks.map((s) => ({ title: s.title, completed: s.completed ?? false, order: s.order })) }
+          ? {
+              create: subtasks.map((subtask) => ({
+                title: subtask.title,
+                completed: subtask.completed ?? false,
+                order: subtask.order,
+              })),
+            }
           : undefined,
-        order: newOrder,
+        order: await getNextTodoOrder(),
       },
-      include: {
-        ...todoInclude,
-      },
+      include: todoInclude,
     })
 
     if (isInitiallyCompleted) {
@@ -179,19 +174,16 @@ export async function POST(request: NextRequest) {
     }
 
     emit('todos')
-    return NextResponse.json(todo, { status: 201 })
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.issues },
-        { status: 400 }
-      )
+    if (data.notebookNoteId) {
+      emit('notebook')
     }
 
-    console.error('Error creating todo:', error)
-    return NextResponse.json(
-      { error: 'Failed to create todo' },
-      { status: 500 }
-    )
+    return created(todo)
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return validationError(error)
+    }
+
+    return internalError('Failed to create todo', error, 'Error creating todo')
   }
 }

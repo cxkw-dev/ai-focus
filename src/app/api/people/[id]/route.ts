@@ -1,67 +1,67 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { z } from 'zod'
-import { Prisma } from '@prisma/client'
 import { emit } from '@/lib/events'
-
-const updatePersonSchema = z.object({
-  name: z.string().min(1).max(100).optional(),
-  email: z.string().email().max(200).transform(e => e.toLowerCase()).optional(),
-})
+import {
+  conflict,
+  internalError,
+  notFound,
+  ok,
+  parseJsonBody,
+  validationError,
+} from '@/lib/server/api-responses'
+import { isPrismaErrorCode } from '@/lib/server/prisma-errors'
+import { updatePersonSchema } from '@/lib/validation/person'
+import { ZodError } from 'zod'
 
 export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params
-    const body = await request.json()
-    const validatedData = updatePersonSchema.parse(body)
-
-    const person = await db.person.update({
-      where: { id },
-      data: validatedData,
-    })
+    const data = await parseJsonBody(request, updatePersonSchema)
+    const person = await db.person.update({ where: { id }, data })
 
     emit('people')
-    return NextResponse.json(person)
+    return ok(person)
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.issues },
-        { status: 400 }
-      )
+    if (error instanceof ZodError) {
+      return validationError(error)
     }
 
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      return NextResponse.json(
-        { error: 'A contact with this email already exists' },
-        { status: 409 }
-      )
+    if (isPrismaErrorCode(error, 'P2002')) {
+      return conflict('A contact with this email already exists')
     }
 
-    console.error('Error updating person:', error)
-    return NextResponse.json(
-      { error: 'Failed to update person' },
-      { status: 500 }
+    if (isPrismaErrorCode(error, 'P2025')) {
+      return notFound('Person not found')
+    }
+
+    return internalError(
+      'Failed to update person',
+      error,
+      'Error updating person',
     )
   }
 }
 
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params
     await db.person.delete({ where: { id } })
     emit('people')
-    return NextResponse.json({ success: true })
+    return ok({ success: true })
   } catch (error) {
-    console.error('Error deleting person:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete person' },
-      { status: 500 }
+    if (isPrismaErrorCode(error, 'P2025')) {
+      return notFound('Person not found')
+    }
+
+    return internalError(
+      'Failed to delete person',
+      error,
+      'Error deleting person',
     )
   }
 }

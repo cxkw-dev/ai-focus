@@ -19,12 +19,19 @@ export async function GET(request: NextRequest) {
     const notes = await db.notebookNote.findMany({
       where,
       include: {
-        todo: { select: { id: true, taskNumber: true, title: true, status: true, priority: true, dueDate: true, labels: { select: { id: true, name: true, color: true } } } },
+        todo: {
+          select: {
+            id: true,
+            taskNumber: true,
+            title: true,
+            status: true,
+            priority: true,
+            dueDate: true,
+            labels: { select: { id: true, name: true, color: true } },
+          },
+        },
       },
-      orderBy: [
-        { pinned: 'desc' },
-        { updatedAt: 'desc' },
-      ],
+      orderBy: [{ pinned: 'desc' }, { updatedAt: 'desc' }],
     })
 
     return NextResponse.json(notes)
@@ -32,7 +39,7 @@ export async function GET(request: NextRequest) {
     console.error('Error fetching notebook notes:', error)
     return NextResponse.json(
       { error: 'Failed to fetch notes' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
@@ -54,14 +61,14 @@ export async function POST(request: NextRequest) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation failed', details: error.issues },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
     console.error('Error creating notebook note:', error)
     return NextResponse.json(
       { error: 'Failed to create note' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

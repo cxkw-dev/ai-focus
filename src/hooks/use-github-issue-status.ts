@@ -20,11 +20,13 @@ export function useGithubIssueStatuses(urls: string[]) {
   return useQueries({
     queries: urls.map((url) => queryOptions(url)),
     combine: (results) => {
-      const statuses: (GitHubIssueStatus | undefined)[] = results.map(r => r.data)
-      const isLoading = results.some(r => r.isLoading)
+      const statuses: (GitHubIssueStatus | undefined)[] = results.map(
+        (r) => r.data,
+      )
+      const isLoading = results.some((r) => r.isLoading)
       const loaded = statuses.filter((s): s is GitHubIssueStatus => !!s)
       const allLoaded = !isLoading && loaded.length === urls.length
-      const allClosed = allLoaded && loaded.every(s => s.state === 'closed')
+      const allClosed = allLoaded && loaded.every((s) => s.state === 'closed')
 
       return { statuses, isLoading, allClosed }
     },

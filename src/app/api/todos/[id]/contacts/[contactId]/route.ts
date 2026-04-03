@@ -10,7 +10,7 @@ const updateContactSchema = z.object({
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string; contactId: string }> }
+  { params }: { params: Promise<{ id: string; contactId: string }> },
 ) {
   const { id, contactId } = await params
   const body = await request.json()
@@ -35,7 +35,7 @@ export async function PATCH(
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string; contactId: string }> }
+  { params }: { params: Promise<{ id: string; contactId: string }> },
 ) {
   const { id, contactId } = await params
   const deleted = await db.todoContact.deleteMany({

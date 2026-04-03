@@ -43,7 +43,7 @@ interface AzureCommitResponse {
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params
@@ -71,19 +71,21 @@ export async function GET(
 
     const uniquePullRequestRefs = dedupeBy(
       pullRequestRefs,
-      (ref) => `${ref.repoId}:${ref.pullRequestId}`
+      (ref) => `${ref.repoId}:${ref.pullRequestId}`,
     )
     const uniqueCommitRefs = dedupeBy(
       commitRefs,
-      (ref) => `${ref.repoId}:${ref.commitId}`
+      (ref) => `${ref.repoId}:${ref.commitId}`,
     )
 
     const pullRequests = await Promise.all(
-      uniquePullRequestRefs.map((ref) => resolvePullRequest(config, ref, teamProject))
+      uniquePullRequestRefs.map((ref) =>
+        resolvePullRequest(config, ref, teamProject),
+      ),
     )
 
     const commits = await Promise.all(
-      uniqueCommitRefs.map((ref) => resolveCommit(config, ref, teamProject))
+      uniqueCommitRefs.map((ref) => resolveCommit(config, ref, teamProject)),
     )
 
     return NextResponse.json({
@@ -95,14 +97,14 @@ export async function GET(
     if (error instanceof AzureDevOpsError) {
       return NextResponse.json(
         { error: error.message, details: error.details },
-        { status: error.status }
+        { status: error.status },
       )
     }
 
     console.error('Error fetching Azure PR links:', error)
     return NextResponse.json(
       { error: 'Failed to fetch Azure PR links' },
-      { status: 502 }
+      { status: 502 },
     )
   }
 }
@@ -110,7 +112,7 @@ export async function GET(
 async function resolvePullRequest(
   config: ReturnType<typeof getAzureDevOpsConfig>,
   ref: AzurePullRequestRef,
-  teamProject: string | null
+  teamProject: string | null,
 ) {
   try {
     const detail = await fetchPullRequestDetail(config, ref, teamProject)
@@ -149,7 +151,8 @@ async function resolvePullRequest(
       closedAt: null,
       author: null,
       url: ref.relationUrl,
-      error: error instanceof Error ? error.message : 'Failed to resolve PR details',
+      error:
+        error instanceof Error ? error.message : 'Failed to resolve PR details',
     }
   }
 }
@@ -157,7 +160,7 @@ async function resolvePullRequest(
 async function resolveCommit(
   config: ReturnType<typeof getAzureDevOpsConfig>,
   ref: AzureCommitRef,
-  teamProject: string | null
+  teamProject: string | null,
 ) {
   try {
     const detail = await fetchCommitDetail(config, ref, teamProject)
@@ -184,7 +187,10 @@ async function resolveCommit(
       },
       authoredAt: null,
       url: ref.relationUrl,
-      error: error instanceof Error ? error.message : 'Failed to resolve commit details',
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to resolve commit details',
     }
   }
 }
@@ -192,29 +198,26 @@ async function resolveCommit(
 async function fetchPullRequestDetail(
   config: ReturnType<typeof getAzureDevOpsConfig>,
   ref: AzurePullRequestRef,
-  teamProject: string | null
+  teamProject: string | null,
 ): Promise<AzurePullRequestResponse> {
   if (ref.source === 'relation-url' && /^https?:\/\//i.test(ref.relationUrl)) {
     return fetchAzureJson<AzurePullRequestResponse>(config, ref.relationUrl)
   }
 
   if (!teamProject) {
-    throw new AzureDevOpsError(
-      'Missing Team Project for PR resolution',
-      502
-    )
+    throw new AzureDevOpsError('Missing Team Project for PR resolution', 502)
   }
 
   return fetchAzureJson<AzurePullRequestResponse>(
     config,
-    `/${encodeURIComponent(teamProject)}/_apis/git/repositories/${encodeURIComponent(ref.repoId)}/pullRequests/${ref.pullRequestId}`
+    `/${encodeURIComponent(teamProject)}/_apis/git/repositories/${encodeURIComponent(ref.repoId)}/pullRequests/${ref.pullRequestId}`,
   )
 }
 
 async function fetchCommitDetail(
   config: ReturnType<typeof getAzureDevOpsConfig>,
   ref: AzureCommitRef,
-  teamProject: string | null
+  teamProject: string | null,
 ): Promise<AzureCommitResponse> {
   if (ref.source === 'relation-url' && /^https?:\/\//i.test(ref.relationUrl)) {
     return fetchAzureJson<AzureCommitResponse>(config, ref.relationUrl)
@@ -223,17 +226,19 @@ async function fetchCommitDetail(
   if (!teamProject) {
     throw new AzureDevOpsError(
       'Missing Team Project for commit resolution',
-      502
+      502,
     )
   }
 
   return fetchAzureJson<AzureCommitResponse>(
     config,
-    `/${encodeURIComponent(teamProject)}/_apis/git/repositories/${encodeURIComponent(ref.repoId)}/commits/${encodeURIComponent(ref.commitId)}`
+    `/${encodeURIComponent(teamProject)}/_apis/git/repositories/${encodeURIComponent(ref.repoId)}/commits/${encodeURIComponent(ref.commitId)}`,
   )
 }
 
-function toMergeStatus(status: string | null): 'merged' | 'open' | 'abandoned' | 'unknown' {
+function toMergeStatus(
+  status: string | null,
+): 'merged' | 'open' | 'abandoned' | 'unknown' {
   if (status === 'completed') return 'merged'
   if (status === 'active') return 'open'
   if (status === 'abandoned') return 'abandoned'

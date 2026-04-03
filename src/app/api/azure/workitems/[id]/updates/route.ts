@@ -23,7 +23,7 @@ interface AzureWorkItemUpdate {
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params
@@ -34,8 +34,8 @@ export async function GET(
       config,
       `/_apis/wit/workitems/${workItemId}/updates`,
       {
-        searchParams: { '$top': 50 },
-      }
+        searchParams: { $top: 50 },
+      },
     )
 
     const updates = (response.value ?? [])
@@ -46,11 +46,15 @@ export async function GET(
             oldValue: normalizeFieldValue(value?.oldValue),
             newValue: normalizeFieldValue(value?.newValue),
           }))
-          .filter((change) => change.oldValue !== null || change.newValue !== null)
+          .filter(
+            (change) => change.oldValue !== null || change.newValue !== null,
+          )
 
         if (changes.length === 0) return null
 
-        const stateChange = changes.find((change) => change.field === 'System.State')
+        const stateChange = changes.find(
+          (change) => change.field === 'System.State',
+        )
 
         return {
           updateId: update.id,
@@ -79,21 +83,25 @@ export async function GET(
     if (error instanceof AzureDevOpsError) {
       return NextResponse.json(
         { error: error.message, details: error.details },
-        { status: error.status }
+        { status: error.status },
       )
     }
 
     console.error('Error fetching Azure work item updates:', error)
     return NextResponse.json(
       { error: 'Failed to fetch Azure work item updates' },
-      { status: 502 }
+      { status: 502 },
     )
   }
 }
 
 function normalizeFieldValue(value: unknown): string | number | boolean | null {
   if (value === null || value === undefined) return null
-  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+  if (
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+  ) {
     return value
   }
 

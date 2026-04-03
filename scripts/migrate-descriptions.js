@@ -55,7 +55,9 @@ async function main() {
 
       // Skip if already short and single-line
       if (plainText.length <= 200 && !plainText.includes('\n')) {
-        console.log(`#${todo.taskNumber}: already short (${plainText.length} chars), skipping`)
+        console.log(
+          `#${todo.taskNumber}: already short (${plainText.length} chars), skipping`,
+        )
         skipped++
         continue
       }
@@ -67,7 +69,7 @@ async function main() {
       await client.query(
         `INSERT INTO "NotebookNote" (id, title, content, pinned, archived, "createdAt", "updatedAt")
          VALUES ($1, $2, $3, false, false, NOW(), NOW())`,
-        [noteId, `Note for #${todo.taskNumber}`, todo.description]
+        [noteId, `Note for #${todo.taskNumber}`, todo.description],
       )
 
       // Update todo with short description + link to note
@@ -75,10 +77,12 @@ async function main() {
         `UPDATE "Todo"
          SET description = $1, "notebookNoteId" = $2, "updatedAt" = NOW()
          WHERE id = $3`,
-        [`<p>${firstSentence}</p>`, noteId, todo.id]
+        [`<p>${firstSentence}</p>`, noteId, todo.id],
       )
 
-      console.log(`#${todo.taskNumber}: migrated (${plainText.length} chars -> "${firstSentence}")`)
+      console.log(
+        `#${todo.taskNumber}: migrated (${plainText.length} chars -> "${firstSentence}")`,
+      )
       console.log(`  -> created note: ${noteId}\n`)
       migrated++
     }

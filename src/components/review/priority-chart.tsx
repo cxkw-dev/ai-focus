@@ -35,7 +35,7 @@ interface PriorityChartProps {
 export function PriorityChart({ data, colors }: PriorityChartProps) {
   if (!colors.primary) return null
 
-  const chartData = data.map(d => ({
+  const chartData = data.map((d) => ({
     name: PRIORITY_LABELS[d.priority] || d.priority,
     count: d.count,
     fill: colors[PRIORITY_COLOR_KEYS[d.priority]] || colors.textMuted,
@@ -44,15 +44,34 @@ export function PriorityChart({ data, colors }: PriorityChartProps) {
   return (
     <div
       className="rounded-xl border p-5"
-      style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-color)' }}
+      style={{
+        backgroundColor: 'var(--surface)',
+        borderColor: 'var(--border-color)',
+      }}
     >
-      <div className="flex items-center gap-2 mb-4">
-        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--priority-high)' }} />
-        <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Priority Breakdown</h3>
+      <div className="mb-4 flex items-center gap-2">
+        <div
+          className="h-2 w-2 rounded-full"
+          style={{ backgroundColor: 'var(--priority-high)' }}
+        />
+        <h3
+          className="text-sm font-semibold"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          Priority Breakdown
+        </h3>
       </div>
       <ResponsiveContainer width="100%" height={260}>
-        <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke={colors.border} horizontal={false} />
+        <BarChart
+          data={chartData}
+          layout="vertical"
+          margin={{ top: 0, right: 10, left: 10, bottom: 0 }}
+        >
+          <CartesianGrid
+            strokeDasharray="3 3"
+            stroke={colors.border}
+            horizontal={false}
+          />
           <XAxis
             type="number"
             tick={{ fill: colors.textMuted, fontSize: 12 }}

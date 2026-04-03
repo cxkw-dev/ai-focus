@@ -1,0 +1,6 @@
+.next
+coverage
+dist
+mcp-server/dist
+node_modules
+package-lock.json

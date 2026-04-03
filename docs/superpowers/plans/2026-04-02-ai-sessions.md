@@ -13,6 +13,7 @@
 ### Task 1: Prisma Schema — Add Session Model
 
 **Files:**
+
 - Modify: `prisma/schema.prisma`
 
 - [ ] **Step 1: Add Session model to schema**
@@ -58,6 +59,7 @@ git commit -m "add session model to prisma schema"
 ### Task 2: TypeScript Types + Query Infrastructure
 
 **Files:**
+
 - Modify: `src/types/todo.ts`
 - Modify: `src/lib/todo-queries.ts`
 - Modify: `src/lib/api.ts`
@@ -122,6 +124,7 @@ git commit -m "add session types, prisma include, and api client methods"
 ### Task 3: API Routes — Session CRUD
 
 **Files:**
+
 - Create: `src/app/api/todos/[id]/sessions/route.ts`
 - Create: `src/app/api/sessions/[id]/route.ts`
 
@@ -142,13 +145,16 @@ const createSessionSchema = z.object({
 
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params
   const body = await request.json()
   const parsed = createSessionSchema.safeParse(body)
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid input', details: parsed.error.issues }, { status: 400 })
+    return NextResponse.json(
+      { error: 'Invalid input', details: parsed.error.issues },
+      { status: 400 },
+    )
   }
 
   const todo = await db.todo.findUnique({ where: todoWhere(id) })
@@ -179,7 +185,7 @@ import { emit } from '@/lib/events'
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params
 
@@ -211,6 +217,7 @@ git commit -m "add session api routes (create and delete)"
 ### Task 4: Install react-icons
 
 **Files:**
+
 - Modify: `package.json`
 
 - [ ] **Step 1: Install react-icons**
@@ -234,6 +241,7 @@ git commit -m "install react-icons for brand icons"
 ### Task 5: Session Display Component
 
 **Files:**
+
 - Create: `src/components/todos/session-list.tsx`
 
 - [ ] **Step 1: Create the SessionList component**
@@ -274,7 +282,11 @@ interface SessionListProps {
   compact?: boolean
 }
 
-export function SessionList({ sessions, onDelete, compact = false }: SessionListProps) {
+export function SessionList({
+  sessions,
+  onDelete,
+  compact = false,
+}: SessionListProps) {
   const [expanded, setExpanded] = React.useState(false)
   const [copiedId, setCopiedId] = React.useState<string | null>(null)
 
@@ -298,31 +310,53 @@ export function SessionList({ sessions, onDelete, compact = false }: SessionList
   return (
     <div
       className={cn(!compact && 'pt-1.5')}
-      style={!compact ? { borderTop: '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)' } : undefined}
+      style={
+        !compact
+          ? {
+              borderTop:
+                '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)',
+            }
+          : undefined
+      }
     >
-      <div className="flex items-center gap-1.5 mb-1">
+      <div className="mb-1 flex items-center gap-1.5">
         <button
           type="button"
-          onClick={() => setExpanded(prev => !prev)}
-          className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={() => setExpanded((prev) => !prev)}
+          className="flex cursor-pointer items-center gap-1.5 transition-opacity hover:opacity-80"
         >
           {expanded ? (
-            <ChevronDown className="h-3 w-3" style={{ color: 'var(--text-muted)', opacity: 0.6 }} />
+            <ChevronDown
+              className="h-3 w-3"
+              style={{ color: 'var(--text-muted)', opacity: 0.6 }}
+            />
           ) : (
-            <ChevronRight className="h-3 w-3" style={{ color: 'var(--text-muted)', opacity: 0.6 }} />
+            <ChevronRight
+              className="h-3 w-3"
+              style={{ color: 'var(--text-muted)', opacity: 0.6 }}
+            />
           )}
-          <Terminal className="h-3 w-3" style={{ color: 'var(--text-muted)', opacity: 0.6 }} />
-          <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>
+          <Terminal
+            className="h-3 w-3"
+            style={{ color: 'var(--text-muted)', opacity: 0.6 }}
+          />
+          <span
+            className="text-[10px] font-semibold uppercase tracking-wide"
+            style={{ color: 'var(--text-muted)', opacity: 0.6 }}
+          >
             Sessions
           </span>
         </button>
-        <span className="text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>
+        <span
+          className="text-[10px] font-medium"
+          style={{ color: 'var(--text-muted)' }}
+        >
           {sessions.length}
         </span>
       </div>
 
       {expanded && (
-        <div className="flex flex-col gap-2.5 mt-1">
+        <div className="mt-1 flex flex-col gap-2.5">
           {Object.entries(grouped).map(([tool, toolSessions]) => {
             const config = TOOL_CONFIG[tool as keyof typeof TOOL_CONFIG]
             if (!config) return null
@@ -330,10 +364,16 @@ export function SessionList({ sessions, onDelete, compact = false }: SessionList
 
             return (
               <div key={tool}>
-                <div className="flex items-center gap-1.5 mb-1.5 pl-0.5">
-                  <Icon style={{ color: config.colorVar, width: 14, height: 14 }} />
-                  <span className="text-[8px] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-                    {toolSessions.length} {toolSessions.length === 1 ? 'session' : 'sessions'}
+                <div className="mb-1.5 flex items-center gap-1.5 pl-0.5">
+                  <Icon
+                    style={{ color: config.colorVar, width: 14, height: 14 }}
+                  />
+                  <span
+                    className="text-[8px] uppercase tracking-wide"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    {toolSessions.length}{' '}
+                    {toolSessions.length === 1 ? 'session' : 'sessions'}
                   </span>
                 </div>
                 <div className="flex flex-col gap-1 pl-0.5">
@@ -346,35 +386,52 @@ export function SessionList({ sessions, onDelete, compact = false }: SessionList
                         border: `1px solid ${config.borderTint}`,
                       }}
                     >
-                      <div className="flex-1 min-w-0">
+                      <div className="min-w-0 flex-1">
                         <div
-                          className="text-[10px] font-mono truncate"
+                          className="truncate font-mono text-[10px]"
                           style={{ color: 'var(--text-primary)' }}
                         >
                           {session.command}
                         </div>
-                        <div className="text-[8px] mt-0.5" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>
-                          {session.workingPath} · {formatRelativeDate(session.createdAt)}
+                        <div
+                          className="mt-0.5 text-[8px]"
+                          style={{ color: 'var(--text-muted)', opacity: 0.6 }}
+                        >
+                          {session.workingPath} ·{' '}
+                          {formatRelativeDate(session.createdAt)}
                         </div>
                       </div>
                       <button
                         type="button"
-                        onClick={(e) => { e.stopPropagation(); handleCopy(session) }}
-                        className="flex-shrink-0 p-1 rounded transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleCopy(session)
+                        }}
+                        className="flex-shrink-0 rounded p-1 transition-colors"
                         style={{
                           background: config.buttonBg,
                           border: `1px solid ${config.buttonBorder}`,
-                          color: copiedId === session.id ? 'var(--status-done)' : config.colorVar,
+                          color:
+                            copiedId === session.id
+                              ? 'var(--status-done)'
+                              : config.colorVar,
                         }}
-                        title={copiedId === session.id ? 'Copied!' : 'Copy to terminal'}
+                        title={
+                          copiedId === session.id
+                            ? 'Copied!'
+                            : 'Copy to terminal'
+                        }
                       >
                         <Terminal className="h-2.5 w-2.5" />
                       </button>
                       {onDelete && (
                         <button
                           type="button"
-                          onClick={(e) => { e.stopPropagation(); onDelete(session.id) }}
-                          className="flex-shrink-0 p-0.5 rounded opacity-0 group-hover/session:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onDelete(session.id)
+                          }}
+                          className="flex-shrink-0 rounded p-0.5 opacity-0 transition-opacity group-hover/session:opacity-100"
                           style={{ color: 'var(--destructive)' }}
                         >
                           <X className="h-2.5 w-2.5" />
@@ -405,11 +462,13 @@ git commit -m "add session-list component with grouped display and copy"
 ### Task 6: Integrate SessionList into TodoItem
 
 **Files:**
+
 - Modify: `src/components/todos/todo-item.tsx`
 
 - [ ] **Step 1: Add SessionList to TodoItem card**
 
 Import at top of file:
+
 ```ts
 import { SessionList } from './session-list'
 ```
@@ -417,14 +476,17 @@ import { SessionList } from './session-list'
 In the `TodoItemContent` component, add the sessions section after the subtasks section (after the closing `</div>` of the subtasks block, around line 880). Find the subtask section's closing `</div>` that corresponds to `{!compact && shouldShowSubtasks && (` and add after it:
 
 ```tsx
-      {!compact && todo.sessions && todo.sessions.length > 0 && (
-        <SessionList sessions={todo.sessions} />
-      )}
+{
+  !compact && todo.sessions && todo.sessions.length > 0 && (
+    <SessionList sessions={todo.sessions} />
+  )
+}
 ```
 
 - [ ] **Step 2: Verify in browser**
 
 Open http://localhost:3000/todos. If a task has sessions (created via the API curl in Task 3), the collapsible "Sessions" section should appear on the card. Check:
+
 - Chevron expand/collapse works
 - Sessions grouped by tool with brand icons
 - Command is primary text in monospace
@@ -443,11 +505,13 @@ git commit -m "integrate session-list into todo item card"
 ### Task 7: Integrate SessionList into EditTodoDialog
 
 **Files:**
+
 - Modify: `src/components/todos/edit-todo-dialog.tsx`
 
 - [ ] **Step 1: Add SessionList with delete to the edit dialog right column**
 
 Import at top:
+
 ```ts
 import { SessionList } from './session-list'
 ```
@@ -455,30 +519,38 @@ import { SessionList } from './session-list'
 Add `deleteSession` mutation. Import `todosApi` if not already imported (it is imported). Add a delete handler inside the `EditTodoDialog` component:
 
 ```ts
-  const handleDeleteSession = React.useCallback(async (sessionId: string) => {
+const handleDeleteSession = React.useCallback(
+  async (sessionId: string) => {
     await todosApi.deleteSession(sessionId)
     queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
-  }, [queryClient])
+  },
+  [queryClient],
+)
 ```
 
 In the right column section, after the "Connected Note" section and before the "Contacts" section (around line 698), add:
 
 ```tsx
-                {/* Sessions */}
-                {todo?.sessions && todo.sessions.length > 0 && (
-                  <div className="space-y-2">
-                    <SessionList
-                      sessions={todo.sessions}
-                      onDelete={handleDeleteSession}
-                      compact
-                    />
-                  </div>
-                )}
+{
+  /* Sessions */
+}
+{
+  todo?.sessions && todo.sessions.length > 0 && (
+    <div className="space-y-2">
+      <SessionList
+        sessions={todo.sessions}
+        onDelete={handleDeleteSession}
+        compact
+      />
+    </div>
+  )
+}
 ```
 
 - [ ] **Step 2: Verify in browser**
 
 Open a task's edit dialog. Check:
+
 - Sessions section appears in right column
 - Delete button (X) appears on hover
 - Deleting a session removes it and refreshes
@@ -496,87 +568,95 @@ git commit -m "add session-list with delete to edit dialog"
 ### Task 8: MCP Server — add_session Tool
 
 **Files:**
+
 - Create: `mcp-server/src/tools/sessions.ts`
 - Modify: `mcp-server/src/index.ts`
 
 - [ ] **Step 1: Create `mcp-server/src/tools/sessions.ts`**
 
 ```ts
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
-import { apiFetch, textResult, isApiError, resolveTodoId } from "../helpers.js";
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { z } from 'zod'
+import { apiFetch, textResult, isApiError, resolveTodoId } from '../helpers.js'
 
 export function registerSessionTools(server: McpServer) {
   server.tool(
-    "add_session",
-    "Attach an AI coding session to a todo so the user can resume it later. Call this when you start working on a task.",
+    'add_session',
+    'Attach an AI coding session to a todo so the user can resume it later. Call this when you start working on a task.',
     {
       taskNumber: z
         .number()
         .int()
         .positive()
         .optional()
-        .describe("The task number (e.g. 7)"),
+        .describe('The task number (e.g. 7)'),
       id: z
         .string()
         .optional()
-        .describe("The todo cuid (use taskNumber instead when possible)"),
+        .describe('The todo cuid (use taskNumber instead when possible)'),
       tool: z
-        .enum(["claude", "codex"])
-        .describe("Which AI tool this session is from"),
+        .enum(['claude', 'codex'])
+        .describe('Which AI tool this session is from'),
       command: z
         .string()
         .min(1)
-        .describe("Full resume command, e.g. 'claude --resume 019d4ebb-e7a3' or 'codex resume 019d4ebb'"),
+        .describe(
+          "Full resume command, e.g. 'claude --resume 019d4ebb-e7a3' or 'codex resume 019d4ebb'",
+        ),
       workingPath: z
         .string()
         .min(1)
         .describe("Working directory path, e.g. '~/ai-focus'"),
     },
     async (params) => {
-      const resolved = await resolveTodoId(params);
-      if ("error" in resolved) return resolved.error;
+      const resolved = await resolveTodoId(params)
+      if ('error' in resolved) return resolved.error
 
-      const data = await apiFetch(`/api/todos/${resolved.resolvedId}/sessions`, {
-        method: "POST",
-        body: JSON.stringify({
-          tool: params.tool,
-          command: params.command,
-          workingPath: params.workingPath,
-        }),
-      });
-      if (isApiError(data)) return textResult(data);
-      return textResult({ message: `Session added to task`, session: data });
-    }
-  );
+      const data = await apiFetch(
+        `/api/todos/${resolved.resolvedId}/sessions`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            tool: params.tool,
+            command: params.command,
+            workingPath: params.workingPath,
+          }),
+        },
+      )
+      if (isApiError(data)) return textResult(data)
+      return textResult({ message: `Session added to task`, session: data })
+    },
+  )
 
   server.tool(
-    "remove_session",
-    "Remove an AI session from a todo.",
+    'remove_session',
+    'Remove an AI session from a todo.',
     {
-      sessionId: z.string().describe("The session cuid to delete"),
+      sessionId: z.string().describe('The session cuid to delete'),
     },
     async (params) => {
       const data = await apiFetch(`/api/sessions/${params.sessionId}`, {
-        method: "DELETE",
-      });
-      if (isApiError(data)) return textResult(data);
-      return textResult({ message: "Session removed" });
-    }
-  );
+        method: 'DELETE',
+      })
+      if (isApiError(data)) return textResult(data)
+      return textResult({ message: 'Session removed' })
+    },
+  )
 }
 ```
 
 - [ ] **Step 2: Register in `mcp-server/src/index.ts`**
 
 Add import:
+
 ```ts
-import { registerSessionTools } from "./tools/sessions.js";
+import { registerSessionTools } from './tools/sessions.js'
 ```
 
 Add registration call after `registerStatusUpdateTools(server);`:
+
 ```ts
-registerSessionTools(server);
+registerSessionTools(server)
 ```
 
 - [ ] **Step 3: Build MCP server**
@@ -596,6 +676,7 @@ git commit -m "add session mcp tools (add_session, remove_session)"
 ### Task 9: Add Sessions to MCP Todo Summary
 
 **Files:**
+
 - Modify: `mcp-server/src/helpers.ts`
 - Modify: `mcp-server/src/types.ts`
 
@@ -612,12 +693,12 @@ sessions?: { id: string; tool: string; command: string; workingPath: string; cre
 Add after the `githubIssueUrls` block (around line 107):
 
 ```ts
-      if (t.sessions?.length) {
-        const sessionLines = t.sessions.map(
-          (s) => `     ${s.tool}: ${s.command} (${s.workingPath})`
-        );
-        parts.push(`   sessions:\n${sessionLines.join("\n")}`);
-      }
+if (t.sessions?.length) {
+  const sessionLines = t.sessions.map(
+    (s) => `     ${s.tool}: ${s.command} (${s.workingPath})`,
+  )
+  parts.push(`   sessions:\n${sessionLines.join('\n')}`)
+}
 ```
 
 - [ ] **Step 3: Rebuild MCP server**
@@ -637,6 +718,7 @@ git commit -m "include sessions in mcp todo summary output"
 ### Task 10: Verify formatRelativeDate Handles Sessions
 
 **Files:**
+
 - Check: `src/lib/utils.ts`
 
 - [ ] **Step 1: Verify `formatRelativeDate` exists and works for session timestamps**

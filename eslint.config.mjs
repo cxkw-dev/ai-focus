@@ -1,4 +1,5 @@
 import nextVitals from 'eslint-config-next/core-web-vitals'
+import eslintConfigPrettier from 'eslint-config-prettier'
 
 const config = [
   ...nextVitals,
@@ -7,8 +8,9 @@ const config = [
       '@next/next/no-img-element': 'off',
     },
   },
+  eslintConfigPrettier,
   {
-    ignores: ['mcp-server/dist/**'],
+    ignores: ['coverage/**', 'mcp-server/dist/**'],
   },
 ]
 

@@ -1,11 +1,13 @@
 # AI Focus - Codex Instructions
 
 ## Project Overview
+
 A Next.js 16 productivity app with todos, notebook, and year-in-review stats. Built with Prisma 7, PostgreSQL, React 19, and Tailwind CSS v4.
 
 ## Git Configuration
 
 ### Repository Details
+
 - **Repository:** git@github-personal:cxkw-dev/ai-focus.git
 - **Remote uses:** `github-personal` SSH host (configured in ~/.ssh/config)
 - **Git user (local to this repo):**
@@ -13,16 +15,19 @@ A Next.js 16 productivity app with todos, notebook, and year-in-review stats. Bu
   - Name: cxkw.dev
 
 ### Commit Rules
+
 - **All commit messages MUST be lowercase**
 - **Never include "Co-authored-by" or AI attribution in commits**
 - Keep messages concise and descriptive
 
 ### Push & Deploy Rules
+
 - **Push directly to main** — this is a personal project, no PRs needed
 - **Never create branches or pull requests** unless explicitly asked
 - When asked to push, just `git push origin main`
 
 ### Important Notes
+
 - This repo uses the **personal SSH key** (`github-personal` host), not the work key
 - Git user is configured locally (not globally) to avoid conflicts with other repos
 - The `.env` file is ignored and contains sensitive database credentials
@@ -30,13 +35,16 @@ A Next.js 16 productivity app with todos, notebook, and year-in-review stats. Bu
 ## Local Development
 
 ### Prerequisites
+
 - PostgreSQL running via Homebrew on port 5432 (`brew services start postgresql@17`)
 
 ### Development Workflow
+
 **The user runs `npm run dev` locally and sees changes live via hot reload.**
 Do NOT rebuild or redeploy Docker after code changes - the local dev server handles this automatically.
 
 ### Docker Commands (only when explicitly needed)
+
 Docker is used for production-like testing, not daily development.
 
 ```bash
@@ -59,10 +67,12 @@ docker-compose down
 - **Database user:** postgres
 
 ### Docker Compose Rules
+
 - Always specify `container_name: ai-focus-app` in docker-compose.yml
 - This ensures consistent container naming for easier management
 
 ### Database Architecture
+
 - PostgreSQL runs on the **host machine** via Homebrew (not in a container)
 - The Docker app connects to it using `host.docker.internal:5432`
 - Local dev (outside Docker) connects via `localhost:5432`
@@ -144,6 +154,7 @@ mcp-server/                 # MCP server for Codex agent integration
 ## Database Schema
 
 ### Models
+
 - **Todo** — id, taskNumber (auto-increment), title, description, priority, dueDate, status, order, archived, myPrUrls[], githubPrUrls[], labels[], subtasks[]
 - **Subtask** — id, title, completed, order, todoId (cascade delete)
 - **Label** — id, name (unique), color, todos[]
@@ -152,6 +163,7 @@ mcp-server/                 # MCP server for Codex agent integration
 - **Person** — id, name, email (@unique), createdAt, updatedAt
 
 ### Enums
+
 - **Status:** TODO, IN_PROGRESS, WAITING, ON_HOLD, COMPLETED
 - **Priority:** LOW, MEDIUM, HIGH, URGENT
 
@@ -165,6 +177,7 @@ React Query is the single source of truth for all server data. Custom hooks in `
 - **`useTodoForm`** — Shared form state deduplicating logic across InlineTodoForm, CreateTodoModal, and EditTodoDialog.
 
 ### Real-Time Updates (SSE)
+
 - `src/lib/events.ts` — In-memory pub/sub event emitter
 - `src/app/api/events/route.ts` — SSE endpoint that streams entity changes
 - `src/hooks/use-sse.ts` — Client hook that invalidates React Query cache on events
@@ -177,15 +190,15 @@ The app has **separate UI components for desktop and mobile**, not just CSS brea
 
 ### Task Creation
 
-| Viewport | Component | File |
-|----------|-----------|------|
-| Desktop (>= 1280px) | `InlineTodoForm` | `src/components/todos/inline-todo-form.tsx` |
-| Mobile (< 1280px) | `CreateTodoModal` | `src/components/todos/create-todo-modal.tsx` |
+| Viewport            | Component         | File                                         |
+| ------------------- | ----------------- | -------------------------------------------- |
+| Desktop (>= 1280px) | `InlineTodoForm`  | `src/components/todos/inline-todo-form.tsx`  |
+| Mobile (< 1280px)   | `CreateTodoModal` | `src/components/todos/create-todo-modal.tsx` |
 
 ### Task Editing
 
-| Viewport | Component | File |
-|----------|-----------|------|
+| Viewport  | Component        | File                                        |
+| --------- | ---------------- | ------------------------------------------- |
 | All sizes | `EditTodoDialog` | `src/components/todos/edit-todo-dialog.tsx` |
 
 ### Layout Rules
@@ -225,13 +238,13 @@ The app uses a **dynamic theme switcher** with multiple color themes. Users can 
 
 ### Available Themes
 
-| Theme | Description | Custom Fonts |
-|-------|-------------|--------------|
-| Midnight Peach | Warm peach tones on dark (default) | — |
-| Discord | Classic Discord blurple | — |
-| Anthropic | Warm terracotta tones | Lora (headings), DM Sans (body) |
-| Atom One Dark | Classic developer editor theme | — |
-| Tron Legacy | The Grid — near-black with cyan/orange | Inconsolata (body) |
+| Theme          | Description                            | Custom Fonts                    |
+| -------------- | -------------------------------------- | ------------------------------- |
+| Midnight Peach | Warm peach tones on dark (default)     | —                               |
+| Discord        | Classic Discord blurple                | —                               |
+| Anthropic      | Warm terracotta tones                  | Lora (headings), DM Sans (body) |
+| Atom One Dark  | Classic developer editor theme         | —                               |
+| Tron Legacy    | The Grid — near-black with cyan/orange | Inconsolata (body)              |
 
 ### Theme Architecture
 
@@ -243,6 +256,7 @@ The app uses a **dynamic theme switcher** with multiple color themes. Users can 
 ### Font System
 
 Fonts are loaded via `next/font/google` in `src/app/layout.tsx` and set as CSS variables on `<body>`:
+
 - `--font-geist-sans` (default body), `--font-geist-mono`, `--font-pixelify`, `--font-inconsolata`, `--font-lora`, `--font-dm-sans`
 
 Theme font values reference these variables (e.g. `var(--font-lora)`). The `applyTheme()` function resolves them to actual font family names via `getComputedStyle` before setting `--font-sans` and `--font-heading` on `<html>`.
@@ -257,40 +271,54 @@ Theme font values reference these variables (e.g. `var(--font-lora)`). The `appl
 
 ### CSS Variables Used
 
-| Variable | Purpose |
-|----------|---------|
-| `--background` | Page background |
-| `--surface` | Cards, sidebar |
-| `--surface-2` | Modals, dropdowns |
-| `--primary` | Primary actions, buttons |
-| `--accent` | Secondary accent color |
-| `--text-primary` | Main text |
-| `--text-muted` | Secondary text |
-| `--border-color` | Borders |
-| `--link` | Link color |
-| `--destructive` | Destructive actions |
-| `--status-*` | Todo status colors (todo, in-progress, waiting, on-hold, done) |
-| `--priority-*` | Priority level colors (low, medium, high, urgent) |
-| `--font-sans` | Body font (overridden by themes) |
-| `--font-heading` | Heading font (overridden by themes) |
+| Variable         | Purpose                                                        |
+| ---------------- | -------------------------------------------------------------- |
+| `--background`   | Page background                                                |
+| `--surface`      | Cards, sidebar                                                 |
+| `--surface-2`    | Modals, dropdowns                                              |
+| `--primary`      | Primary actions, buttons                                       |
+| `--accent`       | Secondary accent color                                         |
+| `--text-primary` | Main text                                                      |
+| `--text-muted`   | Secondary text                                                 |
+| `--border-color` | Borders                                                        |
+| `--link`         | Link color                                                     |
+| `--destructive`  | Destructive actions                                            |
+| `--status-*`     | Todo status colors (todo, in-progress, waiting, on-hold, done) |
+| `--priority-*`   | Priority level colors (low, medium, high, urgent)              |
+| `--font-sans`    | Body font (overridden by themes)                               |
+| `--font-heading` | Heading font (overridden by themes)                            |
 
 ## Design Rules
 
 ### Accent colors on cards
+
 **Never use `border-t-[Xpx]`, `border-l-[Xpx]`, etc. on elements with `rounded-*` classes.** Mixing a thicker border on one side with border-radius creates ugly uneven corners. Absolute-positioned inner bars also look off.
 
 Instead, use a **small colored dot next to the heading** inside the card:
+
 ```tsx
-<div className="rounded-xl border p-5" style={{ borderColor: 'var(--border-color)' }}>
-  <div className="flex items-center gap-2 mb-4">
-    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--primary)' }} />
-    <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Section Title</h3>
+<div
+  className="rounded-xl border p-5"
+  style={{ borderColor: 'var(--border-color)' }}
+>
+  <div className="mb-4 flex items-center gap-2">
+    <div
+      className="h-2 w-2 rounded-full"
+      style={{ backgroundColor: 'var(--primary)' }}
+    />
+    <h3
+      className="text-sm font-semibold"
+      style={{ color: 'var(--text-primary)' }}
+    >
+      Section Title
+    </h3>
   </div>
   ...
 </div>
 ```
 
 ### Nested interactive elements
+
 **Never nest `<button>` inside `<button>`.** This is invalid HTML and causes React hydration errors. If an item is clickable and contains a delete/action button, use `<div role="button" tabIndex={0}>` for the outer element with keyboard event handling.
 
 ## MCP Server
@@ -304,6 +332,7 @@ The `mcp-server/` directory contains a Model Context Protocol server for Codex a
 - **Rich text:** Converts plain text to HTML for TipTap editor (bold, italic, lists)
 
 ### Building
+
 ```bash
 cd mcp-server && npm run build
 ```
@@ -320,6 +349,7 @@ npm run db:studio      # Open Prisma Studio
 ```
 
 Or manually:
+
 ```bash
 npx prisma db push --config prisma/prisma.config.ts
 npx prisma migrate dev --name <name> --config prisma/prisma.config.ts
@@ -328,6 +358,7 @@ npx prisma studio --config prisma/prisma.config.ts
 ```
 
 ### Prisma 7 Notes
+
 - The `datasource.url` is configured in `prisma/prisma.config.ts`, not in `schema.prisma`
 - Binary targets: `native` + `linux-musl-arm64-openssl-3.0.x` (for Docker ARM64)
 - Use `db push` for quick schema sync (no shadow database needed)
@@ -338,6 +369,7 @@ npx prisma studio --config prisma/prisma.config.ts
 The app uses a **pixel art SVG** as the source of truth for all icons and favicons.
 
 ### Icon Files
+
 - **Source:** `public/icon.svg` - The master pixel art SVG (16x16 grid)
 - **Generated PNGs:** All PNG/ICO files are auto-generated from the SVG
   - `icon-192.png` - PWA icon (192x192)
@@ -366,6 +398,7 @@ After regenerating icons:
    - Also update `start_url` version parameter
 
 2. **Rebuild Docker (if using Docker):**
+
    ```bash
    docker-compose down && docker-compose build --no-cache && docker-compose up -d
    ```
@@ -377,4 +410,5 @@ After regenerating icons:
    - Reinstall PWA from browser
 
 ### Why This Matters
+
 Chrome **aggressively caches** PWA icons and manifests. Simply updating the files won't work - you need cache-busting query parameters (`?v=X`) to force browsers to fetch new icons.

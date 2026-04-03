@@ -1,43 +1,240 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { Prisma, Priority as PrismaPriority, Status as PrismaStatus } from '@prisma/client'
+import {
+  Prisma,
+  Priority as PrismaPriority,
+  Status as PrismaStatus,
+} from '@prisma/client'
 import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
 import { evaluateAccomplishment } from '@/lib/accomplishment-agent'
 import { todoInclude, todoWhere } from '@/lib/todo-queries'
-import { z } from 'zod'
+import {
+  badRequest,
+  internalError,
+  notFound,
+  ok,
+  parseJsonBody,
+  validationError,
+} from '@/lib/server/api-responses'
+import { isPrismaErrorCode } from '@/lib/server/prisma-errors'
+import { updateTodoSchema } from '@/lib/validation/todo'
+import { ZodError, z } from 'zod'
 
-const subtaskSchema = z.object({
-  id: z.string().optional(),
-  title: z.string().min(1).max(1000),
-  completed: z.boolean().optional(),
-  order: z.number().int(),
-})
+const TODO_ROUTE_ERRORS = {
+  invalidSubtaskId: 'INVALID_SUBTASK_ID',
+  todoNotFound: 'TODO_NOT_FOUND',
+} as const
 
-const updateTodoSchema = z.object({
-  title: z.string().min(1).max(200).optional(),
-  description: z.string().max(10000).optional().nullable(),
-  status: z.enum(['TODO', 'IN_PROGRESS', 'WAITING', 'UNDER_REVIEW', 'ON_HOLD', 'COMPLETED']).optional(),
-  archived: z.boolean().optional(),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
-  dueDate: z.string().datetime().optional().nullable(),
-  labelIds: z.array(z.string()).optional(),
-  subtasks: z.array(subtaskSchema).optional(),
-  myPrUrls: z.array(z.string().url()).optional(),
-  githubPrUrls: z.array(z.string().url()).optional(),
-  azureWorkItemUrl: z.string().url().optional().nullable(),
-  azureDepUrls: z.array(z.string().url()).optional(),
-  myIssueUrls: z.array(z.string().url()).optional(),
-  githubIssueUrls: z.array(z.string().url()).optional(),
-  notebookNoteId: z.string().optional().nullable(),
-})
+type ExistingTodoSnapshot = {
+  id: string
+  status: PrismaStatus
+  notebookNoteId: string | null
+  subtasks: { id: string }[]
+}
 
-function isNotFoundError(error: unknown) {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025'
+type UpdateTodoPayload = z.infer<typeof updateTodoSchema>
+
+type SubtaskPayload = Array<{
+  id?: string
+  title: string
+  completed?: boolean
+  order: number
+}>
+
+function createRouteError(code: keyof typeof TODO_ROUTE_ERRORS) {
+  return new Error(TODO_ROUTE_ERRORS[code])
+}
+
+function isRouteError(error: unknown, code: keyof typeof TODO_ROUTE_ERRORS) {
+  return error instanceof Error && error.message === TODO_ROUTE_ERRORS[code]
+}
+
+async function syncSubtasks(
+  tx: Prisma.TransactionClient,
+  todo: ExistingTodoSnapshot,
+  subtasks: SubtaskPayload,
+) {
+  const existingSubtaskIds = new Set(todo.subtasks.map((subtask) => subtask.id))
+  const incomingSubtaskIds = new Set(
+    subtasks
+      .map((subtask) => subtask.id)
+      .filter((subtaskId): subtaskId is string => Boolean(subtaskId)),
+  )
+
+  const unknownSubtaskIds = Array.from(incomingSubtaskIds).filter(
+    (subtaskId) => !existingSubtaskIds.has(subtaskId),
+  )
+
+  if (unknownSubtaskIds.length > 0) {
+    throw createRouteError('invalidSubtaskId')
+  }
+
+  const subtaskIdsToDelete = Array.from(existingSubtaskIds).filter(
+    (existingId) => !incomingSubtaskIds.has(existingId),
+  )
+
+  if (subtaskIdsToDelete.length > 0) {
+    await tx.subtask.deleteMany({
+      where: {
+        id: { in: subtaskIdsToDelete },
+        todoId: todo.id,
+      },
+    })
+  }
+
+  await Promise.all(
+    subtasks.map((subtask) => {
+      if (subtask.id) {
+        return tx.subtask.update({
+          where: { id: subtask.id },
+          data: {
+            title: subtask.title,
+            completed: subtask.completed ?? false,
+            order: subtask.order,
+          },
+        })
+      }
+
+      return tx.subtask.create({
+        data: {
+          title: subtask.title,
+          completed: subtask.completed ?? false,
+          order: subtask.order,
+          todoId: todo.id,
+        },
+      })
+    }),
+  )
+}
+
+async function applyStatusTransition(
+  tx: Prisma.TransactionClient,
+  todo: ExistingTodoSnapshot,
+  nextStatus: PrismaStatus | undefined,
+) {
+  const transition: {
+    archived?: boolean
+    completedAt?: Date | null
+    statusChangedAt?: Date
+  } = {}
+
+  if (nextStatus === undefined) {
+    return transition
+  }
+
+  if (todo.status !== nextStatus) {
+    transition.statusChangedAt = new Date()
+  }
+
+  if (nextStatus === PrismaStatus.COMPLETED) {
+    transition.archived = true
+    transition.completedAt = new Date()
+
+    if (todo.notebookNoteId) {
+      await tx.notebookNote.update({
+        where: { id: todo.notebookNoteId },
+        data: { archived: true },
+      })
+    }
+
+    return transition
+  }
+
+  if (todo.status === PrismaStatus.COMPLETED) {
+    transition.archived = false
+    transition.completedAt = null
+
+    await tx.accomplishment.deleteMany({
+      where: { todoId: todo.id },
+    })
+
+    if (todo.notebookNoteId) {
+      await tx.notebookNote.update({
+        where: { id: todo.notebookNoteId },
+        data: { archived: false },
+      })
+    }
+  }
+
+  return transition
+}
+
+function buildTodoUpdateData(
+  data: UpdateTodoPayload,
+  transition: Awaited<ReturnType<typeof applyStatusTransition>>,
+): Prisma.TodoUpdateInput {
+  const updateData: Prisma.TodoUpdateInput = {}
+
+  if (data.title !== undefined) updateData.title = data.title
+  if (data.description !== undefined) updateData.description = data.description
+  if (data.status !== undefined) updateData.status = data.status as PrismaStatus
+  if (transition.archived !== undefined) {
+    updateData.archived = transition.archived
+  } else if (data.archived !== undefined) {
+    updateData.archived = data.archived
+  }
+  if (data.priority !== undefined) {
+    updateData.priority = data.priority as PrismaPriority
+  }
+  if (data.myPrUrls !== undefined) updateData.myPrUrls = data.myPrUrls
+  if (data.githubPrUrls !== undefined)
+    updateData.githubPrUrls = data.githubPrUrls
+  if (data.azureWorkItemUrl !== undefined) {
+    updateData.azureWorkItemUrl = data.azureWorkItemUrl
+  }
+  if (data.azureDepUrls !== undefined)
+    updateData.azureDepUrls = data.azureDepUrls
+  if (data.myIssueUrls !== undefined) updateData.myIssueUrls = data.myIssueUrls
+  if (data.githubIssueUrls !== undefined) {
+    updateData.githubIssueUrls = data.githubIssueUrls
+  }
+  if (transition.completedAt !== undefined) {
+    updateData.completedAt = transition.completedAt
+  }
+  if (transition.statusChangedAt !== undefined) {
+    updateData.statusChangedAt = transition.statusChangedAt
+  }
+  if (data.labelIds !== undefined) {
+    updateData.labels = {
+      set: data.labelIds.map((labelId) => ({ id: labelId })),
+    }
+  }
+  if (data.dueDate !== undefined) {
+    updateData.dueDate = data.dueDate ? new Date(data.dueDate) : null
+  }
+  if (data.notebookNoteId !== undefined) {
+    updateData.notebookNote =
+      data.notebookNoteId === null
+        ? { disconnect: true }
+        : { connect: { id: data.notebookNoteId } }
+  }
+
+  return updateData
+}
+
+async function loadTodoForMutation(
+  tx: Prisma.TransactionClient,
+  id: string,
+): Promise<ExistingTodoSnapshot> {
+  const todo = await tx.todo.findUnique({
+    where: todoWhere(id),
+    select: {
+      id: true,
+      status: true,
+      notebookNoteId: true,
+      subtasks: { select: { id: true } },
+    },
+  })
+
+  if (!todo) {
+    throw createRouteError('todoNotFound')
+  }
+
+  return todo
 }
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params
@@ -47,277 +244,117 @@ export async function GET(
     })
 
     if (!todo) {
-      return NextResponse.json({ error: 'Todo not found' }, { status: 404 })
+      return notFound('Todo not found')
     }
 
-    return NextResponse.json(todo)
+    return ok(todo)
   } catch (error) {
-    console.error('Error fetching todo:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch todo' },
-      { status: 500 }
-    )
+    return internalError('Failed to fetch todo', error, 'Error fetching todo')
   }
 }
 
 export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params
-    const body = await request.json()
-    const validatedData = updateTodoSchema.parse(body)
-    const { labelIds, subtasks, notebookNoteId, dueDate, ...todoData } = validatedData
+    const data = await parseJsonBody(request, updateTodoSchema)
 
     const todo = await db.$transaction(async (tx) => {
-      let resolvedTodoId: string | null = null
-      let completedAt: Date | null | undefined
-      let statusChangedAt: Date | undefined
+      const existingTodo = await loadTodoForMutation(tx, id)
+      const nextStatus = data.status as PrismaStatus | undefined
 
-      const needsExistingTodo = todoData.status !== undefined || subtasks !== undefined
-      const existingTodo = needsExistingTodo
-        ? await tx.todo.findUnique({
-            where: todoWhere(id),
-            select: {
-              id: true,
-              status: true,
-              notebookNoteId: true,
-              subtasks: { select: { id: true } },
-            },
-          })
-        : null
-
-      if (needsExistingTodo && !existingTodo) {
-        throw new Error('TODO_NOT_FOUND')
+      if (data.subtasks !== undefined) {
+        await syncSubtasks(tx, existingTodo, data.subtasks)
       }
 
-      resolvedTodoId = existingTodo?.id ?? null
+      const transition = await applyStatusTransition(
+        tx,
+        existingTodo,
+        nextStatus,
+      )
+      const updateData = buildTodoUpdateData(data, transition)
 
-      // Handle completedAt + auto-archive when status changes
-      if (todoData.status !== undefined) {
-        if (existingTodo?.status !== todoData.status) {
-          statusChangedAt = new Date()
-        }
-
-        if (todoData.status === 'COMPLETED') {
-          todoData.archived = true
-          completedAt = new Date()
-
-          // Archive linked notebook note when completing
-          if (existingTodo?.notebookNoteId) {
-            await tx.notebookNote.update({
-              where: { id: existingTodo.notebookNoteId },
-              data: { archived: true },
-            })
-          }
-        } else if (existingTodo?.status === 'COMPLETED') {
-          completedAt = null
-          todoData.archived = false
-
-          // Delete linked accomplishment when un-completing
-          await tx.accomplishment.deleteMany({
-            where: { todoId: existingTodo.id },
-          })
-
-          // Unarchive linked notebook note when un-completing
-          if (existingTodo?.notebookNoteId) {
-            await tx.notebookNote.update({
-              where: { id: existingTodo.notebookNoteId },
-              data: { archived: false },
-            })
-          }
-        }
-      }
-
-      // If subtasks are provided, do a declarative sync with ownership validation.
-      if (subtasks !== undefined && existingTodo) {
-        const existingSubtaskIds = new Set(existingTodo.subtasks.map((subtask) => subtask.id))
-        const incomingSubtaskIds = new Set(
-          subtasks
-            .map((subtask) => subtask.id)
-            .filter((subtaskId): subtaskId is string => !!subtaskId)
-        )
-
-        const unknownSubtaskIds = Array.from(incomingSubtaskIds).filter(
-          (subtaskId) => !existingSubtaskIds.has(subtaskId)
-        )
-
-        if (unknownSubtaskIds.length > 0) {
-          throw new Error('INVALID_SUBTASK_ID')
-        }
-
-        const subtaskIdsToDelete = Array.from(existingSubtaskIds).filter(
-          (existingId) => !incomingSubtaskIds.has(existingId)
-        )
-
-        if (subtaskIdsToDelete.length > 0) {
-          await tx.subtask.deleteMany({
-            where: {
-              id: { in: subtaskIdsToDelete },
-              todoId: existingTodo.id,
-            },
-          })
-        }
-
-        await Promise.all(subtasks.map((subtask) => {
-          if (subtask.id) {
-            return tx.subtask.update({
-              where: { id: subtask.id },
-              data: {
-                title: subtask.title,
-                completed: subtask.completed ?? false,
-                order: subtask.order,
-              },
-            })
-          }
-
-          return tx.subtask.create({
-            data: {
-              title: subtask.title,
-              completed: subtask.completed ?? false,
-              order: subtask.order,
-              todoId: existingTodo.id,
-            },
-          })
-        }))
-      }
-
-      const updateData: Prisma.TodoUpdateInput = {}
-
-      if (todoData.title !== undefined) updateData.title = todoData.title
-      if (todoData.description !== undefined) updateData.description = todoData.description
-      if (todoData.status !== undefined) updateData.status = todoData.status as PrismaStatus
-      if (todoData.archived !== undefined) updateData.archived = todoData.archived
-      if (todoData.priority !== undefined) updateData.priority = todoData.priority as PrismaPriority
-      if (todoData.myPrUrls !== undefined) updateData.myPrUrls = todoData.myPrUrls
-      if (todoData.githubPrUrls !== undefined) updateData.githubPrUrls = todoData.githubPrUrls
-      if (todoData.azureWorkItemUrl !== undefined) updateData.azureWorkItemUrl = todoData.azureWorkItemUrl
-      if (todoData.azureDepUrls !== undefined) updateData.azureDepUrls = todoData.azureDepUrls
-      if (todoData.myIssueUrls !== undefined) updateData.myIssueUrls = todoData.myIssueUrls
-      if (todoData.githubIssueUrls !== undefined) updateData.githubIssueUrls = todoData.githubIssueUrls
-
-      if (completedAt !== undefined) {
-        updateData.completedAt = completedAt
-      }
-
-      if (statusChangedAt !== undefined) {
-        updateData.statusChangedAt = statusChangedAt
-      }
-
-      if (labelIds !== undefined) {
-        updateData.labels = { set: labelIds.map((labelId) => ({ id: labelId })) }
-      }
-
-      if (dueDate !== undefined) {
-        updateData.dueDate = dueDate ? new Date(dueDate) : null
-      }
-
-      if (notebookNoteId !== undefined) {
-        updateData.notebookNote = notebookNoteId === null
-          ? { disconnect: true }
-          : { connect: { id: notebookNoteId } }
-      }
-
-      const updatedTodo = await tx.todo.update({
-        where: resolvedTodoId ? { id: resolvedTodoId } : todoWhere(id),
+      return tx.todo.update({
+        where: { id: existingTodo.id },
         data: updateData,
         include: todoInclude,
       })
-
-      return updatedTodo
     })
 
-    // If the task was just completed, evaluate it for accomplishment
-    if (validatedData.status === 'COMPLETED') {
+    if (data.status === 'COMPLETED') {
       evaluateAccomplishment({
         id: todo.id,
         title: todo.title,
         description: todo.description,
         labels: todo.labels,
-        completedAt: new Date(),
+        completedAt: todo.completedAt ?? new Date(),
       })
     }
 
     emit('todos')
-    if (validatedData.status !== undefined) emit('notebook')
-    return NextResponse.json(todo)
+    if (data.status !== undefined || data.notebookNoteId !== undefined) {
+      emit('notebook')
+    }
+
+    return ok(todo)
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.issues },
-        { status: 400 }
-      )
+    if (error instanceof ZodError) {
+      return validationError(error)
     }
 
-    if (error instanceof Error && error.message === 'INVALID_SUBTASK_ID') {
-      return NextResponse.json(
-        { error: 'One or more subtasks do not belong to this todo' },
-        { status: 400 }
-      )
+    if (isRouteError(error, 'invalidSubtaskId')) {
+      return badRequest('One or more subtasks do not belong to this todo')
     }
 
-    if (error instanceof Error && error.message === 'TODO_NOT_FOUND') {
-      return NextResponse.json(
-        { error: 'Todo not found' },
-        { status: 404 }
-      )
+    if (
+      isRouteError(error, 'todoNotFound') ||
+      isPrismaErrorCode(error, 'P2025')
+    ) {
+      return notFound('Todo not found')
     }
 
-    if (isNotFoundError(error)) {
-      return NextResponse.json(
-        { error: 'Todo not found' },
-        { status: 404 }
-      )
-    }
-
-    console.error('Error updating todo:', error)
-    return NextResponse.json(
-      { error: 'Failed to update todo' },
-      { status: 500 }
-    )
+    return internalError('Failed to update todo', error, 'Error updating todo')
   }
 }
 
 export async function DELETE(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params
-    const where = todoWhere(id)
+    const todo = await db.todo.findUnique({
+      where: todoWhere(id),
+      select: { id: true, notebookNoteId: true },
+    })
 
-    // Resolve the actual id (could be a taskNumber lookup)
-    const todo = await db.todo.findUnique({ where, select: { id: true, notebookNoteId: true } })
     if (!todo) {
-      return NextResponse.json({ error: 'Todo not found' }, { status: 404 })
+      return notFound('Todo not found')
     }
 
-    // Delete linked accomplishment before deleting the todo
     await db.accomplishment.deleteMany({ where: { todoId: todo.id } })
 
-    // Delete linked notebook note before deleting the todo
     if (todo.notebookNoteId) {
-      await db.notebookNote.delete({ where: { id: todo.notebookNoteId } }).catch(() => {})
+      await db.notebookNote
+        .delete({ where: { id: todo.notebookNoteId } })
+        .catch(() => {})
     }
 
     await db.todo.delete({ where: { id: todo.id } })
 
     emit('todos')
-    if (todo.notebookNoteId) emit('notebook')
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    if (isNotFoundError(error)) {
-      return NextResponse.json(
-        { error: 'Todo not found' },
-        { status: 404 }
-      )
+    if (todo.notebookNoteId) {
+      emit('notebook')
     }
 
-    console.error('Error deleting todo:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete todo' },
-      { status: 500 }
-    )
+    return ok({ success: true })
+  } catch (error) {
+    if (isPrismaErrorCode(error, 'P2025')) {
+      return notFound('Todo not found')
+    }
+
+    return internalError('Failed to delete todo', error, 'Error deleting todo')
   }
 }

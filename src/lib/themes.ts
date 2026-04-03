@@ -366,13 +366,15 @@ export const themes: Theme[] = [
 export const defaultTheme = themes[0]
 
 export function getThemeById(id: string): Theme {
-  return themes.find(t => t.id === id) || defaultTheme
+  return themes.find((t) => t.id === id) || defaultTheme
 }
 
 function resolveFontValue(value: string): string {
   const match = value.match(/^var\((--[\w-]+)\)$/)
   if (match) {
-    const resolved = getComputedStyle(document.body).getPropertyValue(match[1]).trim()
+    const resolved = getComputedStyle(document.body)
+      .getPropertyValue(match[1])
+      .trim()
     if (resolved) return resolved
   }
   return value
@@ -396,7 +398,10 @@ export function applyTheme(theme: Theme): void {
   root.style.setProperty('--accent-foreground', colors.accentForeground)
   root.style.setProperty('--link', colors.link)
   root.style.setProperty('--destructive', colors.destructive)
-  root.style.setProperty('--destructive-foreground', colors.destructiveForeground)
+  root.style.setProperty(
+    '--destructive-foreground',
+    colors.destructiveForeground,
+  )
   root.style.setProperty('--status-todo', colors.statusTodo)
   root.style.setProperty('--status-in-progress', colors.statusInProgress)
   root.style.setProperty('--status-waiting', colors.statusWaiting)
@@ -410,7 +415,10 @@ export function applyTheme(theme: Theme): void {
   root.style.setProperty('--category-delivery', colors.categoryDelivery)
   root.style.setProperty('--category-hiring', colors.categoryHiring)
   root.style.setProperty('--category-mentoring', colors.categoryMentoring)
-  root.style.setProperty('--category-collaboration', colors.categoryCollaboration)
+  root.style.setProperty(
+    '--category-collaboration',
+    colors.categoryCollaboration,
+  )
   root.style.setProperty('--category-growth', colors.categoryGrowth)
   root.style.setProperty('--category-other', colors.categoryOther)
 
@@ -427,7 +435,10 @@ export function applyTheme(theme: Theme): void {
   }
   if (theme.fonts?.heading) {
     const resolved = resolveFontValue(theme.fonts.heading)
-    root.style.setProperty('--font-heading', `${resolved}, system-ui, sans-serif`)
+    root.style.setProperty(
+      '--font-heading',
+      `${resolved}, system-ui, sans-serif`,
+    )
   } else {
     root.style.removeProperty('--font-heading')
   }

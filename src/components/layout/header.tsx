@@ -38,7 +38,7 @@ function OllamaStatus() {
         <TooltipTrigger asChild>
           <button
             onClick={() => refetch()}
-            className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] font-medium cursor-pointer select-none transition-colors hover:brightness-110"
+            className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors select-none hover:brightness-110"
             style={{
               backgroundColor: 'var(--surface)',
               border: '1px solid var(--border-color)',
@@ -59,7 +59,13 @@ function OllamaStatus() {
               ) : null}
               <span
                 className="relative inline-flex h-2 w-2 rounded-full"
-                style={{ backgroundColor: isFetching ? 'var(--text-muted)' : connected ? '#22c55e' : '#ef4444' }}
+                style={{
+                  backgroundColor: isFetching
+                    ? 'var(--text-muted)'
+                    : connected
+                      ? '#22c55e'
+                      : '#ef4444',
+                }}
               />
             </span>
             <span className="hidden sm:inline">{model || 'ollama'}</span>
@@ -67,9 +73,13 @@ function OllamaStatus() {
         </TooltipTrigger>
         <TooltipContent side="bottom">
           <div className="text-xs">
-            <p className="font-medium">{connected ? 'Ollama connected' : 'Ollama unreachable'}</p>
+            <p className="font-medium">
+              {connected ? 'Ollama connected' : 'Ollama unreachable'}
+            </p>
             <p style={{ color: 'var(--text-muted)' }}>{url}</p>
-            <p style={{ color: 'var(--text-muted)', marginTop: 2 }}>Click to refresh</p>
+            <p style={{ color: 'var(--text-muted)', marginTop: 2 }}>
+              Click to refresh
+            </p>
           </div>
         </TooltipContent>
       </Tooltip>
@@ -77,12 +87,18 @@ function OllamaStatus() {
   )
 }
 
-export function Header({ title, onMenuClick, showMenuButton, actions }: HeaderProps) {
+export function Header({
+  title,
+  onMenuClick,
+  showMenuButton,
+  actions,
+}: HeaderProps) {
   return (
     <header
-      className="sticky top-0 z-30 flex h-16 items-center justify-between border-b backdrop-blur-lg px-3 sm:px-6"
+      className="sticky top-0 z-30 flex h-16 items-center justify-between border-b px-3 backdrop-blur-lg sm:px-6"
       style={{
-        backgroundColor: 'color-mix(in srgb, var(--background) 80%, transparent)',
+        backgroundColor:
+          'color-mix(in srgb, var(--background) 80%, transparent)',
         borderColor: 'var(--border-color)',
       }}
     >
@@ -97,7 +113,12 @@ export function Header({ title, onMenuClick, showMenuButton, actions }: HeaderPr
             <Menu className="h-5 w-5" />
           </Button>
         )}
-        <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</h1>
+        <h1
+          className="text-xl font-semibold"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          {title}
+        </h1>
       </div>
 
       <div className="flex items-center gap-2">

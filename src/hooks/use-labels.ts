@@ -19,30 +19,43 @@ export function useLabels() {
     mutationFn: labelsApi.create,
     onSuccess: (newLabel) => {
       queryClient.setQueryData<Label[]>(queryKeys.labels, (prev = []) =>
-        [...prev, newLabel].sort((a, b) => a.name.localeCompare(b.name))
+        [...prev, newLabel].sort((a, b) => a.name.localeCompare(b.name)),
       )
       queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
       toast({ title: 'Label created', description: newLabel.name })
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to create label.', variant: 'destructive' })
+      toast({
+        title: 'Error',
+        description: 'Failed to create label.',
+        variant: 'destructive',
+      })
     },
   })
 
   const update = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Pick<Label, 'name' | 'color'>> }) =>
-      labelsApi.update(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string
+      data: Partial<Pick<Label, 'name' | 'color'>>
+    }) => labelsApi.update(id, data),
     onSuccess: (updatedLabel) => {
       queryClient.setQueryData<Label[]>(queryKeys.labels, (prev = []) =>
         prev
-          .map(l => (l.id === updatedLabel.id ? updatedLabel : l))
-          .sort((a, b) => a.name.localeCompare(b.name))
+          .map((l) => (l.id === updatedLabel.id ? updatedLabel : l))
+          .sort((a, b) => a.name.localeCompare(b.name)),
       )
       queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
       toast({ title: 'Label updated', description: updatedLabel.name })
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to update label.', variant: 'destructive' })
+      toast({
+        title: 'Error',
+        description: 'Failed to update label.',
+        variant: 'destructive',
+      })
     },
   })
 
@@ -50,13 +63,17 @@ export function useLabels() {
     mutationFn: labelsApi.delete,
     onSuccess: (_data, id) => {
       queryClient.setQueryData<Label[]>(queryKeys.labels, (prev = []) =>
-        prev.filter(l => l.id !== id)
+        prev.filter((l) => l.id !== id),
       )
       queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
       toast({ title: 'Label deleted' })
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to delete label.', variant: 'destructive' })
+      toast({
+        title: 'Error',
+        description: 'Failed to delete label.',
+        variant: 'destructive',
+      })
     },
   })
 
@@ -72,7 +89,10 @@ export function useLabels() {
     }
   }
 
-  const handleUpdate = async (id: string, data: Partial<Pick<Label, 'name' | 'color'>>) => {
+  const handleUpdate = async (
+    id: string,
+    data: Partial<Pick<Label, 'name' | 'color'>>,
+  ) => {
     try {
       await update.mutateAsync({ id, data })
       return true

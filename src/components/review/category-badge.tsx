@@ -2,7 +2,10 @@
 
 import type { AccomplishmentCategory } from '@/types/accomplishment'
 
-const CATEGORY_CONFIG: Record<AccomplishmentCategory, { label: string; cssVar: string }> = {
+const CATEGORY_CONFIG: Record<
+  AccomplishmentCategory,
+  { label: string; cssVar: string }
+> = {
   DELIVERY: { label: 'Delivery', cssVar: '--category-delivery' },
   HIRING: { label: 'Hiring', cssVar: '--category-hiring' },
   MENTORING: { label: 'Mentoring', cssVar: '--category-mentoring' },

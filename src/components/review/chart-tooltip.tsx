@@ -13,7 +13,12 @@ interface ChartTooltipProps {
   colors: Record<string, string>
 }
 
-export function ChartTooltip({ active, payload, label, colors }: ChartTooltipProps) {
+export function ChartTooltip({
+  active,
+  payload,
+  label,
+  colors,
+}: ChartTooltipProps) {
   if (!active || !payload?.length) return null
 
   return (

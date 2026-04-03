@@ -11,13 +11,15 @@ import {
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params
     const workItemId = parseWorkItemId(id)
     const config = getAzureDevOpsConfig()
-    const item = await fetchWorkItem(config, workItemId, { expandRelations: true })
+    const item = await fetchWorkItem(config, workItemId, {
+      expandRelations: true,
+    })
     const fields = item.fields ?? {}
 
     const systemLinks = Object.entries(item._links ?? {})
@@ -38,8 +40,14 @@ export async function GET(
         }
       })
       .filter(
-        (value): value is { relation: string; name: string | null; comment: string | null; url: string } =>
-          value !== null
+        (
+          value,
+        ): value is {
+          relation: string
+          name: string | null
+          comment: string | null
+          url: string
+        } => value !== null,
       )
 
     return NextResponse.json({
@@ -50,7 +58,9 @@ export async function GET(
       areaPath: toText(fields['System.AreaPath']),
       iterationPath: toText(fields['System.IterationPath']),
       description: toText(fields['System.Description']),
-      acceptanceCriteria: toText(fields['Microsoft.VSTS.Common.AcceptanceCriteria']),
+      acceptanceCriteria: toText(
+        fields['Microsoft.VSTS.Common.AcceptanceCriteria'],
+      ),
       tags: splitTags(fields['System.Tags']),
       links: {
         system: systemLinks,
@@ -61,14 +71,14 @@ export async function GET(
     if (error instanceof AzureDevOpsError) {
       return NextResponse.json(
         { error: error.message, details: error.details },
-        { status: error.status }
+        { status: error.status },
       )
     }
 
     console.error('Error fetching Azure work item:', error)
     return NextResponse.json(
       { error: 'Failed to fetch Azure work item' },
-      { status: 502 }
+      { status: 502 },
     )
   }
 }

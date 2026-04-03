@@ -6,73 +6,37 @@ import { Undo2 } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import { todosApi } from '@/lib/api'
 import { queryKeys } from '@/lib/query-keys'
-import type { Priority, Status, Todo, TodoBoardResponse, UpdateTodoInput } from '@/types/todo'
+import {
+  applyReorderedActiveTodos,
+  createEmptyTodoBoard,
+  findTodoInBoard,
+  placeTodoInBoard,
+  removeTodoFromList,
+  updateTodoInBoard,
+} from '@/lib/todo-board'
+import type {
+  Priority,
+  Status,
+  Todo,
+  TodoBoardResponse,
+  UpdateTodoInput,
+} from '@/types/todo'
 
-function emptyBoard(): TodoBoardResponse {
-  return { active: [], completed: [], deleted: [] }
-}
-
-function removeTodo(todos: Todo[], todoId: string) {
-  return todos.filter((todo) => todo.id !== todoId)
-}
-
-function findTodo(board: TodoBoardResponse | undefined, todoId: string) {
-  if (!board) return undefined
-  return [...board.active, ...board.completed, ...board.deleted].find((todo) => todo.id === todoId)
-}
-
-function updateBoardTodo(
-  board: TodoBoardResponse,
-  todoId: string,
-  updater: (todo: Todo) => Todo
-): TodoBoardResponse {
-  return {
-    active: board.active.map((todo) => (todo.id === todoId ? updater(todo) : todo)),
-    completed: board.completed.map((todo) => (todo.id === todoId ? updater(todo) : todo)),
-    deleted: board.deleted.map((todo) => (todo.id === todoId ? updater(todo) : todo)),
-  }
-}
-
-function insertTodo(todos: Todo[], todo: Todo) {
-  return [todo, ...removeTodo(todos, todo.id)]
-}
-
-function placeTodo(board: TodoBoardResponse, todo: Todo): TodoBoardResponse {
-  const nextBoard = {
-    active: removeTodo(board.active, todo.id),
-    completed: removeTodo(board.completed, todo.id),
-    deleted: removeTodo(board.deleted, todo.id),
-  }
-
-  if (todo.status === 'COMPLETED') {
-    return { ...nextBoard, completed: insertTodo(nextBoard.completed, todo) }
-  }
-
-  if (todo.archived) {
-    return { ...nextBoard, deleted: insertTodo(nextBoard.deleted, todo) }
-  }
-
-  return { ...nextBoard, active: insertTodo(nextBoard.active, todo) }
-}
-
-function sortActiveTodos(todos: Todo[]) {
-  return [...todos].sort((left, right) => {
-    if (left.order !== right.order) return left.order - right.order
-    return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
-  })
-}
-
-function applyReorderedActiveTodos(board: TodoBoardResponse, reorderedTodos: Todo[]) {
-  const orderMap = new Map(reorderedTodos.map((todo, index) => [todo.id, index]))
-
-  return {
-    ...board,
-    active: sortActiveTodos(
-      board.active.map((todo) =>
-        orderMap.has(todo.id) ? { ...todo, order: orderMap.get(todo.id)! } : todo
-      )
-    ),
-  }
+function UndoToastAction({ onUndo }: { onUndo: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={(event) => {
+        event.preventDefault()
+        event.stopPropagation()
+        onUndo()
+      }}
+      className="bg-primary text-primary-foreground ring-offset-background hover:bg-primary/90 focus:ring-ring inline-flex h-8 shrink-0 items-center justify-center rounded-lg px-3 text-sm font-medium transition-all focus:ring-2 focus:ring-offset-2 focus:outline-none active:scale-95"
+    >
+      <Undo2 className="mr-1.5 h-4 w-4" strokeWidth={2} />
+      Undo
+    </button>
+  )
 }
 
 export function useTodos() {
@@ -88,20 +52,33 @@ export function useTodos() {
     (updater: (board: TodoBoardResponse) => TodoBoardResponse) => {
       queryClient.setQueryData<TodoBoardResponse>(
         queryKeys.todoBoard,
-        (current) => updater(current ?? emptyBoard())
+        (current) => updater(current ?? createEmptyTodoBoard()),
       )
     },
-    [queryClient]
+    [queryClient],
+  )
+
+  const restoreBoardSnapshot = React.useCallback(
+    (previousBoard?: TodoBoardResponse) => {
+      if (previousBoard) {
+        queryClient.setQueryData(queryKeys.todoBoard, previousBoard)
+      }
+    },
+    [queryClient],
   )
 
   const create = useMutation({
     mutationFn: todosApi.create,
     onSuccess: (newTodo) => {
-      setBoardData((board) => placeTodo(board, newTodo))
+      setBoardData((board) => placeTodoInBoard(board, newTodo))
       toast({ title: 'Added', description: newTodo.title })
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to create todo.', variant: 'destructive' })
+      toast({
+        title: 'Error',
+        description: 'Failed to create todo.',
+        variant: 'destructive',
+      })
     },
   })
 
@@ -109,22 +86,35 @@ export function useTodos() {
     mutationFn: ({ id, data }: { id: string; data: UpdateTodoInput }) =>
       todosApi.update(id, data),
     onSuccess: (updatedTodo) => {
-      setBoardData((board) => placeTodo(board, updatedTodo))
+      setBoardData((board) => placeTodoInBoard(board, updatedTodo))
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to update todo.', variant: 'destructive' })
+      toast({
+        title: 'Error',
+        description: 'Failed to update todo.',
+        variant: 'destructive',
+      })
     },
   })
 
   const undoComplete = useMutation({
-    mutationFn: ({ id, previousStatus }: { id: string; previousStatus: Status }) =>
-      todosApi.update(id, { status: previousStatus }),
+    mutationFn: ({
+      id,
+      previousStatus,
+    }: {
+      id: string
+      previousStatus: Status
+    }) => todosApi.update(id, { status: previousStatus }),
     onSuccess: (restoredTodo) => {
-      setBoardData((board) => placeTodo(board, restoredTodo))
+      setBoardData((board) => placeTodoInBoard(board, restoredTodo))
       toast({ title: 'Restored' })
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to undo completion.', variant: 'destructive' })
+      toast({
+        title: 'Error',
+        description: 'Failed to undo completion.',
+        variant: 'destructive',
+      })
     },
   })
 
@@ -134,59 +124,61 @@ export function useTodos() {
     onMutate: async ({ id, status }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.todoBoard })
 
-      const previousBoard = queryClient.getQueryData<TodoBoardResponse>(queryKeys.todoBoard)
-      const todo = findTodo(previousBoard, id)
+      const previousBoard = queryClient.getQueryData<TodoBoardResponse>(
+        queryKeys.todoBoard,
+      )
+      const todo = findTodoInBoard(previousBoard, id)
       const previousStatus = todo?.status
       const nextStatusChangedAt = new Date().toISOString()
 
       if (status === 'COMPLETED') {
         setBoardData((board) => ({
           ...board,
-          active: removeTodo(board.active, id),
+          active: removeTodoFromList(board.active, id),
         }))
       } else {
         setBoardData((board) =>
-          updateBoardTodo(board, id, (currentTodo) => ({
+          updateTodoInBoard(board, id, (currentTodo) => ({
             ...currentTodo,
             status,
-            statusChangedAt: currentTodo.status === status ? currentTodo.statusChangedAt : nextStatusChangedAt,
-          }))
+            statusChangedAt:
+              currentTodo.status === status
+                ? currentTodo.statusChangedAt
+                : nextStatusChangedAt,
+          })),
         )
       }
 
       return { previousBoard, previousStatus, title: todo?.title }
     },
     onSuccess: (updatedTodo, { id, status }, context) => {
-      setBoardData((board) => placeTodo(board, updatedTodo))
+      setBoardData((board) => placeTodoInBoard(board, updatedTodo))
 
       if (status === 'COMPLETED' && context?.previousStatus) {
+        const previousStatus = context.previousStatus
+
         toast({
           title: 'Completed',
           description: context.title,
           action: (
-            <button
-              type="button"
-              onClick={(event) => {
-                event.preventDefault()
-                event.stopPropagation()
-                undoComplete.mutate({ id, previousStatus: context.previousStatus! })
+            <UndoToastAction
+              onUndo={() => {
+                undoComplete.mutate({ id, previousStatus })
                 dismiss()
               }}
-              className="inline-flex h-8 shrink-0 items-center justify-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground ring-offset-background transition-all hover:bg-primary/90 active:scale-95 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            >
-              <Undo2 className="h-4 w-4 mr-1.5" strokeWidth={2} />
-              Undo
-            </button>
+            />
           ),
           duration: 5000,
         })
       }
     },
-    onError: (_err, _vars, context) => {
-      if (context?.previousBoard) {
-        queryClient.setQueryData(queryKeys.todoBoard, context.previousBoard)
-      }
-      toast({ title: 'Error', description: 'Failed to update todo.', variant: 'destructive' })
+    onError: (_error, _variables, context) => {
+      restoreBoardSnapshot(context?.previousBoard)
+      toast({
+        title: 'Error',
+        description: 'Failed to update todo.',
+        variant: 'destructive',
+      })
     },
   })
 
@@ -195,66 +187,27 @@ export function useTodos() {
       todosApi.update(id, { priority }),
     onMutate: async ({ id, priority }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.todoBoard })
-      const previousBoard = queryClient.getQueryData<TodoBoardResponse>(queryKeys.todoBoard)
-      setBoardData((board) =>
-        updateBoardTodo(board, id, (todo) => ({ ...todo, priority }))
+
+      const previousBoard = queryClient.getQueryData<TodoBoardResponse>(
+        queryKeys.todoBoard,
       )
-      return { previousBoard }
-    },
-    onSuccess: (updatedTodo) => {
-      setBoardData((board) => placeTodo(board, updatedTodo))
-    },
-    onError: (_err, _vars, context) => {
-      if (context?.previousBoard) {
-        queryClient.setQueryData(queryKeys.todoBoard, context.previousBoard)
-      }
-      toast({ title: 'Error', description: 'Failed to update todo.', variant: 'destructive' })
-    },
-  })
 
-  const archive = useMutation({
-    mutationFn: (id: string) => todosApi.update(id, { archived: true }),
-    onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.todoBoard })
-
-      const previousBoard = queryClient.getQueryData<TodoBoardResponse>(queryKeys.todoBoard)
-      const todoToArchive = previousBoard?.active.find((todo) => todo.id === id)
-
-      if (todoToArchive) {
-        setBoardData((board) => placeTodo(board, { ...todoToArchive, archived: true }))
-
-        toast({
-          title: 'Deleted',
-          description: todoToArchive.title,
-          action: (
-            <button
-              type="button"
-              onClick={(event) => {
-                event.preventDefault()
-                event.stopPropagation()
-                restore.mutate(id)
-                dismiss()
-              }}
-              className="inline-flex h-8 shrink-0 items-center justify-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground ring-offset-background transition-all hover:bg-primary/90 active:scale-95 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            >
-              <Undo2 className="h-4 w-4 mr-1.5" strokeWidth={2} />
-              Undo
-            </button>
-          ),
-          duration: 5000,
-        })
-      }
+      setBoardData((board) =>
+        updateTodoInBoard(board, id, (todo) => ({ ...todo, priority })),
+      )
 
       return { previousBoard }
     },
     onSuccess: (updatedTodo) => {
-      setBoardData((board) => placeTodo(board, updatedTodo))
+      setBoardData((board) => placeTodoInBoard(board, updatedTodo))
     },
-    onError: (_err, _id, context) => {
-      if (context?.previousBoard) {
-        queryClient.setQueryData(queryKeys.todoBoard, context.previousBoard)
-      }
-      toast({ title: 'Error', description: 'Failed to delete todo.', variant: 'destructive' })
+    onError: (_error, _variables, context) => {
+      restoreBoardSnapshot(context?.previousBoard)
+      toast({
+        title: 'Error',
+        description: 'Failed to update todo.',
+        variant: 'destructive',
+      })
     },
   })
 
@@ -263,24 +216,77 @@ export function useTodos() {
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.todoBoard })
 
-      const previousBoard = queryClient.getQueryData<TodoBoardResponse>(queryKeys.todoBoard)
-      const todoToRestore = previousBoard?.deleted.find((todo) => todo.id === id)
+      const previousBoard = queryClient.getQueryData<TodoBoardResponse>(
+        queryKeys.todoBoard,
+      )
+      const todoToRestore = previousBoard?.deleted.find(
+        (todo) => todo.id === id,
+      )
 
       if (todoToRestore) {
-        setBoardData((board) => placeTodo(board, { ...todoToRestore, archived: false }))
+        setBoardData((board) =>
+          placeTodoInBoard(board, { ...todoToRestore, archived: false }),
+        )
       }
 
       return { previousBoard }
     },
     onSuccess: (restoredTodo) => {
-      setBoardData((board) => placeTodo(board, restoredTodo))
+      setBoardData((board) => placeTodoInBoard(board, restoredTodo))
       toast({ title: 'Restored' })
     },
-    onError: (_err, _id, context) => {
-      if (context?.previousBoard) {
-        queryClient.setQueryData(queryKeys.todoBoard, context.previousBoard)
+    onError: (_error, _variables, context) => {
+      restoreBoardSnapshot(context?.previousBoard)
+      toast({
+        title: 'Error',
+        description: 'Failed to restore todo.',
+        variant: 'destructive',
+      })
+    },
+  })
+
+  const archive = useMutation({
+    mutationFn: (id: string) => todosApi.update(id, { archived: true }),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.todoBoard })
+
+      const previousBoard = queryClient.getQueryData<TodoBoardResponse>(
+        queryKeys.todoBoard,
+      )
+      const todoToArchive = previousBoard?.active.find((todo) => todo.id === id)
+
+      if (todoToArchive) {
+        setBoardData((board) =>
+          placeTodoInBoard(board, { ...todoToArchive, archived: true }),
+        )
+
+        toast({
+          title: 'Deleted',
+          description: todoToArchive.title,
+          action: (
+            <UndoToastAction
+              onUndo={() => {
+                restore.mutate(id)
+                dismiss()
+              }}
+            />
+          ),
+          duration: 5000,
+        })
       }
-      toast({ title: 'Error', description: 'Failed to restore todo.', variant: 'destructive' })
+
+      return { previousBoard }
+    },
+    onSuccess: (updatedTodo) => {
+      setBoardData((board) => placeTodoInBoard(board, updatedTodo))
+    },
+    onError: (_error, _variables, context) => {
+      restoreBoardSnapshot(context?.previousBoard)
+      toast({
+        title: 'Error',
+        description: 'Failed to delete todo.',
+        variant: 'destructive',
+      })
     },
   })
 
@@ -288,49 +294,70 @@ export function useTodos() {
     mutationFn: (id: string) => todosApi.delete(id),
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.todoBoard })
-      const previousBoard = queryClient.getQueryData<TodoBoardResponse>(queryKeys.todoBoard)
+
+      const previousBoard = queryClient.getQueryData<TodoBoardResponse>(
+        queryKeys.todoBoard,
+      )
+
       setBoardData((board) => ({
         ...board,
-        completed: removeTodo(board.completed, id),
-        deleted: removeTodo(board.deleted, id),
+        completed: removeTodoFromList(board.completed, id),
+        deleted: removeTodoFromList(board.deleted, id),
       }))
+
       return { previousBoard }
     },
     onSuccess: () => {
       toast({ title: 'Permanently deleted' })
     },
-    onError: (_err, _id, context) => {
-      if (context?.previousBoard) {
-        queryClient.setQueryData(queryKeys.todoBoard, context.previousBoard)
-      }
-      toast({ title: 'Error', description: 'Failed to delete todo.', variant: 'destructive' })
+    onError: (_error, _variables, context) => {
+      restoreBoardSnapshot(context?.previousBoard)
+      toast({
+        title: 'Error',
+        description: 'Failed to delete todo.',
+        variant: 'destructive',
+      })
     },
   })
 
   const toggleSubtask = useMutation({
-    mutationFn: ({ todoId, subtaskId, completed }: { todoId: string; subtaskId: string; completed: boolean }) =>
-      todosApi.toggleSubtask(todoId, subtaskId, completed),
+    mutationFn: ({
+      todoId,
+      subtaskId,
+      completed,
+    }: {
+      todoId: string
+      subtaskId: string
+      completed: boolean
+    }) => todosApi.toggleSubtask(todoId, subtaskId, completed),
     onMutate: async ({ todoId, subtaskId, completed }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.todoBoard })
-      const previousBoard = queryClient.getQueryData<TodoBoardResponse>(queryKeys.todoBoard)
+
+      const previousBoard = queryClient.getQueryData<TodoBoardResponse>(
+        queryKeys.todoBoard,
+      )
+
       setBoardData((board) =>
-        updateBoardTodo(board, todoId, (todo) => ({
+        updateTodoInBoard(board, todoId, (todo) => ({
           ...todo,
           subtasks: todo.subtasks.map((subtask) =>
-            subtask.id === subtaskId ? { ...subtask, completed } : subtask
+            subtask.id === subtaskId ? { ...subtask, completed } : subtask,
           ),
-        }))
+        })),
       )
+
       return { previousBoard }
     },
     onSuccess: (updatedTodo) => {
-      setBoardData((board) => placeTodo(board, updatedTodo))
+      setBoardData((board) => placeTodoInBoard(board, updatedTodo))
     },
-    onError: (_err, _vars, context) => {
-      if (context?.previousBoard) {
-        queryClient.setQueryData(queryKeys.todoBoard, context.previousBoard)
-      }
-      toast({ title: 'Error', description: 'Failed to toggle subtask.', variant: 'destructive' })
+    onError: (_error, _variables, context) => {
+      restoreBoardSnapshot(context?.previousBoard)
+      toast({
+        title: 'Error',
+        description: 'Failed to toggle subtask.',
+        variant: 'destructive',
+      })
     },
   })
 
@@ -339,15 +366,22 @@ export function useTodos() {
       todosApi.reorder(reorderedTodos.map((todo) => todo.id)),
     onMutate: async (reorderedTodos) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.todoBoard })
-      const previousBoard = queryClient.getQueryData<TodoBoardResponse>(queryKeys.todoBoard)
+
+      const previousBoard = queryClient.getQueryData<TodoBoardResponse>(
+        queryKeys.todoBoard,
+      )
+
       setBoardData((board) => applyReorderedActiveTodos(board, reorderedTodos))
+
       return { previousBoard }
     },
-    onError: (_err, _vars, context) => {
-      if (context?.previousBoard) {
-        queryClient.setQueryData(queryKeys.todoBoard, context.previousBoard)
-      }
-      toast({ title: 'Error', description: 'Failed to reorder todos.', variant: 'destructive' })
+    onError: (_error, _variables, context) => {
+      restoreBoardSnapshot(context?.previousBoard)
+      toast({
+        title: 'Error',
+        description: 'Failed to reorder todos.',
+        variant: 'destructive',
+      })
     },
   })
 

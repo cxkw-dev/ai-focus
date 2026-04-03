@@ -53,11 +53,11 @@ function ToolbarButton({
       disabled={disabled}
       title={title}
       className={cn(
-        'p-1 rounded transition-colors',
+        'rounded p-1 transition-colors',
         isActive
           ? 'bg-[color-mix(in_srgb,var(--primary)_20%,transparent)] text-[var(--primary)]'
-          : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[color-mix(in_srgb,var(--text-muted)_10%,transparent)]',
-        disabled && 'opacity-30 cursor-not-allowed'
+          : 'text-[var(--text-muted)] hover:bg-[color-mix(in_srgb,var(--text-muted)_10%,transparent)] hover:text-[var(--text-primary)]',
+        disabled && 'cursor-not-allowed opacity-30',
       )}
     >
       {children}
@@ -85,7 +85,7 @@ export function RichTextEditor({
     () => (mentions ? createMentionSuggestion(peopleRef) : null),
     // Only compute once based on whether mentions is provided
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [!!mentions]
+    [!!mentions],
   )
 
   const editor = useEditor({
@@ -130,9 +130,11 @@ export function RichTextEditor({
       attributes: {
         class: cn(
           'prose prose-sm prose-invert max-w-none focus:outline-none break-words',
-          compact ? 'min-h-[60px] max-h-[120px]' : 'min-h-[100px] max-h-[250px]',
+          compact
+            ? 'min-h-[60px] max-h-[120px]'
+            : 'min-h-[100px] max-h-[250px]',
           fullHeight && 'min-h-full max-h-none h-full',
-          'overflow-y-auto px-3 py-2'
+          'overflow-y-auto px-3 py-2',
         ),
       },
     },
@@ -156,18 +158,18 @@ export function RichTextEditor({
         }
       }
 
-        return {
-          isBold: editorInstance.isActive('bold'),
-          isItalic: editorInstance.isActive('italic'),
-          isStrike: editorInstance.isActive('strike'),
-          isHeading2: editorInstance.isActive('heading', { level: 2 }),
-          isBulletList: editorInstance.isActive('bulletList'),
-          isOrderedList: editorInstance.isActive('orderedList'),
-          isLink: editorInstance.isActive('link'),
-          canUndo: editorInstance.can().undo(),
-          canRedo: editorInstance.can().redo(),
-          isFocused: editorInstance.isFocused,
-        }
+      return {
+        isBold: editorInstance.isActive('bold'),
+        isItalic: editorInstance.isActive('italic'),
+        isStrike: editorInstance.isActive('strike'),
+        isHeading2: editorInstance.isActive('heading', { level: 2 }),
+        isBulletList: editorInstance.isActive('bulletList'),
+        isOrderedList: editorInstance.isActive('orderedList'),
+        isLink: editorInstance.isActive('link'),
+        canUndo: editorInstance.can().undo(),
+        canRedo: editorInstance.can().redo(),
+        isFocused: editorInstance.isFocused,
+      }
     },
   })
 
@@ -192,19 +194,27 @@ export function RichTextEditor({
   return (
     <div
       className={cn(
-        'rounded-md border overflow-hidden transition-colors duration-150',
+        'overflow-hidden rounded-md border transition-colors duration-150',
         fullHeight && 'flex h-full w-full flex-col',
       )}
       style={{
         backgroundColor: 'var(--background)',
-        borderColor: editorState?.isFocused ? 'var(--primary)' : 'var(--border-color)',
+        borderColor: editorState?.isFocused
+          ? 'var(--primary)'
+          : 'var(--border-color)',
         boxShadow: editorState?.isFocused ? '0 0 0 1px var(--primary)' : 'none',
       }}
     >
       {/* Toolbar */}
       <div
-        className="flex items-center gap-0.5 px-2 py-1 border-b flex-wrap transition-colors duration-150"
-        style={{ borderColor: editorState?.isFocused ? 'color-mix(in srgb, var(--primary) 40%, transparent)' : 'var(--border-color)', backgroundColor: 'color-mix(in srgb, var(--surface) 50%, transparent)' }}
+        className="flex flex-wrap items-center gap-0.5 border-b px-2 py-1 transition-colors duration-150"
+        style={{
+          borderColor: editorState?.isFocused
+            ? 'color-mix(in srgb, var(--primary) 40%, transparent)'
+            : 'var(--border-color)',
+          backgroundColor:
+            'color-mix(in srgb, var(--surface) 50%, transparent)',
+        }}
       >
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBold().run()}
@@ -231,10 +241,15 @@ export function RichTextEditor({
           <Strikethrough className="h-3.5 w-3.5" />
         </ToolbarButton>
 
-        <div className="w-px h-4 mx-1" style={{ backgroundColor: 'var(--border-color)' }} />
+        <div
+          className="mx-1 h-4 w-px"
+          style={{ backgroundColor: 'var(--border-color)' }}
+        />
 
         <ToolbarButton
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 2 }).run()
+          }
           isActive={editorState?.isHeading2}
           disabled={disabled}
           title="Heading"
@@ -260,14 +275,21 @@ export function RichTextEditor({
 
         <ToolbarButton
           onClick={() => {
-            const previousUrl = editor.getAttributes('link').href as string | undefined
+            const previousUrl = editor.getAttributes('link').href as
+              | string
+              | undefined
             const url = window.prompt('Enter link URL', previousUrl || '')
             if (url === null) return
             if (url.trim() === '') {
               editor.chain().focus().extendMarkRange('link').unsetLink().run()
               return
             }
-            editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+            editor
+              .chain()
+              .focus()
+              .extendMarkRange('link')
+              .setLink({ href: url })
+              .run()
           }}
           isActive={editorState?.isLink}
           disabled={disabled}
@@ -276,10 +298,15 @@ export function RichTextEditor({
           <LinkIcon className="h-3.5 w-3.5" />
         </ToolbarButton>
 
-        <div className="w-px h-4 mx-1" style={{ backgroundColor: 'var(--border-color)' }} />
+        <div
+          className="mx-1 h-4 w-px"
+          style={{ backgroundColor: 'var(--border-color)' }}
+        />
 
         <ToolbarButton
-          onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()}
+          onClick={() =>
+            editor.chain().focus().unsetAllMarks().clearNodes().run()
+          }
           disabled={disabled}
           title="Clear Formatting"
         >
@@ -302,7 +329,10 @@ export function RichTextEditor({
       </div>
 
       {/* Editor content */}
-      <EditorContent editor={editor} className={cn(fullHeight && 'flex-1 min-h-0 overflow-y-auto')} />
+      <EditorContent
+        editor={editor}
+        className={cn(fullHeight && 'min-h-0 flex-1 overflow-y-auto')}
+      />
     </div>
   )
 }

@@ -12,27 +12,28 @@
 
 ## File Structure
 
-| Action | File | Responsibility |
-|--------|------|----------------|
-| Create | `prisma/schema.prisma` (modify) | Add `StatusUpdate` model |
-| Create | `src/types/todo.ts` (modify) | Add `StatusUpdate` interface |
-| Create | `src/app/api/todos/[id]/updates/route.ts` | GET (list) + POST (create) status updates |
-| Create | `src/app/api/todos/[id]/updates/[updateId]/route.ts` | DELETE single update |
-| Create | `src/lib/api.ts` (modify) | Add `statusUpdatesApi` client |
-| Create | `src/lib/query-keys.ts` (modify) | Add `todoUpdates` key |
-| Create | `src/hooks/use-status-updates.ts` | React Query hook for status updates |
-| Create | `src/components/todos/status-updates-drawer.tsx` | Timeline drawer component |
-| Modify | `src/components/todos/todo-item.tsx` | Add timeline tab + drawer |
-| Modify | `src/app/globals.css` | Add `.todo-timeline-tab` styles |
-| Create | `mcp-server/src/tools/status-updates.ts` | MCP tools: `add_status_update`, `list_status_updates` |
-| Modify | `mcp-server/src/index.ts` | Register status update tools + resources |
-| Modify | `mcp-server/src/types.ts` | Add `StatusUpdateResponse` type |
+| Action | File                                                 | Responsibility                                        |
+| ------ | ---------------------------------------------------- | ----------------------------------------------------- |
+| Create | `prisma/schema.prisma` (modify)                      | Add `StatusUpdate` model                              |
+| Create | `src/types/todo.ts` (modify)                         | Add `StatusUpdate` interface                          |
+| Create | `src/app/api/todos/[id]/updates/route.ts`            | GET (list) + POST (create) status updates             |
+| Create | `src/app/api/todos/[id]/updates/[updateId]/route.ts` | DELETE single update                                  |
+| Create | `src/lib/api.ts` (modify)                            | Add `statusUpdatesApi` client                         |
+| Create | `src/lib/query-keys.ts` (modify)                     | Add `todoUpdates` key                                 |
+| Create | `src/hooks/use-status-updates.ts`                    | React Query hook for status updates                   |
+| Create | `src/components/todos/status-updates-drawer.tsx`     | Timeline drawer component                             |
+| Modify | `src/components/todos/todo-item.tsx`                 | Add timeline tab + drawer                             |
+| Modify | `src/app/globals.css`                                | Add `.todo-timeline-tab` styles                       |
+| Create | `mcp-server/src/tools/status-updates.ts`             | MCP tools: `add_status_update`, `list_status_updates` |
+| Modify | `mcp-server/src/index.ts`                            | Register status update tools + resources              |
+| Modify | `mcp-server/src/types.ts`                            | Add `StatusUpdateResponse` type                       |
 
 ---
 
 ### Task 1: Database — Add StatusUpdate model
 
 **Files:**
+
 - Modify: `prisma/schema.prisma`
 
 - [ ] **Step 1: Add StatusUpdate model to schema**
@@ -81,6 +82,7 @@ git commit -m "add status update model to schema"
 ### Task 2: TypeScript types
 
 **Files:**
+
 - Modify: `src/types/todo.ts`
 - Modify: `mcp-server/src/types.ts`
 
@@ -104,11 +106,11 @@ In `mcp-server/src/types.ts`, add:
 
 ```typescript
 export interface StatusUpdateResponse {
-  id: string;
-  content: string;
-  status: string | null;
-  todoId: string;
-  createdAt: string;
+  id: string
+  content: string
+  status: string | null
+  todoId: string
+  createdAt: string
 }
 ```
 
@@ -124,6 +126,7 @@ git commit -m "add status update types"
 ### Task 3: API routes — GET + POST + DELETE
 
 **Files:**
+
 - Create: `src/app/api/todos/[id]/updates/route.ts`
 - Create: `src/app/api/todos/[id]/updates/[updateId]/route.ts`
 
@@ -139,12 +142,21 @@ import { emit } from '@/lib/events'
 
 const createSchema = z.object({
   content: z.string().min(1).max(5000),
-  status: z.enum(['TODO', 'IN_PROGRESS', 'WAITING', 'UNDER_REVIEW', 'ON_HOLD', 'COMPLETED']).optional(),
+  status: z
+    .enum([
+      'TODO',
+      'IN_PROGRESS',
+      'WAITING',
+      'UNDER_REVIEW',
+      'ON_HOLD',
+      'COMPLETED',
+    ])
+    .optional(),
 })
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params
   const updates = await db.statusUpdate.findMany({
@@ -156,7 +168,7 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params
   const body = await request.json()
@@ -185,7 +197,7 @@ import { emit } from '@/lib/events'
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string; updateId: string }> }
+  { params }: { params: Promise<{ id: string; updateId: string }> },
 ) {
   const { id, updateId } = await params
   await db.statusUpdate.delete({
@@ -199,6 +211,7 @@ export async function DELETE(
 - [ ] **Step 3: Verify API works**
 
 Start dev server if not running. Test with curl:
+
 ```bash
 # Create an update (use a real todo ID from your DB)
 curl -X POST http://localhost:4444/api/todos/<todoId>/updates \
@@ -208,6 +221,7 @@ curl -X POST http://localhost:4444/api/todos/<todoId>/updates \
 # List updates
 curl http://localhost:4444/api/todos/<todoId>/updates
 ```
+
 Expected: 201 created, then array with the update.
 
 - [ ] **Step 4: Commit**
@@ -222,6 +236,7 @@ git commit -m "add status updates api routes"
 ### Task 4: API client + query keys
 
 **Files:**
+
 - Modify: `src/lib/api.ts`
 - Modify: `src/lib/query-keys.ts`
 
@@ -238,17 +253,22 @@ Add after `todoContactsApi`:
 ```typescript
 export const statusUpdatesApi = {
   list: (todoId: string): Promise<StatusUpdate[]> =>
-    fetch(`/api/todos/${todoId}/updates`).then(r => json(r)),
+    fetch(`/api/todos/${todoId}/updates`).then((r) => json(r)),
 
-  create: (todoId: string, data: { content: string; status?: string }): Promise<StatusUpdate> =>
+  create: (
+    todoId: string,
+    data: { content: string; status?: string },
+  ): Promise<StatusUpdate> =>
     fetch(`/api/todos/${todoId}/updates`, {
       method: 'POST',
       headers,
       body: JSON.stringify(data),
-    }).then(r => json(r)),
+    }).then((r) => json(r)),
 
   remove: (todoId: string, updateId: string): Promise<{ success: boolean }> =>
-    fetch(`/api/todos/${todoId}/updates/${updateId}`, { method: 'DELETE' }).then(r => json(r)),
+    fetch(`/api/todos/${todoId}/updates/${updateId}`, {
+      method: 'DELETE',
+    }).then((r) => json(r)),
 }
 ```
 
@@ -272,6 +292,7 @@ git commit -m "add status updates api client and query keys"
 ### Task 5: React Query hook
 
 **Files:**
+
 - Create: `src/hooks/use-status-updates.ts`
 
 - [ ] **Step 1: Create the hook**
@@ -303,25 +324,32 @@ export function useStatusUpdates(todoId: string, enabled = true) {
     onSuccess: (newUpdate) => {
       queryClient.setQueryData<StatusUpdate[]>(
         queryKeys.todoUpdates(todoId),
-        (prev = []) => [newUpdate, ...prev]
+        (prev = []) => [newUpdate, ...prev],
       )
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to add update.', variant: 'destructive' })
+      toast({
+        title: 'Error',
+        description: 'Failed to add update.',
+        variant: 'destructive',
+      })
     },
   })
 
   const remove = useMutation({
-    mutationFn: (updateId: string) =>
-      statusUpdatesApi.remove(todoId, updateId),
+    mutationFn: (updateId: string) => statusUpdatesApi.remove(todoId, updateId),
     onSuccess: (_data, updateId) => {
       queryClient.setQueryData<StatusUpdate[]>(
         queryKeys.todoUpdates(todoId),
-        (prev = []) => prev.filter(u => u.id !== updateId)
+        (prev = []) => prev.filter((u) => u.id !== updateId),
       )
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to remove update.', variant: 'destructive' })
+      toast({
+        title: 'Error',
+        description: 'Failed to remove update.',
+        variant: 'destructive',
+      })
     },
   })
 
@@ -346,6 +374,7 @@ git commit -m "add use-status-updates react query hook"
 ### Task 6: Timeline drawer component
 
 **Files:**
+
 - Create: `src/components/todos/status-updates-drawer.tsx`
 
 - [ ] **Step 1: Create the drawer**
@@ -588,6 +617,7 @@ git commit -m "add status updates timeline drawer component"
 ### Task 7: Integrate drawer into TodoItem
 
 **Files:**
+
 - Modify: `src/components/todos/todo-item.tsx`
 - Modify: `src/app/globals.css`
 
@@ -681,6 +711,7 @@ git commit -m "integrate timeline drawer into todo cards"
 ### Task 8: SSE integration for real-time sync
 
 **Files:**
+
 - Modify: `src/hooks/use-sse.ts`
 
 - [ ] **Step 1: Add todoUpdates to SSE handler**
@@ -690,9 +721,10 @@ Read `src/hooks/use-sse.ts` and add `todoUpdates` to the entity invalidation map
 The SSE hook likely has an entity→queryKey map. Add:
 
 ```typescript
-todoUpdates: (payload) => queryClient.invalidateQueries({
-  queryKey: ['todo-updates', payload?.todoId]
-})
+todoUpdates: (payload) =>
+  queryClient.invalidateQueries({
+    queryKey: ['todo-updates', payload?.todoId],
+  })
 ```
 
 (Adapt to match the existing pattern in the file.)
@@ -709,6 +741,7 @@ git commit -m "add sse invalidation for status updates"
 ### Task 9: MCP server — tools + resources
 
 **Files:**
+
 - Create: `mcp-server/src/tools/status-updates.ts`
 - Modify: `mcp-server/src/index.ts`
 
@@ -717,22 +750,22 @@ git commit -m "add sse invalidation for status updates"
 Create `mcp-server/src/tools/status-updates.ts`:
 
 ```typescript
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
-import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { z } from 'zod'
+import { ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js'
 import {
   apiFetch,
   textResult,
   isApiError,
   toHtml,
   resolveTodoId,
-} from "../helpers.js";
-import type { StatusUpdateResponse } from "../types.js";
+} from '../helpers.js'
+import type { StatusUpdateResponse } from '../types.js'
 
 export function registerStatusUpdateTools(server: McpServer) {
   // --- Tool: add a status update to a todo's timeline ---
   server.tool(
-    "add_status_update",
+    'add_status_update',
     `Add a status update to a todo's timeline. Use this to log progress, blockers, decisions, or any notable event for a task.
 
 This is the PREFERRED way to record progress on a task — do NOT append status updates to the todo description. The timeline is purpose-built for chronological updates.
@@ -742,113 +775,153 @@ Examples:
 - "Blocked on PR review from platform team"
 - "Deployed to staging, running smoke tests"`,
     {
-      taskNumber: z.number().int().positive().optional().describe("The task number (e.g. 7)"),
-      id: z.string().optional().describe("The todo cuid (use taskNumber instead when possible)"),
+      taskNumber: z
+        .number()
+        .int()
+        .positive()
+        .optional()
+        .describe('The task number (e.g. 7)'),
+      id: z
+        .string()
+        .optional()
+        .describe('The todo cuid (use taskNumber instead when possible)'),
       content: z
         .string()
         .min(1)
         .max(5000)
-        .describe("The update text — what happened, what's the current state, any blockers"),
+        .describe(
+          "The update text — what happened, what's the current state, any blockers",
+        ),
       status: z
-        .enum(["TODO", "IN_PROGRESS", "WAITING", "UNDER_REVIEW", "ON_HOLD", "COMPLETED"])
+        .enum([
+          'TODO',
+          'IN_PROGRESS',
+          'WAITING',
+          'UNDER_REVIEW',
+          'ON_HOLD',
+          'COMPLETED',
+        ])
         .optional()
-        .describe("Optionally set the todo's status at the same time as adding this update"),
+        .describe(
+          "Optionally set the todo's status at the same time as adding this update",
+        ),
     },
     async ({ taskNumber, id, content, status }) => {
-      const resolved = await resolveTodoId({ taskNumber, id });
-      if ("error" in resolved) return resolved.error;
+      const resolved = await resolveTodoId({ taskNumber, id })
+      if ('error' in resolved) return resolved.error
 
       // If status change requested, update the todo first
       if (status) {
-        const key = taskNumber?.toString() ?? resolved.resolvedId;
+        const key = taskNumber?.toString() ?? resolved.resolvedId
         const todoUpdate = await apiFetch(`/api/todos/${key}`, {
-          method: "PATCH",
+          method: 'PATCH',
           body: JSON.stringify({ status }),
-        });
-        if (isApiError(todoUpdate)) return textResult(todoUpdate);
+        })
+        if (isApiError(todoUpdate)) return textResult(todoUpdate)
       }
 
       const data = await apiFetch(`/api/todos/${resolved.resolvedId}/updates`, {
-        method: "POST",
+        method: 'POST',
         body: JSON.stringify({ content, status: status ?? undefined }),
-      });
-      return textResult(data);
-    }
-  );
+      })
+      return textResult(data)
+    },
+  )
 
   // --- Tool: list status updates ---
   server.tool(
-    "list_status_updates",
-    "List all status updates for a todo, newest first. Use this to review the history/timeline of a task.",
+    'list_status_updates',
+    'List all status updates for a todo, newest first. Use this to review the history/timeline of a task.',
     {
-      taskNumber: z.number().int().positive().optional().describe("The task number (e.g. 7)"),
-      id: z.string().optional().describe("The todo cuid (use taskNumber instead when possible)"),
+      taskNumber: z
+        .number()
+        .int()
+        .positive()
+        .optional()
+        .describe('The task number (e.g. 7)'),
+      id: z
+        .string()
+        .optional()
+        .describe('The todo cuid (use taskNumber instead when possible)'),
     },
     async ({ taskNumber, id }) => {
-      const resolved = await resolveTodoId({ taskNumber, id });
-      if ("error" in resolved) return resolved.error;
+      const resolved = await resolveTodoId({ taskNumber, id })
+      if ('error' in resolved) return resolved.error
 
-      const data = await apiFetch(`/api/todos/${resolved.resolvedId}/updates`);
-      if (isApiError(data)) return textResult(data);
+      const data = await apiFetch(`/api/todos/${resolved.resolvedId}/updates`)
+      if (isApiError(data)) return textResult(data)
 
-      const updates = data as StatusUpdateResponse[];
-      if (updates.length === 0) return textResult("No status updates yet.");
+      const updates = data as StatusUpdateResponse[]
+      if (updates.length === 0) return textResult('No status updates yet.')
 
       const formatted = updates
         .map((u) => {
-          const date = new Date(u.createdAt).toLocaleString("en-US", {
-            month: "short",
-            day: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-          });
-          const statusTag = u.status ? ` [${u.status}]` : "";
-          return `${date}${statusTag}: ${u.content}`;
+          const date = new Date(u.createdAt).toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+          })
+          const statusTag = u.status ? ` [${u.status}]` : ''
+          return `${date}${statusTag}: ${u.content}`
         })
-        .join("\n");
-      return { content: [{ type: "text" as const, text: formatted }] };
-    }
-  );
+        .join('\n')
+      return { content: [{ type: 'text' as const, text: formatted }] }
+    },
+  )
 
   // --- Resource: todo timeline (so LLMs can read timeline data via resource URI) ---
   server.resource(
-    "todo-updates",
-    new ResourceTemplate("todo-updates://{todoId}", { list: undefined }),
+    'todo-updates',
+    new ResourceTemplate('todo-updates://{todoId}', { list: undefined }),
     {
-      description: "Timeline of status updates for a todo. Provides chronological progress history.",
-      mimeType: "text/plain",
+      description:
+        'Timeline of status updates for a todo. Provides chronological progress history.',
+      mimeType: 'text/plain',
     },
     async (uri, variables) => {
-      const todoId = variables.todoId as string;
-      const data = await apiFetch(`/api/todos/${todoId}/updates`);
+      const todoId = variables.todoId as string
+      const data = await apiFetch(`/api/todos/${todoId}/updates`)
       if (isApiError(data)) {
         return {
-          contents: [{ uri: uri.href, mimeType: "text/plain", text: `Error: ${(data as { message: string }).message}` }],
-        };
+          contents: [
+            {
+              uri: uri.href,
+              mimeType: 'text/plain',
+              text: `Error: ${(data as { message: string }).message}`,
+            },
+          ],
+        }
       }
-      const updates = data as StatusUpdateResponse[];
+      const updates = data as StatusUpdateResponse[]
       if (updates.length === 0) {
         return {
-          contents: [{ uri: uri.href, mimeType: "text/plain", text: "No status updates yet." }],
-        };
+          contents: [
+            {
+              uri: uri.href,
+              mimeType: 'text/plain',
+              text: 'No status updates yet.',
+            },
+          ],
+        }
       }
       const text = updates
         .map((u) => {
-          const date = new Date(u.createdAt).toLocaleString("en-US", {
-            month: "short",
-            day: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-          });
-          const statusTag = u.status ? ` [${u.status}]` : "";
-          return `${date}${statusTag}: ${u.content}`;
+          const date = new Date(u.createdAt).toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+          })
+          const statusTag = u.status ? ` [${u.status}]` : ''
+          return `${date}${statusTag}: ${u.content}`
         })
-        .join("\n");
+        .join('\n')
       return {
-        contents: [{ uri: uri.href, mimeType: "text/plain", text }],
-      };
-    }
-  );
+        contents: [{ uri: uri.href, mimeType: 'text/plain', text }],
+      }
+    },
+  )
 }
 ```
 
@@ -857,13 +930,13 @@ Examples:
 In `mcp-server/src/index.ts`, add import:
 
 ```typescript
-import { registerStatusUpdateTools } from "./tools/status-updates.js";
+import { registerStatusUpdateTools } from './tools/status-updates.js'
 ```
 
 Add registration call after `registerStatsTools(server);`:
 
 ```typescript
-registerStatusUpdateTools(server);
+registerStatusUpdateTools(server)
 ```
 
 - [ ] **Step 3: Build MCP server**
@@ -883,6 +956,7 @@ git commit -m "add mcp tools and resource for status updates"
 ### Task 10: Update MCP update_todo to guide agents toward timeline
 
 **Files:**
+
 - Modify: `mcp-server/src/tools/todos.ts`
 
 - [ ] **Step 1: Update update_todo description**
@@ -924,6 +998,7 @@ git commit -m "update mcp update_todo to guide agents toward timeline"
 - [ ] **Step 1: Open the app in browser**
 
 Navigate to the todos page. Verify:
+
 - Each active todo card has two side tabs (Users + Clock icons)
 - Clicking Clock opens the timeline drawer (280px, slides from right)
 - The drawer shows "No updates yet." for cards without updates
@@ -936,6 +1011,7 @@ Navigate to the todos page. Verify:
 - [ ] **Step 2: Test MCP tools**
 
 Test the MCP server tools work by using them from a Claude/Codex session:
+
 - `add_status_update` with a taskNumber and content
 - `list_status_updates` for that same task
 - Verify the update appears in the UI timeline immediately (SSE)

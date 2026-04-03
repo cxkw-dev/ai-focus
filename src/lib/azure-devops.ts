@@ -74,7 +74,7 @@ export function getAzureDevOpsConfig(orgOverride?: string): AzureDevOpsConfig {
   if (!org) {
     throw new AzureDevOpsError(
       'AZURE_DEVOPS_ORG not configured (required for workItemId-based Azure MCP tools)',
-      500
+      500,
     )
   }
 
@@ -97,12 +97,15 @@ export function parseWorkItemId(value: string): number {
 export async function fetchAzureJson<T>(
   config: AzureDevOpsConfig,
   pathOrUrl: string,
-  options?: AzureFetchOptions
+  options?: AzureFetchOptions,
 ): Promise<T> {
   const url = buildAzureUrl(config.org, pathOrUrl)
 
   if (!url.searchParams.has('api-version')) {
-    url.searchParams.set('api-version', options?.apiVersion ?? DEFAULT_AZURE_API_VERSION)
+    url.searchParams.set(
+      'api-version',
+      options?.apiVersion ?? DEFAULT_AZURE_API_VERSION,
+    )
   }
 
   const searchParams = options?.searchParams ?? {}
@@ -125,7 +128,7 @@ export async function fetchAzureJson<T>(
     throw new AzureDevOpsError(
       'Failed to connect to Azure DevOps API',
       502,
-      String(error)
+      String(error),
     )
   }
 
@@ -134,17 +137,17 @@ export async function fetchAzureJson<T>(
     throw new AzureDevOpsError(
       `Azure DevOps API error: ${response.status}`,
       mapAzureStatus(response.status),
-      body
+      body,
     )
   }
 
   try {
-    return await response.json() as T
+    return (await response.json()) as T
   } catch (error) {
     throw new AzureDevOpsError(
       'Azure DevOps API returned invalid JSON',
       502,
-      String(error)
+      String(error),
     )
   }
 }
@@ -152,7 +155,7 @@ export async function fetchAzureJson<T>(
 export async function fetchWorkItem(
   config: AzureDevOpsConfig,
   workItemId: number,
-  options?: { fields?: string[]; expandRelations?: boolean }
+  options?: { fields?: string[]; expandRelations?: boolean },
 ): Promise<AzureWorkItem> {
   return fetchAzureJson<AzureWorkItem>(
     config,
@@ -160,15 +163,15 @@ export async function fetchWorkItem(
     {
       searchParams: {
         fields: options?.fields?.length ? options.fields.join(',') : undefined,
-        '$expand': options?.expandRelations ? 'relations' : undefined,
+        $expand: options?.expandRelations ? 'relations' : undefined,
       },
-    }
+    },
   )
 }
 
 export async function fetchWorkItemSummaries(
   config: AzureDevOpsConfig,
-  ids: number[]
+  ids: number[],
 ): Promise<Map<number, AzureWorkItemSummary>> {
   if (ids.length === 0) return new Map()
 
@@ -179,16 +182,12 @@ export async function fetchWorkItemSummaries(
       url?: string
       fields?: Record<string, unknown>
     }>
-  }>(
-    config,
-    '/_apis/wit/workitems',
-    {
-      searchParams: {
-        ids: dedupedIds.join(','),
-        fields: ['System.Title', 'System.State', 'System.WorkItemType'].join(','),
-      },
-    }
-  )
+  }>(config, '/_apis/wit/workitems', {
+    searchParams: {
+      ids: dedupedIds.join(','),
+      fields: ['System.Title', 'System.State', 'System.WorkItemType'].join(','),
+    },
+  })
 
   const map = new Map<number, AzureWorkItemSummary>()
   for (const item of data.value ?? []) {
@@ -210,7 +209,8 @@ export function getWorkItemTeamProject(workItem: AzureWorkItem): string | null {
 
 export function toText(value: unknown): string | null {
   if (typeof value === 'string') return value
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  if (typeof value === 'number' || typeof value === 'boolean')
+    return String(value)
   return null
 }
 
@@ -238,7 +238,9 @@ export function splitTags(value: unknown): string[] {
     .filter(Boolean)
 }
 
-export function extractWorkItemIdFromRelationUrl(url: string | undefined): number | null {
+export function extractWorkItemIdFromRelationUrl(
+  url: string | undefined,
+): number | null {
   if (!url) return null
   const match = url.match(/\/workitems\/(\d+)(?:[/?#]|$)/i)
   if (!match) return null
@@ -248,10 +250,14 @@ export function extractWorkItemIdFromRelationUrl(url: string | undefined): numbe
   return parsed
 }
 
-export function parsePullRequestRef(relationUrl: string | undefined): AzurePullRequestRef | null {
+export function parsePullRequestRef(
+  relationUrl: string | undefined,
+): AzurePullRequestRef | null {
   if (!relationUrl) return null
 
-  const directMatch = relationUrl.match(/\/_apis\/git\/repositories\/([^/]+)\/pullRequests\/(\d+)/i)
+  const directMatch = relationUrl.match(
+    /\/_apis\/git\/repositories\/([^/]+)\/pullRequests\/(\d+)/i,
+  )
   if (directMatch) {
     const pullRequestId = Number.parseInt(directMatch[2], 10)
     if (!Number.isInteger(pullRequestId) || pullRequestId <= 0) return null
@@ -264,7 +270,9 @@ export function parsePullRequestRef(relationUrl: string | undefined): AzurePullR
     }
   }
 
-  const artifactMatch = relationUrl.match(/^vstfs:\/\/\/Git\/PullRequestId\/(.+)$/i)
+  const artifactMatch = relationUrl.match(
+    /^vstfs:\/\/\/Git\/PullRequestId\/(.+)$/i,
+  )
   if (!artifactMatch) return null
 
   const decoded = decodeURIComponent(artifactMatch[1])
@@ -273,7 +281,8 @@ export function parsePullRequestRef(relationUrl: string | undefined): AzurePullR
 
   const repoId = parts[1]
   const pullRequestId = Number.parseInt(parts[2], 10)
-  if (!repoId || !Number.isInteger(pullRequestId) || pullRequestId <= 0) return null
+  if (!repoId || !Number.isInteger(pullRequestId) || pullRequestId <= 0)
+    return null
 
   return {
     repoId,
@@ -283,10 +292,14 @@ export function parsePullRequestRef(relationUrl: string | undefined): AzurePullR
   }
 }
 
-export function parseCommitRef(relationUrl: string | undefined): AzureCommitRef | null {
+export function parseCommitRef(
+  relationUrl: string | undefined,
+): AzureCommitRef | null {
   if (!relationUrl) return null
 
-  const directMatch = relationUrl.match(/\/_apis\/git\/repositories\/([^/]+)\/commits\/([^/?#]+)/i)
+  const directMatch = relationUrl.match(
+    /\/_apis\/git\/repositories\/([^/]+)\/commits\/([^/?#]+)/i,
+  )
   if (directMatch) {
     return {
       repoId: decodeURIComponent(directMatch[1]),
@@ -325,7 +338,9 @@ function buildAzureUrl(org: string, pathOrUrl: string): URL {
   }
 
   const normalizedPath = pathOrUrl.startsWith('/') ? pathOrUrl : `/${pathOrUrl}`
-  return new URL(`https://dev.azure.com/${encodeURIComponent(org)}${normalizedPath}`)
+  return new URL(
+    `https://dev.azure.com/${encodeURIComponent(org)}${normalizedPath}`,
+  )
 }
 
 function mapAzureStatus(status: number): number {

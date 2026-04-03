@@ -12,7 +12,11 @@ const HeaderActionsContext = React.createContext<HeaderActionsContextValue>({
   setActions: () => {},
 })
 
-export function HeaderActionsProvider({ children }: { children: React.ReactNode }) {
+export function HeaderActionsProvider({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   const [actions, setActions] = React.useState<React.ReactNode>(null)
   const value = React.useMemo(() => ({ actions, setActions }), [actions])
   return (

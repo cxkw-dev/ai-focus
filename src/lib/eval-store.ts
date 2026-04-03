@@ -60,7 +60,9 @@ export function pushEvalEntry(payload: {
 
 function subscribe(callback: () => void) {
   listeners.add(callback)
-  return () => { listeners.delete(callback) }
+  return () => {
+    listeners.delete(callback)
+  }
 }
 
 function getSnapshot() {

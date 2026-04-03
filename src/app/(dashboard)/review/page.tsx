@@ -18,28 +18,42 @@ export default function ReviewPage() {
   const { accomplishments, create, update, remove } = useAccomplishments(year)
   const colors = useChartColors()
 
-  const hasData = stats && (stats.summary.totalCreated > 0 || (stats.accomplishments?.total ?? 0) > 0 || accomplishments.length > 0)
+  const hasData =
+    stats &&
+    (stats.summary.totalCreated > 0 ||
+      (stats.accomplishments?.total ?? 0) > 0 ||
+      accomplishments.length > 0)
 
   return (
-    <div className="flex flex-col gap-4 sm:gap-6 pb-8">
+    <div className="flex flex-col gap-4 pb-8 sm:gap-6">
       <div
         className="rounded-2xl border px-4 py-5 sm:px-6 sm:py-6"
-        style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-color)' }}
+        style={{
+          backgroundColor: 'var(--surface)',
+          borderColor: 'var(--border-color)',
+        }}
       >
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-2">
             <p
-              className="text-xs font-semibold uppercase tracking-[0.24em]"
+              className="text-xs font-semibold tracking-[0.24em] uppercase"
               style={{ color: 'var(--text-muted)' }}
             >
               Year in Review
             </p>
             <div>
-              <h1 className="text-2xl font-semibold sm:text-3xl" style={{ color: 'var(--text-primary)' }}>
+              <h1
+                className="text-2xl font-semibold sm:text-3xl"
+                style={{ color: 'var(--text-primary)' }}
+              >
                 {year} at a glance
               </h1>
-              <p className="mt-1 text-sm sm:text-base" style={{ color: 'var(--text-muted)' }}>
-                Scan the charts first, then dive into the accomplishment timeline below.
+              <p
+                className="mt-1 text-sm sm:text-base"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                Scan the charts first, then dive into the accomplishment
+                timeline below.
               </p>
             </div>
           </div>
@@ -49,7 +63,7 @@ export default function ReviewPage() {
               <select
                 value={year}
                 onChange={(e) => setYear(Number(e.target.value))}
-                className="appearance-none rounded-lg border px-4 py-2 pr-9 text-sm font-medium focus:outline-none focus:ring-2"
+                className="appearance-none rounded-lg border px-4 py-2 pr-9 text-sm font-medium focus:ring-2 focus:outline-none"
                 style={{
                   backgroundColor: 'var(--surface-2)',
                   borderColor: 'var(--border-color)',
@@ -57,25 +71,29 @@ export default function ReviewPage() {
                   ['--tw-ring-color' as string]: 'var(--primary)',
                 }}
               >
-                {yearOptions.map(y => (
-                  <option key={y} value={y}>{y}</option>
+                {yearOptions.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
                 ))}
               </select>
               <ChevronDown
-                className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2"
+                className="pointer-events-none absolute top-1/2 right-2.5 h-4 w-4 -translate-y-1/2"
                 style={{ color: 'var(--text-muted)' }}
               />
             </div>
           </div>
         </div>
-
       </div>
 
       {isLoading && (
         <div className="flex items-center justify-center py-20">
           <div
             className="h-6 w-6 animate-spin rounded-full border-2 border-t-transparent"
-            style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }}
+            style={{
+              borderColor: 'var(--primary)',
+              borderTopColor: 'transparent',
+            }}
           />
         </div>
       )}
@@ -83,9 +101,15 @@ export default function ReviewPage() {
       {stats && !hasData && !isLoading && (
         <div
           className="rounded-xl border p-12 text-center"
-          style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-color)' }}
+          style={{
+            backgroundColor: 'var(--surface)',
+            borderColor: 'var(--border-color)',
+          }}
         >
-          <p className="text-lg font-medium" style={{ color: 'var(--text-primary)' }}>
+          <p
+            className="text-lg font-medium"
+            style={{ color: 'var(--text-primary)' }}
+          >
             No data found for {year}
           </p>
           <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>

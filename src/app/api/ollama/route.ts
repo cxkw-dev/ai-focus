@@ -10,11 +10,17 @@ export async function GET() {
     })
 
     if (!res.ok) {
-      return NextResponse.json({ connected: false, model: OLLAMA_MODEL, url: OLLAMA_URL })
+      return NextResponse.json({
+        connected: false,
+        model: OLLAMA_MODEL,
+        url: OLLAMA_URL,
+      })
     }
 
     const data = (await res.json()) as { models?: { name: string }[] }
-    const modelLoaded = data.models?.some((m) => m.name.startsWith(OLLAMA_MODEL.split(':')[0])) ?? false
+    const modelLoaded =
+      data.models?.some((m) => m.name.startsWith(OLLAMA_MODEL.split(':')[0])) ??
+      false
 
     return NextResponse.json({
       connected: true,
@@ -23,6 +29,10 @@ export async function GET() {
       modelLoaded,
     })
   } catch {
-    return NextResponse.json({ connected: false, model: OLLAMA_MODEL, url: OLLAMA_URL })
+    return NextResponse.json({
+      connected: false,
+      model: OLLAMA_MODEL,
+      url: OLLAMA_URL,
+    })
   }
 }

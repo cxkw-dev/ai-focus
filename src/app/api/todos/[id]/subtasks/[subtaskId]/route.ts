@@ -1,26 +1,24 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
 import { todoInclude, todoWhere } from '@/lib/todo-queries'
-import { z } from 'zod'
-
-const toggleSchema = z.object({
-  completed: z.boolean(),
-})
-
-function isNotFoundError(error: unknown) {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025'
-}
+import {
+  internalError,
+  notFound,
+  ok,
+  parseJsonBody,
+  validationError,
+} from '@/lib/server/api-responses'
+import { isPrismaErrorCode } from '@/lib/server/prisma-errors'
+import { toggleSubtaskSchema } from '@/lib/validation/todo'
+import { ZodError } from 'zod'
 
 export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string; subtaskId: string }> }
+  request: Request,
+  { params }: { params: Promise<{ id: string; subtaskId: string }> },
 ) {
   try {
     const { id, subtaskId } = await params
-    const body = await request.json()
-    const { completed } = toggleSchema.parse(body)
+    const { completed } = await parseJsonBody(request, toggleSubtaskSchema)
 
     const todo = await db.todo.findUnique({
       where: todoWhere(id),
@@ -28,10 +26,7 @@ export async function PATCH(
     })
 
     if (!todo) {
-      return NextResponse.json(
-        { error: 'Todo not found' },
-        { status: 404 }
-      )
+      return notFound('Todo not found')
     }
 
     const updated = await db.subtask.updateMany({
@@ -43,39 +38,29 @@ export async function PATCH(
     })
 
     if (updated.count === 0) {
-      return NextResponse.json(
-        { error: 'Subtask not found for this todo' },
-        { status: 404 }
-      )
+      return notFound('Subtask not found for this todo')
     }
 
-    // Return the full parent todo for cache update
     const updatedTodo = await db.todo.findUniqueOrThrow({
       where: { id: todo.id },
       include: todoInclude,
     })
 
     emit('todos')
-    return NextResponse.json(updatedTodo)
+    return ok(updatedTodo)
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.issues },
-        { status: 400 }
-      )
+    if (error instanceof ZodError) {
+      return validationError(error)
     }
 
-    if (isNotFoundError(error)) {
-      return NextResponse.json(
-        { error: 'Todo not found' },
-        { status: 404 }
-      )
+    if (isPrismaErrorCode(error, 'P2025')) {
+      return notFound('Todo not found')
     }
 
-    console.error('Error toggling subtask:', error)
-    return NextResponse.json(
-      { error: 'Failed to toggle subtask' },
-      { status: 500 }
+    return internalError(
+      'Failed to toggle subtask',
+      error,
+      'Error toggling subtask',
     )
   }
 }

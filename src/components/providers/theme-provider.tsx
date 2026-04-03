@@ -1,8 +1,17 @@
 'use client'
 
 import * as React from 'react'
-import { ThemeProvider as NextThemesProvider, type ThemeProviderProps } from 'next-themes'
-import { themes, defaultTheme, getThemeById, applyTheme, type Theme } from '@/lib/themes'
+import {
+  ThemeProvider as NextThemesProvider,
+  type ThemeProviderProps,
+} from 'next-themes'
+import {
+  themes,
+  defaultTheme,
+  getThemeById,
+  applyTheme,
+  type Theme,
+} from '@/lib/themes'
 
 const THEME_STORAGE_KEY = 'ai-focus-theme'
 
@@ -12,7 +21,9 @@ interface AppThemeContextType {
   themes: Theme[]
 }
 
-const AppThemeContext = React.createContext<AppThemeContextType | undefined>(undefined)
+const AppThemeContext = React.createContext<AppThemeContextType | undefined>(
+  undefined,
+)
 
 export function useAppTheme() {
   const context = React.useContext(AppThemeContext)
@@ -60,9 +71,7 @@ function AppThemeProvider({ children }: { children: React.ReactNode }) {
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   return (
     <NextThemesProvider {...props}>
-      <AppThemeProvider>
-        {children}
-      </AppThemeProvider>
+      <AppThemeProvider>{children}</AppThemeProvider>
     </NextThemesProvider>
   )
 }

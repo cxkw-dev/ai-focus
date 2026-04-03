@@ -7,18 +7,19 @@ import { NoteEditor } from '@/components/notes/note-editor'
 import { useNotebook } from '@/hooks/use-notebook'
 
 export default function NotesPage() {
-  const { notes, isLoading, create, update, saveContent, remove } = useNotebook()
+  const { notes, isLoading, create, update, saveContent, remove } =
+    useNotebook()
   const [selectedId, setSelectedId] = React.useState<string | null>(null)
   const [mobileShowEditor, setMobileShowEditor] = React.useState(false)
 
   const selectedNote = React.useMemo(
-    () => notes.find(n => n.id === selectedId) ?? null,
-    [notes, selectedId]
+    () => notes.find((n) => n.id === selectedId) ?? null,
+    [notes, selectedId],
   )
 
   // Clear selection if note was deleted
   React.useEffect(() => {
-    if (selectedId && !notes.find(n => n.id === selectedId)) {
+    if (selectedId && !notes.find((n) => n.id === selectedId)) {
       setSelectedId(null)
       setMobileShowEditor(false)
     }
@@ -39,26 +40,41 @@ export default function NotesPage() {
     setMobileShowEditor(true)
   }, [])
 
-  const handleDelete = React.useCallback((id: string) => {
-    remove.mutate(id)
-  }, [remove])
+  const handleDelete = React.useCallback(
+    (id: string) => {
+      remove.mutate(id)
+    },
+    [remove],
+  )
 
-  const handleSaveContent = React.useCallback((id: string, content: string) => {
-    saveContent.mutate({ id, content })
-  }, [saveContent])
+  const handleSaveContent = React.useCallback(
+    (id: string, content: string) => {
+      saveContent.mutate({ id, content })
+    },
+    [saveContent],
+  )
 
-  const handleSaveTitle = React.useCallback((id: string, title: string) => {
-    update.mutate({ id, data: { title } })
-  }, [update])
+  const handleSaveTitle = React.useCallback(
+    (id: string, title: string) => {
+      update.mutate({ id, data: { title } })
+    },
+    [update],
+  )
 
   const handleBack = React.useCallback(() => {
     setMobileShowEditor(false)
   }, [])
 
   return (
-    <div className="h-[calc(100vh-120px)] flex flex-col">
+    <div className="flex h-[calc(100vh-120px)] flex-col">
       {/* Desktop layout */}
-      <div className="hidden lg:grid lg:grid-cols-[280px_1fr] h-full rounded-lg border" style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--surface)' }}>
+      <div
+        className="hidden h-full rounded-lg border lg:grid lg:grid-cols-[280px_1fr]"
+        style={{
+          borderColor: 'var(--border-color)',
+          backgroundColor: 'var(--surface)',
+        }}
+      >
         <NotesSidebar
           notes={notes}
           selectedId={selectedId}
@@ -76,16 +92,32 @@ export default function NotesPage() {
               onSaveTitle={handleSaveTitle}
             />
           ) : (
-            <div className="flex flex-col items-center justify-center h-full gap-4" style={{ color: 'var(--text-muted)' }}>
+            <div
+              className="flex h-full flex-col items-center justify-center gap-4"
+              style={{ color: 'var(--text-muted)' }}
+            >
               <div
                 className="flex h-16 w-16 items-center justify-center rounded-2xl"
-                style={{ backgroundColor: 'color-mix(in srgb, var(--primary) 8%, transparent)' }}
+                style={{
+                  backgroundColor:
+                    'color-mix(in srgb, var(--primary) 8%, transparent)',
+                }}
               >
-                <FileText className="h-7 w-7" style={{ color: 'var(--primary)', opacity: 0.6 }} />
+                <FileText
+                  className="h-7 w-7"
+                  style={{ color: 'var(--primary)', opacity: 0.6 }}
+                />
               </div>
               <div className="text-center">
-                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)', opacity: 0.6 }}>No note selected</p>
-                <p className="text-xs mt-1">Pick a note from the sidebar or create a new one</p>
+                <p
+                  className="text-sm font-medium"
+                  style={{ color: 'var(--text-primary)', opacity: 0.6 }}
+                >
+                  No note selected
+                </p>
+                <p className="mt-1 text-xs">
+                  Pick a note from the sidebar or create a new one
+                </p>
               </div>
             </div>
           )}
@@ -93,19 +125,28 @@ export default function NotesPage() {
       </div>
 
       {/* Mobile layout */}
-      <div className="flex flex-col h-full lg:hidden">
+      <div className="flex h-full flex-col lg:hidden">
         {mobileShowEditor && selectedNote ? (
-          <div className="flex flex-col h-full rounded-lg overflow-hidden border" style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--surface)' }}>
+          <div
+            className="flex h-full flex-col overflow-hidden rounded-lg border"
+            style={{
+              borderColor: 'var(--border-color)',
+              backgroundColor: 'var(--surface)',
+            }}
+          >
             <button
               type="button"
               onClick={handleBack}
-              className="flex items-center gap-2 px-4 py-2.5 text-xs font-medium border-b"
-              style={{ color: 'var(--primary)', borderColor: 'var(--border-color)' }}
+              className="flex items-center gap-2 border-b px-4 py-2.5 text-xs font-medium"
+              style={{
+                color: 'var(--primary)',
+                borderColor: 'var(--border-color)',
+              }}
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               Back to notes
             </button>
-            <div className="flex-1 min-h-0">
+            <div className="min-h-0 flex-1">
               <NoteEditor
                 key={selectedNote.id}
                 note={selectedNote}
@@ -115,7 +156,13 @@ export default function NotesPage() {
             </div>
           </div>
         ) : (
-          <div className="h-full rounded-lg overflow-hidden border" style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--surface)' }}>
+          <div
+            className="h-full overflow-hidden rounded-lg border"
+            style={{
+              borderColor: 'var(--border-color)',
+              backgroundColor: 'var(--surface)',
+            }}
+          >
             <NotesSidebar
               notes={notes}
               selectedId={selectedId}

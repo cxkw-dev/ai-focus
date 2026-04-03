@@ -45,12 +45,16 @@ export function useSSE() {
           } else if (entity === 'todoContacts') {
             const todoId = getPayloadTodoId(payload)
             if (todoId) {
-              queryClient.invalidateQueries({ queryKey: queryKeys.todoContacts(todoId) })
+              queryClient.invalidateQueries({
+                queryKey: queryKeys.todoContacts(todoId),
+              })
             }
           } else if (entity === 'todoUpdates') {
             const todoId = getPayloadTodoId(payload)
             if (todoId) {
-              queryClient.invalidateQueries({ queryKey: queryKeys.todoUpdates(todoId) })
+              queryClient.invalidateQueries({
+                queryKey: queryKeys.todoUpdates(todoId),
+              })
             }
           } else if (entity === 'notebook') {
             queryClient.invalidateQueries({ queryKey: queryKeys.notebook })

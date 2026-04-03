@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { activeTodoOrderBy, todoInclude } from '@/lib/todo-queries'
+import { internalError, ok } from '@/lib/server/api-responses'
 
 export async function GET() {
   try {
@@ -31,12 +31,12 @@ export async function GET() {
       }),
     ])
 
-    return NextResponse.json({ active, completed, deleted })
+    return ok({ active, completed, deleted })
   } catch (error) {
-    console.error('Error fetching todo board:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch todo board' },
-      { status: 500 }
+    return internalError(
+      'Failed to fetch todo board',
+      error,
+      'Error fetching todo board',
     )
   }
 }

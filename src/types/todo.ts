@@ -1,6 +1,12 @@
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
 
-export type Status = 'TODO' | 'IN_PROGRESS' | 'WAITING' | 'UNDER_REVIEW' | 'ON_HOLD' | 'COMPLETED'
+export type Status =
+  | 'TODO'
+  | 'IN_PROGRESS'
+  | 'WAITING'
+  | 'UNDER_REVIEW'
+  | 'ON_HOLD'
+  | 'COMPLETED'
 
 export interface Label {
   id: string

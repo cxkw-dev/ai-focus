@@ -20,12 +20,16 @@ export function useGithubPrStatuses(urls: string[]) {
   return useQueries({
     queries: urls.map((url) => queryOptions(url)),
     combine: (results) => {
-      const statuses: (GitHubPrStatus | undefined)[] = results.map(r => r.data)
-      const isLoading = results.some(r => r.isLoading)
+      const statuses: (GitHubPrStatus | undefined)[] = results.map(
+        (r) => r.data,
+      )
+      const isLoading = results.some((r) => r.isLoading)
       const loaded = statuses.filter((s): s is GitHubPrStatus => !!s)
       const allLoaded = !isLoading && loaded.length === urls.length
-      const allMergedOrClosed = allLoaded && loaded.every(s => s.state === 'merged' || s.state === 'closed')
-      const allMerged = allLoaded && loaded.every(s => s.state === 'merged')
+      const allMergedOrClosed =
+        allLoaded &&
+        loaded.every((s) => s.state === 'merged' || s.state === 'closed')
+      const allMerged = allLoaded && loaded.every((s) => s.state === 'merged')
 
       return { statuses, isLoading, allMergedOrClosed, allMerged }
     },

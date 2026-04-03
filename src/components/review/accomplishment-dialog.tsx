@@ -8,7 +8,10 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-import type { Accomplishment, AccomplishmentCategory } from '@/types/accomplishment'
+import type {
+  Accomplishment,
+  AccomplishmentCategory,
+} from '@/types/accomplishment'
 
 const CATEGORIES: { value: AccomplishmentCategory; label: string }[] = [
   { value: 'DELIVERY', label: 'Delivery' },
@@ -39,7 +42,8 @@ export function AccomplishmentDialog({
 }: AccomplishmentDialogProps) {
   const [title, setTitle] = React.useState('')
   const [description, setDescription] = React.useState('')
-  const [category, setCategory] = React.useState<AccomplishmentCategory>('DELIVERY')
+  const [category, setCategory] =
+    React.useState<AccomplishmentCategory>('DELIVERY')
   const [date, setDate] = React.useState('')
 
   React.useEffect(() => {
@@ -78,10 +82,12 @@ export function AccomplishmentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md p-0 overflow-hidden">
+      <DialogContent className="max-w-md overflow-hidden p-0">
         <form onSubmit={handleSubmit}>
           <DialogHeader className="px-5 pt-5 pb-3">
-            <DialogTitle>{accomplishment ? 'Edit' : 'Add'} Accomplishment</DialogTitle>
+            <DialogTitle>
+              {accomplishment ? 'Edit' : 'Add'} Accomplishment
+            </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-3 px-5 pb-4">
@@ -118,7 +124,7 @@ export function AccomplishmentDialog({
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Add details..."
                 rows={3}
-                className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 resize-none"
+                className="w-full resize-none rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2"
                 style={{
                   ...inputStyle,
                   ['--tw-ring-color' as string]: 'var(--primary)',
@@ -136,7 +142,9 @@ export function AccomplishmentDialog({
                 </label>
                 <select
                   value={category}
-                  onChange={(e) => setCategory(e.target.value as AccomplishmentCategory)}
+                  onChange={(e) =>
+                    setCategory(e.target.value as AccomplishmentCategory)
+                  }
                   className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2"
                   style={{
                     ...inputStyle,
@@ -173,7 +181,7 @@ export function AccomplishmentDialog({
           </div>
 
           <DialogFooter
-            className="px-5 py-3 border-t"
+            className="border-t px-5 py-3"
             style={{ borderColor: 'var(--border-color)' }}
           >
             <button

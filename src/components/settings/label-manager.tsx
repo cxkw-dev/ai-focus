@@ -10,7 +10,10 @@ import type { Label as TodoLabel } from '@/types/todo'
 interface LabelManagerProps {
   labels: TodoLabel[]
   onCreateLabel: (data: Pick<TodoLabel, 'name' | 'color'>) => Promise<boolean>
-  onUpdateLabel: (id: string, data: Partial<Pick<TodoLabel, 'name' | 'color'>>) => Promise<boolean>
+  onUpdateLabel: (
+    id: string,
+    data: Partial<Pick<TodoLabel, 'name' | 'color'>>,
+  ) => Promise<boolean>
   onDeleteLabel: (id: string) => Promise<boolean>
   disabled?: boolean
 }
@@ -24,8 +27,12 @@ export function LabelManager({
 }: LabelManagerProps) {
   const [newName, setNewName] = React.useState('')
   const [newColor, setNewColor] = React.useState('#22c55e')
-  const [presetColors, setPresetColors] = React.useState<Array<{ varName: string; value: string }>>([])
-  const [drafts, setDrafts] = React.useState<Record<string, { name: string; color: string }>>({})
+  const [presetColors, setPresetColors] = React.useState<
+    Array<{ varName: string; value: string }>
+  >([])
+  const [drafts, setDrafts] = React.useState<
+    Record<string, { name: string; color: string }>
+  >({})
   const [isSaving, setIsSaving] = React.useState(false)
   const isCompact = labels.length > 6
 
@@ -75,7 +82,10 @@ export function LabelManager({
   const handleCreate = async () => {
     if (!newName.trim()) return
     setIsSaving(true)
-    const success = await onCreateLabel({ name: newName.trim(), color: newColor })
+    const success = await onCreateLabel({
+      name: newName.trim(),
+      color: newColor,
+    })
     setIsSaving(false)
     if (success) {
       setNewName('')
@@ -83,7 +93,10 @@ export function LabelManager({
     }
   }
 
-  const commitUpdate = async (id: string, updates: Partial<Pick<TodoLabel, 'name' | 'color'>>) => {
+  const commitUpdate = async (
+    id: string,
+    updates: Partial<Pick<TodoLabel, 'name' | 'color'>>,
+  ) => {
     if (Object.keys(updates).length === 0) return
     setIsSaving(true)
     await onUpdateLabel(id, updates)
@@ -99,18 +112,22 @@ export function LabelManager({
   return (
     <div className="space-y-5">
       <div
-        className="rounded-xl border p-4 space-y-3"
+        className="space-y-3 rounded-xl border p-4"
         style={{
           borderColor: 'var(--border-color)',
-          backgroundColor: 'color-mix(in srgb, var(--surface) 60%, transparent)',
+          backgroundColor:
+            'color-mix(in srgb, var(--surface) 60%, transparent)',
         }}
       >
         <div className="flex items-center justify-between">
-          <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+          <div
+            className="text-xs font-semibold tracking-wide uppercase"
+            style={{ color: 'var(--text-muted)' }}
+          >
             Create Label
           </div>
           <span
-            className="h-5 px-1.5 rounded text-[10px] font-semibold inline-flex items-center gap-1"
+            className="inline-flex h-5 items-center gap-1 rounded px-1.5 text-[10px] font-semibold"
             style={{
               backgroundColor: `color-mix(in srgb, ${newColor} 15%, transparent)`,
               color: newColor,
@@ -120,7 +137,7 @@ export function LabelManager({
           </span>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto] items-center">
+        <div className="grid items-center gap-2 sm:grid-cols-[1fr_auto_auto]">
           <Input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
@@ -129,7 +146,10 @@ export function LabelManager({
             className="text-sm"
           />
           <div className="flex items-center gap-2">
-            <span className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+            <span
+              className="text-[10px] tracking-wide uppercase"
+              style={{ color: 'var(--text-muted)' }}
+            >
               Color
             </span>
             <input
@@ -139,7 +159,8 @@ export function LabelManager({
               disabled={disabled || isSaving}
               className="color-swatch h-9 w-9 rounded-full border-2 bg-transparent p-0"
               style={{
-                borderColor: 'color-mix(in srgb, var(--border-color) 70%, transparent)',
+                borderColor:
+                  'color-mix(in srgb, var(--border-color) 70%, transparent)',
                 boxShadow: `0 0 0 2px ${newColor}22`,
               }}
               aria-label="Label color"
@@ -163,8 +184,14 @@ export function LabelManager({
               className="h-7 w-7 rounded-full border-2 transition-transform hover:scale-105"
               style={{
                 backgroundColor: preset.value,
-                borderColor: newColor === preset.value ? 'var(--text-primary)' : 'color-mix(in srgb, var(--border-color) 70%, transparent)',
-                boxShadow: newColor === preset.value ? `0 0 0 2px ${preset.value}55` : 'none',
+                borderColor:
+                  newColor === preset.value
+                    ? 'var(--text-primary)'
+                    : 'color-mix(in srgb, var(--border-color) 70%, transparent)',
+                boxShadow:
+                  newColor === preset.value
+                    ? `0 0 0 2px ${preset.value}55`
+                    : 'none',
               }}
               aria-label={`Select ${preset.varName}`}
             />
@@ -177,7 +204,10 @@ export function LabelManager({
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+          <div
+            className="text-xs font-semibold tracking-wide uppercase"
+            style={{ color: 'var(--text-muted)' }}
+          >
             Existing Labels
           </div>
           <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
@@ -190,7 +220,8 @@ export function LabelManager({
             className="rounded-xl border p-4 text-xs"
             style={{
               borderColor: 'var(--border-color)',
-              backgroundColor: 'color-mix(in srgb, var(--surface) 70%, transparent)',
+              backgroundColor:
+                'color-mix(in srgb, var(--surface) 70%, transparent)',
               color: 'var(--text-muted)',
             }}
           >
@@ -199,23 +230,27 @@ export function LabelManager({
         )}
 
         {labels.map((label) => {
-          const draft = drafts[label.id] ?? { name: label.name, color: label.color }
+          const draft = drafts[label.id] ?? {
+            name: label.name,
+            color: label.color,
+          }
 
           return (
             <div
               key={label.id}
               className={cn(
                 'flex flex-col gap-3 rounded-xl border',
-                isCompact ? 'p-2' : 'p-3'
+                isCompact ? 'p-2' : 'p-3',
               )}
               style={{
                 borderColor: 'var(--border-color)',
-                backgroundColor: 'color-mix(in srgb, var(--surface-2) 80%, transparent)',
+                backgroundColor:
+                  'color-mix(in srgb, var(--surface-2) 80%, transparent)',
               }}
             >
               <div className="flex flex-wrap items-center gap-2">
                 <span
-                  className="h-5 px-1.5 rounded text-[10px] font-semibold inline-flex items-center gap-1"
+                  className="inline-flex h-5 items-center gap-1 rounded px-1.5 text-[10px] font-semibold"
                   style={{
                     backgroundColor: `color-mix(in srgb, ${draft.color} 15%, transparent)`,
                     color: draft.color,
@@ -223,13 +258,16 @@ export function LabelManager({
                 >
                   {draft.name.trim() || 'Untitled'}
                 </span>
-                <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                <span
+                  className="text-[10px]"
+                  style={{ color: 'var(--text-muted)' }}
+                >
                   Preview
                 </span>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <div className="flex-1 min-w-[220px]">
+                <div className="min-w-[220px] flex-1">
                   <Input
                     value={draft.name}
                     onChange={(e) => {
@@ -240,11 +278,14 @@ export function LabelManager({
                       }))
                     }}
                     disabled={disabled}
-                    className="text-sm w-full"
+                    className="w-full text-sm"
                   />
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                  <span
+                    className="text-[10px] tracking-wide uppercase"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
                     Color
                   </span>
                   <input
@@ -260,7 +301,8 @@ export function LabelManager({
                     disabled={disabled}
                     className="color-swatch h-8 w-8 rounded-full border-2 bg-transparent p-0"
                     style={{
-                      borderColor: 'color-mix(in srgb, var(--border-color) 70%, transparent)',
+                      borderColor:
+                        'color-mix(in srgb, var(--border-color) 70%, transparent)',
                       boxShadow: `0 0 0 2px ${draft.color}22`,
                     }}
                     aria-label="Label color"
@@ -268,14 +310,23 @@ export function LabelManager({
                 </div>
 
                 <div className="flex items-center gap-2 sm:ml-auto">
-                  {(draft.name.trim() !== label.name || draft.color !== label.color) && (
+                  {(draft.name.trim() !== label.name ||
+                    draft.color !== label.color) && (
                     <Button
                       type="button"
                       onClick={() => {
-                        const updates: Partial<Pick<TodoLabel, 'name' | 'color'>> = {}
-                        if (draft.name.trim() && draft.name.trim() !== label.name) updates.name = draft.name.trim()
-                        if (draft.color !== label.color) updates.color = draft.color
-                        if (Object.keys(updates).length > 0) void commitUpdate(label.id, updates)
+                        const updates: Partial<
+                          Pick<TodoLabel, 'name' | 'color'>
+                        > = {}
+                        if (
+                          draft.name.trim() &&
+                          draft.name.trim() !== label.name
+                        )
+                          updates.name = draft.name.trim()
+                        if (draft.color !== label.color)
+                          updates.color = draft.color
+                        if (Object.keys(updates).length > 0)
+                          void commitUpdate(label.id, updates)
                       }}
                       disabled={disabled || isSaving || !draft.name.trim()}
                       className="h-9 px-3 text-xs"
@@ -288,7 +339,7 @@ export function LabelManager({
                     variant="outline"
                     onClick={() => handleDelete(label.id)}
                     disabled={disabled || isSaving}
-                    className="h-9 w-9 p-0 border-destructive/40 text-destructive hover:bg-destructive/10"
+                    className="border-destructive/40 text-destructive hover:bg-destructive/10 h-9 w-9 p-0"
                     aria-label="Delete label"
                     title="Delete label"
                   >
@@ -310,20 +361,27 @@ export function LabelManager({
                     }
                     className={cn(
                       'h-6 w-6 rounded-full border-2 transition-transform hover:scale-105',
-                      isCompact && 'h-5 w-5'
+                      isCompact && 'h-5 w-5',
                     )}
                     style={{
                       backgroundColor: preset.value,
-                      borderColor: draft.color === preset.value
-                        ? 'var(--text-primary)'
-                        : 'color-mix(in srgb, var(--border-color) 70%, transparent)',
-                      boxShadow: draft.color === preset.value ? `0 0 0 2px ${preset.value}55` : 'none',
+                      borderColor:
+                        draft.color === preset.value
+                          ? 'var(--text-primary)'
+                          : 'color-mix(in srgb, var(--border-color) 70%, transparent)',
+                      boxShadow:
+                        draft.color === preset.value
+                          ? `0 0 0 2px ${preset.value}55`
+                          : 'none',
                     }}
                     aria-label={`Select ${preset.varName}`}
                     title="Apply theme color"
                   />
                 ))}
-                <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                <span
+                  className="text-[10px]"
+                  style={{ color: 'var(--text-muted)' }}
+                >
                   Theme picks
                 </span>
               </div>

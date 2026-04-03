@@ -2,16 +2,32 @@
 
 import * as React from 'react'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
-import type { Accomplishment, AccomplishmentCategory } from '@/types/accomplishment'
+import type {
+  Accomplishment,
+  AccomplishmentCategory,
+} from '@/types/accomplishment'
 import { CategoryBadge, getCategoryLabel } from './category-badge'
 import { AccomplishmentDialog } from './accomplishment-dialog'
 
 const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ]
 
-const FILTER_OPTIONS: { value: AccomplishmentCategory | 'ALL'; label: string }[] = [
+const FILTER_OPTIONS: {
+  value: AccomplishmentCategory | 'ALL'
+  label: string
+}[] = [
   { value: 'ALL', label: 'All' },
   { value: 'DELIVERY', label: 'Delivery' },
   { value: 'HIRING', label: 'Hiring' },
@@ -24,8 +40,21 @@ const FILTER_OPTIONS: { value: AccomplishmentCategory | 'ALL'; label: string }[]
 interface AccomplishmentsSectionProps {
   accomplishments: Accomplishment[]
   year: number
-  onCreate: (data: { title: string; description?: string; category: AccomplishmentCategory; date: string }) => void
-  onUpdate: (id: string, data: { title?: string; description?: string | null; category?: AccomplishmentCategory; date?: string }) => void
+  onCreate: (data: {
+    title: string
+    description?: string
+    category: AccomplishmentCategory
+    date: string
+  }) => void
+  onUpdate: (
+    id: string,
+    data: {
+      title?: string
+      description?: string | null
+      category?: AccomplishmentCategory
+      date?: string
+    },
+  ) => void
   onDelete: (id: string) => void
 }
 
@@ -36,13 +65,16 @@ export function AccomplishmentsSection({
   onUpdate,
   onDelete,
 }: AccomplishmentsSectionProps) {
-  const [filter, setFilter] = React.useState<AccomplishmentCategory | 'ALL'>('ALL')
+  const [filter, setFilter] = React.useState<AccomplishmentCategory | 'ALL'>(
+    'ALL',
+  )
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<Accomplishment | null>(null)
 
-  const filtered = filter === 'ALL'
-    ? accomplishments
-    : accomplishments.filter(a => a.category === filter)
+  const filtered =
+    filter === 'ALL'
+      ? accomplishments
+      : accomplishments.filter((a) => a.category === filter)
 
   // Group by month
   const grouped = React.useMemo(() => {
@@ -62,7 +94,12 @@ export function AccomplishmentsSection({
     setDialogOpen(true)
   }
 
-  function handleDialogSubmit(data: { title: string; description?: string; category: AccomplishmentCategory; date: string }) {
+  function handleDialogSubmit(data: {
+    title: string
+    description?: string
+    category: AccomplishmentCategory
+    date: string
+  }) {
     if (editing) {
       onUpdate(editing.id, data)
     } else {
@@ -74,13 +111,22 @@ export function AccomplishmentsSection({
   return (
     <div
       className="rounded-xl border p-3 sm:p-5"
-      style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-color)' }}
+      style={{
+        backgroundColor: 'var(--surface)',
+        borderColor: 'var(--border-color)',
+      }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--primary)' }} />
-          <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+          <div
+            className="h-2 w-2 rounded-full"
+            style={{ backgroundColor: 'var(--primary)' }}
+          />
+          <h3
+            className="text-sm font-semibold"
+            style={{ color: 'var(--text-primary)' }}
+          >
             Accomplishments
           </h3>
           {accomplishments.length > 0 && (
@@ -90,7 +136,10 @@ export function AccomplishmentsSection({
           )}
         </div>
         <button
-          onClick={() => { setEditing(null); setDialogOpen(true) }}
+          onClick={() => {
+            setEditing(null)
+            setDialogOpen(true)
+          }}
           className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
           style={{
             backgroundColor: 'var(--primary)',
@@ -103,7 +152,7 @@ export function AccomplishmentsSection({
       </div>
 
       {/* Category filter chips */}
-      <div className="flex flex-wrap gap-1.5 mb-4">
+      <div className="mb-4 flex flex-wrap gap-1.5">
         {FILTER_OPTIONS.map((opt) => {
           const active = filter === opt.value
           return (
@@ -113,7 +162,9 @@ export function AccomplishmentsSection({
               className="rounded-full px-3 py-1 text-xs font-medium transition-colors"
               style={{
                 backgroundColor: active ? 'var(--primary)' : 'var(--surface-2)',
-                color: active ? 'var(--primary-foreground)' : 'var(--text-muted)',
+                color: active
+                  ? 'var(--primary-foreground)'
+                  : 'var(--text-muted)',
               }}
             >
               {opt.label}
@@ -136,7 +187,7 @@ export function AccomplishmentsSection({
           {grouped.map(([month, items]) => (
             <div key={month}>
               <h4
-                className="mb-2 text-xs font-semibold uppercase tracking-wider"
+                className="mb-2 text-xs font-semibold tracking-wider uppercase"
                 style={{ color: 'var(--text-muted)' }}
               >
                 {MONTH_NAMES[month]} {year}
@@ -159,7 +210,10 @@ export function AccomplishmentsSection({
                       className="mt-0.5 shrink-0 text-xs tabular-nums"
                       style={{ color: 'var(--text-muted)', width: '2.5rem' }}
                     >
-                      {new Date(a.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {new Date(a.date).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                      })}
                     </span>
 
                     {/* Content */}
@@ -167,7 +221,7 @@ export function AccomplishmentsSection({
                       <div className="flex items-center gap-2">
                         <CategoryBadge category={a.category} />
                         <span
-                          className="text-sm font-medium truncate"
+                          className="truncate text-sm font-medium"
                           style={{ color: 'var(--text-primary)' }}
                         >
                           {a.title}
@@ -175,7 +229,7 @@ export function AccomplishmentsSection({
                       </div>
                       {a.description && (
                         <p
-                          className="mt-0.5 text-xs line-clamp-2"
+                          className="mt-0.5 line-clamp-2 text-xs"
                           style={{ color: 'var(--text-muted)' }}
                         >
                           {a.description}
@@ -184,7 +238,7 @@ export function AccomplishmentsSection({
                     </div>
 
                     {/* Actions */}
-                    <div className="flex shrink-0 items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                       <button
                         onClick={() => handleEdit(a)}
                         className="rounded p-1 transition-colors hover:bg-[var(--surface)]"
@@ -210,7 +264,10 @@ export function AccomplishmentsSection({
 
       <AccomplishmentDialog
         open={dialogOpen}
-        onOpenChange={(open) => { setDialogOpen(open); if (!open) setEditing(null) }}
+        onOpenChange={(open) => {
+          setDialogOpen(open)
+          if (!open) setEditing(null)
+        }}
         onSubmit={handleDialogSubmit}
         accomplishment={editing}
       />

@@ -1,18 +1,35 @@
 'use client'
 
-import { GitPullRequest, GitMerge, Check, Loader2, CircleDot, ArrowDown, ShieldCheck } from 'lucide-react'
+import {
+  GitPullRequest,
+  GitMerge,
+  Check,
+  Loader2,
+  CircleDot,
+  ArrowDown,
+  ShieldCheck,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useGithubPrStatus, useGithubPrStatuses } from '@/hooks/use-github-pr-status'
+import {
+  useGithubPrStatus,
+  useGithubPrStatuses,
+} from '@/hooks/use-github-pr-status'
 import type { GitHubPrStatus } from '@/types/todo'
 
-const CHIP_BASE = 'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors min-w-0 max-w-full whitespace-nowrap'
+const CHIP_BASE =
+  'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors min-w-0 max-w-full whitespace-nowrap'
 
 function getBadgeConfig(data: GitHubPrStatus) {
-  if (data.state === 'merged') return { color: '#a371f7', icon: GitMerge, label: 'Merged' }
-  if (data.state === 'closed') return { color: '#f85149', icon: GitPullRequest, label: 'Closed' }
-  if (data.draft) return { color: '#8b949e', icon: GitPullRequest, label: 'Draft' }
-  if (data.reviewStatus === 'changes_requested') return { color: '#e5534b', icon: CircleDot, label: 'Changes' }
-  if (data.reviewStatus === 'review_requested') return { color: '#d29922', icon: GitPullRequest, label: 'In Review' }
+  if (data.state === 'merged')
+    return { color: '#a371f7', icon: GitMerge, label: 'Merged' }
+  if (data.state === 'closed')
+    return { color: '#f85149', icon: GitPullRequest, label: 'Closed' }
+  if (data.draft)
+    return { color: '#8b949e', icon: GitPullRequest, label: 'Draft' }
+  if (data.reviewStatus === 'changes_requested')
+    return { color: '#e5534b', icon: CircleDot, label: 'Changes' }
+  if (data.reviewStatus === 'review_requested')
+    return { color: '#d29922', icon: GitPullRequest, label: 'In Review' }
   if (data.reviewStatus === 'approved') {
     const count = data.approvedCount
     const total = data.reviewerCount
@@ -41,7 +58,8 @@ export function GitHubPrBadge({ url, showTitle }: GitHubPrBadgeProps) {
       <span
         className={cn(CHIP_BASE)}
         style={{
-          backgroundColor: 'color-mix(in srgb, var(--text-muted) 10%, transparent)',
+          backgroundColor:
+            'color-mix(in srgb, var(--text-muted) 10%, transparent)',
           color: 'var(--text-muted)',
         }}
       >
@@ -58,9 +76,13 @@ export function GitHubPrBadge({ url, showTitle }: GitHubPrBadgeProps) {
         target="_blank"
         rel="noopener noreferrer"
         onClick={(e) => e.stopPropagation()}
-        className={cn(CHIP_BASE, 'hover:brightness-110 cursor-pointer no-underline')}
+        className={cn(
+          CHIP_BASE,
+          'cursor-pointer no-underline hover:brightness-110',
+        )}
         style={{
-          backgroundColor: 'color-mix(in srgb, var(--text-muted) 10%, transparent)',
+          backgroundColor:
+            'color-mix(in srgb, var(--text-muted) 10%, transparent)',
           color: 'var(--text-muted)',
         }}
       >
@@ -79,7 +101,10 @@ export function GitHubPrBadge({ url, showTitle }: GitHubPrBadgeProps) {
       target="_blank"
       rel="noopener noreferrer"
       onClick={(e) => e.stopPropagation()}
-      className={cn(CHIP_BASE, 'hover:brightness-110 cursor-pointer no-underline flex-shrink-0')}
+      className={cn(
+        CHIP_BASE,
+        'flex-shrink-0 cursor-pointer no-underline hover:brightness-110',
+      )}
       style={{
         backgroundColor: `color-mix(in srgb, ${config.color} 15%, transparent)`,
         color: config.color,
@@ -87,17 +112,23 @@ export function GitHubPrBadge({ url, showTitle }: GitHubPrBadgeProps) {
       title={`${data.title} — ${config.label}`}
     >
       <Icon className="h-3 w-3" />
-      <span className="truncate max-w-[7rem]">{config.label}</span>
-      {data.behindBy != null && data.state === 'open' && (
-        data.behindBy > 0 ? (
-          <span className="shrink-0 inline-flex items-center gap-px font-semibold" style={{ color: '#d29922' }}>
+      <span className="max-w-[7rem] truncate">{config.label}</span>
+      {data.behindBy != null &&
+        data.state === 'open' &&
+        (data.behindBy > 0 ? (
+          <span
+            className="inline-flex shrink-0 items-center gap-px font-semibold"
+            style={{ color: '#d29922' }}
+          >
             <ArrowDown className="h-2.5 w-2.5" />
             {data.behindBy}
           </span>
         ) : (
-          <ShieldCheck className="h-3 w-3 shrink-0" style={{ color: '#58a6ff' }} />
-        )
-      )}
+          <ShieldCheck
+            className="h-3 w-3 shrink-0"
+            style={{ color: '#58a6ff' }}
+          />
+        ))}
       <span className="shrink-0">#{data.number}</span>
     </a>
   )
@@ -108,7 +139,7 @@ export function GitHubPrBadge({ url, showTitle }: GitHubPrBadgeProps) {
     <span className="flex w-full min-w-0 items-center gap-1.5">
       {chip}
       <span
-        className="min-w-0 flex-1 text-[10px] truncate"
+        className="min-w-0 flex-1 truncate text-[10px]"
         style={{ color: 'var(--text-muted)' }}
       >
         {data.title}
@@ -144,10 +175,16 @@ export function GitHubPrRow({ urls, showTitle }: GitHubPrRowProps) {
 
   return (
     <div
-      className="flex items-center gap-1.5 flex-wrap pt-1.5"
-      style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)' }}
+      className="flex flex-wrap items-center gap-1.5 pt-1.5"
+      style={{
+        borderTop:
+          '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)',
+      }}
     >
-      <span className="text-[10px] font-medium flex items-center gap-1" style={{ color: labelColor }}>
+      <span
+        className="flex items-center gap-1 text-[10px] font-medium"
+        style={{ color: labelColor }}
+      >
         {allMergedOrClosed && !isLoading && <Check className="h-3 w-3" />}
         {label}
       </span>

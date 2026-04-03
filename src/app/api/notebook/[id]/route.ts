@@ -10,14 +10,24 @@ const updateNoteSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params
     const note = await db.notebookNote.findUnique({
       where: { id },
       include: {
-        todo: { select: { id: true, taskNumber: true, title: true, status: true, priority: true, dueDate: true, labels: { select: { id: true, name: true, color: true } } } },
+        todo: {
+          select: {
+            id: true,
+            taskNumber: true,
+            title: true,
+            status: true,
+            priority: true,
+            dueDate: true,
+            labels: { select: { id: true, name: true, color: true } },
+          },
+        },
       },
     })
 
@@ -28,16 +38,13 @@ export async function GET(
     return NextResponse.json(note)
   } catch (error) {
     console.error('Error fetching notebook note:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch note' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch note' }, { status: 500 })
   }
 }
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params
@@ -48,7 +55,17 @@ export async function PATCH(
       where: { id },
       data: validatedData,
       include: {
-        todo: { select: { id: true, taskNumber: true, title: true, status: true, priority: true, dueDate: true, labels: { select: { id: true, name: true, color: true } } } },
+        todo: {
+          select: {
+            id: true,
+            taskNumber: true,
+            title: true,
+            status: true,
+            priority: true,
+            dueDate: true,
+            labels: { select: { id: true, name: true, color: true } },
+          },
+        },
       },
     })
 
@@ -57,21 +74,21 @@ export async function PATCH(
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Validation failed', details: error.issues },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
     console.error('Error updating notebook note:', error)
     return NextResponse.json(
       { error: 'Failed to update note' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params
@@ -84,7 +101,7 @@ export async function DELETE(
     console.error('Error deleting notebook note:', error)
     return NextResponse.json(
       { error: 'Failed to delete note' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

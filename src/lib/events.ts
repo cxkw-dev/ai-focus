@@ -8,7 +8,9 @@ const listeners = new Set<Listener>()
 
 export function subscribe(listener: Listener) {
   listeners.add(listener)
-  return () => { listeners.delete(listener) }
+  return () => {
+    listeners.delete(listener)
+  }
 }
 
 export function emit(entity: string, payload?: unknown) {

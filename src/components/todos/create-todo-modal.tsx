@@ -1,14 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import {
-  CalendarDays,
-  Flame,
-  Tags,
-  ListChecks,
-  Plus,
-  X,
-} from 'lucide-react'
+import { CalendarDays, Flame, Tags, ListChecks, Plus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -24,7 +17,12 @@ import {
 } from '@/components/ui/dialog'
 import { LabelMultiSelect, LabelManagerDialog } from './label-multi-select'
 import { PrioritySelector } from './priority-selector'
-import { SingleUrlField, UrlListField, AzureIcon, GitHubIcon } from './url-fields'
+import {
+  SingleUrlField,
+  UrlListField,
+  AzureIcon,
+  GitHubIcon,
+} from './url-fields'
 import { useLabels } from '@/hooks/use-labels'
 import { useTodoForm } from '@/hooks/use-todo-form'
 import {
@@ -54,7 +52,12 @@ export function CreateTodoModal({
   defaultLabelIds,
   people,
 }: CreateTodoModalProps) {
-  const { labels, handleCreate: onCreateLabel, handleUpdate: onUpdateLabel, handleDelete: onDeleteLabel } = useLabels()
+  const {
+    labels,
+    handleCreate: onCreateLabel,
+    handleUpdate: onUpdateLabel,
+    handleDelete: onDeleteLabel,
+  } = useLabels()
   const form = useTodoForm(null, { initialLabelIds: defaultLabelIds })
   const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
@@ -65,8 +68,13 @@ export function CreateTodoModal({
   const [newIssueUrl, setNewIssueUrl] = React.useState('')
   const resetForm = form.reset
   const subtaskMentions = React.useMemo(
-    () => people.map((person) => ({ id: person.id, name: person.name, email: person.email })),
-    [people]
+    () =>
+      people.map((person) => ({
+        id: person.id,
+        name: person.name,
+        email: person.email,
+      })),
+    [people],
   )
 
   React.useEffect(() => {
@@ -112,18 +120,21 @@ export function CreateTodoModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[98vw] sm:w-[96vw] max-w-[1040px] max-h-[90vh] sm:max-h-[85vh] flex flex-col overflow-hidden p-0">
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+      <DialogContent className="flex max-h-[90vh] w-[98vw] max-w-[1040px] flex-col overflow-hidden p-0 sm:max-h-[85vh] sm:w-[96vw]">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           {/* Header */}
           <div
-            className="px-4 sm:px-6 py-4 sm:py-5 border-b shrink-0"
+            className="shrink-0 border-b px-4 py-4 sm:px-6 sm:py-5"
             style={{
               borderColor: 'var(--border-color)',
-              background: 'linear-gradient(135deg, color-mix(in srgb, var(--primary) 8%, transparent), color-mix(in srgb, var(--accent) 8%, transparent))',
+              background:
+                'linear-gradient(135deg, color-mix(in srgb, var(--primary) 8%, transparent), color-mix(in srgb, var(--accent) 8%, transparent))',
             }}
           >
             <DialogHeader className="space-y-1.5">
-              <DialogTitle className="text-lg sm:text-xl">Create New Task</DialogTitle>
+              <DialogTitle className="text-lg sm:text-xl">
+                Create New Task
+              </DialogTitle>
               <DialogDescription className="text-sm">
                 Add a new task to your list
               </DialogDescription>
@@ -131,12 +142,16 @@ export function CreateTodoModal({
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6">
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-0 md:gap-0">
+          <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
+            <div className="grid grid-cols-1 gap-0 md:grid-cols-[1fr_320px] md:gap-0">
               {/* Left column - Content */}
               <div className="space-y-4 md:pr-6">
                 <div className="space-y-2">
-                  <Label htmlFor="create-title" className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                  <Label
+                    htmlFor="create-title"
+                    className="text-xs font-semibold tracking-wide uppercase"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
                     Task Title
                   </Label>
                   <Input
@@ -150,7 +165,10 @@ export function CreateTodoModal({
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                  <Label
+                    className="text-xs font-semibold tracking-wide uppercase"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
                     Description
                   </Label>
                   <RichTextEditor
@@ -158,29 +176,49 @@ export function CreateTodoModal({
                     onChange={form.setDescription}
                     placeholder="Add more details, links, or notes..."
                     disabled={isLoading}
-                    mentions={people.map(p => ({ id: p.id, name: p.name, email: p.email }))}
+                    mentions={people.map((p) => ({
+                      id: p.id,
+                      name: p.name,
+                      email: p.email,
+                    }))}
                   />
                 </div>
 
                 {/* Subtasks */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                  <Label
+                    className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
                     <ListChecks className="h-3.5 w-3.5" />
                     Subtasks
                     {form.subtasks.length > 0 && (
-                      <span className="text-[10px] font-normal" style={{ color: 'var(--text-muted)' }}>
+                      <span
+                        className="text-[10px] font-normal"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
                         {form.subtasks.length}
                       </span>
                     )}
                   </Label>
                   <div className="space-y-1">
                     {form.subtasks.map((subtask, index) => (
-                      <div key={index} className="flex items-center gap-2 group/subtask">
-                        <div className="text-xs flex-1 min-w-0" style={{ color: 'var(--text-primary)' }}>
+                      <div
+                        key={index}
+                        className="group/subtask flex items-center gap-2"
+                      >
+                        <div
+                          className="min-w-0 flex-1 text-xs"
+                          style={{ color: 'var(--text-primary)' }}
+                        >
                           {isHtmlContent(subtask.title) ? (
                             <div
-                              className="[&_p]:my-0 [&_p]:leading-snug [&_.mention]:font-medium [&_.mention:hover]:underline [&_a]:text-[var(--primary)] [&_a:hover]:underline"
-                              dangerouslySetInnerHTML={{ __html: linkifyHtml(mentionifyHtml(subtask.title)) }}
+                              className="[&_.mention]:font-medium [&_.mention:hover]:underline [&_a]:text-[var(--primary)] [&_a:hover]:underline [&_p]:my-0 [&_p]:leading-snug"
+                              dangerouslySetInnerHTML={{
+                                __html: linkifyHtml(
+                                  mentionifyHtml(subtask.title),
+                                ),
+                              }}
                             />
                           ) : (
                             subtask.title
@@ -189,7 +227,7 @@ export function CreateTodoModal({
                         <button
                           type="button"
                           onClick={() => form.removeSubtask(index)}
-                          className="flex-shrink-0 opacity-0 group-hover/subtask:opacity-100 transition-opacity"
+                          className="flex-shrink-0 opacity-0 transition-opacity group-hover/subtask:opacity-100"
                           style={{ color: 'var(--text-muted)' }}
                         >
                           <X className="h-3.5 w-3.5" />
@@ -197,7 +235,10 @@ export function CreateTodoModal({
                       </div>
                     ))}
                     <div className="flex items-center gap-2">
-                      <Plus className="h-4 w-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                      <Plus
+                        className="h-4 w-4 flex-shrink-0"
+                        style={{ color: 'var(--text-muted)' }}
+                      />
                       <SubtaskMentionInput
                         value={newSubtaskTitle}
                         onChange={setNewSubtaskTitle}
@@ -214,12 +255,15 @@ export function CreateTodoModal({
 
               {/* Right column - Meta */}
               <div
-                className="space-y-5 pt-6 md:pt-0 md:pl-6 md:border-l"
+                className="space-y-5 pt-6 md:border-l md:pt-0 md:pl-6"
                 style={{ borderColor: 'var(--border-color)' }}
               >
                 {/* Priority */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                  <Label
+                    className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
                     <Flame className="h-3.5 w-3.5" />
                     Priority
                   </Label>
@@ -232,7 +276,11 @@ export function CreateTodoModal({
 
                 {/* Due Date */}
                 <div className="space-y-2">
-                  <Label htmlFor="create-dueDate" className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                  <Label
+                    htmlFor="create-dueDate"
+                    className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
                     <CalendarDays className="h-3.5 w-3.5" />
                     Due Date
                   </Label>
@@ -247,13 +295,21 @@ export function CreateTodoModal({
 
                 {/* Azure */}
                 <div className="space-y-3">
-                  <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                  <Label
+                    className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
                     <AzureIcon className="h-3.5 w-3.5" />
                     Azure
                   </Label>
 
                   <div className="space-y-1.5">
-                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>My Work Item</span>
+                    <span
+                      className="text-[10px] font-medium tracking-wide uppercase"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      My Work Item
+                    </span>
                     <SingleUrlField
                       value={form.azureWorkItemUrl}
                       onChange={form.setAzureWorkItemUrl}
@@ -263,7 +319,12 @@ export function CreateTodoModal({
                   </div>
 
                   <div className="space-y-1.5">
-                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Waiting On</span>
+                    <span
+                      className="text-[10px] font-medium tracking-wide uppercase"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      Waiting On
+                    </span>
                     <UrlListField
                       type="azure"
                       urls={form.azureDepUrls}
@@ -278,13 +339,21 @@ export function CreateTodoModal({
 
                 {/* GitHub */}
                 <div className="space-y-3">
-                  <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                  <Label
+                    className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
                     <GitHubIcon className="h-3.5 w-3.5" />
                     GitHub
                   </Label>
 
                   <div className="space-y-1.5">
-                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>My PRs</span>
+                    <span
+                      className="text-[10px] font-medium tracking-wide uppercase"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      My PRs
+                    </span>
                     <UrlListField
                       type="github"
                       urls={form.myPrUrls}
@@ -297,7 +366,12 @@ export function CreateTodoModal({
                   </div>
 
                   <div className="space-y-1.5">
-                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Waiting On</span>
+                    <span
+                      className="text-[10px] font-medium tracking-wide uppercase"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      Waiting On
+                    </span>
                     <UrlListField
                       type="github"
                       urls={form.githubPrUrls}
@@ -312,13 +386,21 @@ export function CreateTodoModal({
 
                 {/* GitHub Issues */}
                 <div className="space-y-3">
-                  <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                  <Label
+                    className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
                     <GitHubIcon className="h-3.5 w-3.5" />
                     GitHub Issues
                   </Label>
 
                   <div className="space-y-1.5">
-                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>My Issues</span>
+                    <span
+                      className="text-[10px] font-medium tracking-wide uppercase"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      My Issues
+                    </span>
                     <UrlListField
                       type="github-issue"
                       urls={form.myIssueUrls}
@@ -331,7 +413,12 @@ export function CreateTodoModal({
                   </div>
 
                   <div className="space-y-1.5">
-                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Waiting On</span>
+                    <span
+                      className="text-[10px] font-medium tracking-wide uppercase"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      Waiting On
+                    </span>
                     <UrlListField
                       type="github-issue"
                       urls={form.githubIssueUrls}
@@ -347,14 +434,17 @@ export function CreateTodoModal({
                 {/* Labels */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                    <Label
+                      className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
                       <Tags className="h-3.5 w-3.5" />
                       Labels
                     </Label>
                     <button
                       type="button"
                       onClick={() => setIsLabelManagerOpen(true)}
-                      className="text-[11px] font-medium underline hover:no-underline transition-all"
+                      className="text-[11px] font-medium underline transition-all hover:no-underline"
                       style={{ color: 'var(--primary)' }}
                     >
                       Manage
@@ -375,7 +465,7 @@ export function CreateTodoModal({
 
           {/* Footer */}
           <div
-            className="px-4 sm:px-6 py-3 sm:py-4 border-t shrink-0"
+            className="shrink-0 border-t px-4 py-3 sm:px-6 sm:py-4"
             style={{ borderColor: 'var(--border-color)' }}
           >
             <DialogFooter className="flex gap-3 sm:justify-end">
@@ -387,7 +477,11 @@ export function CreateTodoModal({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={!form.title.trim() || isLoading} className="h-10 px-5">
+              <Button
+                type="submit"
+                disabled={!form.title.trim() || isLoading}
+                className="h-10 px-5"
+              >
                 {isLoading ? 'Creating...' : 'Create Task'}
               </Button>
             </DialogFooter>

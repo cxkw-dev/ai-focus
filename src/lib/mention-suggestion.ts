@@ -11,7 +11,7 @@ type SuggestionConfig = Omit<SuggestionOptions<MentionSuggestionItem>, 'editor'>
 
 export function createMentionSuggestion(
   peopleRef: React.RefObject<MentionSuggestionItem[]>,
-  activeRef?: React.RefObject<boolean>
+  activeRef?: React.RefObject<boolean>,
 ): SuggestionConfig {
   return {
     items: ({ query }) => {
@@ -21,15 +21,15 @@ export function createMentionSuggestion(
         .filter(
           (p) =>
             p.name.toLowerCase().includes(q) ||
-            p.email.toLowerCase().includes(q)
+            p.email.toLowerCase().includes(q),
         )
         .slice(0, 8)
     },
 
     render: () => {
-      let component: ReactRenderer<
-        { onKeyDown: (props: { event: KeyboardEvent }) => boolean }
-      >
+      let component: ReactRenderer<{
+        onKeyDown: (props: { event: KeyboardEvent }) => boolean
+      }>
       let popup: TippyInstance[]
 
       return {

@@ -52,7 +52,11 @@ export function SubtaskMentionInput({
     const lastCommit = lastCommitRef.current
 
     // Guard against duplicate Enter events from the rich-text editor lifecycle.
-    if (lastCommit && lastCommit.value === currentValue && now - lastCommit.at < 250) {
+    if (
+      lastCommit &&
+      lastCommit.value === currentValue &&
+      now - lastCommit.at < 250
+    ) {
       return
     }
 
@@ -73,10 +77,11 @@ export function SubtaskMentionInput({
   }, [mentions])
 
   const mentionSuggestion = React.useMemo(
-    () => (mentions ? createMentionSuggestion(peopleRef, mentionActiveRef) : null),
+    () =>
+      mentions ? createMentionSuggestion(peopleRef, mentionActiveRef) : null,
     // Only compute once based on whether mentions is provided
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [!!mentions]
+    [!!mentions],
   )
 
   const editor = useEditor({
@@ -144,7 +149,7 @@ export function SubtaskMentionInput({
           'subtask-mention-editor w-full bg-transparent px-0 py-0 focus:outline-none',
           '[&>p]:my-0 [&>*+*]:mt-0',
           completed && 'line-through',
-          className
+          className,
         ),
         ...(ariaLabel ? { 'aria-label': ariaLabel } : {}),
       },
@@ -188,5 +193,5 @@ export function SubtaskMentionInput({
 
   if (!editor) return null
 
-  return <EditorContent editor={editor} className="flex-1 min-w-0" />
+  return <EditorContent editor={editor} className="min-w-0 flex-1" />
 }

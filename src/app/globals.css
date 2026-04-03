@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /*
  * Midnight Peach Theme
@@ -31,20 +31,36 @@
   --animate-fade-in: fade-in 0.2s ease-out;
 
   @keyframes accordion-down {
-    from { height: 0; }
-    to { height: var(--radix-accordion-content-height); }
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
   }
   @keyframes accordion-up {
-    from { height: var(--radix-accordion-content-height); }
-    to { height: 0; }
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
   }
   @keyframes slide-in-from-left {
-    from { transform: translateX(-100%); }
-    to { transform: translateX(0); }
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
   }
   @keyframes fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 }
 
@@ -54,55 +70,54 @@
    * ======================================== */
 
   /* Backgrounds */
-  --background: #0F0B0A;
+  --background: #0f0b0a;
   --surface: #171110;
   --surface-2: #221817;
 
   /* Text */
-  --text-primary: #F6E9E3;
-  --text-muted: #C9B6AE;
+  --text-primary: #f6e9e3;
+  --text-muted: #c9b6ae;
 
   /* Borders */
-  --border-color: #2F2320;
+  --border-color: #2f2320;
 
   /* Primary (peach) */
-  --primary: #FFB199;
-  --primary-hover: #FF9A7A;
-  --primary-pressed: #FF8660;
-  --primary-foreground: #0F0B0A;
+  --primary: #ffb199;
+  --primary-hover: #ff9a7a;
+  --primary-pressed: #ff8660;
+  --primary-foreground: #0f0b0a;
 
   /* Accent (coral pink) */
-  --accent: #FF7D8C;
-  --accent-foreground: #0F0B0A;
+  --accent: #ff7d8c;
+  --accent-foreground: #0f0b0a;
 
   /* Link */
-  --link: #FFC3AD;
+  --link: #ffc3ad;
 
   /* Destructive */
-  --destructive: #FF6B6B;
-  --destructive-foreground: #0F0B0A;
+  --destructive: #ff6b6b;
+  --destructive-foreground: #0f0b0a;
 
   /* Status colors */
-  --status-todo: #C9B6AE;
-  --status-in-progress: #FFB199;
-  --status-waiting: #FFCB8E;
-  --status-on-hold: #FF7D8C;
-  --status-done: #7DD3A8;
+  --status-todo: #c9b6ae;
+  --status-in-progress: #ffb199;
+  --status-waiting: #ffcb8e;
+  --status-on-hold: #ff7d8c;
+  --status-done: #7dd3a8;
 
   /* Priority colors */
-  --priority-low: #C9B6AE;
-  --priority-medium: #FFCB8E;
-  --priority-high: #FFB199;
-  --priority-urgent: #FF6B6B;
+  --priority-low: #c9b6ae;
+  --priority-medium: #ffcb8e;
+  --priority-high: #ffb199;
+  --priority-urgent: #ff6b6b;
 
   /* Category colors */
-  --category-delivery: #FFB199;
-  --category-hiring: #FF7D8C;
-  --category-mentoring: #FFCB8E;
-  --category-collaboration: #7DD3A8;
-  --category-growth: #C9B6AE;
-  --category-other: #E8B4B8;
-
+  --category-delivery: #ffb199;
+  --category-hiring: #ff7d8c;
+  --category-mentoring: #ffcb8e;
+  --category-collaboration: #7dd3a8;
+  --category-growth: #c9b6ae;
+  --category-other: #e8b4b8;
 }
 
 /* Force dark mode since Midnight Peach is a dark theme */
@@ -117,10 +132,17 @@
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
-  font-feature-settings: "rlig" 1, "calt" 1;
+  font-feature-settings:
+    'rlig' 1,
+    'calt' 1;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-heading, inherit);
 }
 
@@ -189,7 +211,8 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Flame animations for urgent priority */
 @keyframes flame-center {
-  0%, 100% {
+  0%,
+  100% {
     transform: scaleY(1) scaleX(1) translateY(0);
     opacity: 1;
   }
@@ -208,7 +231,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @keyframes flame-left {
-  0%, 100% {
+  0%,
+  100% {
     transform: scaleY(1) rotate(-5deg) translateY(0);
     opacity: 0.9;
   }
@@ -223,7 +247,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @keyframes flame-right {
-  0%, 100% {
+  0%,
+  100% {
     transform: scaleY(1) rotate(5deg) translateY(0);
     opacity: 0.9;
   }
@@ -238,7 +263,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @keyframes flame-core {
-  0%, 100% {
+  0%,
+  100% {
     transform: scaleY(1) scaleX(1);
     opacity: 0.9;
   }
@@ -249,7 +275,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @keyframes flame-glow {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.4;
     transform: scale(1);
   }
@@ -752,4 +779,3 @@ h1, h2, h3, h4, h5, h6 {
 .hljs-strong {
   font-weight: bold;
 }
-

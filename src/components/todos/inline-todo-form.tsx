@@ -1,12 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import {
-  CalendarDays,
-  Loader2,
-  Plus,
-  X,
-} from 'lucide-react'
+import { CalendarDays, Loader2, Plus, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PRIORITIES } from '@/lib/priority'
 import { LabelMultiSelect, LabelManagerDialog } from './label-multi-select'
@@ -37,7 +32,12 @@ export function InlineTodoForm({
   defaultLabelIds,
   subtaskMentions,
 }: InlineTodoFormProps) {
-  const { labels, handleCreate: onCreateLabel, handleUpdate: onUpdateLabel, handleDelete: onDeleteLabel } = useLabels()
+  const {
+    labels,
+    handleCreate: onCreateLabel,
+    handleUpdate: onUpdateLabel,
+    handleDelete: onDeleteLabel,
+  } = useLabels()
   const form = useTodoForm(null, { initialLabelIds: defaultLabelIds })
   const [isExpanded, setIsExpanded] = React.useState(false)
   const [isLabelManagerOpen, setIsLabelManagerOpen] = React.useState(false)
@@ -94,13 +94,16 @@ export function InlineTodoForm({
     <form onSubmit={handleSubmit} className="w-full">
       <div className="group relative">
         <div
-          className="absolute -inset-0.5 rounded-lg blur opacity-0 group-focus-within:opacity-100 transition-opacity"
-          style={{ background: `linear-gradient(to right, color-mix(in srgb, var(--primary) 20%, transparent), color-mix(in srgb, var(--accent) 20%, transparent))` }}
+          className="absolute -inset-0.5 rounded-lg opacity-0 blur transition-opacity group-focus-within:opacity-100"
+          style={{
+            background: `linear-gradient(to right, color-mix(in srgb, var(--primary) 20%, transparent), color-mix(in srgb, var(--accent) 20%, transparent))`,
+          }}
         />
         <div
-          className="relative rounded-lg border backdrop-blur-sm overflow-hidden transition-all duration-200"
+          className="relative overflow-hidden rounded-lg border backdrop-blur-sm transition-all duration-200"
           style={{
-            backgroundColor: 'color-mix(in srgb, var(--surface) 80%, transparent)',
+            backgroundColor:
+              'color-mix(in srgb, var(--surface) 80%, transparent)',
             borderColor: 'var(--border-color)',
           }}
         >
@@ -118,12 +121,20 @@ export function InlineTodoForm({
             }}
             placeholder="Add a task..."
             disabled={isLoading}
-            className="w-full bg-transparent px-4 py-3 text-sm focus:outline-none placeholder:text-[var(--text-muted)]"
-            style={{ color: 'var(--text-primary)', caretColor: 'var(--accent)' }}
+            className="w-full bg-transparent px-4 py-3 text-sm placeholder:text-[var(--text-muted)] focus:outline-none"
+            style={{
+              color: 'var(--text-primary)',
+              caretColor: 'var(--accent)',
+            }}
           />
 
           {isExpanded && (
-            <div style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 50%, transparent)' }}>
+            <div
+              style={{
+                borderTop:
+                  '1px solid color-mix(in srgb, var(--border-color) 50%, transparent)',
+              }}
+            >
               {/* Description */}
               <textarea
                 value={form.description}
@@ -137,17 +148,25 @@ export function InlineTodoForm({
                 placeholder="Notes (optional) — Shift+Enter for new line"
                 disabled={isLoading}
                 rows={2}
-                className="w-full bg-transparent px-4 py-2.5 text-xs focus:outline-none resize-none"
+                className="w-full resize-none bg-transparent px-4 py-2.5 text-xs focus:outline-none"
                 style={{ color: 'var(--text-muted)' }}
               />
 
               {/* Priority and Date Row */}
               <div
-                className="px-4 py-3 flex items-center gap-3"
-                style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 30%, transparent)' }}
+                className="flex items-center gap-3 px-4 py-3"
+                style={{
+                  borderTop:
+                    '1px solid color-mix(in srgb, var(--border-color) 30%, transparent)',
+                }}
               >
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: 'var(--text-muted)' }}>Priority</span>
+                  <span
+                    className="text-[10px] font-semibold tracking-wide uppercase"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    Priority
+                  </span>
                   {PRIORITIES.map((pConfig) => {
                     const p = pConfig.value
                     const config = pConfig
@@ -161,13 +180,18 @@ export function InlineTodoForm({
                         onClick={() => form.setPriority(p)}
                         disabled={isLoading}
                         className={cn(
-                          'flex items-center justify-center p-1.5 rounded-md transition-all',
-                          !isSelected && 'hover:bg-white/5 opacity-40 hover:opacity-100'
+                          'flex items-center justify-center rounded-md p-1.5 transition-all',
+                          !isSelected &&
+                            'opacity-40 hover:bg-white/5 hover:opacity-100',
                         )}
-                        style={isSelected ? {
-                          backgroundColor: `color-mix(in srgb, ${config.colorVar} 15%, transparent)`,
-                          color: config.colorVar,
-                        } : { color: config.colorVar }}
+                        style={
+                          isSelected
+                            ? {
+                                backgroundColor: `color-mix(in srgb, ${config.colorVar} 15%, transparent)`,
+                                color: config.colorVar,
+                              }
+                            : { color: config.colorVar }
+                        }
                         title={config.label}
                       >
                         <Icon className="h-3.5 w-3.5" />
@@ -176,24 +200,41 @@ export function InlineTodoForm({
                   })}
                 </div>
 
-                <div className="w-px h-4 bg-[var(--border-color)] opacity-50" />
+                <div className="h-4 w-px bg-[var(--border-color)] opacity-50" />
 
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: 'var(--text-muted)' }}>Due</span>
+                  <span
+                    className="text-[10px] font-semibold tracking-wide uppercase"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    Due
+                  </span>
                   <button
                     type="button"
                     onClick={() => {
-                      const input = document.getElementById('inline-date-input') as HTMLInputElement
+                      const input = document.getElementById(
+                        'inline-date-input',
+                      ) as HTMLInputElement
                       input?.showPicker?.()
                     }}
-                    className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] transition-colors border border-transparent hover:border-[var(--border-color)]"
-                    style={form.dueDate ? {
-                      backgroundColor: 'color-mix(in srgb, var(--primary) 15%, transparent)',
-                      color: 'var(--primary)',
-                    } : { color: 'var(--text-muted)' }}
+                    className="flex items-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-[11px] transition-colors hover:border-[var(--border-color)]"
+                    style={
+                      form.dueDate
+                        ? {
+                            backgroundColor:
+                              'color-mix(in srgb, var(--primary) 15%, transparent)',
+                            color: 'var(--primary)',
+                          }
+                        : { color: 'var(--text-muted)' }
+                    }
                   >
                     <CalendarDays className="h-3.5 w-3.5" />
-                    {form.dueDate ? new Date(form.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Set date'}
+                    {form.dueDate
+                      ? new Date(form.dueDate).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                        })
+                      : 'Set date'}
                   </button>
                   <input
                     id="inline-date-input"
@@ -207,8 +248,11 @@ export function InlineTodoForm({
 
               {/* Labels Row */}
               <div
-                className="px-4 py-3 flex items-center gap-3"
-                style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 30%, transparent)' }}
+                className="flex items-center gap-3 px-4 py-3"
+                style={{
+                  borderTop:
+                    '1px solid color-mix(in srgb, var(--border-color) 30%, transparent)',
+                }}
               >
                 <div className="flex items-center gap-1.5">
                   <LabelMultiSelect
@@ -224,7 +268,7 @@ export function InlineTodoForm({
 
               {/* Selected labels display */}
               {form.labelIds.length > 0 && (
-                <div className="px-4 pb-3 flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1.5 px-4 pb-3">
                   {labels
                     .filter((label) => form.labelIds.includes(label.id))
                     .map((label) => (
@@ -245,19 +289,35 @@ export function InlineTodoForm({
               {/* Subtasks Row */}
               <div
                 className="px-4 py-3"
-                style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 30%, transparent)' }}
+                style={{
+                  borderTop:
+                    '1px solid color-mix(in srgb, var(--border-color) 30%, transparent)',
+                }}
               >
                 <div className="space-y-1">
                   {form.subtasks.map((subtask, index) => (
-                    <div key={index} className="flex items-center gap-2 group/subtask">
-                      <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
+                    <div
+                      key={index}
+                      className="group/subtask flex items-center gap-2"
+                    >
+                      <span
+                        className="flex-shrink-0 text-[10px]"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
                         {index + 1}.
                       </span>
-                      <div className="text-xs flex-1 min-w-0" style={{ color: 'var(--text-primary)' }}>
+                      <div
+                        className="min-w-0 flex-1 text-xs"
+                        style={{ color: 'var(--text-primary)' }}
+                      >
                         {isHtmlContent(subtask.title) ? (
                           <div
-                            className="[&_p]:my-0 [&_p]:leading-snug [&_.mention]:font-medium [&_.mention:hover]:underline [&_a]:text-[var(--primary)] [&_a:hover]:underline"
-                            dangerouslySetInnerHTML={{ __html: linkifyHtml(mentionifyHtml(subtask.title)) }}
+                            className="[&_.mention]:font-medium [&_.mention:hover]:underline [&_a]:text-[var(--primary)] [&_a:hover]:underline [&_p]:my-0 [&_p]:leading-snug"
+                            dangerouslySetInnerHTML={{
+                              __html: linkifyHtml(
+                                mentionifyHtml(subtask.title),
+                              ),
+                            }}
                           />
                         ) : (
                           subtask.title
@@ -266,7 +326,7 @@ export function InlineTodoForm({
                       <button
                         type="button"
                         onClick={() => form.removeSubtask(index)}
-                        className="flex-shrink-0 opacity-0 group-hover/subtask:opacity-100 transition-opacity"
+                        className="flex-shrink-0 opacity-0 transition-opacity group-hover/subtask:opacity-100"
                         style={{ color: 'var(--text-muted)' }}
                       >
                         <X className="h-3 w-3" />
@@ -274,12 +334,16 @@ export function InlineTodoForm({
                     </div>
                   ))}
                   <div className="flex items-center gap-2">
-                    <Plus className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                    <Plus
+                      className="h-3.5 w-3.5 flex-shrink-0"
+                      style={{ color: 'var(--text-muted)' }}
+                    />
                     <SubtaskMentionInput
                       value={newSubtaskTitle}
                       onChange={setNewSubtaskTitle}
                       onCommit={() => {
-                        const normalized = normalizeSubtaskTitle(newSubtaskTitle)
+                        const normalized =
+                          normalizeSubtaskTitle(newSubtaskTitle)
                         if (!hasMeaningfulText(normalized)) return
                         form.addSubtask(normalized)
                         setNewSubtaskTitle('')
@@ -297,7 +361,10 @@ export function InlineTodoForm({
               {/* Azure Work Items Row */}
               <div
                 className="px-4 py-3"
-                style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 30%, transparent)' }}
+                style={{
+                  borderTop:
+                    '1px solid color-mix(in srgb, var(--border-color) 30%, transparent)',
+                }}
               >
                 <UrlListField
                   type="azure"
@@ -314,7 +381,10 @@ export function InlineTodoForm({
               {/* GitHub PRs Row */}
               <div
                 className="px-4 py-3"
-                style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 30%, transparent)' }}
+                style={{
+                  borderTop:
+                    '1px solid color-mix(in srgb, var(--border-color) 30%, transparent)',
+                }}
               >
                 <UrlListField
                   type="github"
@@ -330,8 +400,11 @@ export function InlineTodoForm({
 
               {/* Actions Row */}
               <div
-                className="px-4 py-3 flex items-center justify-end gap-2"
-                style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 30%, transparent)' }}
+                className="flex items-center justify-end gap-2 px-4 py-3"
+                style={{
+                  borderTop:
+                    '1px solid color-mix(in srgb, var(--border-color) 30%, transparent)',
+                }}
               >
                 <button
                   type="button"
@@ -341,7 +414,7 @@ export function InlineTodoForm({
                     setNewPrUrl('')
                     setNewAzureDepUrl('')
                   }}
-                  className="px-3 py-1.5 text-xs font-medium rounded-md transition-colors hover:bg-white/5"
+                  className="rounded-md px-3 py-1.5 text-xs font-medium transition-colors hover:bg-white/5"
                   style={{ color: 'var(--text-muted)' }}
                 >
                   Cancel
@@ -350,7 +423,7 @@ export function InlineTodoForm({
                 <button
                   type="submit"
                   disabled={!form.title.trim() || isLoading}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md shadow-sm transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-1.5 rounded-md px-3 py-1.5 shadow-sm transition-all hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
                   style={{
                     backgroundColor: 'var(--primary)',
                     color: 'var(--primary-foreground)',

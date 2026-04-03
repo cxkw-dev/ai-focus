@@ -2,9 +2,12 @@
 
 import * as React from 'react'
 import { ChevronDown, ChevronRight, Terminal, X } from 'lucide-react'
+import type { IconType } from 'react-icons'
 import { SiAnthropic, SiOpenai } from 'react-icons/si'
 import { cn, formatRelativeTime } from '@/lib/utils'
 import type { Session } from '@/types/todo'
+
+type SessionTool = Session['tool']
 
 const TOOL_CONFIG = {
   claude: {
@@ -23,7 +26,17 @@ const TOOL_CONFIG = {
     buttonBg: 'rgba(74,222,128,0.10)',
     buttonBorder: 'rgba(74,222,128,0.15)',
   },
-} as const
+} satisfies Record<
+  SessionTool,
+  {
+    icon: IconType
+    colorVar: string
+    bgTint: string
+    borderTint: string
+    buttonBg: string
+    buttonBorder: string
+  }
+>
 
 interface SessionListProps {
   sessions: Session[]
@@ -31,65 +44,123 @@ interface SessionListProps {
   compact?: boolean
 }
 
-export function SessionList({ sessions, onDelete, compact = false }: SessionListProps) {
+export function SessionList({
+  sessions,
+  onDelete,
+  compact = false,
+}: SessionListProps) {
   const [expanded, setExpanded] = React.useState(false)
   const [copiedId, setCopiedId] = React.useState<string | null>(null)
+  const resetTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  )
 
-  if (sessions.length === 0) return null
+  const groupedSessions = React.useMemo(() => {
+    const groups: Partial<Record<SessionTool, Session[]>> = {}
 
-  const grouped = React.useMemo(() => {
-    const groups: Record<string, Session[]> = {}
     for (const session of sessions) {
-      if (!groups[session.tool]) groups[session.tool] = []
-      groups[session.tool].push(session)
+      if (!groups[session.tool]) {
+        groups[session.tool] = []
+      }
+
+      groups[session.tool]!.push(session)
     }
+
     return groups
   }, [sessions])
 
   const handleCopy = React.useCallback(async (session: Session) => {
     await navigator.clipboard.writeText(session.command)
     setCopiedId(session.id)
-    setTimeout(() => setCopiedId(null), 1500)
+
+    if (resetTimeoutRef.current) {
+      clearTimeout(resetTimeoutRef.current)
+    }
+
+    resetTimeoutRef.current = setTimeout(() => {
+      setCopiedId(null)
+      resetTimeoutRef.current = null
+    }, 1500)
   }, [])
+
+  React.useEffect(() => {
+    return () => {
+      if (resetTimeoutRef.current) {
+        clearTimeout(resetTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  if (sessions.length === 0) {
+    return null
+  }
 
   return (
     <div
       className={cn(!compact && 'pt-1.5')}
-      style={!compact ? { borderTop: '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)' } : undefined}
+      style={
+        !compact
+          ? {
+              borderTop:
+                '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)',
+            }
+          : undefined
+      }
     >
-      <div className="flex items-center gap-1.5 mb-1">
+      <div className="mb-1 flex items-center gap-1.5">
         <button
           type="button"
-          onClick={() => setExpanded(prev => !prev)}
-          className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={() => setExpanded((previous) => !previous)}
+          className="flex cursor-pointer items-center gap-1.5 transition-opacity hover:opacity-80"
         >
           {expanded ? (
-            <ChevronDown className="h-3 w-3" style={{ color: 'var(--text-muted)', opacity: 0.6 }} />
+            <ChevronDown
+              className="h-3 w-3"
+              style={{ color: 'var(--text-muted)', opacity: 0.6 }}
+            />
           ) : (
-            <ChevronRight className="h-3 w-3" style={{ color: 'var(--text-muted)', opacity: 0.6 }} />
+            <ChevronRight
+              className="h-3 w-3"
+              style={{ color: 'var(--text-muted)', opacity: 0.6 }}
+            />
           )}
-          <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>
+          <span
+            className="text-[10px] font-semibold tracking-wide uppercase"
+            style={{ color: 'var(--text-muted)', opacity: 0.6 }}
+          >
             Sessions
           </span>
         </button>
-        <span className="text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>
+        <span
+          className="text-[10px] font-medium"
+          style={{ color: 'var(--text-muted)' }}
+        >
           {sessions.length}
         </span>
       </div>
 
       {expanded && (
-        <div className="flex flex-col gap-2.5 mt-1">
-          {Object.entries(grouped).map(([tool, toolSessions]) => {
-            const config = TOOL_CONFIG[tool as keyof typeof TOOL_CONFIG]
-            if (!config) return null
+        <div className="mt-1 flex flex-col gap-2.5">
+          {Object.entries(groupedSessions).map(([tool, toolSessions]) => {
+            if (!toolSessions) {
+              return null
+            }
+
+            const config = TOOL_CONFIG[tool as SessionTool]
             const Icon = config.icon
 
             return (
               <div key={tool}>
-                <div className="flex items-center gap-1.5 mb-1.5 pl-0.5">
-                  <Icon style={{ color: config.colorVar, width: 14, height: 14 }} />
-                  <span className="text-[8px] uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-                    {toolSessions.length} {toolSessions.length === 1 ? 'session' : 'sessions'}
+                <div className="mb-1.5 flex items-center gap-1.5 pl-0.5">
+                  <Icon
+                    style={{ color: config.colorVar, width: 14, height: 14 }}
+                  />
+                  <span
+                    className="text-[8px] tracking-wide uppercase"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    {toolSessions.length}{' '}
+                    {toolSessions.length === 1 ? 'session' : 'sessions'}
                   </span>
                 </div>
                 <div className="flex flex-col gap-1 pl-0.5">
@@ -102,35 +173,55 @@ export function SessionList({ sessions, onDelete, compact = false }: SessionList
                         border: `1px solid ${config.borderTint}`,
                       }}
                     >
-                      <div className="flex-1 min-w-0">
+                      <div className="min-w-0 flex-1">
                         <div
-                          className="text-[10px] font-mono truncate"
+                          className="truncate font-mono text-[10px]"
                           style={{ color: 'var(--text-primary)' }}
                         >
                           {session.command}
                         </div>
-                        <div className="text-[8px] mt-0.5" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>
-                          {session.workingPath} · {formatRelativeTime(session.createdAt)}
+                        <div
+                          className="mt-0.5 text-[8px]"
+                          style={{
+                            color: 'var(--text-muted)',
+                            opacity: 0.6,
+                          }}
+                        >
+                          {session.workingPath} ·{' '}
+                          {formatRelativeTime(session.createdAt)}
                         </div>
                       </div>
                       <button
                         type="button"
-                        onClick={(e) => { e.stopPropagation(); handleCopy(session) }}
-                        className="flex-shrink-0 p-1 rounded transition-colors"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          void handleCopy(session)
+                        }}
+                        className="flex-shrink-0 rounded p-1 transition-colors"
                         style={{
                           background: config.buttonBg,
                           border: `1px solid ${config.buttonBorder}`,
-                          color: copiedId === session.id ? 'var(--status-done)' : config.colorVar,
+                          color:
+                            copiedId === session.id
+                              ? 'var(--status-done)'
+                              : config.colorVar,
                         }}
-                        title={copiedId === session.id ? 'Copied!' : 'Copy to terminal'}
+                        title={
+                          copiedId === session.id
+                            ? 'Copied!'
+                            : 'Copy to terminal'
+                        }
                       >
                         <Terminal className="h-2.5 w-2.5" />
                       </button>
                       {onDelete && (
                         <button
                           type="button"
-                          onClick={(e) => { e.stopPropagation(); onDelete(session.id) }}
-                          className="flex-shrink-0 p-0.5 rounded opacity-0 group-hover/session:opacity-100 transition-opacity"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            onDelete(session.id)
+                          }}
+                          className="flex-shrink-0 rounded p-0.5 opacity-0 transition-opacity group-hover/session:opacity-100"
                           style={{ color: 'var(--destructive)' }}
                         >
                           <X className="h-2.5 w-2.5" />

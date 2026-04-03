@@ -5,7 +5,10 @@ import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Sidebar } from './sidebar'
 import { Header } from './header'
-import { HeaderActionsProvider, useHeaderActions } from './header-actions-context'
+import {
+  HeaderActionsProvider,
+  useHeaderActions,
+} from './header-actions-context'
 
 const pageTitles: Record<string, string> = {
   '/todos': 'Todos',
@@ -74,10 +77,17 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
     : { duration: 0 }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--background)' }}>
+    <div
+      className="min-h-screen"
+      style={{ backgroundColor: 'var(--background)' }}
+    >
       {/* Desktop Sidebar */}
       {!isMobile && (
-        <Sidebar collapsed={collapsed} onCollapse={handleCollapse} transition={transition} />
+        <Sidebar
+          collapsed={collapsed}
+          onCollapse={handleCollapse}
+          transition={transition}
+        />
       )}
 
       {/* Mobile Sidebar Overlay */}
@@ -87,7 +97,10 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
             className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <Sidebar collapsed={false} onCollapse={() => setMobileMenuOpen(false)} />
+          <Sidebar
+            collapsed={false}
+            onCollapse={() => setMobileMenuOpen(false)}
+          />
         </>
       )}
 
@@ -98,7 +111,7 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
           marginLeft: isMobile ? 0 : collapsed ? 72 : 256,
         }}
         transition={transition}
-        className="flex flex-col min-h-screen"
+        className="flex min-h-screen flex-col"
       >
         <Header
           title={title}
@@ -106,7 +119,9 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
           onMenuClick={() => setMobileMenuOpen(true)}
           actions={actions}
         />
-        <div className="flex-1 px-3 py-3 sm:p-4 flex flex-col min-h-0">{children}</div>
+        <div className="flex min-h-0 flex-1 flex-col px-3 py-3 sm:p-4">
+          {children}
+        </div>
       </motion.main>
     </div>
   )

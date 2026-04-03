@@ -3,7 +3,9 @@
 import { useState, useEffect, useCallback } from 'react'
 
 function getCssVar(name: string): string {
-  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+  const value = getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim()
   return value || '#888888'
 }
 
@@ -54,7 +56,10 @@ export function useChartColors() {
       }
     })
 
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] })
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['style'],
+    })
     return () => observer.disconnect()
   }, [syncColors])
 

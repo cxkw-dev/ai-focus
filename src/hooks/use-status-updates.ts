@@ -22,25 +22,32 @@ export function useStatusUpdates(todoId: string, enabled = true) {
     onSuccess: (newUpdate) => {
       queryClient.setQueryData<StatusUpdate[]>(
         queryKeys.todoUpdates(todoId),
-        (prev = []) => [newUpdate, ...prev]
+        (prev = []) => [newUpdate, ...prev],
       )
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to add update.', variant: 'destructive' })
+      toast({
+        title: 'Error',
+        description: 'Failed to add update.',
+        variant: 'destructive',
+      })
     },
   })
 
   const remove = useMutation({
-    mutationFn: (updateId: string) =>
-      statusUpdatesApi.remove(todoId, updateId),
+    mutationFn: (updateId: string) => statusUpdatesApi.remove(todoId, updateId),
     onSuccess: (_data, updateId) => {
       queryClient.setQueryData<StatusUpdate[]>(
         queryKeys.todoUpdates(todoId),
-        (prev = []) => prev.filter(u => u.id !== updateId)
+        (prev = []) => prev.filter((u) => u.id !== updateId),
       )
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to remove update.', variant: 'destructive' })
+      toast({
+        title: 'Error',
+        description: 'Failed to remove update.',
+        variant: 'destructive',
+      })
     },
   })
 

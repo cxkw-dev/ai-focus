@@ -21,12 +21,32 @@ export const PRIORITIES: {
   icon: React.ElementType
   colorVar: string
 }[] = [
-  { value: 'LOW', label: 'Low', icon: bold(PhTilde), colorVar: 'var(--priority-low)' },
-  { value: 'MEDIUM', label: 'Medium', icon: bold(PhEquals), colorVar: 'var(--priority-medium)' },
-  { value: 'HIGH', label: 'High', icon: bold(PhArrowFatUp), colorVar: 'var(--priority-high)' },
-  { value: 'URGENT', label: 'Urgent', icon: bold(PhLightning), colorVar: 'var(--priority-urgent)' },
+  {
+    value: 'LOW',
+    label: 'Low',
+    icon: bold(PhTilde),
+    colorVar: 'var(--priority-low)',
+  },
+  {
+    value: 'MEDIUM',
+    label: 'Medium',
+    icon: bold(PhEquals),
+    colorVar: 'var(--priority-medium)',
+  },
+  {
+    value: 'HIGH',
+    label: 'High',
+    icon: bold(PhArrowFatUp),
+    colorVar: 'var(--priority-high)',
+  },
+  {
+    value: 'URGENT',
+    label: 'Urgent',
+    icon: bold(PhLightning),
+    colorVar: 'var(--priority-urgent)',
+  },
 ]
 
 export const PRIORITY_MAP = Object.fromEntries(
-  PRIORITIES.map((p) => [p.value, p])
+  PRIORITIES.map((p) => [p.value, p]),
 ) as Record<Priority, (typeof PRIORITIES)[number]>

@@ -1,37 +1,55 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
 import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
-
-const createSchema = z.object({
-  content: z.string().min(1).max(5000),
-  status: z.enum(['TODO', 'IN_PROGRESS', 'WAITING', 'UNDER_REVIEW', 'ON_HOLD', 'COMPLETED']).optional(),
-})
+import {
+  created,
+  internalError,
+  notFound,
+  ok,
+  parseJsonBody,
+  validationError,
+} from '@/lib/server/api-responses'
+import { findResolvedTodo } from '@/lib/server/todo-lookup'
+import { createStatusUpdateSchema } from '@/lib/validation/todo'
+import { ZodError } from 'zod'
 
 export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params
-  const updates = await db.statusUpdate.findMany({
-    where: { todoId: id },
-    orderBy: { createdAt: 'desc' },
-  })
-  return NextResponse.json(updates)
-}
-
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params
-    const body = await request.json()
-    const data = createSchema.parse(body)
+    const todo = await findResolvedTodo(id)
 
-    const todo = await db.todo.findUnique({ where: { id }, select: { id: true } })
     if (!todo) {
-      return NextResponse.json({ error: 'Todo not found' }, { status: 404 })
+      return notFound('Todo not found')
+    }
+
+    const updates = await db.statusUpdate.findMany({
+      where: { todoId: todo.id },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    return ok(updates)
+  } catch (error) {
+    return internalError(
+      'Failed to fetch updates',
+      error,
+      'Error fetching todo updates',
+    )
+  }
+}
+
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { id } = await params
+    const data = await parseJsonBody(request, createStatusUpdateSchema)
+    const todo = await findResolvedTodo(id)
+
+    if (!todo) {
+      return notFound('Todo not found')
     }
 
     const update = await db.statusUpdate.create({
@@ -41,12 +59,18 @@ export async function POST(
         status: data.status ?? null,
       },
     })
-    emit('todoUpdates', { todoId: id })
-    return NextResponse.json(update, { status: 201 })
-  } catch (err) {
-    if (err instanceof z.ZodError) {
-      return NextResponse.json({ error: err.issues }, { status: 400 })
+
+    emit('todoUpdates', { todoId: todo.id })
+    return created(update)
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return validationError(error)
     }
-    throw err
+
+    return internalError(
+      'Failed to add update',
+      error,
+      'Error creating todo update',
+    )
   }
 }

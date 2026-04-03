@@ -19,13 +19,15 @@ interface RelationEntry {
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params
     const workItemId = parseWorkItemId(id)
     const config = getAzureDevOpsConfig()
-    const workItem = await fetchWorkItem(config, workItemId, { expandRelations: true })
+    const workItem = await fetchWorkItem(config, workItemId, {
+      expandRelations: true,
+    })
 
     const parents: RelationEntry[] = []
     const children: RelationEntry[] = []
@@ -66,7 +68,11 @@ export async function GET(
     }
 
     const allLinkedIds = Array.from(
-      new Set([...parents, ...children, ...dependsOn, ...related].map((entry) => entry.id))
+      new Set(
+        [...parents, ...children, ...dependsOn, ...related].map(
+          (entry) => entry.id,
+        ),
+      ),
     )
     const summaryById = await fetchWorkItemSummaries(config, allLinkedIds)
 
@@ -97,14 +103,14 @@ export async function GET(
     if (error instanceof AzureDevOpsError) {
       return NextResponse.json(
         { error: error.message, details: error.details },
-        { status: error.status }
+        { status: error.status },
       )
     }
 
     console.error('Error fetching Azure work item relations:', error)
     return NextResponse.json(
       { error: 'Failed to fetch Azure work item relations' },
-      { status: 502 }
+      { status: 502 },
     )
   }
 }

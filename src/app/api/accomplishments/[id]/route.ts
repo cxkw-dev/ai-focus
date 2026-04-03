@@ -2,13 +2,23 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { z } from 'zod'
 
-const CATEGORIES = ['DELIVERY', 'HIRING', 'MENTORING', 'COLLABORATION', 'GROWTH', 'OTHER'] as const
+const CATEGORIES = [
+  'DELIVERY',
+  'HIRING',
+  'MENTORING',
+  'COLLABORATION',
+  'GROWTH',
+  'OTHER',
+] as const
 
 const updateSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   description: z.string().max(1000).nullable().optional(),
   category: z.enum(CATEGORIES).optional(),
-  date: z.string().refine((s) => !isNaN(Date.parse(s)), 'Invalid date').optional(),
+  date: z
+    .string()
+    .refine((s) => !isNaN(Date.parse(s)), 'Invalid date')
+    .optional(),
 })
 
 export async function PATCH(
@@ -42,7 +52,10 @@ export async function PATCH(
     }
 
     console.error('Error updating accomplishment:', error)
-    return NextResponse.json({ error: 'Failed to update accomplishment' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Failed to update accomplishment' },
+      { status: 500 },
+    )
   }
 }
 
@@ -56,6 +69,9 @@ export async function DELETE(
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error deleting accomplishment:', error)
-    return NextResponse.json({ error: 'Failed to delete accomplishment' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Failed to delete accomplishment' },
+      { status: 500 },
+    )
   }
 }

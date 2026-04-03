@@ -13,6 +13,7 @@
 ### Task 1: Database Schema — Add TodoContact Model
 
 **Files:**
+
 - Modify: `prisma/schema.prisma:10-37` (Todo model, add relation)
 - Modify: `prisma/schema.prisma:95-101` (Person model, add relation)
 
@@ -70,6 +71,7 @@ git commit -m "add todocontact model for task contacts feature"
 ### Task 2: Types and API Client
 
 **Files:**
+
 - Modify: `src/types/todo.ts:39` (add TodoContact type after Todo interface)
 - Modify: `src/lib/api.ts:1` (add import) and `src/lib/api.ts:157` (add todoContactsApi after peopleApi)
 
@@ -97,7 +99,16 @@ export interface TodoContact {
 Add import of `TodoContact` to the existing import on line 1:
 
 ```typescript
-import type { Todo, CreateTodoInput, UpdateTodoInput, Label, GitHubPrStatus, AzureWorkItemStatus, PaginatedTodosResponse, TodoContact } from '@/types/todo'
+import type {
+  Todo,
+  CreateTodoInput,
+  UpdateTodoInput,
+  Label,
+  GitHubPrStatus,
+  AzureWorkItemStatus,
+  PaginatedTodosResponse,
+  TodoContact,
+} from '@/types/todo'
 ```
 
 Add after `peopleApi` (after line 157):
@@ -105,24 +116,33 @@ Add after `peopleApi` (after line 157):
 ```typescript
 export const todoContactsApi = {
   list: (todoId: string): Promise<TodoContact[]> =>
-    fetch(`/api/todos/${todoId}/contacts`).then(r => json(r)),
+    fetch(`/api/todos/${todoId}/contacts`).then((r) => json(r)),
 
-  add: (todoId: string, data: { personId: string; role: string }): Promise<TodoContact> =>
+  add: (
+    todoId: string,
+    data: { personId: string; role: string },
+  ): Promise<TodoContact> =>
     fetch(`/api/todos/${todoId}/contacts`, {
       method: 'POST',
       headers,
       body: JSON.stringify(data),
-    }).then(r => json(r)),
+    }).then((r) => json(r)),
 
-  update: (todoId: string, contactId: string, data: { role?: string; order?: number }): Promise<TodoContact> =>
+  update: (
+    todoId: string,
+    contactId: string,
+    data: { role?: string; order?: number },
+  ): Promise<TodoContact> =>
     fetch(`/api/todos/${todoId}/contacts/${contactId}`, {
       method: 'PATCH',
       headers,
       body: JSON.stringify(data),
-    }).then(r => json(r)),
+    }).then((r) => json(r)),
 
   remove: (todoId: string, contactId: string): Promise<{ success: boolean }> =>
-    fetch(`/api/todos/${todoId}/contacts/${contactId}`, { method: 'DELETE' }).then(r => json(r)),
+    fetch(`/api/todos/${todoId}/contacts/${contactId}`, {
+      method: 'DELETE',
+    }).then((r) => json(r)),
 }
 ```
 
@@ -138,6 +158,7 @@ git commit -m "add todocontact type and api client"
 ### Task 3: API Routes
 
 **Files:**
+
 - Create: `src/app/api/todos/[id]/contacts/route.ts`
 - Create: `src/app/api/todos/[id]/contacts/[contactId]/route.ts`
 
@@ -160,7 +181,7 @@ const addContactSchema = z.object({
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params
   const contacts = await db.todoContact.findMany({
@@ -173,7 +194,7 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params
   const body = await request.json()
@@ -193,8 +214,16 @@ export async function POST(
     emit('todos')
     return NextResponse.json(contact, { status: 201 })
   } catch (err: unknown) {
-    if (err && typeof err === 'object' && 'code' in err && err.code === 'P2002') {
-      return NextResponse.json({ error: 'Contact already assigned to this task' }, { status: 409 })
+    if (
+      err &&
+      typeof err === 'object' &&
+      'code' in err &&
+      err.code === 'P2002'
+    ) {
+      return NextResponse.json(
+        { error: 'Contact already assigned to this task' },
+        { status: 409 },
+      )
     }
     throw err
   }
@@ -218,7 +247,7 @@ const updateContactSchema = z.object({
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string; contactId: string }> }
+  { params }: { params: Promise<{ id: string; contactId: string }> },
 ) {
   const { id, contactId } = await params
   const body = await request.json()
@@ -235,7 +264,7 @@ export async function PATCH(
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string; contactId: string }> }
+  { params }: { params: Promise<{ id: string; contactId: string }> },
 ) {
   const { id, contactId } = await params
   await db.todoContact.delete({
@@ -262,6 +291,7 @@ git commit -m "add api routes for task contacts crud"
 ### Task 4: React Query Hook — useTodoContacts
 
 **Files:**
+
 - Create: `src/hooks/use-todo-contacts.ts`
 
 Reference pattern: `src/hooks/use-people.ts`
@@ -294,26 +324,40 @@ export function useTodoContacts(todoId: string, enabled = true) {
     onSuccess: (newContact) => {
       queryClient.setQueryData<TodoContact[]>(
         ['todos', todoId, 'contacts'],
-        (prev = []) => [...prev, newContact]
+        (prev = []) => [...prev, newContact],
       )
       toast({ title: 'Contact added', description: newContact.person.name })
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to add contact.', variant: 'destructive' })
+      toast({
+        title: 'Error',
+        description: 'Failed to add contact.',
+        variant: 'destructive',
+      })
     },
   })
 
   const update = useMutation({
-    mutationFn: ({ contactId, data }: { contactId: string; data: { role?: string; order?: number } }) =>
-      todoContactsApi.update(todoId, contactId, data),
+    mutationFn: ({
+      contactId,
+      data,
+    }: {
+      contactId: string
+      data: { role?: string; order?: number }
+    }) => todoContactsApi.update(todoId, contactId, data),
     onSuccess: (updatedContact) => {
       queryClient.setQueryData<TodoContact[]>(
         ['todos', todoId, 'contacts'],
-        (prev = []) => prev.map(c => c.id === updatedContact.id ? updatedContact : c)
+        (prev = []) =>
+          prev.map((c) => (c.id === updatedContact.id ? updatedContact : c)),
       )
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to update contact.', variant: 'destructive' })
+      toast({
+        title: 'Error',
+        description: 'Failed to update contact.',
+        variant: 'destructive',
+      })
     },
   })
 
@@ -323,12 +367,16 @@ export function useTodoContacts(todoId: string, enabled = true) {
     onSuccess: (_data, contactId) => {
       queryClient.setQueryData<TodoContact[]>(
         ['todos', todoId, 'contacts'],
-        (prev = []) => prev.filter(c => c.id !== contactId)
+        (prev = []) => prev.filter((c) => c.id !== contactId),
       )
       toast({ title: 'Contact removed' })
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to remove contact.', variant: 'destructive' })
+      toast({
+        title: 'Error',
+        description: 'Failed to remove contact.',
+        variant: 'destructive',
+      })
     },
   })
 
@@ -355,6 +403,7 @@ git commit -m "add usetodocontacts hook"
 ### Task 5: Contacts Drawer Component
 
 **Files:**
+
 - Create: `src/components/todos/contacts-drawer.tsx`
 
 This is the slide-out panel that appears when the tab on the card edge is clicked. It overlays adjacent content with elevation.
@@ -609,6 +658,7 @@ git commit -m "add contacts drawer component"
 ### Task 6: Integrate Drawer Tab into TodoItem
 
 **Files:**
+
 - Modify: `src/components/todos/todo-item.tsx:3` (add import)
 - Modify: `src/components/todos/todo-item.tsx:860-885` (wrap card in relative container, add tab + drawer)
 
@@ -617,7 +667,7 @@ git commit -m "add contacts drawer component"
 Add to imports at top of file:
 
 ```typescript
-import { Users } from 'lucide-react'  // add to existing lucide import
+import { Users } from 'lucide-react' // add to existing lucide import
 import { ContactsDrawer } from './contacts-drawer'
 ```
 
@@ -632,6 +682,7 @@ const [contactsOpen, setContactsOpen] = React.useState(false)
 **Step 3: Modify the card section to include the drawer tab and panel**
 
 The card is at lines 860-885. The current structure is:
+
 ```tsx
 <div className="flex items-center gap-0.5">
   {/* Drag Handle */}
@@ -686,6 +737,7 @@ Change the card `<div>` wrapper to be `relative` and add the tab + drawer after 
 **Step 4: Verify visually in the browser**
 
 Run `npm run dev` and check:
+
 - Tab is visible on the right edge of every card
 - Clicking the tab opens the drawer sliding from right
 - Drawer overlays adjacent content
@@ -704,6 +756,7 @@ git commit -m "integrate contacts drawer tab into todo item card"
 ### Task 7: Add Contacts Section to EditTodoDialog
 
 **Files:**
+
 - Modify: `src/components/todos/edit-todo-dialog.tsx`
 
 Add a contacts section to the right column, between Labels (line 557) and the closing `</div>` of the right column (line 558).
@@ -713,7 +766,7 @@ Add a contacts section to the right column, between Labels (line 557) and the cl
 Add to the imports at top of edit-todo-dialog.tsx:
 
 ```typescript
-import { Users } from 'lucide-react'  // add to existing lucide import
+import { Users } from 'lucide-react' // add to existing lucide import
 import { useTodoContacts } from '@/hooks/use-todo-contacts'
 ```
 
@@ -724,7 +777,7 @@ Inside the component, after existing hooks (around line 210-220), add:
 ```typescript
 const { contacts, addContact, updateContact, removeContact } = useTodoContacts(
   todo?.id ?? '',
-  !!todo
+  !!todo,
 )
 ```
 
@@ -733,7 +786,9 @@ Also add state for the add form:
 ```typescript
 const [newContactPersonId, setNewContactPersonId] = React.useState('')
 const [newContactRole, setNewContactRole] = React.useState('')
-const [editingContactId, setEditingContactId] = React.useState<string | null>(null)
+const [editingContactId, setEditingContactId] = React.useState<string | null>(
+  null,
+)
 const [editingContactRole, setEditingContactRole] = React.useState('')
 ```
 
@@ -742,9 +797,14 @@ const [editingContactRole, setEditingContactRole] = React.useState('')
 Insert after the Labels section closing `</div>` (after line 557), before the right column closing `</div>` (line 558):
 
 ```tsx
-{/* Contacts */}
-<div className="space-y-2">
-  <Label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+{
+  /* Contacts */
+}
+;<div className="space-y-2">
+  <Label
+    className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide"
+    style={{ color: 'var(--text-muted)' }}
+  >
     <Users className="h-3.5 w-3.5" />
     Contacts
   </Label>
@@ -752,11 +812,17 @@ Insert after the Labels section closing `</div>` (after line 557), before the ri
     {contacts.map((contact) => (
       <div
         key={contact.id}
-        className="flex items-center gap-2 rounded-md px-2 py-1.5 group/contact"
-        style={{ backgroundColor: 'color-mix(in srgb, var(--background) 50%, transparent)' }}
+        className="group/contact flex items-center gap-2 rounded-md px-2 py-1.5"
+        style={{
+          backgroundColor:
+            'color-mix(in srgb, var(--background) 50%, transparent)',
+        }}
       >
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+        <div className="min-w-0 flex-1">
+          <p
+            className="truncate text-xs font-medium"
+            style={{ color: 'var(--text-primary)' }}
+          >
             {contact.person.name}
           </p>
           {editingContactId === contact.id ? (
@@ -766,20 +832,26 @@ Insert after the Labels section closing `</div>` (after line 557), before the ri
               onChange={(e) => setEditingContactRole(e.target.value)}
               onBlur={() => {
                 if (editingContactRole.trim()) {
-                  updateContact({ contactId: contact.id, data: { role: editingContactRole.trim() } })
+                  updateContact({
+                    contactId: contact.id,
+                    data: { role: editingContactRole.trim() },
+                  })
                 }
                 setEditingContactId(null)
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   if (editingContactRole.trim()) {
-                    updateContact({ contactId: contact.id, data: { role: editingContactRole.trim() } })
+                    updateContact({
+                      contactId: contact.id,
+                      data: { role: editingContactRole.trim() },
+                    })
                   }
                   setEditingContactId(null)
                 }
                 if (e.key === 'Escape') setEditingContactId(null)
               }}
-              className="w-full text-[10px] bg-transparent border-b outline-none"
+              className="w-full border-b bg-transparent text-[10px] outline-none"
               style={{ color: 'var(--primary)', borderColor: 'var(--primary)' }}
             />
           ) : (
@@ -797,7 +869,7 @@ Insert after the Labels section closing `</div>` (after line 557), before the ri
         </div>
         <button
           onClick={() => removeContact(contact.id)}
-          className="p-0.5 rounded opacity-0 group-hover/contact:opacity-100 transition-opacity"
+          className="rounded p-0.5 opacity-0 transition-opacity group-hover/contact:opacity-100"
           style={{ color: 'var(--destructive)' }}
         >
           <Trash2 className="h-3 w-3" />
@@ -810,14 +882,19 @@ Insert after the Labels section closing `</div>` (after line 557), before the ri
       <select
         value={newContactPersonId}
         onChange={(e) => setNewContactPersonId(e.target.value)}
-        className="w-full text-xs rounded px-1.5 py-1 bg-transparent border outline-none"
-        style={{ borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
+        className="w-full rounded border bg-transparent px-1.5 py-1 text-xs outline-none"
+        style={{
+          borderColor: 'var(--border-color)',
+          color: 'var(--text-primary)',
+        }}
       >
         <option value="">Add contact...</option>
         {people
-          .filter(p => !contacts.some(c => c.personId === p.id))
+          .filter((p) => !contacts.some((c) => c.personId === p.id))
           .map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
           ))}
       </select>
       {newContactPersonId && (
@@ -829,24 +906,33 @@ Insert after the Labels section closing `</div>` (after line 557), before the ri
             placeholder="Role"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && newContactRole.trim()) {
-                addContact({ personId: newContactPersonId, role: newContactRole.trim() })
+                addContact({
+                  personId: newContactPersonId,
+                  role: newContactRole.trim(),
+                })
                 setNewContactPersonId('')
                 setNewContactRole('')
               }
             }}
-            className="flex-1 text-xs rounded px-1.5 py-1 bg-transparent border outline-none"
-            style={{ borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
+            className="flex-1 rounded border bg-transparent px-1.5 py-1 text-xs outline-none"
+            style={{
+              borderColor: 'var(--border-color)',
+              color: 'var(--text-primary)',
+            }}
           />
           <button
             onClick={() => {
               if (newContactRole.trim()) {
-                addContact({ personId: newContactPersonId, role: newContactRole.trim() })
+                addContact({
+                  personId: newContactPersonId,
+                  role: newContactRole.trim(),
+                })
                 setNewContactPersonId('')
                 setNewContactRole('')
               }
             }}
             disabled={!newContactRole.trim()}
-            className="text-[10px] font-medium px-2 py-0.5 rounded disabled:opacity-40"
+            className="rounded px-2 py-0.5 text-[10px] font-medium disabled:opacity-40"
             style={{ backgroundColor: 'var(--primary)', color: 'white' }}
           >
             Add
@@ -872,6 +958,7 @@ git commit -m "add contacts section to edit todo dialog"
 ### Task 8: MCP Server — Add Contact Tools
 
 **Files:**
+
 - Modify: `mcp-server/src/index.ts`
 
 Add 3 tools: `list_todo_contacts`, `add_todo_contact`, `remove_todo_contact`.
@@ -882,11 +969,19 @@ Follow the existing pattern (`server.tool(name, description, schema, handler)`).
 
 ```typescript
 server.tool(
-  "list_todo_contacts",
-  "List contacts assigned to a todo/task. Each contact has a person (name, email) and a role.",
+  'list_todo_contacts',
+  'List contacts assigned to a todo/task. Each contact has a person (name, email) and a role.',
   {
-    taskNumber: z.number().int().positive().optional().describe("Task number (e.g. 7)"),
-    id: z.string().optional().describe("Todo cuid (use taskNumber instead when possible)"),
+    taskNumber: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .describe('Task number (e.g. 7)'),
+    id: z
+      .string()
+      .optional()
+      .describe('Todo cuid (use taskNumber instead when possible)'),
   },
   async (params) => {
     const todoId = params.id ?? String(params.taskNumber)
@@ -900,17 +995,24 @@ server.tool(
     const data = await apiFetch(`/api/todos/${resolvedId}/contacts`)
     if (isApiError(data)) return textResult(data)
     return textResult(data)
-  }
+  },
 )
 
 server.tool(
-  "add_todo_contact",
-  "Add a contact (person) to a todo/task with a role.",
+  'add_todo_contact',
+  'Add a contact (person) to a todo/task with a role.',
   {
-    taskNumber: z.number().int().positive().optional().describe("Task number (e.g. 7)"),
-    id: z.string().optional().describe("Todo cuid"),
-    personId: z.string().describe("Person ID to add"),
-    role: z.string().describe("Role this person plays (e.g. 'reviewer', 'stakeholder')"),
+    taskNumber: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .describe('Task number (e.g. 7)'),
+    id: z.string().optional().describe('Todo cuid'),
+    personId: z.string().describe('Person ID to add'),
+    role: z
+      .string()
+      .describe("Role this person plays (e.g. 'reviewer', 'stakeholder')"),
   },
   async (params) => {
     let resolvedId = params.id
@@ -919,23 +1021,24 @@ server.tool(
       if (isApiError(todo)) return textResult(todo)
       resolvedId = todo.id
     }
-    if (!resolvedId) return textResult({ _error: true, message: "Provide taskNumber or id" })
+    if (!resolvedId)
+      return textResult({ _error: true, message: 'Provide taskNumber or id' })
     const data = await apiFetch(`/api/todos/${resolvedId}/contacts`, {
-      method: "POST",
+      method: 'POST',
       body: JSON.stringify({ personId: params.personId, role: params.role }),
     })
     if (isApiError(data)) return textResult(data)
     return textResult(data)
-  }
+  },
 )
 
 server.tool(
-  "remove_todo_contact",
-  "Remove a contact from a todo/task.",
+  'remove_todo_contact',
+  'Remove a contact from a todo/task.',
   {
-    taskNumber: z.number().int().positive().optional().describe("Task number"),
-    id: z.string().optional().describe("Todo cuid"),
-    contactId: z.string().describe("The TodoContact ID to remove"),
+    taskNumber: z.number().int().positive().optional().describe('Task number'),
+    id: z.string().optional().describe('Todo cuid'),
+    contactId: z.string().describe('The TodoContact ID to remove'),
   },
   async (params) => {
     let resolvedId = params.id
@@ -944,13 +1047,17 @@ server.tool(
       if (isApiError(todo)) return textResult(todo)
       resolvedId = todo.id
     }
-    if (!resolvedId) return textResult({ _error: true, message: "Provide taskNumber or id" })
-    const data = await apiFetch(`/api/todos/${resolvedId}/contacts/${params.contactId}`, {
-      method: "DELETE",
-    })
+    if (!resolvedId)
+      return textResult({ _error: true, message: 'Provide taskNumber or id' })
+    const data = await apiFetch(
+      `/api/todos/${resolvedId}/contacts/${params.contactId}`,
+      {
+        method: 'DELETE',
+      },
+    )
     if (isApiError(data)) return textResult(data)
     return textResult(data)
-  }
+  },
 )
 ```
 
@@ -971,6 +1078,7 @@ git commit -m "add contact tools to mcp server"
 ### Task 9: Polish and Edge Cases
 
 **Files:**
+
 - Possibly modify: `src/components/todos/todo-item.tsx` (tab badge, hover styles)
 - Possibly modify: `src/components/todos/contacts-drawer.tsx` (empty state, loading)
 

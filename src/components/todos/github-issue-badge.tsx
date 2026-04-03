@@ -1,11 +1,21 @@
 'use client'
 
-import { CircleDot, CheckCircle2, SkipForward, Loader2, Check } from 'lucide-react'
+import {
+  CircleDot,
+  CheckCircle2,
+  SkipForward,
+  Loader2,
+  Check,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useGithubIssueStatus, useGithubIssueStatuses } from '@/hooks/use-github-issue-status'
+import {
+  useGithubIssueStatus,
+  useGithubIssueStatuses,
+} from '@/hooks/use-github-issue-status'
 import type { GitHubIssueStatus } from '@/types/todo'
 
-const CHIP_BASE = 'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors min-w-0 max-w-full whitespace-nowrap'
+const CHIP_BASE =
+  'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors min-w-0 max-w-full whitespace-nowrap'
 
 function getBadgeConfig(data: GitHubIssueStatus) {
   if (data.state === 'closed') {
@@ -33,7 +43,8 @@ export function GitHubIssueBadge({ url, showTitle }: GitHubIssueBadgeProps) {
       <span
         className={cn(CHIP_BASE)}
         style={{
-          backgroundColor: 'color-mix(in srgb, var(--text-muted) 10%, transparent)',
+          backgroundColor:
+            'color-mix(in srgb, var(--text-muted) 10%, transparent)',
           color: 'var(--text-muted)',
         }}
       >
@@ -50,9 +61,13 @@ export function GitHubIssueBadge({ url, showTitle }: GitHubIssueBadgeProps) {
         target="_blank"
         rel="noopener noreferrer"
         onClick={(e) => e.stopPropagation()}
-        className={cn(CHIP_BASE, 'hover:brightness-110 cursor-pointer no-underline')}
+        className={cn(
+          CHIP_BASE,
+          'cursor-pointer no-underline hover:brightness-110',
+        )}
         style={{
-          backgroundColor: 'color-mix(in srgb, var(--text-muted) 10%, transparent)',
+          backgroundColor:
+            'color-mix(in srgb, var(--text-muted) 10%, transparent)',
           color: 'var(--text-muted)',
         }}
       >
@@ -71,7 +86,10 @@ export function GitHubIssueBadge({ url, showTitle }: GitHubIssueBadgeProps) {
       target="_blank"
       rel="noopener noreferrer"
       onClick={(e) => e.stopPropagation()}
-      className={cn(CHIP_BASE, 'hover:brightness-110 cursor-pointer no-underline flex-shrink-0')}
+      className={cn(
+        CHIP_BASE,
+        'flex-shrink-0 cursor-pointer no-underline hover:brightness-110',
+      )}
       style={{
         backgroundColor: `color-mix(in srgb, ${config.color} 15%, transparent)`,
         color: config.color,
@@ -79,7 +97,7 @@ export function GitHubIssueBadge({ url, showTitle }: GitHubIssueBadgeProps) {
       title={`${data.title} — ${config.label}${data.assignees.length ? ` (${data.assignees.join(', ')})` : ''}`}
     >
       <Icon className="h-3 w-3" />
-      <span className="truncate max-w-[7rem]">{config.label}</span>
+      <span className="max-w-[7rem] truncate">{config.label}</span>
       <span className="shrink-0">#{data.number}</span>
     </a>
   )
@@ -90,11 +108,11 @@ export function GitHubIssueBadge({ url, showTitle }: GitHubIssueBadgeProps) {
     <span className="flex w-full min-w-0 items-center gap-1.5">
       {chip}
       {data.labels.length > 0 && (
-        <span className="flex items-center gap-1 flex-shrink-0">
+        <span className="flex flex-shrink-0 items-center gap-1">
           {data.labels.slice(0, 3).map((label) => (
             <span
               key={label.name}
-              className="h-2 w-2 rounded-full flex-shrink-0"
+              className="h-2 w-2 flex-shrink-0 rounded-full"
               style={{ backgroundColor: label.color }}
               title={label.name}
             />
@@ -102,7 +120,7 @@ export function GitHubIssueBadge({ url, showTitle }: GitHubIssueBadgeProps) {
         </span>
       )}
       <span
-        className="min-w-0 flex-1 text-[10px] truncate"
+        className="min-w-0 flex-1 truncate text-[10px]"
         style={{ color: 'var(--text-muted)' }}
       >
         {data.title}
@@ -135,10 +153,16 @@ export function GitHubIssueRow({ urls, showTitle }: GitHubIssueRowProps) {
 
   return (
     <div
-      className="flex items-center gap-1.5 flex-wrap pt-1.5"
-      style={{ borderTop: '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)' }}
+      className="flex flex-wrap items-center gap-1.5 pt-1.5"
+      style={{
+        borderTop:
+          '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)',
+      }}
     >
-      <span className="text-[10px] font-medium flex items-center gap-1" style={{ color: labelColor }}>
+      <span
+        className="flex items-center gap-1 text-[10px] font-medium"
+        style={{ color: labelColor }}
+      >
         {allClosed && !isLoading && <Check className="h-3 w-3" />}
         {label}
       </span>

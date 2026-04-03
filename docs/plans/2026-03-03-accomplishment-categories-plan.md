@@ -13,6 +13,7 @@
 ### Task 1: Add OTHER to Prisma enum and push schema
 
 **Files:**
+
 - Modify: `prisma/schema.prisma:119-125`
 
 **Step 1: Add OTHER to the AccomplishmentCategory enum**
@@ -52,18 +53,35 @@ git commit -m "add OTHER to accomplishment category enum"
 ### Task 2: Add OTHER to API route validation arrays
 
 **Files:**
+
 - Modify: `src/app/api/accomplishments/route.ts:5`
 - Modify: `src/app/api/accomplishments/[id]/route.ts:5`
 
 **Step 1: Update both CATEGORIES arrays**
 
 In both files, change line 5 from:
+
 ```ts
-const CATEGORIES = ['DELIVERY', 'HIRING', 'MENTORING', 'COLLABORATION', 'GROWTH'] as const
+const CATEGORIES = [
+  'DELIVERY',
+  'HIRING',
+  'MENTORING',
+  'COLLABORATION',
+  'GROWTH',
+] as const
 ```
+
 to:
+
 ```ts
-const CATEGORIES = ['DELIVERY', 'HIRING', 'MENTORING', 'COLLABORATION', 'GROWTH', 'OTHER'] as const
+const CATEGORIES = [
+  'DELIVERY',
+  'HIRING',
+  'MENTORING',
+  'COLLABORATION',
+  'GROWTH',
+  'OTHER',
+] as const
 ```
 
 **Step 2: Commit**
@@ -78,11 +96,13 @@ git commit -m "add OTHER to api route category validation"
 ### Task 3: Add OTHER to TypeScript type
 
 **Files:**
+
 - Modify: `src/types/accomplishment.ts:1-6`
 
 **Step 1: Add OTHER to the union type**
 
 Change the type to:
+
 ```ts
 export type AccomplishmentCategory =
   | 'DELIVERY'
@@ -105,14 +125,16 @@ git commit -m "add OTHER to accomplishment category type"
 ### Task 4: Add categoryOther to theme system
 
 **Files:**
+
 - Modify: `src/lib/themes.ts` (ThemeColors interface + all 5 theme objects + applyTheme function)
 - Modify: `src/app/globals.css:98-103` (default CSS variables)
 
 **Step 1: Add categoryOther to ThemeColors interface**
 
 In `src/lib/themes.ts`, add after `categoryGrowth: string` (line 56):
+
 ```ts
-  categoryOther: string
+categoryOther: string
 ```
 
 **Step 2: Add categoryOther color to each theme**
@@ -128,15 +150,17 @@ Add after `categoryGrowth` in each theme's colors object:
 **Step 3: Add CSS variable to applyTheme function**
 
 After line 404 (`root.style.setProperty('--category-growth', ...)`), add:
+
 ```ts
-  root.style.setProperty('--category-other', colors.categoryOther)
+root.style.setProperty('--category-other', colors.categoryOther)
 ```
 
 **Step 4: Add default CSS variable in globals.css**
 
 In `src/app/globals.css`, after line 103 (`--category-growth: #C9B6AE;`), add:
+
 ```css
-  --category-other: #E8B4B8;
+--category-other: #e8b4b8;
 ```
 
 **Step 5: Commit**
@@ -151,6 +175,7 @@ git commit -m "add category-other color to theme system"
 ### Task 5: Add OTHER to UI components
 
 **Files:**
+
 - Modify: `src/components/review/category-badge.tsx:6-11`
 - Modify: `src/components/review/accomplishments-section.tsx:14-21`
 - Modify: `src/components/review/accomplishment-dialog.tsx:13-19`
@@ -158,6 +183,7 @@ git commit -m "add category-other color to theme system"
 **Step 1: Add OTHER to category-badge.tsx**
 
 Add after the GROWTH entry in CATEGORY_CONFIG:
+
 ```ts
   OTHER: { label: 'Other', cssVar: '--category-other' },
 ```
@@ -165,6 +191,7 @@ Add after the GROWTH entry in CATEGORY_CONFIG:
 **Step 2: Add OTHER to accomplishments-section.tsx filter**
 
 Add after the GROWTH entry in FILTER_OPTIONS:
+
 ```ts
   { value: 'OTHER', label: 'Other' },
 ```
@@ -172,6 +199,7 @@ Add after the GROWTH entry in FILTER_OPTIONS:
 **Step 3: Add OTHER to accomplishment-dialog.tsx dropdown**
 
 Add after the GROWTH entry in CATEGORIES:
+
 ```ts
   { value: 'OTHER', label: 'Other' },
 ```
@@ -188,6 +216,7 @@ git commit -m "add OTHER category to ui components"
 ### Task 6: Rewrite agent prompt and update validation
 
 **Files:**
+
 - Modify: `src/lib/accomplishment-agent.ts:7-35` (PROMPT constant)
 - Modify: `src/lib/accomplishment-agent.ts:132-135` (validCategories + fallback)
 
@@ -237,18 +266,38 @@ Labels: {LABELS}`
 **Step 2: Update validCategories array and fallback**
 
 Change lines 132-135 from:
+
 ```ts
-  const validCategories = ['DELIVERY', 'HIRING', 'MENTORING', 'COLLABORATION', 'GROWTH'] as const
-  const category = validCategories.includes(parsed.category as typeof validCategories[number])
-    ? (parsed.category as typeof validCategories[number])
-    : 'DELIVERY'
+const validCategories = [
+  'DELIVERY',
+  'HIRING',
+  'MENTORING',
+  'COLLABORATION',
+  'GROWTH',
+] as const
+const category = validCategories.includes(
+  parsed.category as (typeof validCategories)[number],
+)
+  ? (parsed.category as (typeof validCategories)[number])
+  : 'DELIVERY'
 ```
+
 to:
+
 ```ts
-  const validCategories = ['DELIVERY', 'HIRING', 'MENTORING', 'COLLABORATION', 'GROWTH', 'OTHER'] as const
-  const category = validCategories.includes(parsed.category as typeof validCategories[number])
-    ? (parsed.category as typeof validCategories[number])
-    : 'OTHER'
+const validCategories = [
+  'DELIVERY',
+  'HIRING',
+  'MENTORING',
+  'COLLABORATION',
+  'GROWTH',
+  'OTHER',
+] as const
+const category = validCategories.includes(
+  parsed.category as (typeof validCategories)[number],
+)
+  ? (parsed.category as (typeof validCategories)[number])
+  : 'OTHER'
 ```
 
 Note: fallback changed from `'DELIVERY'` to `'OTHER'` — if Ollama returns an unrecognized category, it's better to fall back to OTHER than to inflate DELIVERY.
@@ -265,17 +314,21 @@ git commit -m "rewrite agent prompt with neutral bias and admin exclusions"
 ### Task 7: Update MCP server
 
 **Files:**
+
 - Modify: `mcp-server/src/index.ts:735-737`
 
 **Step 1: Add OTHER to the enum and description**
 
 Change the category field definition from:
+
 ```ts
     category: z
       .enum(["DELIVERY", "HIRING", "MENTORING", "COLLABORATION", "GROWTH"])
       .describe("Category: DELIVERY (features/PRs), HIRING (interviews), MENTORING (coaching), COLLABORATION (cross-team), GROWTH (learning)"),
 ```
+
 to:
+
 ```ts
     category: z
       .enum(["DELIVERY", "HIRING", "MENTORING", "COLLABORATION", "GROWTH", "OTHER"])
@@ -305,6 +358,7 @@ User should already have `npm run dev` running. Verify no console errors.
 **Step 2: Check the review page**
 
 Navigate to /review. Verify:
+
 - "Other" filter chip appears
 - Creating a new accomplishment shows "Other" in the category dropdown
 - Existing accomplishments still display correctly

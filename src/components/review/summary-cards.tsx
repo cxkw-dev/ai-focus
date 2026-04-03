@@ -15,7 +15,10 @@ interface SummaryCardsProps {
   accomplishmentsTotal?: number
 }
 
-export function SummaryCards({ summary, accomplishmentsTotal = 0 }: SummaryCardsProps) {
+export function SummaryCards({
+  summary,
+  accomplishmentsTotal = 0,
+}: SummaryCardsProps) {
   const cards = [
     {
       label: 'Tasks Created',
@@ -62,7 +65,7 @@ export function SummaryCards({ summary, accomplishmentsTotal = 0 }: SummaryCards
         return (
           <div
             key={card.label}
-            className="relative rounded-xl border p-4 overflow-hidden transition-all duration-200 hover:-translate-y-0.5"
+            className="relative overflow-hidden rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5"
             style={{
               backgroundColor: 'var(--surface)',
               borderColor: 'var(--border-color)',
@@ -78,13 +81,15 @@ export function SummaryCards({ summary, accomplishmentsTotal = 0 }: SummaryCards
           >
             {/* Colored top accent line */}
             <div
-              className="absolute top-0 left-0 right-0 h-0.5"
+              className="absolute top-0 right-0 left-0 h-0.5"
               style={{ backgroundColor: card.color }}
             />
-            <div className="flex items-center gap-2 mb-3">
+            <div className="mb-3 flex items-center gap-2">
               <div
                 className="flex h-7 w-7 items-center justify-center rounded-lg"
-                style={{ backgroundColor: `color-mix(in srgb, ${card.color} 12%, transparent)` }}
+                style={{
+                  backgroundColor: `color-mix(in srgb, ${card.color} 12%, transparent)`,
+                }}
               >
                 <Icon className="h-3.5 w-3.5" style={{ color: card.color }} />
               </div>
@@ -92,7 +97,10 @@ export function SummaryCards({ summary, accomplishmentsTotal = 0 }: SummaryCards
                 {card.label}
               </span>
             </div>
-            <p className="text-2xl font-bold tabular-nums" style={{ color: 'var(--text-primary)' }}>
+            <p
+              className="text-2xl font-bold tabular-nums"
+              style={{ color: 'var(--text-primary)' }}
+            >
               {card.value}
             </p>
           </div>

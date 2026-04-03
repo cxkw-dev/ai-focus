@@ -22,14 +22,11 @@ export function linkifyHtml(html: string): string {
   return parts
     .map((part) => {
       if (/^<a\s/i.test(part)) return part
-      return part.replace(
-        /(https?:\/\/[^\s<]+|www\.[^\s<]+)/gi,
-        (match) => {
-          const [cleanUrl, trailing] = cleanUrlEnd(match)
-          const href = ensureProtocol(cleanUrl)
-          return `<a href="${href}" target="_blank" rel="noopener noreferrer">${cleanUrl}</a>${trailing}`
-        }
-      )
+      return part.replace(/(https?:\/\/[^\s<]+|www\.[^\s<]+)/gi, (match) => {
+        const [cleanUrl, trailing] = cleanUrlEnd(match)
+        const href = ensureProtocol(cleanUrl)
+        return `<a href="${href}" target="_blank" rel="noopener noreferrer">${cleanUrl}</a>${trailing}`
+      })
     })
     .join('')
 }
@@ -40,7 +37,7 @@ export function mentionifyHtml(html: string): string {
     (_match, email, label) => {
       const teamsUrl = `https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(email)}`
       return `<a href="${teamsUrl}" target="_blank" rel="noopener noreferrer" class="mention">${label}</a>`
-    }
+    },
   )
 }
 

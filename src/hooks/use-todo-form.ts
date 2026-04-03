@@ -63,13 +63,18 @@ interface TodoFormState {
   }
 }
 
-export function useTodoForm(todo?: Todo | null, options?: { initialLabelIds?: string[] }): TodoFormState {
+export function useTodoForm(
+  todo?: Todo | null,
+  options?: { initialLabelIds?: string[] },
+): TodoFormState {
   const [title, setTitle] = React.useState('')
   const [description, setDescription] = React.useState('')
   const [priority, setPriority] = React.useState<Priority>('MEDIUM')
   const [status, setStatus] = React.useState<Status>('TODO')
   const [dueDate, setDueDate] = React.useState('')
-  const [labelIds, setLabelIds] = React.useState<string[]>(options?.initialLabelIds ?? [])
+  const [labelIds, setLabelIds] = React.useState<string[]>(
+    options?.initialLabelIds ?? [],
+  )
   const [subtasks, setSubtasks] = React.useState<SubtaskInput[]>([])
   const [myPrUrls, setMyPrUrls] = React.useState<string[]>([])
   const [githubPrUrls, setGithubPrUrls] = React.useState<string[]>([])
@@ -100,9 +105,14 @@ export function useTodoForm(todo?: Todo | null, options?: { initialLabelIds?: st
     setPriority(t.priority)
     setStatus(t.status)
     setDueDate(t.dueDate ? t.dueDate.split('T')[0] : '')
-    setLabelIds(t.labels?.map(l => l.id) ?? [])
+    setLabelIds(t.labels?.map((l) => l.id) ?? [])
     setSubtasks(
-      t.subtasks?.map(s => ({ id: s.id, title: s.title, completed: s.completed, order: s.order })) ?? []
+      t.subtasks?.map((s) => ({
+        id: s.id,
+        title: s.title,
+        completed: s.completed,
+        order: s.order,
+      })) ?? [],
     )
     setMyPrUrls(t.myPrUrls ?? [])
     setGithubPrUrls(t.githubPrUrls ?? [])
@@ -123,132 +133,190 @@ export function useTodoForm(todo?: Todo | null, options?: { initialLabelIds?: st
   const addSubtask = React.useCallback((subtaskTitle: string) => {
     const normalized = normalizeSubtaskTitle(subtaskTitle)
     if (!hasMeaningfulText(normalized)) return
-    setSubtasks(prev => [...prev, { title: normalized, completed: false, order: prev.length }])
+    setSubtasks((prev) => [
+      ...prev,
+      { title: normalized, completed: false, order: prev.length },
+    ])
   }, [])
 
   const removeSubtask = React.useCallback((index: number) => {
-    setSubtasks(prev => prev.filter((_, i) => i !== index).map((s, i) => ({ ...s, order: i })))
+    setSubtasks((prev) =>
+      prev.filter((_, i) => i !== index).map((s, i) => ({ ...s, order: i })),
+    )
   }, [])
 
-  const moveSubtask = React.useCallback((fromIndex: number, toIndex: number) => {
-    setSubtasks(prev => {
-      if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0 || fromIndex >= prev.length || toIndex >= prev.length) {
-        return prev
-      }
-      const next = [...prev]
-      const [moved] = next.splice(fromIndex, 1)
-      if (!moved) return prev
-      next.splice(toIndex, 0, moved)
-      return next.map((subtask, index) => ({ ...subtask, order: index }))
-    })
-  }, [])
+  const moveSubtask = React.useCallback(
+    (fromIndex: number, toIndex: number) => {
+      setSubtasks((prev) => {
+        if (
+          fromIndex === toIndex ||
+          fromIndex < 0 ||
+          toIndex < 0 ||
+          fromIndex >= prev.length ||
+          toIndex >= prev.length
+        ) {
+          return prev
+        }
+        const next = [...prev]
+        const [moved] = next.splice(fromIndex, 1)
+        if (!moved) return prev
+        next.splice(toIndex, 0, moved)
+        return next.map((subtask, index) => ({ ...subtask, order: index }))
+      })
+    },
+    [],
+  )
 
-  const updateSubtaskTitle = React.useCallback((index: number, newTitle: string) => {
-    setSubtasks(prev => prev.map((s, i) => (i === index ? { ...s, title: newTitle } : s)))
-  }, [])
+  const updateSubtaskTitle = React.useCallback(
+    (index: number, newTitle: string) => {
+      setSubtasks((prev) =>
+        prev.map((s, i) => (i === index ? { ...s, title: newTitle } : s)),
+      )
+    },
+    [],
+  )
 
   const toggleSubtask = React.useCallback((index: number) => {
-    setSubtasks(prev => prev.map((s, i) => (i === index ? { ...s, completed: !s.completed } : s)))
+    setSubtasks((prev) =>
+      prev.map((s, i) => (i === index ? { ...s, completed: !s.completed } : s)),
+    )
   }, [])
 
   const addMyPrUrl = React.useCallback((url: string) => {
     const trimmed = url.trim()
     if (!trimmed) return
-    setMyPrUrls(prev => prev.includes(trimmed) ? prev : [...prev, trimmed])
+    setMyPrUrls((prev) => (prev.includes(trimmed) ? prev : [...prev, trimmed]))
   }, [])
 
   const removeMyPrUrl = React.useCallback((index: number) => {
-    setMyPrUrls(prev => prev.filter((_, i) => i !== index))
+    setMyPrUrls((prev) => prev.filter((_, i) => i !== index))
   }, [])
 
   const addGithubPrUrl = React.useCallback((url: string) => {
     const trimmed = url.trim()
     if (!trimmed) return
-    setGithubPrUrls(prev => prev.includes(trimmed) ? prev : [...prev, trimmed])
+    setGithubPrUrls((prev) =>
+      prev.includes(trimmed) ? prev : [...prev, trimmed],
+    )
   }, [])
 
   const removeGithubPrUrl = React.useCallback((index: number) => {
-    setGithubPrUrls(prev => prev.filter((_, i) => i !== index))
+    setGithubPrUrls((prev) => prev.filter((_, i) => i !== index))
   }, [])
 
   const addAzureDepUrl = React.useCallback((url: string) => {
     const trimmed = url.trim()
     if (!trimmed) return
-    setAzureDepUrls(prev => prev.includes(trimmed) ? prev : [...prev, trimmed])
+    setAzureDepUrls((prev) =>
+      prev.includes(trimmed) ? prev : [...prev, trimmed],
+    )
   }, [])
 
   const removeAzureDepUrl = React.useCallback((index: number) => {
-    setAzureDepUrls(prev => prev.filter((_, i) => i !== index))
+    setAzureDepUrls((prev) => prev.filter((_, i) => i !== index))
   }, [])
 
   const addMyIssueUrl = React.useCallback((url: string) => {
     const trimmed = url.trim()
     if (!trimmed) return
-    setMyIssueUrls(prev => prev.includes(trimmed) ? prev : [...prev, trimmed])
+    setMyIssueUrls((prev) =>
+      prev.includes(trimmed) ? prev : [...prev, trimmed],
+    )
   }, [])
 
   const removeMyIssueUrl = React.useCallback((index: number) => {
-    setMyIssueUrls(prev => prev.filter((_, i) => i !== index))
+    setMyIssueUrls((prev) => prev.filter((_, i) => i !== index))
   }, [])
 
   const addGithubIssueUrl = React.useCallback((url: string) => {
     const trimmed = url.trim()
     if (!trimmed) return
-    setGithubIssueUrls(prev => prev.includes(trimmed) ? prev : [...prev, trimmed])
+    setGithubIssueUrls((prev) =>
+      prev.includes(trimmed) ? prev : [...prev, trimmed],
+    )
   }, [])
 
   const removeGithubIssueUrl = React.useCallback((index: number) => {
-    setGithubIssueUrls(prev => prev.filter((_, i) => i !== index))
+    setGithubIssueUrls((prev) => prev.filter((_, i) => i !== index))
   }, [])
 
-  const toPayload = React.useCallback(() => ({
-    title: title.trim(),
-    description: description.trim() || undefined,
-    priority,
-    status,
-    dueDate: dueDate ? new Date(dueDate).toISOString() : null,
-    labelIds,
-    subtasks: subtasks.map((s, i) => ({
-      ...(s.id ? { id: s.id } : {}),
-      title: s.title,
-      completed: s.completed ?? false,
-      order: i,
-    })),
-    myPrUrls,
-    githubPrUrls,
-    azureWorkItemUrl: azureWorkItemUrl.trim() || null,
-    azureDepUrls,
-    myIssueUrls,
-    githubIssueUrls,
-  }), [title, description, priority, status, dueDate, labelIds, subtasks, myPrUrls, githubPrUrls, azureWorkItemUrl, azureDepUrls, myIssueUrls, githubIssueUrls])
+  const toPayload = React.useCallback(
+    () => ({
+      title: title.trim(),
+      description: description.trim() || undefined,
+      priority,
+      status,
+      dueDate: dueDate ? new Date(dueDate).toISOString() : null,
+      labelIds,
+      subtasks: subtasks.map((s, i) => ({
+        ...(s.id ? { id: s.id } : {}),
+        title: s.title,
+        completed: s.completed ?? false,
+        order: i,
+      })),
+      myPrUrls,
+      githubPrUrls,
+      azureWorkItemUrl: azureWorkItemUrl.trim() || null,
+      azureDepUrls,
+      myIssueUrls,
+      githubIssueUrls,
+    }),
+    [
+      title,
+      description,
+      priority,
+      status,
+      dueDate,
+      labelIds,
+      subtasks,
+      myPrUrls,
+      githubPrUrls,
+      azureWorkItemUrl,
+      azureDepUrls,
+      myIssueUrls,
+      githubIssueUrls,
+    ],
+  )
 
   return {
-    title, setTitle,
-    description, setDescription,
-    priority, setPriority,
-    status, setStatus,
-    dueDate, setDueDate,
-    labelIds, setLabelIds,
+    title,
+    setTitle,
+    description,
+    setDescription,
+    priority,
+    setPriority,
+    status,
+    setStatus,
+    dueDate,
+    setDueDate,
+    labelIds,
+    setLabelIds,
     subtasks,
     addSubtask,
     removeSubtask,
     moveSubtask,
     updateSubtaskTitle,
     toggleSubtask,
-    myPrUrls, setMyPrUrls,
+    myPrUrls,
+    setMyPrUrls,
     addMyPrUrl,
     removeMyPrUrl,
-    githubPrUrls, setGithubPrUrls,
+    githubPrUrls,
+    setGithubPrUrls,
     addGithubPrUrl,
     removeGithubPrUrl,
-    azureWorkItemUrl, setAzureWorkItemUrl,
-    azureDepUrls, setAzureDepUrls,
+    azureWorkItemUrl,
+    setAzureWorkItemUrl,
+    azureDepUrls,
+    setAzureDepUrls,
     addAzureDepUrl,
     removeAzureDepUrl,
-    myIssueUrls, setMyIssueUrls,
+    myIssueUrls,
+    setMyIssueUrls,
     addMyIssueUrl,
     removeMyIssueUrl,
-    githubIssueUrls, setGithubIssueUrls,
+    githubIssueUrls,
+    setGithubIssueUrls,
     addGithubIssueUrl,
     removeGithubIssueUrl,
     reset,

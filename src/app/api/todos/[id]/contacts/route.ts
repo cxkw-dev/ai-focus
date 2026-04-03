@@ -1,51 +1,86 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
 import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
-
-const addContactSchema = z.object({
-  personId: z.string(),
-  role: z.string().min(1),
-})
+import {
+  conflict,
+  created,
+  internalError,
+  notFound,
+  ok,
+  parseJsonBody,
+  validationError,
+} from '@/lib/server/api-responses'
+import { isPrismaErrorCode } from '@/lib/server/prisma-errors'
+import { findResolvedTodo } from '@/lib/server/todo-lookup'
+import { addTodoContactSchema } from '@/lib/validation/todo'
+import { ZodError } from 'zod'
 
 export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const { id } = await params
-  const contacts = await db.todoContact.findMany({
-    where: { todoId: id },
-    include: { person: { select: { id: true, name: true, email: true } } },
-    orderBy: { order: 'asc' },
-  })
-  return NextResponse.json(contacts)
+  try {
+    const { id } = await params
+    const todo = await findResolvedTodo(id)
+
+    if (!todo) {
+      return notFound('Todo not found')
+    }
+
+    const contacts = await db.todoContact.findMany({
+      where: { todoId: todo.id },
+      include: { person: { select: { id: true, name: true, email: true } } },
+      orderBy: { order: 'asc' },
+    })
+
+    return ok(contacts)
+  } catch (error) {
+    return internalError(
+      'Failed to fetch contacts',
+      error,
+      'Error fetching todo contacts',
+    )
+  }
 }
 
 export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const { id } = await params
-  const body = await request.json()
-  const data = addContactSchema.parse(body)
-
   try {
-    const count = await db.todoContact.count({ where: { todoId: id } })
+    const { id } = await params
+    const todo = await findResolvedTodo(id)
+
+    if (!todo) {
+      return notFound('Todo not found')
+    }
+
+    const data = await parseJsonBody(request, addTodoContactSchema)
+    const count = await db.todoContact.count({ where: { todoId: todo.id } })
     const contact = await db.todoContact.create({
       data: {
-        todoId: id,
+        todoId: todo.id,
         personId: data.personId,
         role: data.role,
         order: count,
       },
       include: { person: { select: { id: true, name: true, email: true } } },
     })
-    emit('todoContacts', { todoId: id })
-    return NextResponse.json(contact, { status: 201 })
-  } catch (err: unknown) {
-    if (err && typeof err === 'object' && 'code' in err && err.code === 'P2002') {
-      return NextResponse.json({ error: 'Contact already assigned to this task' }, { status: 409 })
+
+    emit('todoContacts', { todoId: todo.id })
+    return created(contact)
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return validationError(error)
     }
-    throw err
+
+    if (isPrismaErrorCode(error, 'P2002')) {
+      return conflict('Contact already assigned to this task')
+    }
+
+    return internalError(
+      'Failed to add contact',
+      error,
+      'Error creating todo contact',
+    )
   }
 }

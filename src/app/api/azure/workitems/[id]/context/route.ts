@@ -89,7 +89,7 @@ const MAX_SECTION_ITEMS = 100
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params
@@ -98,44 +98,59 @@ export async function GET(
 
     const includeComments = parseBooleanFlag(
       request.nextUrl.searchParams.get('includeComments'),
-      true
+      true,
     )
     const includeUpdates = parseBooleanFlag(
       request.nextUrl.searchParams.get('includeUpdates'),
-      false
+      false,
     )
     const maxComments = parseListLimit(
       request.nextUrl.searchParams.get('maxComments'),
-      DEFAULT_MAX_COMMENTS
+      DEFAULT_MAX_COMMENTS,
     )
     const maxUpdates = parseListLimit(
       request.nextUrl.searchParams.get('maxUpdates'),
-      DEFAULT_MAX_UPDATES
+      DEFAULT_MAX_UPDATES,
     )
 
     // Single canonical work item fetch reused across all sections.
-    const workItem = await fetchWorkItem(config, workItemId, { expandRelations: true })
+    const workItem = await fetchWorkItem(config, workItemId, {
+      expandRelations: true,
+    })
     const teamProject = getWorkItemTeamProject(workItem)
 
     const [relations, prLinks, comments, updates] = await Promise.all([
       safeSection(
-        () => buildRelationsPayload(config, workItemId, workItem.relations ?? []),
-        'Failed to fetch work item relations'
+        () =>
+          buildRelationsPayload(config, workItemId, workItem.relations ?? []),
+        'Failed to fetch work item relations',
       ),
       safeSection(
-        () => buildPrLinksPayload(config, workItemId, workItem.relations ?? [], teamProject),
-        'Failed to fetch work item PR links'
+        () =>
+          buildPrLinksPayload(
+            config,
+            workItemId,
+            workItem.relations ?? [],
+            teamProject,
+          ),
+        'Failed to fetch work item PR links',
       ),
       includeComments
         ? safeSection(
-            () => buildCommentsPayload(config, workItemId, teamProject, maxComments),
-            'Failed to fetch work item comments'
+            () =>
+              buildCommentsPayload(
+                config,
+                workItemId,
+                teamProject,
+                maxComments,
+              ),
+            'Failed to fetch work item comments',
           )
         : Promise.resolve({ skipped: true as const }),
       includeUpdates
         ? safeSection(
             () => buildUpdatesPayload(config, workItemId, maxUpdates),
-            'Failed to fetch work item updates'
+            'Failed to fetch work item updates',
           )
         : Promise.resolve({ skipped: true as const }),
     ])
@@ -161,9 +176,13 @@ export async function GET(
       })
       .filter(
         (
-          value
-        ): value is { relation: string; name: string | null; comment: string | null; url: string } =>
-          value !== null
+          value,
+        ): value is {
+          relation: string
+          name: string | null
+          comment: string | null
+          url: string
+        } => value !== null,
       )
 
     return NextResponse.json({
@@ -176,7 +195,9 @@ export async function GET(
         areaPath: toText(fields['System.AreaPath']),
         iterationPath: toText(fields['System.IterationPath']),
         description: toText(fields['System.Description']),
-        acceptanceCriteria: toText(fields['Microsoft.VSTS.Common.AcceptanceCriteria']),
+        acceptanceCriteria: toText(
+          fields['Microsoft.VSTS.Common.AcceptanceCriteria'],
+        ),
         tags: splitTags(fields['System.Tags']),
         links: {
           system: systemLinks,
@@ -199,14 +220,14 @@ export async function GET(
     if (error instanceof AzureDevOpsError) {
       return NextResponse.json(
         { error: error.message, details: error.details },
-        { status: error.status }
+        { status: error.status },
       )
     }
 
     console.error('Error fetching Azure work item context:', error)
     return NextResponse.json(
       { error: 'Failed to fetch Azure work item context' },
-      { status: 502 }
+      { status: 502 },
     )
   }
 }
@@ -218,7 +239,7 @@ async function buildRelationsPayload(
     rel?: string
     url?: string
     attributes?: Record<string, unknown>
-  }>
+  }>,
 ) {
   const parents: RelationEntry[] = []
   const children: RelationEntry[] = []
@@ -259,7 +280,11 @@ async function buildRelationsPayload(
   }
 
   const allLinkedIds = Array.from(
-    new Set([...parents, ...children, ...dependsOn, ...related].map((entry) => entry.id))
+    new Set(
+      [...parents, ...children, ...dependsOn, ...related].map(
+        (entry) => entry.id,
+      ),
+    ),
   )
   const summaryById = await fetchWorkItemSummaries(config, allLinkedIds)
 
@@ -292,7 +317,7 @@ async function buildPrLinksPayload(
   config: ReturnType<typeof getAzureDevOpsConfig>,
   workItemId: number,
   relations: Array<{ url?: string }>,
-  teamProject: string | null
+  teamProject: string | null,
 ) {
   const pullRequestRefs: AzurePullRequestRef[] = []
   const commitRefs: AzureCommitRef[] = []
@@ -307,18 +332,20 @@ async function buildPrLinksPayload(
 
   const uniquePullRequestRefs = dedupeBy(
     pullRequestRefs,
-    (ref) => `${ref.repoId}:${ref.pullRequestId}`
+    (ref) => `${ref.repoId}:${ref.pullRequestId}`,
   )
   const uniqueCommitRefs = dedupeBy(
     commitRefs,
-    (ref) => `${ref.repoId}:${ref.commitId}`
+    (ref) => `${ref.repoId}:${ref.commitId}`,
   )
 
   const pullRequests = await Promise.all(
-    uniquePullRequestRefs.map((ref) => resolvePullRequest(config, ref, teamProject))
+    uniquePullRequestRefs.map((ref) =>
+      resolvePullRequest(config, ref, teamProject),
+    ),
   )
   const commits = await Promise.all(
-    uniqueCommitRefs.map((ref) => resolveCommit(config, ref, teamProject))
+    uniqueCommitRefs.map((ref) => resolveCommit(config, ref, teamProject)),
   )
 
   return {
@@ -332,10 +359,13 @@ async function buildCommentsPayload(
   config: ReturnType<typeof getAzureDevOpsConfig>,
   workItemId: number,
   teamProject: string | null,
-  maxComments: number
+  maxComments: number,
 ) {
   if (!teamProject) {
-    throw new AzureDevOpsError('Could not determine Team Project for this work item', 502)
+    throw new AzureDevOpsError(
+      'Could not determine Team Project for this work item',
+      502,
+    )
   }
 
   const response = await fetchAzureJson<{ comments?: AzureComment[] }>(
@@ -343,7 +373,7 @@ async function buildCommentsPayload(
     `/${encodeURIComponent(teamProject)}/_apis/wit/workitems/${workItemId}/comments`,
     {
       apiVersion: getCommentsApiVersion(),
-    }
+    },
   )
 
   const comments = (response.comments ?? [])
@@ -373,14 +403,14 @@ async function buildCommentsPayload(
 async function buildUpdatesPayload(
   config: ReturnType<typeof getAzureDevOpsConfig>,
   workItemId: number,
-  maxUpdates: number
+  maxUpdates: number,
 ) {
   const response = await fetchAzureJson<{ value?: AzureWorkItemUpdate[] }>(
     config,
     `/_apis/wit/workitems/${workItemId}/updates`,
     {
       searchParams: { $top: 50 },
-    }
+    },
   )
 
   const updates = (response.value ?? [])
@@ -391,11 +421,15 @@ async function buildUpdatesPayload(
           oldValue: normalizeFieldValue(value?.oldValue),
           newValue: normalizeFieldValue(value?.newValue),
         }))
-        .filter((change) => change.oldValue !== null || change.newValue !== null)
+        .filter(
+          (change) => change.oldValue !== null || change.newValue !== null,
+        )
 
       if (changes.length === 0) return null
 
-      const stateChange = changes.find((change) => change.field === 'System.State')
+      const stateChange = changes.find(
+        (change) => change.field === 'System.State',
+      )
 
       return {
         updateId: update.id,
@@ -428,7 +462,7 @@ async function buildUpdatesPayload(
 async function resolvePullRequest(
   config: ReturnType<typeof getAzureDevOpsConfig>,
   ref: AzurePullRequestRef,
-  teamProject: string | null
+  teamProject: string | null,
 ) {
   try {
     const detail = await fetchPullRequestDetail(config, ref, teamProject)
@@ -467,7 +501,8 @@ async function resolvePullRequest(
       closedAt: null,
       author: null,
       url: ref.relationUrl,
-      error: error instanceof Error ? error.message : 'Failed to resolve PR details',
+      error:
+        error instanceof Error ? error.message : 'Failed to resolve PR details',
     }
   }
 }
@@ -475,7 +510,7 @@ async function resolvePullRequest(
 async function resolveCommit(
   config: ReturnType<typeof getAzureDevOpsConfig>,
   ref: AzureCommitRef,
-  teamProject: string | null
+  teamProject: string | null,
 ) {
   try {
     const detail = await fetchCommitDetail(config, ref, teamProject)
@@ -502,7 +537,10 @@ async function resolveCommit(
       },
       authoredAt: null,
       url: ref.relationUrl,
-      error: error instanceof Error ? error.message : 'Failed to resolve commit details',
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to resolve commit details',
     }
   }
 }
@@ -510,7 +548,7 @@ async function resolveCommit(
 async function fetchPullRequestDetail(
   config: ReturnType<typeof getAzureDevOpsConfig>,
   ref: AzurePullRequestRef,
-  teamProject: string | null
+  teamProject: string | null,
 ): Promise<AzurePullRequestResponse> {
   if (ref.source === 'relation-url' && /^https?:\/\//i.test(ref.relationUrl)) {
     return fetchAzureJson<AzurePullRequestResponse>(config, ref.relationUrl)
@@ -522,30 +560,35 @@ async function fetchPullRequestDetail(
 
   return fetchAzureJson<AzurePullRequestResponse>(
     config,
-    `/${encodeURIComponent(teamProject)}/_apis/git/repositories/${encodeURIComponent(ref.repoId)}/pullRequests/${ref.pullRequestId}`
+    `/${encodeURIComponent(teamProject)}/_apis/git/repositories/${encodeURIComponent(ref.repoId)}/pullRequests/${ref.pullRequestId}`,
   )
 }
 
 async function fetchCommitDetail(
   config: ReturnType<typeof getAzureDevOpsConfig>,
   ref: AzureCommitRef,
-  teamProject: string | null
+  teamProject: string | null,
 ): Promise<AzureCommitResponse> {
   if (ref.source === 'relation-url' && /^https?:\/\//i.test(ref.relationUrl)) {
     return fetchAzureJson<AzureCommitResponse>(config, ref.relationUrl)
   }
 
   if (!teamProject) {
-    throw new AzureDevOpsError('Missing Team Project for commit resolution', 502)
+    throw new AzureDevOpsError(
+      'Missing Team Project for commit resolution',
+      502,
+    )
   }
 
   return fetchAzureJson<AzureCommitResponse>(
     config,
-    `/${encodeURIComponent(teamProject)}/_apis/git/repositories/${encodeURIComponent(ref.repoId)}/commits/${encodeURIComponent(ref.commitId)}`
+    `/${encodeURIComponent(teamProject)}/_apis/git/repositories/${encodeURIComponent(ref.repoId)}/commits/${encodeURIComponent(ref.commitId)}`,
   )
 }
 
-function toMergeStatus(status: string | null): 'merged' | 'open' | 'abandoned' | 'unknown' {
+function toMergeStatus(
+  status: string | null,
+): 'merged' | 'open' | 'abandoned' | 'unknown' {
   if (status === 'completed') return 'merged'
   if (status === 'active') return 'open'
   if (status === 'abandoned') return 'abandoned'
@@ -568,7 +611,11 @@ function dedupeBy<T>(items: T[], keyFn: (item: T) => string): T[] {
 
 function normalizeFieldValue(value: unknown): string | number | boolean | null {
   if (value === null || value === undefined) return null
-  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+  if (
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+  ) {
     return value
   }
 
@@ -579,7 +626,9 @@ function normalizeFieldValue(value: unknown): string | number | boolean | null {
   if (typeof value === 'object') {
     const objectValue = value as Record<string, unknown>
     const preferred =
-      toText(objectValue.name) ?? toText(objectValue.title) ?? toText(objectValue.value)
+      toText(objectValue.name) ??
+      toText(objectValue.title) ??
+      toText(objectValue.value)
     if (preferred) return preferred
   }
 
@@ -608,7 +657,7 @@ function parseListLimit(value: string | null, fallback: number): number {
 
 async function safeSection<T>(
   loader: () => Promise<T>,
-  fallbackMessage: string
+  fallbackMessage: string,
 ): Promise<T | ContextSectionError> {
   try {
     return await loader()

@@ -22,7 +22,7 @@ interface AzureComment {
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params
@@ -36,7 +36,7 @@ export async function GET(
     if (!teamProject) {
       throw new AzureDevOpsError(
         'Could not determine Team Project for this work item',
-        502
+        502,
       )
     }
 
@@ -45,7 +45,7 @@ export async function GET(
       `/${encodeURIComponent(teamProject)}/_apis/wit/workitems/${workItemId}/comments`,
       {
         apiVersion: getCommentsApiVersion(),
-      }
+      },
     )
 
     const comments = (response.comments ?? [])
@@ -71,14 +71,14 @@ export async function GET(
     if (error instanceof AzureDevOpsError) {
       return NextResponse.json(
         { error: error.message, details: error.details },
-        { status: error.status }
+        { status: error.status },
       )
     }
 
     console.error('Error fetching Azure work item comments:', error)
     return NextResponse.json(
       { error: 'Failed to fetch Azure work item comments' },
-      { status: 502 }
+      { status: 502 },
     )
   }
 }

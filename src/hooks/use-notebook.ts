@@ -4,10 +4,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/components/ui/use-toast'
 import { notebookApi } from '@/lib/api'
 import { queryKeys } from '@/lib/query-keys'
-import type { NotebookNote, CreateNotebookNoteInput, UpdateNotebookNoteInput } from '@/types/notebook'
+import type {
+  NotebookNote,
+  CreateNotebookNoteInput,
+  UpdateNotebookNoteInput,
+} from '@/types/notebook'
 
 function pickNewestNote(current: NotebookNote, incoming: NotebookNote) {
-  return new Date(incoming.updatedAt).getTime() >= new Date(current.updatedAt).getTime()
+  return new Date(incoming.updatedAt).getTime() >=
+    new Date(current.updatedAt).getTime()
     ? incoming
     : current
 }
@@ -22,14 +27,23 @@ export function useNotebook() {
   })
 
   const create = useMutation({
-    mutationFn: (data: CreateNotebookNoteInput | void) => notebookApi.create(data ?? undefined),
+    mutationFn: (data: CreateNotebookNoteInput | void) =>
+      notebookApi.create(data ?? undefined),
     onSuccess: (newNote) => {
-      queryClient.setQueryData<NotebookNote[]>(queryKeys.notebook, (prev = []) =>
-        [newNote, ...prev.filter(note => note.id !== newNote.id)]
+      queryClient.setQueryData<NotebookNote[]>(
+        queryKeys.notebook,
+        (prev = []) => [
+          newNote,
+          ...prev.filter((note) => note.id !== newNote.id),
+        ],
       )
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to create note.', variant: 'destructive' })
+      toast({
+        title: 'Error',
+        description: 'Failed to create note.',
+        variant: 'destructive',
+      })
     },
   })
 
@@ -37,15 +51,21 @@ export function useNotebook() {
     mutationFn: ({ id, data }: { id: string; data: UpdateNotebookNoteInput }) =>
       notebookApi.update(id, data),
     onSuccess: (updatedNote) => {
-      queryClient.setQueryData<NotebookNote[]>(queryKeys.notebook, (prev = []) =>
-        prev.map(note => {
-          if (note.id !== updatedNote.id) return note
-          return pickNewestNote(note, updatedNote)
-        })
+      queryClient.setQueryData<NotebookNote[]>(
+        queryKeys.notebook,
+        (prev = []) =>
+          prev.map((note) => {
+            if (note.id !== updatedNote.id) return note
+            return pickNewestNote(note, updatedNote)
+          }),
       )
     },
     onError: () => {
-      toast({ title: 'Error', description: 'Failed to update note.', variant: 'destructive' })
+      toast({
+        title: 'Error',
+        description: 'Failed to update note.',
+        variant: 'destructive',
+      })
     },
   })
 
@@ -54,11 +74,13 @@ export function useNotebook() {
     mutationFn: ({ id, content }: { id: string; content: string }) =>
       notebookApi.update(id, { content }),
     onSuccess: (updatedNote) => {
-      queryClient.setQueryData<NotebookNote[]>(queryKeys.notebook, (prev = []) =>
-        prev.map(note => {
-          if (note.id !== updatedNote.id) return note
-          return pickNewestNote(note, updatedNote)
-        })
+      queryClient.setQueryData<NotebookNote[]>(
+        queryKeys.notebook,
+        (prev = []) =>
+          prev.map((note) => {
+            if (note.id !== updatedNote.id) return note
+            return pickNewestNote(note, updatedNote)
+          }),
       )
     },
   })
@@ -69,7 +91,7 @@ export function useNotebook() {
       await queryClient.cancelQueries({ queryKey: queryKeys.notebook })
       const prev = queryClient.getQueryData<NotebookNote[]>(queryKeys.notebook)
       queryClient.setQueryData<NotebookNote[]>(queryKeys.notebook, (old = []) =>
-        old.filter(n => n.id !== id)
+        old.filter((n) => n.id !== id),
       )
       return { prev }
     },
@@ -77,7 +99,11 @@ export function useNotebook() {
       if (context?.prev) {
         queryClient.setQueryData(queryKeys.notebook, context.prev)
       }
-      toast({ title: 'Error', description: 'Failed to delete note.', variant: 'destructive' })
+      toast({
+        title: 'Error',
+        description: 'Failed to delete note.',
+        variant: 'destructive',
+      })
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.notebook })

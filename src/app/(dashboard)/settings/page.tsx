@@ -30,15 +30,29 @@ function LoadingSpinner() {
 }
 
 function SettingsPageContent() {
-  const { labels, isLoading: labelsLoading, isMutating: labelsMutating, handleCreate: handleCreateLabel, handleUpdate: handleUpdateLabel, handleDelete: handleDeleteLabel } = useLabels()
-  const { people, isLoading: peopleLoading, isMutating: peopleMutating, handleCreate: handleCreatePerson, handleUpdate: handleUpdatePerson, handleDelete: handleDeletePerson } = usePeople()
+  const {
+    labels,
+    isLoading: labelsLoading,
+    isMutating: labelsMutating,
+    handleCreate: handleCreateLabel,
+    handleUpdate: handleUpdateLabel,
+    handleDelete: handleDeleteLabel,
+  } = useLabels()
+  const {
+    people,
+    isLoading: peopleLoading,
+    isMutating: peopleMutating,
+    handleCreate: handleCreatePerson,
+    handleUpdate: handleUpdatePerson,
+    handleDelete: handleDeletePerson,
+  } = usePeople()
   const { theme, setTheme, themes } = useAppTheme()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const queryTab = searchParams.get(TAB_QUERY_KEY)
   const [activeTab, setActiveTab] = React.useState<SettingsTab>(
-    isSettingsTab(queryTab) ? queryTab : 'contacts'
+    isSettingsTab(queryTab) ? queryTab : 'contacts',
   )
 
   React.useEffect(() => {
@@ -75,7 +89,7 @@ function SettingsPageContent() {
         icon: Palette,
       },
     ],
-    [labels.length, people.length, themes.length]
+    [labels.length, people.length, themes.length],
   )
 
   const changeTab = React.useCallback(
@@ -85,20 +99,24 @@ function SettingsPageContent() {
       params.set(TAB_QUERY_KEY, nextTab)
       router.replace(`${pathname}?${params.toString()}`, { scroll: false })
     },
-    [pathname, router, searchParams]
+    [pathname, router, searchParams],
   )
 
   const handleTabKeyDown = React.useCallback(
-    (event: React.KeyboardEvent<HTMLButtonElement>, currentTab: SettingsTab) => {
+    (
+      event: React.KeyboardEvent<HTMLButtonElement>,
+      currentTab: SettingsTab,
+    ) => {
       if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
       event.preventDefault()
       const currentIndex = TAB_ORDER.indexOf(currentTab)
       const offset = event.key === 'ArrowRight' ? 1 : -1
-      const nextIndex = (currentIndex + offset + TAB_ORDER.length) % TAB_ORDER.length
+      const nextIndex =
+        (currentIndex + offset + TAB_ORDER.length) % TAB_ORDER.length
       const nextTab = TAB_ORDER[nextIndex]
       changeTab(nextTab)
     },
-    [changeTab]
+    [changeTab],
   )
 
   return (
@@ -107,10 +125,15 @@ function SettingsPageContent() {
         className="rounded-xl border p-1.5"
         style={{
           borderColor: 'var(--border-color)',
-          backgroundColor: 'color-mix(in srgb, var(--surface) 68%, transparent)',
+          backgroundColor:
+            'color-mix(in srgb, var(--surface) 68%, transparent)',
         }}
       >
-        <div className="flex gap-1 overflow-x-auto scrollbar-hide" role="tablist" aria-label="Settings sections">
+        <div
+          className="scrollbar-hide flex gap-1 overflow-x-auto"
+          role="tablist"
+          aria-label="Settings sections"
+        >
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id
             const Icon = tab.icon
@@ -124,7 +147,7 @@ function SettingsPageContent() {
                 aria-selected={isActive}
                 onClick={() => changeTab(tab.id)}
                 onKeyDown={(event) => handleTabKeyDown(event, tab.id)}
-                className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-lg px-2.5 sm:px-3 py-2 text-left transition-colors"
+                className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left transition-colors sm:px-3"
                 style={{
                   backgroundColor: isActive
                     ? 'color-mix(in srgb, var(--primary) 20%, var(--surface-2) 80%)'
@@ -132,15 +155,24 @@ function SettingsPageContent() {
                   color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
                 }}
               >
-                <span className="flex items-center gap-2 min-w-0">
-                  <Icon className="h-4 w-4 shrink-0" style={{ color: isActive ? 'var(--primary)' : 'var(--text-muted)' }} />
-                  <span className="leading-tight min-w-0">
-                    <span className="block text-sm font-semibold truncate">{tab.label}</span>
-                    <span className="hidden sm:block text-[11px]">{tab.hint}</span>
+                <span className="flex min-w-0 items-center gap-2">
+                  <Icon
+                    className="h-4 w-4 shrink-0"
+                    style={{
+                      color: isActive ? 'var(--primary)' : 'var(--text-muted)',
+                    }}
+                  />
+                  <span className="min-w-0 leading-tight">
+                    <span className="block truncate text-sm font-semibold">
+                      {tab.label}
+                    </span>
+                    <span className="hidden text-[11px] sm:block">
+                      {tab.hint}
+                    </span>
                   </span>
                 </span>
                 <span
-                  className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+                  className="rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase"
                   style={{
                     backgroundColor: isActive
                       ? 'color-mix(in srgb, var(--primary) 24%, transparent)'
@@ -164,14 +196,15 @@ function SettingsPageContent() {
         hidden={activeTab !== 'labels'}
       >
         <div
-          className="rounded-xl border overflow-hidden"
+          className="overflow-hidden rounded-xl border"
           style={{
             borderColor: 'var(--border-color)',
-            backgroundColor: 'color-mix(in srgb, var(--surface) 80%, transparent)',
+            backgroundColor:
+              'color-mix(in srgb, var(--surface) 80%, transparent)',
           }}
         >
           <div
-            className="px-4 sm:px-6 py-4 sm:py-5 border-b"
+            className="border-b px-4 py-4 sm:px-6 sm:py-5"
             style={{
               borderColor: 'var(--border-color)',
               background:
@@ -181,22 +214,30 @@ function SettingsPageContent() {
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
                 <Tags className="h-5 w-5" style={{ color: 'var(--primary)' }} />
-                <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+                <h2
+                  className="text-lg font-semibold"
+                  style={{ color: 'var(--text-primary)' }}
+                >
                   Labels
                 </h2>
               </div>
               <div
-                className="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide"
+                className="rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-wide uppercase"
                 style={{
-                  backgroundColor: 'color-mix(in srgb, var(--surface-2) 70%, transparent)',
+                  backgroundColor:
+                    'color-mix(in srgb, var(--surface-2) 70%, transparent)',
                   color: 'var(--text-muted)',
                 }}
               >
                 {labels.length} total
               </div>
             </div>
-            <p className="text-sm mt-1.5" style={{ color: 'var(--text-muted)' }}>
-              Manage reusable labels for your tasks. Colors show up as chips on the card.
+            <p
+              className="mt-1.5 text-sm"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              Manage reusable labels for your tasks. Colors show up as chips on
+              the card.
             </p>
           </div>
 
@@ -224,14 +265,15 @@ function SettingsPageContent() {
         hidden={activeTab !== 'contacts'}
       >
         <div
-          className="rounded-xl border overflow-hidden"
+          className="overflow-hidden rounded-xl border"
           style={{
             borderColor: 'var(--border-color)',
-            backgroundColor: 'color-mix(in srgb, var(--surface) 80%, transparent)',
+            backgroundColor:
+              'color-mix(in srgb, var(--surface) 80%, transparent)',
           }}
         >
           <div
-            className="px-4 sm:px-6 py-4 sm:py-5 border-b"
+            className="border-b px-4 py-4 sm:px-6 sm:py-5"
             style={{
               borderColor: 'var(--border-color)',
               background:
@@ -240,23 +282,34 @@ function SettingsPageContent() {
           >
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
-                <Users className="h-5 w-5" style={{ color: 'var(--primary)' }} />
-                <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+                <Users
+                  className="h-5 w-5"
+                  style={{ color: 'var(--primary)' }}
+                />
+                <h2
+                  className="text-lg font-semibold"
+                  style={{ color: 'var(--text-primary)' }}
+                >
                   Contacts
                 </h2>
               </div>
               <div
-                className="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide"
+                className="rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-wide uppercase"
                 style={{
-                  backgroundColor: 'color-mix(in srgb, var(--surface-2) 70%, transparent)',
+                  backgroundColor:
+                    'color-mix(in srgb, var(--surface-2) 70%, transparent)',
                   color: 'var(--text-muted)',
                 }}
               >
                 {people.length} total
               </div>
             </div>
-            <p className="text-sm mt-1.5" style={{ color: 'var(--text-muted)' }}>
-              Manage your people directory. Use @mentions in task descriptions to reference them.
+            <p
+              className="mt-1.5 text-sm"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              Manage your people directory. Use @mentions in task descriptions
+              to reference them.
             </p>
           </div>
 
@@ -284,14 +337,15 @@ function SettingsPageContent() {
         hidden={activeTab !== 'appearance'}
       >
         <div
-          className="rounded-xl border overflow-hidden"
+          className="overflow-hidden rounded-xl border"
           style={{
             borderColor: 'var(--border-color)',
-            backgroundColor: 'color-mix(in srgb, var(--surface) 80%, transparent)',
+            backgroundColor:
+              'color-mix(in srgb, var(--surface) 80%, transparent)',
           }}
         >
           <div
-            className="px-4 sm:px-6 py-4 sm:py-5 border-b"
+            className="border-b px-4 py-4 sm:px-6 sm:py-5"
             style={{
               borderColor: 'var(--border-color)',
               background:
@@ -299,18 +353,27 @@ function SettingsPageContent() {
             }}
           >
             <div className="flex items-center gap-2.5">
-              <Palette className="h-5 w-5" style={{ color: 'var(--primary)' }} />
-              <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+              <Palette
+                className="h-5 w-5"
+                style={{ color: 'var(--primary)' }}
+              />
+              <h2
+                className="text-lg font-semibold"
+                style={{ color: 'var(--text-primary)' }}
+              >
                 Appearance
               </h2>
             </div>
-            <p className="text-sm mt-1.5" style={{ color: 'var(--text-muted)' }}>
+            <p
+              className="mt-1.5 text-sm"
+              style={{ color: 'var(--text-muted)' }}
+            >
               Choose a color theme for the interface.
             </p>
           </div>
 
           <div className="p-4 sm:p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {themes.map((t) => {
                 const isActive = theme.id === t.id
                 return (
@@ -326,14 +389,12 @@ function SettingsPageContent() {
                       borderColor: isActive
                         ? 'var(--primary)'
                         : 'var(--border-color)',
-                      boxShadow: isActive
-                        ? '0 0 0 1px var(--primary)'
-                        : 'none',
+                      boxShadow: isActive ? '0 0 0 1px var(--primary)' : 'none',
                     }}
                   >
                     {/* Color swatch */}
                     <div
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg overflow-hidden"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg"
                       style={{
                         backgroundColor: t.colors.background,
                         border: `1px solid ${t.colors.border}`,
@@ -341,29 +402,38 @@ function SettingsPageContent() {
                     >
                       <div className="flex gap-0.5">
                         <div
-                          className="w-2.5 h-5 rounded-sm"
+                          className="h-5 w-2.5 rounded-sm"
                           style={{ backgroundColor: t.colors.primary }}
                         />
                         <div
-                          className="w-2.5 h-5 rounded-sm"
+                          className="h-5 w-2.5 rounded-sm"
                           style={{ backgroundColor: t.colors.accent }}
                         />
                       </div>
                     </div>
 
                     {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    <div className="min-w-0 flex-1">
+                      <div
+                        className="text-sm font-semibold"
+                        style={{ color: 'var(--text-primary)' }}
+                      >
                         {t.name}
                       </div>
-                      <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                      <div
+                        className="mt-0.5 text-xs"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
                         {t.description}
                       </div>
                     </div>
 
                     {/* Check */}
                     {isActive && (
-                      <Check className="h-4 w-4 shrink-0" style={{ color: 'var(--primary)' }} />
+                      <Check
+                        className="h-4 w-4 shrink-0"
+                        style={{ color: 'var(--primary)' }}
+                      />
                     )}
                   </button>
                 )

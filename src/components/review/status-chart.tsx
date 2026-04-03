@@ -38,8 +38,8 @@ export function StatusChart({ data, colors }: StatusChartProps) {
   if (!colors.primary) return null
 
   const chartData = data
-    .filter(d => d.count > 0)
-    .map(d => ({
+    .filter((d) => d.count > 0)
+    .map((d) => ({
       name: STATUS_LABELS[d.status] || d.status,
       value: d.count,
       fill: colors[STATUS_COLOR_KEYS[d.status]] || colors.textMuted,
@@ -48,10 +48,16 @@ export function StatusChart({ data, colors }: StatusChartProps) {
   if (chartData.length === 0) {
     return (
       <div
-        className="rounded-xl border p-5 flex items-center justify-center"
-        style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-color)', minHeight: 300 }}
+        className="flex items-center justify-center rounded-xl border p-5"
+        style={{
+          backgroundColor: 'var(--surface)',
+          borderColor: 'var(--border-color)',
+          minHeight: 300,
+        }}
       >
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No status data</p>
+        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+          No status data
+        </p>
       </div>
     )
   }
@@ -59,11 +65,22 @@ export function StatusChart({ data, colors }: StatusChartProps) {
   return (
     <div
       className="rounded-xl border p-5"
-      style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-color)' }}
+      style={{
+        backgroundColor: 'var(--surface)',
+        borderColor: 'var(--border-color)',
+      }}
     >
-      <div className="flex items-center gap-2 mb-4">
-        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--accent)' }} />
-        <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Status Distribution</h3>
+      <div className="mb-4 flex items-center gap-2">
+        <div
+          className="h-2 w-2 rounded-full"
+          style={{ backgroundColor: 'var(--accent)' }}
+        />
+        <h3
+          className="text-sm font-semibold"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          Status Distribution
+        </h3>
       </div>
       <ResponsiveContainer width="100%" height={260}>
         <PieChart>

@@ -31,20 +31,26 @@ const CATEGORY_COLOR_MAP: Record<string, string> = {
 export function CategoryChart({ data, colors }: CategoryChartProps) {
   if (!colors.primary) return null
 
-  const nonZero = data.filter(d => d.count > 0)
+  const nonZero = data.filter((d) => d.count > 0)
 
   if (nonZero.length === 0) {
     return (
       <div
-        className="rounded-xl border p-5 flex items-center justify-center"
-        style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-color)', minHeight: 200 }}
+        className="flex items-center justify-center rounded-xl border p-5"
+        style={{
+          backgroundColor: 'var(--surface)',
+          borderColor: 'var(--border-color)',
+          minHeight: 200,
+        }}
       >
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No category data</p>
+        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+          No category data
+        </p>
       </div>
     )
   }
 
-  const chartData = nonZero.map(d => ({
+  const chartData = nonZero.map((d) => ({
     name: getCategoryLabel(d.category as AccomplishmentCategory),
     count: d.count,
     category: d.category,
@@ -53,15 +59,37 @@ export function CategoryChart({ data, colors }: CategoryChartProps) {
   return (
     <div
       className="rounded-xl border p-5"
-      style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-color)' }}
+      style={{
+        backgroundColor: 'var(--surface)',
+        borderColor: 'var(--border-color)',
+      }}
     >
-      <div className="flex items-center gap-2 mb-4">
-        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: `var(${getCategoryCssVar('DELIVERY')})` }} />
-        <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>By Category</h3>
+      <div className="mb-4 flex items-center gap-2">
+        <div
+          className="h-2 w-2 rounded-full"
+          style={{ backgroundColor: `var(${getCategoryCssVar('DELIVERY')})` }}
+        />
+        <h3
+          className="text-sm font-semibold"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          By Category
+        </h3>
       </div>
-      <ResponsiveContainer width="100%" height={Math.max(200, chartData.length * 40 + 40)}>
-        <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke={colors.border} horizontal={false} />
+      <ResponsiveContainer
+        width="100%"
+        height={Math.max(200, chartData.length * 40 + 40)}
+      >
+        <BarChart
+          data={chartData}
+          layout="vertical"
+          margin={{ top: 0, right: 10, left: 10, bottom: 0 }}
+        >
+          <CartesianGrid
+            strokeDasharray="3 3"
+            stroke={colors.border}
+            horizontal={false}
+          />
           <XAxis
             type="number"
             tick={{ fill: colors.textMuted, fontSize: 12 }}
@@ -78,9 +106,19 @@ export function CategoryChart({ data, colors }: CategoryChartProps) {
             width={100}
           />
           <Tooltip content={<ChartTooltip colors={colors} />} />
-          <Bar dataKey="count" name="Accomplishments" radius={[0, 4, 4, 0]} barSize={18}>
+          <Bar
+            dataKey="count"
+            name="Accomplishments"
+            radius={[0, 4, 4, 0]}
+            barSize={18}
+          >
             {chartData.map((entry, i) => (
-              <Cell key={i} fill={colors[CATEGORY_COLOR_MAP[entry.category]] || colors.primary} />
+              <Cell
+                key={i}
+                fill={
+                  colors[CATEGORY_COLOR_MAP[entry.category]] || colors.primary
+                }
+              />
             ))}
           </Bar>
         </BarChart>

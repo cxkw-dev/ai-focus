@@ -23,7 +23,10 @@ import {
 interface SidebarProps {
   collapsed: boolean
   onCollapse: (collapsed: boolean) => void
-  transition?: { duration: number; ease?: 'easeInOut' | 'easeIn' | 'easeOut' | 'linear' }
+  transition?: {
+    duration: number
+    ease?: 'easeInOut' | 'easeIn' | 'easeOut' | 'linear'
+  }
 }
 
 const topNavItems = [
@@ -38,7 +41,11 @@ const bottomNavItems = [
 ]
 
 function renderNavItem(
-  item: { title: string; href: string; icon: React.ComponentType<{ className?: string }> },
+  item: {
+    title: string
+    href: string
+    icon: React.ComponentType<{ className?: string }>
+  },
   pathname: string,
   collapsed: boolean,
 ) {
@@ -50,13 +57,19 @@ function renderNavItem(
       key={item.href}
       href={item.href}
       className={`flex items-center rounded-lg py-2.5 text-sm font-medium transition-colors duration-200 ${collapsed ? 'justify-center px-0' : 'gap-3 px-3'}`}
-      style={isActive ? {
-        backgroundColor: 'color-mix(in srgb, var(--primary) 15%, transparent)',
-        color: 'var(--primary)',
-        boxShadow: '0 1px 3px color-mix(in srgb, var(--primary) 20%, transparent)',
-      } : {
-        color: 'var(--text-muted)',
-      }}
+      style={
+        isActive
+          ? {
+              backgroundColor:
+                'color-mix(in srgb, var(--primary) 15%, transparent)',
+              color: 'var(--primary)',
+              boxShadow:
+                '0 1px 3px color-mix(in srgb, var(--primary) 20%, transparent)',
+            }
+          : {
+              color: 'var(--text-muted)',
+            }
+      }
     >
       <Icon className="h-5 w-5 shrink-0" />
       <AnimatePresence mode="wait">
@@ -89,7 +102,11 @@ function renderNavItem(
   return navLink
 }
 
-export function Sidebar({ collapsed, onCollapse, transition = { duration: 0.2, ease: 'easeInOut' } }: SidebarProps) {
+export function Sidebar({
+  collapsed,
+  onCollapse,
+  transition = { duration: 0.2, ease: 'easeInOut' },
+}: SidebarProps) {
   const pathname = usePathname()
 
   return (
@@ -98,14 +115,20 @@ export function Sidebar({ collapsed, onCollapse, transition = { duration: 0.2, e
         initial={false}
         animate={{ width: collapsed ? 72 : 256 }}
         transition={transition}
-        className="fixed left-0 top-0 z-40 flex h-screen flex-col border-r"
-        style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border-color)' }}
+        className="fixed top-0 left-0 z-40 flex h-screen flex-col border-r"
+        style={{
+          backgroundColor: 'var(--surface)',
+          borderColor: 'var(--border-color)',
+        }}
       >
         {/* Logo */}
-        <div className={`flex h-16 items-center border-b overflow-hidden ${collapsed ? 'justify-center px-0' : 'px-4'}`} style={{ borderColor: 'var(--border-color)' }}>
-          <Link href="/" className="flex items-center gap-3 group">
+        <div
+          className={`flex h-16 items-center overflow-hidden border-b ${collapsed ? 'justify-center px-0' : 'px-4'}`}
+          style={{ borderColor: 'var(--border-color)' }}
+        >
+          <Link href="/" className="group flex items-center gap-3">
             <div
-              className="shrink-0 rounded-lg overflow-hidden"
+              className="shrink-0 overflow-hidden rounded-lg"
               style={{
                 width: collapsed ? 36 : 40,
                 height: collapsed ? 36 : 40,
@@ -129,7 +152,7 @@ export function Sidebar({ collapsed, onCollapse, transition = { duration: 0.2, e
                   animate={{ opacity: 1, width: 'auto' }}
                   exit={{ opacity: 0, width: 0 }}
                   transition={{ duration: 0.15 }}
-                  className="text-xl font-bold uppercase whitespace-nowrap overflow-hidden"
+                  className="overflow-hidden text-xl font-bold whitespace-nowrap uppercase"
                   style={{
                     fontFamily: 'var(--font-pixelify), sans-serif',
                     color: 'var(--text-primary)',
@@ -143,7 +166,9 @@ export function Sidebar({ collapsed, onCollapse, transition = { duration: 0.2, e
         </div>
 
         {/* Top Navigation */}
-        <nav className={`flex-1 flex flex-col gap-1 ${collapsed ? 'px-2 py-3' : 'p-3'}`}>
+        <nav
+          className={`flex flex-1 flex-col gap-1 ${collapsed ? 'px-2 py-3' : 'p-3'}`}
+        >
           {topNavItems.map((item) => renderNavItem(item, pathname, collapsed))}
         </nav>
 
@@ -152,7 +177,9 @@ export function Sidebar({ collapsed, onCollapse, transition = { duration: 0.2, e
           className={`flex flex-col gap-1 border-t ${collapsed ? 'px-2 py-3' : 'p-3'}`}
           style={{ borderColor: 'var(--border-color)' }}
         >
-          {bottomNavItems.map((item) => renderNavItem(item, pathname, collapsed))}
+          {bottomNavItems.map((item) =>
+            renderNavItem(item, pathname, collapsed),
+          )}
         </nav>
 
         {/* Collapse Toggle - Edge positioned */}

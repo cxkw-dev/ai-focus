@@ -56,18 +56,25 @@ export function evaluateAccomplishment(task: CompletedTaskInfo): void {
   })
 }
 
-function emitEval(stage: string, task: CompletedTaskInfo, extra?: Record<string, unknown>) {
-  const payload: Record<string, unknown> = { stage, todoId: task.id, taskTitle: task.title }
+function emitEval(
+  stage: string,
+  task: CompletedTaskInfo,
+  extra?: Record<string, unknown>,
+) {
+  const payload: Record<string, unknown> = {
+    stage,
+    todoId: task.id,
+    taskTitle: task.title,
+  }
   if (extra) Object.assign(payload, extra)
   console.log('[accomplishment-agent] emitEval:', stage, task.title)
   emit('eval', payload)
 }
 
 async function doEvaluate(task: CompletedTaskInfo): Promise<void> {
-  const prompt = PROMPT
-    .replace('{TITLE}', task.title)
+  const prompt = PROMPT.replace('{TITLE}', task.title)
     .replace('{DESCRIPTION}', task.description || '(none)')
-    .replace('{LABELS}', task.labels.map(l => l.name).join(', ') || '(none)')
+    .replace('{LABELS}', task.labels.map((l) => l.name).join(', ') || '(none)')
 
   emitEval('analyzing', task)
 
@@ -103,12 +110,20 @@ async function doEvaluate(task: CompletedTaskInfo): Promise<void> {
   // Extract JSON from the response text (handle potential markdown wrapping)
   const jsonMatch = responseText.match(/\{[\s\S]*\}/)
   if (!jsonMatch) {
-    console.error('[accomplishment-agent] Could not parse JSON from:', responseText)
+    console.error(
+      '[accomplishment-agent] Could not parse JSON from:',
+      responseText,
+    )
     emitEval('result', task, { outcome: { created: false } })
     return
   }
 
-  let parsed: { accomplishment: boolean; category?: string; title?: string; description?: string }
+  let parsed: {
+    accomplishment: boolean
+    category?: string
+    title?: string
+    description?: string
+  }
   try {
     parsed = JSON.parse(jsonMatch[0])
   } catch {
@@ -118,7 +133,10 @@ async function doEvaluate(task: CompletedTaskInfo): Promise<void> {
   }
 
   if (!parsed.accomplishment) {
-    console.log('[accomplishment-agent] Task not an accomplishment:', task.title)
+    console.log(
+      '[accomplishment-agent] Task not an accomplishment:',
+      task.title,
+    )
     emitEval('result', task, { outcome: { created: false } })
     return
   }
@@ -130,20 +148,33 @@ async function doEvaluate(task: CompletedTaskInfo): Promise<void> {
   })
 
   if (!currentTodo || currentTodo.status !== 'COMPLETED') {
-    console.log('[accomplishment-agent] Task no longer completed, skipping:', task.title)
+    console.log(
+      '[accomplishment-agent] Task no longer completed, skipping:',
+      task.title,
+    )
     emitEval('result', task, { outcome: { created: false } })
     return
   }
 
-  const validCategories = ['DELIVERY', 'HIRING', 'MENTORING', 'COLLABORATION', 'GROWTH', 'OTHER'] as const
-  const category = validCategories.includes(parsed.category as typeof validCategories[number])
-    ? (parsed.category as typeof validCategories[number])
+  const validCategories = [
+    'DELIVERY',
+    'HIRING',
+    'MENTORING',
+    'COLLABORATION',
+    'GROWTH',
+    'OTHER',
+  ] as const
+  const category = validCategories.includes(
+    parsed.category as (typeof validCategories)[number],
+  )
+    ? (parsed.category as (typeof validCategories)[number])
     : 'OTHER'
 
   const date = task.completedAt
   const title = parsed.title || task.title
-  const description = parsed.description
-    || (task.description ? stripHtml(task.description).slice(0, 500) : null)
+  const description =
+    parsed.description ||
+    (task.description ? stripHtml(task.description).slice(0, 500) : null)
 
   await db.accomplishment.create({
     data: {
@@ -157,7 +188,9 @@ async function doEvaluate(task: CompletedTaskInfo): Promise<void> {
   })
 
   emitEval('result', task, { outcome: { created: true, title, category } })
-  console.log(`[accomplishment-agent] Created accomplishment: [${category}] ${title}`)
+  console.log(
+    `[accomplishment-agent] Created accomplishment: [${category}] ${title}`,
+  )
 }
 
 async function streamOllamaResponse(
@@ -194,5 +227,8 @@ async function streamOllamaResponse(
 }
 
 function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+  return html
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
 }

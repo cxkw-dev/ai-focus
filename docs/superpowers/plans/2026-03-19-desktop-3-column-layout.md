@@ -12,17 +12,18 @@
 
 ## File Structure
 
-| File | Action | Responsibility |
-|------|--------|---------------|
-| `src/lib/categorize-todos.ts` | Modify | Add `buildDesktopColumns()` function + `SubLabel` type |
-| `src/components/todos/todo-column.tsx` | Modify | Add `subLabels` prop, sub-tab UI, internal filtering |
-| `src/app/(dashboard)/todos/page.tsx` | Modify | Use `buildDesktopColumns` for desktop grid, pass `subLabels` |
+| File                                   | Action | Responsibility                                               |
+| -------------------------------------- | ------ | ------------------------------------------------------------ |
+| `src/lib/categorize-todos.ts`          | Modify | Add `buildDesktopColumns()` function + `SubLabel` type       |
+| `src/components/todos/todo-column.tsx` | Modify | Add `subLabels` prop, sub-tab UI, internal filtering         |
+| `src/app/(dashboard)/todos/page.tsx`   | Modify | Use `buildDesktopColumns` for desktop grid, pass `subLabels` |
 
 ---
 
 ### Task 1: Add `buildDesktopColumns()` to categorize-todos.ts
 
 **Files:**
+
 - Modify: `src/lib/categorize-todos.ts`
 
 - [ ] **Step 1: Add SubLabel type and buildDesktopColumns function**
@@ -32,7 +33,7 @@ Add a new exported type and function. The function groups all labels whose name 
 ```typescript
 export interface SubLabel {
   id: string
-  name: string    // display name (e.g. "AMEX", stripped of "PROJECT - " prefix)
+  name: string // display name (e.g. "AMEX", stripped of "PROJECT - " prefix)
   fullName: string // original label name (e.g. "PROJECT - AMEX")
   color: string
   labelId: string
@@ -45,18 +46,16 @@ export interface SubLabel {
  * placed before Others.
  */
 export function buildDesktopColumns(labels: Label[]): ColumnConfig[] {
-  const kaf = labels.find(l => l.name.toLowerCase() === 'kaf')
-  const mergedLabels = labels.filter(l =>
-    MERGED_INTO_OTHERS.includes(l.name.toLowerCase())
+  const kaf = labels.find((l) => l.name.toLowerCase() === 'kaf')
+  const mergedLabels = labels.filter((l) =>
+    MERGED_INTO_OTHERS.includes(l.name.toLowerCase()),
   )
   const projectLabels = labels
-    .filter(l => l.name.startsWith('PROJECT - '))
+    .filter((l) => l.name.startsWith('PROJECT - '))
     .sort((a, b) => a.name.localeCompare(b.name))
 
-  const otherColumnLabels = labels.filter(l =>
-    l !== kaf &&
-    !mergedLabels.includes(l) &&
-    !projectLabels.includes(l)
+  const otherColumnLabels = labels.filter(
+    (l) => l !== kaf && !mergedLabels.includes(l) && !projectLabels.includes(l),
   )
 
   const columns: ColumnConfig[] = []
@@ -77,8 +76,8 @@ export function buildDesktopColumns(labels: Label[]): ColumnConfig[] {
       key: 'projects',
       title: 'Projects',
       color: projectLabels[0].color,
-      labelIds: projectLabels.map(l => l.id),
-      subLabels: projectLabels.map(l => ({
+      labelIds: projectLabels.map((l) => l.id),
+      subLabels: projectLabels.map((l) => ({
         id: l.id,
         name: l.name.replace('PROJECT - ', ''),
         fullName: l.name,
@@ -103,7 +102,7 @@ export function buildDesktopColumns(labels: Label[]): ColumnConfig[] {
     key: 'others',
     title: 'Others',
     color: 'var(--status-waiting)',
-    labelIds: mergedLabels.map(l => l.id),
+    labelIds: mergedLabels.map((l) => l.id),
   })
 
   return columns
@@ -121,7 +120,7 @@ export interface ColumnConfig {
   color: string
   labelId?: string
   labelIds?: string[]
-  subLabels?: SubLabel[]  // <-- add this
+  subLabels?: SubLabel[] // <-- add this
 }
 ```
 
@@ -141,6 +140,7 @@ git commit -m "add buildDesktopColumns function for 3-column layout"
 ### Task 2: Add sub-tab UI to TodoColumn
 
 **Files:**
+
 - Modify: `src/components/todos/todo-column.tsx`
 
 - [ ] **Step 1: Add subLabels prop to TodoColumnProps**
@@ -164,22 +164,22 @@ const [activeSubLabel, setActiveSubLabel] = React.useState<string | null>(null)
 // Filter todos by sub-label when sub-tabs are active
 const filteredActiveTodos = React.useMemo(() => {
   if (!subLabels || !activeSubLabel) return activeTodos
-  return activeTodos.filter(todo =>
-    todo.labels?.some(l => l.id === activeSubLabel)
+  return activeTodos.filter((todo) =>
+    todo.labels?.some((l) => l.id === activeSubLabel),
   )
 }, [activeTodos, subLabels, activeSubLabel])
 
 const filteredCompletedTodos2 = React.useMemo(() => {
   if (!subLabels || !activeSubLabel) return completedTodos
-  return completedTodos.filter(todo =>
-    todo.labels?.some(l => l.id === activeSubLabel)
+  return completedTodos.filter((todo) =>
+    todo.labels?.some((l) => l.id === activeSubLabel),
   )
 }, [completedTodos, subLabels, activeSubLabel])
 
 const filteredDeletedTodos = React.useMemo(() => {
   if (!subLabels || !activeSubLabel) return deletedTodos
-  return deletedTodos.filter(todo =>
-    todo.labels?.some(l => l.id === activeSubLabel)
+  return deletedTodos.filter((todo) =>
+    todo.labels?.some((l) => l.id === activeSubLabel),
   )
 }, [deletedTodos, subLabels, activeSubLabel])
 ```
@@ -191,38 +191,51 @@ Then update `displayedTodos`, `tabs` counts, and drag-and-drop to use the filter
 Render sub-tabs between the column title row and the filter tabs. Style them as small pill buttons matching the existing design language:
 
 ```tsx
-{/* Sub-label tabs (for Projects column) */}
-{subLabels && subLabels.length > 0 && (
-  <div className="flex items-center gap-1 mt-1.5 overflow-x-auto scrollbar-hide">
-    <button
-      onClick={() => setActiveSubLabel(null)}
-      className="rounded-md px-2 py-0.5 text-[10px] font-medium transition-colors whitespace-nowrap"
-      style={activeSubLabel === null ? {
-        backgroundColor: 'color-mix(in srgb, var(--primary) 18%, transparent)',
-        color: 'var(--primary)',
-      } : {
-        color: 'var(--text-muted)',
-      }}
-    >
-      All
-    </button>
-    {subLabels.map((sub) => (
+{
+  /* Sub-label tabs (for Projects column) */
+}
+{
+  subLabels && subLabels.length > 0 && (
+    <div className="scrollbar-hide mt-1.5 flex items-center gap-1 overflow-x-auto">
       <button
-        key={sub.id}
-        onClick={() => setActiveSubLabel(sub.labelId)}
-        className="rounded-md px-2 py-0.5 text-[10px] font-medium transition-colors whitespace-nowrap"
-        style={activeSubLabel === sub.labelId ? {
-          backgroundColor: `color-mix(in srgb, ${sub.color} 18%, transparent)`,
-          color: sub.color,
-        } : {
-          color: 'var(--text-muted)',
-        }}
+        onClick={() => setActiveSubLabel(null)}
+        className="whitespace-nowrap rounded-md px-2 py-0.5 text-[10px] font-medium transition-colors"
+        style={
+          activeSubLabel === null
+            ? {
+                backgroundColor:
+                  'color-mix(in srgb, var(--primary) 18%, transparent)',
+                color: 'var(--primary)',
+              }
+            : {
+                color: 'var(--text-muted)',
+              }
+        }
       >
-        {sub.name}
+        All
       </button>
-    ))}
-  </div>
-)}
+      {subLabels.map((sub) => (
+        <button
+          key={sub.id}
+          onClick={() => setActiveSubLabel(sub.labelId)}
+          className="whitespace-nowrap rounded-md px-2 py-0.5 text-[10px] font-medium transition-colors"
+          style={
+            activeSubLabel === sub.labelId
+              ? {
+                  backgroundColor: `color-mix(in srgb, ${sub.color} 18%, transparent)`,
+                  color: sub.color,
+                }
+              : {
+                  color: 'var(--text-muted)',
+                }
+          }
+        >
+          {sub.name}
+        </button>
+      ))}
+    </div>
+  )
+}
 ```
 
 - [ ] **Step 4: Update defaultLabelIds for create**
@@ -245,12 +258,17 @@ git commit -m "add sub-tab filtering to todo column for grouped labels"
 ### Task 3: Wire up desktop grid to use 3 columns
 
 **Files:**
+
 - Modify: `src/app/(dashboard)/todos/page.tsx`
 
 - [ ] **Step 1: Import and use buildDesktopColumns**
 
 ```typescript
-import { buildColumns, buildDesktopColumns, categorizeTodosByLabel } from '@/lib/categorize-todos'
+import {
+  buildColumns,
+  buildDesktopColumns,
+  categorizeTodosByLabel,
+} from '@/lib/categorize-todos'
 ```
 
 Create separate column configs for mobile and desktop:
@@ -260,17 +278,23 @@ Create separate column configs for mobile and desktop:
 const columns = React.useMemo(() => buildColumns(labels), [labels])
 
 // New (for desktop)
-const desktopColumns = React.useMemo(() => buildDesktopColumns(labels), [labels])
+const desktopColumns = React.useMemo(
+  () => buildDesktopColumns(labels),
+  [labels],
+)
 
 // Separate categorization for desktop
 const desktopCategorizedActive = React.useMemo(
-  () => categorizeTodosByLabel(todos, desktopColumns), [todos, desktopColumns]
+  () => categorizeTodosByLabel(todos, desktopColumns),
+  [todos, desktopColumns],
 )
 const desktopCategorizedCompleted = React.useMemo(
-  () => categorizeTodosByLabel(completedTodos, desktopColumns), [completedTodos, desktopColumns]
+  () => categorizeTodosByLabel(completedTodos, desktopColumns),
+  [completedTodos, desktopColumns],
 )
 const desktopCategorizedDeleted = React.useMemo(
-  () => categorizeTodosByLabel(deletedTodos, desktopColumns), [deletedTodos, desktopColumns]
+  () => categorizeTodosByLabel(deletedTodos, desktopColumns),
+  [deletedTodos, desktopColumns],
 )
 ```
 
@@ -279,10 +303,12 @@ const desktopCategorizedDeleted = React.useMemo(
 Replace the desktop `columns.map` with `desktopColumns.map` and pass `subLabels`:
 
 ```tsx
-{/* Desktop View (>= 1280px) */}
-<div className="hidden xl:flex xl:flex-col flex-1 min-h-0">
+{
+  /* Desktop View (>= 1280px) */
+}
+;<div className="hidden min-h-0 flex-1 xl:flex xl:flex-col">
   <div
-    className="gap-6 flex-1 min-h-0"
+    className="min-h-0 flex-1 gap-6"
     style={{
       display: 'grid',
       gridTemplateColumns: `repeat(${desktopColumns.length}, minmax(0, 1fr))`,
@@ -323,6 +349,7 @@ Replace the desktop `columns.map` with `desktopColumns.map` and pass `subLabels`
 - [ ] **Step 3: Verify the full layout in browser**
 
 Open http://localhost:4444/todos at 1440px width. Verify:
+
 - 3 columns visible: KAF, Projects, Others
 - Projects column shows sub-tabs (All | AMEX | DMV | DOW)
 - Clicking sub-tabs filters the project todos

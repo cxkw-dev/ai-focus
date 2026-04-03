@@ -22,11 +22,14 @@ export function useAzureWorkItemStatuses(urls: string[]) {
   return useQueries({
     queries: urls.map((url) => queryOptions(url)),
     combine: (results) => {
-      const statuses: (AzureWorkItemStatus | undefined)[] = results.map(r => r.data)
-      const isLoading = results.some(r => r.isLoading)
+      const statuses: (AzureWorkItemStatus | undefined)[] = results.map(
+        (r) => r.data,
+      )
+      const isLoading = results.some((r) => r.isLoading)
       const loaded = statuses.filter((s): s is AzureWorkItemStatus => !!s)
       const allLoaded = !isLoading && loaded.length === urls.length
-      const allResolved = allLoaded && loaded.every(s => RESOLVED_STATES.includes(s.state))
+      const allResolved =
+        allLoaded && loaded.every((s) => RESOLVED_STATES.includes(s.state))
 
       return { statuses, isLoading, allResolved }
     },

@@ -3,8 +3,18 @@ import { db } from '@/lib/db'
 import type { YearStats, MonthlyData } from '@/types/stats'
 
 const MONTH_LABELS = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
 ]
 
 export async function GET(request: NextRequest) {
@@ -68,7 +78,8 @@ export async function GET(request: NextRequest) {
     // --- Summary ---
     const totalCreated = todosCreated.length
     const totalCompleted = todosCompleted.length
-    const completionRate = totalCreated > 0 ? Math.round((totalCompleted / totalCreated) * 100) : 0
+    const completionRate =
+      totalCreated > 0 ? Math.round((totalCompleted / totalCreated) * 100) : 0
 
     // Avg completion days (using completedAt - createdAt)
     let totalDays = 0
@@ -77,7 +88,8 @@ export async function GET(request: NextRequest) {
       const completed = new Date(todo.completedAt!).getTime()
       totalDays += (completed - created) / (1000 * 60 * 60 * 24)
     }
-    const avgCompletionDays = totalCompleted > 0 ? Math.round(totalDays / totalCompleted) : 0
+    const avgCompletionDays =
+      totalCompleted > 0 ? Math.round(totalDays / totalCompleted) : 0
 
     // Current streak: consecutive months (from most recent) with at least 1 completion
     let currentStreak = 0
@@ -93,7 +105,7 @@ export async function GET(request: NextRequest) {
 
     // High priority completed (HIGH + URGENT)
     const highPriorityCompleted = todosCompleted.filter(
-      t => t.priority === 'HIGH' || t.priority === 'URGENT'
+      (t) => t.priority === 'HIGH' || t.priority === 'URGENT',
     ).length
 
     // --- By Status (all todos created this year, current status) ---
@@ -101,7 +113,14 @@ export async function GET(request: NextRequest) {
     for (const todo of todosCreated) {
       statusMap.set(todo.status, (statusMap.get(todo.status) || 0) + 1)
     }
-    const byStatus = ['TODO', 'IN_PROGRESS', 'WAITING', 'UNDER_REVIEW', 'ON_HOLD', 'COMPLETED'].map(status => ({
+    const byStatus = [
+      'TODO',
+      'IN_PROGRESS',
+      'WAITING',
+      'UNDER_REVIEW',
+      'ON_HOLD',
+      'COMPLETED',
+    ].map((status) => ({
       status,
       count: statusMap.get(status) || 0,
     }))
@@ -111,16 +130,23 @@ export async function GET(request: NextRequest) {
     for (const todo of todosCreated) {
       priorityMap.set(todo.priority, (priorityMap.get(todo.priority) || 0) + 1)
     }
-    const byPriority = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'].map(priority => ({
+    const byPriority = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'].map((priority) => ({
       priority,
       count: priorityMap.get(priority) || 0,
     }))
 
     // --- Top Labels ---
-    const labelMap = new Map<string, { name: string; color: string; count: number }>()
+    const labelMap = new Map<
+      string,
+      { name: string; color: string; count: number }
+    >()
     for (const todo of todosCreated) {
       for (const label of todo.labels) {
-        const existing = labelMap.get(label.name) || { name: label.name, color: label.color, count: 0 }
+        const existing = labelMap.get(label.name) || {
+          name: label.name,
+          color: label.color,
+          count: 0,
+        }
         existing.count++
         labelMap.set(label.name, existing)
       }
@@ -130,8 +156,14 @@ export async function GET(request: NextRequest) {
       .slice(0, 10)
 
     // --- Highlights ---
-    const busiestMonthIdx = monthly.reduce((max, m, i) => m.created > monthly[max].created ? i : max, 0)
-    const productiveMonthIdx = monthly.reduce((max, m, i) => m.completed > monthly[max].completed ? i : max, 0)
+    const busiestMonthIdx = monthly.reduce(
+      (max, m, i) => (m.created > monthly[max].created ? i : max),
+      0,
+    )
+    const productiveMonthIdx = monthly.reduce(
+      (max, m, i) => (m.completed > monthly[max].completed ? i : max),
+      0,
+    )
 
     // --- Accomplishments ---
     const accomplishments = await db.accomplishment.findMany({
@@ -141,9 +173,18 @@ export async function GET(request: NextRequest) {
 
     const accomplishmentCategoryMap = new Map<string, number>()
     for (const a of accomplishments) {
-      accomplishmentCategoryMap.set(a.category, (accomplishmentCategoryMap.get(a.category) || 0) + 1)
+      accomplishmentCategoryMap.set(
+        a.category,
+        (accomplishmentCategoryMap.get(a.category) || 0) + 1,
+      )
     }
-    const byCategory = ['DELIVERY', 'HIRING', 'MENTORING', 'COLLABORATION', 'GROWTH'].map(category => ({
+    const byCategory = [
+      'DELIVERY',
+      'HIRING',
+      'MENTORING',
+      'COLLABORATION',
+      'GROWTH',
+    ].map((category) => ({
       category,
       count: accomplishmentCategoryMap.get(category) || 0,
     }))
@@ -159,8 +200,14 @@ export async function GET(request: NextRequest) {
     }
 
     const highlights = {
-      busiestMonth: monthly[busiestMonthIdx].created > 0 ? MONTH_LABELS[busiestMonthIdx] : null,
-      mostProductiveMonth: monthly[productiveMonthIdx].completed > 0 ? MONTH_LABELS[productiveMonthIdx] : null,
+      busiestMonth:
+        monthly[busiestMonthIdx].created > 0
+          ? MONTH_LABELS[busiestMonthIdx]
+          : null,
+      mostProductiveMonth:
+        monthly[productiveMonthIdx].completed > 0
+          ? MONTH_LABELS[productiveMonthIdx]
+          : null,
       topLabel: topLabels.length > 0 ? topLabels[0].name : null,
       topCategory,
     }
@@ -188,6 +235,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(stats)
   } catch (error) {
     console.error('Error fetching year stats:', error)
-    return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Failed to fetch stats' },
+      { status: 500 },
+    )
   }
 }

@@ -2,7 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { z } from 'zod'
 
-const CATEGORIES = ['DELIVERY', 'HIRING', 'MENTORING', 'COLLABORATION', 'GROWTH', 'OTHER'] as const
+const CATEGORIES = [
+  'DELIVERY',
+  'HIRING',
+  'MENTORING',
+  'COLLABORATION',
+  'GROWTH',
+  'OTHER',
+] as const
 
 const createSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
@@ -28,7 +35,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(accomplishments)
   } catch (error) {
     console.error('Error fetching accomplishments:', error)
-    return NextResponse.json({ error: 'Failed to fetch accomplishments' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Failed to fetch accomplishments' },
+      { status: 500 },
+    )
   }
 }
 
@@ -58,6 +68,9 @@ export async function POST(request: NextRequest) {
     }
 
     console.error('Error creating accomplishment:', error)
-    return NextResponse.json({ error: 'Failed to create accomplishment' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Failed to create accomplishment' },
+      { status: 500 },
+    )
   }
 }
