@@ -1,8 +1,9 @@
 'use client'
 
 import * as React from 'react'
-import { Plus, Rows3 } from 'lucide-react'
+import { Plus, Rows3, Eye, EyeOff } from 'lucide-react'
 import { HeaderActions } from '@/components/layout/header-actions-context'
+import { BlockedExpandedProvider } from '@/components/todos/todo-item'
 import { TodoColumn } from '@/components/todos/todo-column'
 import { EditTodoDialog } from '@/components/todos/edit-todo-dialog'
 import { CreateTodoModal } from '@/components/todos/create-todo-modal'
@@ -61,6 +62,8 @@ export default function TodosPage() {
       return next
     })
   }, [])
+
+  const [blockedExpanded, setBlockedExpanded] = React.useState(false)
 
   // Build dynamic columns from labels
   const columns = React.useMemo(() => buildColumns(labels), [labels])
@@ -246,32 +249,66 @@ export default function TodosPage() {
   const mobileCol = columns.find((c) => c.key === mobileCategory) ?? columns[0]
 
   return (
+    <BlockedExpandedProvider expanded={blockedExpanded}>
     <div className="flex h-[calc(100vh-120px)] flex-col">
       {/* Portal compact toggle into header */}
       <HeaderActions>
-        <button
-          type="button"
-          onClick={toggleCompact}
-          className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all"
-          style={{
-            backgroundColor: compact
-              ? 'color-mix(in srgb, var(--primary) 16%, var(--surface-2) 84%)'
-              : 'var(--surface-2)',
-            color: compact ? 'var(--primary)' : 'var(--text-muted)',
-            border: compact
-              ? '1px solid color-mix(in srgb, var(--primary) 30%, transparent)'
-              : '1px solid var(--border-color)',
-          }}
-          title={
-            compact ? 'Switch to comfortable view' : 'Switch to compact view'
-          }
-          aria-label={
-            compact ? 'Switch to comfortable view' : 'Switch to compact view'
-          }
-        >
-          <Rows3 className="h-3.5 w-3.5" />
-          <span>{compact ? 'Compact' : 'Comfortable'}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setBlockedExpanded((prev) => !prev)}
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all"
+            style={{
+              backgroundColor: blockedExpanded
+                ? 'color-mix(in srgb, var(--primary) 16%, var(--surface-2) 84%)'
+                : 'var(--surface-2)',
+              color: blockedExpanded ? 'var(--primary)' : 'var(--text-muted)',
+              border: blockedExpanded
+                ? '1px solid color-mix(in srgb, var(--primary) 30%, transparent)'
+                : '1px solid var(--border-color)',
+            }}
+            title={
+              blockedExpanded
+                ? 'Collapse blocked cards'
+                : 'Expand blocked cards'
+            }
+            aria-label={
+              blockedExpanded
+                ? 'Collapse blocked cards'
+                : 'Expand blocked cards'
+            }
+          >
+            {blockedExpanded ? (
+              <EyeOff className="h-3.5 w-3.5" />
+            ) : (
+              <Eye className="h-3.5 w-3.5" />
+            )}
+            <span>{blockedExpanded ? 'Collapse blocked' : 'Show blocked'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={toggleCompact}
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all"
+            style={{
+              backgroundColor: compact
+                ? 'color-mix(in srgb, var(--primary) 16%, var(--surface-2) 84%)'
+                : 'var(--surface-2)',
+              color: compact ? 'var(--primary)' : 'var(--text-muted)',
+              border: compact
+                ? '1px solid color-mix(in srgb, var(--primary) 30%, transparent)'
+                : '1px solid var(--border-color)',
+            }}
+            title={
+              compact ? 'Switch to comfortable view' : 'Switch to compact view'
+            }
+            aria-label={
+              compact ? 'Switch to comfortable view' : 'Switch to compact view'
+            }
+          >
+            <Rows3 className="h-3.5 w-3.5" />
+            <span>{compact ? 'Compact' : 'Comfortable'}</span>
+          </button>
+        </div>
       </HeaderActions>
 
       {/* Mobile/Narrow View (< 1280px) */}
@@ -401,7 +438,7 @@ export default function TodosPage() {
             gridTemplateColumns: columns
               .map((col) =>
                 (categorizedActive[col.key] ?? []).length === 0
-                  ? '48px'
+                  ? '36px'
                   : 'minmax(0, 1fr)',
               )
               .join(' '),
@@ -413,28 +450,25 @@ export default function TodosPage() {
               return (
                 <div
                   key={col.key}
-                  className="flex flex-col items-center gap-2 rounded-lg pt-2"
-                  style={{
-                    borderRight: '1px solid var(--border-color)',
-                  }}
+                  className="flex flex-col items-center"
                 >
-                  <div
-                    className="h-2 w-2 rounded-full"
-                    style={{ backgroundColor: col.color }}
-                  />
                   <span
-                    className="text-[9px] font-bold uppercase tracking-wide"
-                    style={{
-                      writingMode: 'vertical-rl',
-                      color: col.color,
-                      opacity: 0.7,
-                    }}
+                    className="mt-3 text-[8px] font-bold uppercase tracking-wide"
+                    style={{ color: col.color, opacity: 0.4, writingMode: 'vertical-rl' }}
                   >
                     {col.title}
                   </span>
+                  <div
+                    className="mt-2 flex-1"
+                    style={{
+                      width: 1,
+                      background:
+                        `linear-gradient(to bottom, color-mix(in srgb, ${col.color} 20%, transparent), transparent 80%)`,
+                    }}
+                  />
                   <span
-                    className="mt-auto mb-2 text-[9px]"
-                    style={{ color: 'var(--text-muted)', opacity: 0.5 }}
+                    className="mb-3 text-[9px]"
+                    style={{ color: col.color, opacity: 0.3 }}
                   >
                     0
                   </span>
@@ -532,5 +566,6 @@ export default function TodosPage() {
         </span>
       </button>
     </div>
+    </BlockedExpandedProvider>
   )
 }

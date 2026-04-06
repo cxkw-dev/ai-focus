@@ -85,18 +85,17 @@ export function ContactsDrawer({
         <motion.div
           ref={drawerRef}
           initial={{ width: 0, opacity: 0 }}
-          animate={{ width: 240, opacity: 1 }}
+          animate={{ width: '100%', opacity: 1 }}
           exit={{ width: 0, opacity: 0 }}
           transition={{ duration: 0.2, ease: 'easeInOut' }}
-          className="absolute top-0 right-0 bottom-0 z-30 overflow-hidden rounded-r-lg"
+          className="absolute inset-0 z-30 overflow-hidden rounded-lg"
           style={{
             backgroundColor: 'var(--surface)',
-            borderLeft: '1px solid var(--border-color)',
-            boxShadow: '-4px 0 16px rgba(0,0,0,0.2)',
+            boxShadow: '0 0 16px rgba(0,0,0,0.2)',
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex h-full w-[240px] flex-col">
+          <div className="flex h-full w-full flex-col">
             {/* Header */}
             <div
               className="flex shrink-0 items-center justify-between border-b px-3 py-1.5"

@@ -12,28 +12,34 @@ export interface ColumnConfig {
 const MERGED_INTO_OTHERS = ['training']
 
 /**
- * Build column configs from labels. Projects is always centered,
- * other labels are split alphabetically around it, Others is last.
+ * Build column configs from labels. KAF is always first,
+ * Others is always last, everything else sorted alphabetically in between.
  * Labels in MERGED_INTO_OTHERS are folded into the Others column.
  */
 export function buildColumns(labels: Label[]): ColumnConfig[] {
-  const projectsLabel = labels.find((l) => l.name.toLowerCase() === 'projects')
+  const kafLabel = labels.find((l) => l.name.toLowerCase() === 'kaf')
 
   const mergedLabels = labels.filter((l) =>
     MERGED_INTO_OTHERS.includes(l.name.toLowerCase()),
   )
-  const columnLabels = labels
-    .filter((l) => l !== projectsLabel && !mergedLabels.includes(l))
+  const middleLabels = labels
+    .filter((l) => l !== kafLabel && !mergedLabels.includes(l))
     .sort((a, b) => a.name.localeCompare(b.name))
 
   const columns: ColumnConfig[] = []
 
-  // Split labels into left and right of projects
-  const midpoint = Math.ceil(columnLabels.length / 2)
-  const leftLabels = columnLabels.slice(0, midpoint)
-  const rightLabels = columnLabels.slice(midpoint)
+  // KAF always first
+  if (kafLabel) {
+    columns.push({
+      key: kafLabel.id,
+      title: kafLabel.name,
+      color: kafLabel.color,
+      labelId: kafLabel.id,
+    })
+  }
 
-  for (const label of leftLabels) {
+  // Everything else alphabetically in between
+  for (const label of middleLabels) {
     columns.push({
       key: label.id,
       title: label.name,
@@ -42,25 +48,7 @@ export function buildColumns(labels: Label[]): ColumnConfig[] {
     })
   }
 
-  if (projectsLabel) {
-    columns.push({
-      key: projectsLabel.id,
-      title: projectsLabel.name,
-      color: projectsLabel.color,
-      labelId: projectsLabel.id,
-    })
-  }
-
-  for (const label of rightLabels) {
-    columns.push({
-      key: label.id,
-      title: label.name,
-      color: label.color,
-      labelId: label.id,
-    })
-  }
-
-  // Others column includes merged labels
+  // Others column always last, includes merged labels
   columns.push({
     key: 'others',
     title: 'Others',

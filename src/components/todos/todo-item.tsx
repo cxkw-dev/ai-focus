@@ -41,6 +41,7 @@ import {
   FileText,
   DollarSign,
   XCircle,
+  Minimize2,
 } from 'lucide-react'
 import { cn, formatRelativeDate } from '@/lib/utils'
 import { getBillingCodeEntries } from '@/lib/labels'
@@ -80,6 +81,22 @@ import type {
   SubtaskInput,
 } from '@/types/todo'
 import type { Person } from '@/types/person'
+
+const BlockedExpandedContext = React.createContext(false)
+
+export function BlockedExpandedProvider({
+  expanded,
+  children,
+}: {
+  expanded: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <BlockedExpandedContext.Provider value={expanded}>
+      {children}
+    </BlockedExpandedContext.Provider>
+  )
+}
 
 const CHIP_BASE =
   'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors whitespace-nowrap'
@@ -132,12 +149,11 @@ const STATUS_CONFIG: Record<
   },
 }
 
-const CARD_OVERLAY_STATUSES = new Set<Status>([
+const COLLAPSED_STATUSES = new Set<Status>([
   'WAITING',
   'UNDER_REVIEW',
   'ON_HOLD',
 ])
-const DAY_MS = 86_400_000
 
 const PRIORITY_CONFIG: Record<
   Priority,
@@ -198,18 +214,6 @@ function renderTextWithLinks(text: string) {
   })
 }
 
-function getDaysInStatus(timestamp: string | null | undefined) {
-  const parsed = timestamp ? Date.parse(timestamp) : Number.NaN
-  if (Number.isNaN(parsed)) return 0
-  return Math.max(0, Math.floor((Date.now() - parsed) / DAY_MS))
-}
-
-function formatStatusAge(daysInStatus: number) {
-  if (daysInStatus <= 0) return 'today'
-  if (daysInStatus === 1) return '1 day in status'
-  return `${daysInStatus} days in status`
-}
-
 type ViewMode = 'active' | 'completed' | 'deleted'
 
 interface TodoItemProps {
@@ -233,6 +237,7 @@ interface TodoItemProps {
   dropIndicator?: 'above' | 'below' | null
   animateTransitions?: boolean
   compact?: boolean
+  onCollapse?: () => void
 }
 
 function toSubtaskInput(subtasks: Subtask[]): SubtaskInput[] {
@@ -533,49 +538,66 @@ function PriorityDropdown({
   )
 }
 
-function TodoStatusBanner({
+function CollapsedTodoRow({
   todo,
-  compact = false,
+  onClick,
 }: {
   todo: Todo
-  compact?: boolean
+  onClick: () => void
 }) {
-  if (!CARD_OVERLAY_STATUSES.has(todo.status)) return null
-
   const config = STATUS_CONFIG[todo.status]
-  const daysInStatus = getDaysInStatus(todo.statusChangedAt ?? todo.createdAt)
+  const Icon = config.icon
 
   return (
     <div
-      className={cn(
-        'mt-1.5 flex items-center gap-1.5 rounded px-2 py-1',
-        compact && 'mt-1 px-1.5 py-0.5',
-      )}
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onClick()
+        }
+      }}
+      className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 transition-opacity hover:opacity-70"
       style={{
-        backgroundColor: config.colorVar,
-        border: `1px solid ${config.colorVar}`,
+        backgroundColor: 'var(--surface-2)',
+        opacity: 0.5,
       }}
     >
       <span
-        className={cn(
-          'leading-none font-semibold uppercase',
-          compact
-            ? 'text-[9px] tracking-[0.15em]'
-            : 'text-[10px] tracking-[0.18em]',
-        )}
-        style={{ color: 'var(--surface)' }}
+        className={cn(CHIP_BASE, 'flex-shrink-0')}
+        style={{
+          backgroundColor: `color-mix(in srgb, ${config.bgVar} 15%, transparent)`,
+          color: config.colorVar,
+        }}
       >
-        {config.label}
+        <Icon className="h-3 w-3" />
+        <span>{config.label}</span>
       </span>
       <span
-        className={cn(
-          'inline-flex items-center gap-0.5 leading-none font-medium opacity-80',
-          compact ? 'text-[8px]' : 'text-[9px]',
-        )}
-        style={{ color: 'var(--surface)' }}
+        className="min-w-0 flex-1 truncate text-[11px]"
+        style={{ color: 'var(--text-muted)' }}
       >
-        <Clock className="h-2.5 w-2.5" />
-        {formatStatusAge(daysInStatus)}
+        {todo.title}
+      </span>
+      {todo.labels?.map((label) => (
+        <span
+          key={label.id}
+          className={cn(CHIP_BASE, 'flex-shrink-0 font-semibold')}
+          style={{
+            backgroundColor: `color-mix(in srgb, ${label.color} 15%, transparent)`,
+            color: label.color,
+          }}
+        >
+          {label.name}
+        </span>
+      ))}
+      <span
+        className="flex-shrink-0 font-mono text-[9px] font-semibold"
+        style={{ color: 'var(--text-muted)', opacity: 0.6 }}
+      >
+        #{todo.taskNumber}
       </span>
     </div>
   )
@@ -595,6 +617,7 @@ function TodoItemContent({
   isDragging,
   viewMode = 'active',
   compact = false,
+  onCollapse,
 }: TodoItemProps) {
   const isCompleted = todo.status === 'COMPLETED'
   const canInlineEditSubtasks = viewMode === 'active' && !isDragging
@@ -854,6 +877,15 @@ function TodoItemContent({
               </div>
             </div>
             <div className="flex flex-shrink-0 items-center gap-1">
+              {onCollapse && (
+                <button
+                  onClick={onCollapse}
+                  className={cn(CHIP_BASE, 'todo-action-edit')}
+                  title="Collapse"
+                >
+                  <Minimize2 className="h-3 w-3" />
+                </button>
+              )}
               {(viewMode === 'active' || viewMode === 'completed') && (
                 <>
                   {todo.notebookNoteId && (
@@ -972,7 +1004,6 @@ function TodoItemContent({
                   {renderTextWithLinks(todo.description)}
                 </p>
               ))}
-            <TodoStatusBanner todo={todo} compact={compact} />
           </div>
         </div>
       </div>
@@ -1210,6 +1241,17 @@ export function TodoItem({
 
   const dragging = isOverlay || isDragging
   const isCompleted = todo.status === 'COMPLETED'
+  const blockedExpanded = React.useContext(BlockedExpandedContext)
+  const isCollapsible =
+    viewMode === 'active' && COLLAPSED_STATUSES.has(todo.status)
+  const [manuallyExpanded, setManuallyExpanded] = React.useState(false)
+
+  // Reset expanded state when status changes away from collapsed
+  React.useEffect(() => {
+    if (!COLLAPSED_STATUSES.has(todo.status)) {
+      setManuallyExpanded(false)
+    }
+  }, [todo.status])
 
   React.useEffect(() => {
     if (!hasBillingEntries) {
@@ -1223,6 +1265,8 @@ export function TodoItem({
       style={{ backgroundColor: 'var(--primary)' }}
     />
   )
+
+  const showCollapsed = isCollapsible && !manuallyExpanded && !blockedExpanded && !dragging
 
   return (
     <motion.div
@@ -1244,6 +1288,28 @@ export function TodoItem({
       className={cn('min-w-0 transition-opacity duration-150', dragging && 'opacity-50')}
     >
       {dropIndicator === 'above' && dropLine}
+      {showCollapsed ? (
+        <div className="flex items-center gap-0.5">
+          <div className="flex w-[18px] flex-shrink-0 justify-center">
+            <button
+              {...attributes}
+              {...listeners}
+              className={cn(
+                'todo-drag-handle cursor-grab touch-none self-center rounded p-0.5 transition-colors',
+                dragging && 'cursor-grabbing',
+              )}
+            >
+              <GripVertical className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <div className="min-w-0 flex-1">
+            <CollapsedTodoRow
+              todo={todo}
+              onClick={() => setManuallyExpanded(true)}
+            />
+          </div>
+        </div>
+      ) : (
       <div className="flex items-center gap-0.5">
         {/* Reserve a consistent gutter so the card body stays aligned across filters */}
         <div className="flex w-[18px] flex-shrink-0 justify-center">
@@ -1292,6 +1358,11 @@ export function TodoItem({
             isDragging={dragging}
             viewMode={viewMode}
             compact={compact}
+            onCollapse={
+              manuallyExpanded
+                ? () => setManuallyExpanded(false)
+                : undefined
+            }
           />
           <BillingCodesDrawer
             entries={billingEntries}
@@ -1365,6 +1436,7 @@ export function TodoItem({
           </div>
         )}
       </div>
+      )}
       {dropIndicator === 'below' && dropLine}
     </motion.div>
   )
