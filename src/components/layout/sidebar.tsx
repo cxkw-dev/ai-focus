@@ -32,13 +32,13 @@ interface SidebarProps {
 
 const topNavItems = [
   { title: 'Todos', href: '/todos', icon: CheckSquare },
-  { title: 'Labels', href: '/labels', icon: Tags },
   { title: 'Scratch Pad', href: '/scratchpad', icon: PenLine },
   { title: 'Notes', href: '/notes', icon: FileText },
 ]
 
 const bottomNavItems = [
   { title: 'Review', href: '/review', icon: BarChart3 },
+  { title: 'Labels', href: '/labels', icon: Tags },
   { title: 'Settings', href: '/settings', icon: Settings },
 ]
 
