@@ -94,8 +94,7 @@ All routes live under `src/app/api/chat/`.
 | `GET` | `/api/chat/threads/:id` | Get one thread + ordered messages |
 | `PATCH` | `/api/chat/threads/:id` | Inline rename (`{ title }`) |
 | `DELETE` | `/api/chat/threads/:id` | Delete thread (cascades messages) |
-| `POST` | `/api/chat/threads/:id/messages` | Streaming chat endpoint — accepts new user message, runs TanStack AI agent loop, streams SSE response |
-| `POST` | `/api/chat/threads/:id/confirm-tool` | Resume the agent loop after the user confirms or cancels a destructive tool call |
+| `POST` | `/api/chat/threads/:id/messages` | Streaming chat endpoint — accepts new user message, runs TanStack AI agent loop (including paused approval flow), streams SSE response |
 
 ### 5.1 Streaming chat route shape
 
@@ -191,10 +190,33 @@ Each tool is a `toolDefinition().server()` whose implementation makes a single i
 
 ### 6.2 Destructive-tool gating
 
-Destructive tools are flagged with metadata:
+TanStack AI ships a built-in human-in-the-loop approval flow via the `needsApproval: true` flag on `toolDefinition` and the client-side `addToolApprovalResponse(...)` API exposed by `useChat`. We use that directly instead of building our own suspend/resume mechanism.
+
+**Destructive tools are flagged at definition time:**
 
 ```ts
-const DESTRUCTIVE_TOOLS = new Set([
+import { toolDefinition } from '@tanstack/ai'
+
+const deleteTodoDef = toolDefinition({
+  name: 'delete_todo',
+  description: 'Permanently delete a todo by taskNumber or id.',
+  inputSchema: z.object({ taskNumber: z.number().int().positive().optional(), id: z.string().optional() }),
+  outputSchema: z.object({ success: z.boolean() }),
+  needsApproval: true,
+})
+
+const deleteTodo = deleteTodoDef.server(async ({ taskNumber, id }) => {
+  // This body only runs after the user has approved.
+  const key = taskNumber?.toString() ?? id
+  await apiFetch(`/api/todos/${key}`, { method: 'DELETE' })
+  return { success: true }
+})
+```
+
+**Tools that get `needsApproval: true`:**
+
+```ts
+const DESTRUCTIVE_TOOL_NAMES = new Set([
   'delete_todo', 'delete_label', 'delete_note',
   'delete_person', 'delete_accomplishment',
   'archive_todo',
@@ -202,32 +224,32 @@ const DESTRUCTIVE_TOOLS = new Set([
 ])
 ```
 
-When the LLM calls one of these tools, the server-side implementation **does not** execute the operation immediately. Instead it returns a sentinel:
+These names are applied in each tool module file by passing `needsApproval: true` to the matching `toolDefinition` call.
 
-```ts
-{
-  pending: true,
-  action: 'delete_todo',
-  args: { taskNumber: 7 },
-  summary: "Delete todo #7 'Fix login bug'?",
-}
+**Server flow (automatic, no extra route).** When the LLM calls a `needsApproval` tool, TanStack AI's chat loop:
+
+1. Pauses the tool's `.server()` body before it executes.
+2. Emits an `approval-requested` SSE event carrying `{ toolCallId, toolName, input, approval: { id } }`.
+3. The processor sets the tool-call part's `state` to `"approval-requested"` and waits.
+
+The same `POST /api/chat/threads/:id/messages` SSE stream stays open across the pause — no separate `confirm-tool` endpoint is needed. (The `confirm-tool` route mentioned in §5 table is therefore **removed**; see §5 update below.)
+
+**Client flow.** The `useChat` hook returns `addToolApprovalResponse({ id, approved })` along with `messages`. The drawer renders messages by walking each message's `parts` array and matching on `part.type === 'tool-call'`:
+
+```tsx
+{part.type === 'tool-call' && part.state === 'approval-requested' && (
+  <ChatConfirmationCard
+    toolName={part.name}
+    args={part.arguments}
+    onConfirm={() => addToolApprovalResponse({ id: part.approval.id, approved: true })}
+    onDeny={() => addToolApprovalResponse({ id: part.approval.id, approved: false })}
+  />
+)}
 ```
 
-**Suspend-and-resume mechanism.** The flow is two HTTP requests, not one long-lived stream:
+When the user approves, the framework resumes the paused server tool, runs its `.server()` body, captures the result, and continues the agent loop. When the user denies, the framework injects a rejection result back to the LLM so it can react (apologize, offer an alternative, etc.) — all on the same stream.
 
-1. The original `POST /api/chat/threads/:id/messages` SSE stream runs the agent loop until a destructive tool returns the `pending` sentinel. At that point, the route:
-   - Persists the assistant message (with its `toolCalls` array) and a `TOOL` message containing the sentinel as content.
-   - Persists a stream-state row (see below) capturing where the agent loop was paused.
-   - Emits a final SSE event `event: tool-confirmation-required` carrying the proposed action and the deferred `toolCallId`.
-   - Closes the SSE stream cleanly. The client's `useChat` reads this as the end of the assistant turn and renders the inline confirmation card.
-
-2. The user clicks **Confirm** or **Cancel** in `chat-confirmation-card`. This triggers `POST /api/chat/threads/:id/confirm-tool` with `{ toolCallId, decision: 'confirm' | 'cancel' }`. This endpoint **opens a fresh SSE stream**:
-   - **Confirm** → server executes the previously deferred operation, persists its real result as the `TOOL` message (overwriting the sentinel content), and starts a new TanStack AI `chat()` call seeded with the full thread history (now including the real tool result) so the LLM continues from where it paused.
-   - **Cancel** → server replaces the sentinel `TOOL` content with `{ cancelled: true, reason: 'User declined' }` and starts a new `chat()` call so the LLM can react (e.g. apologize, offer alternatives).
-
-**Stream-state row.** A new lightweight column on `ChatMessage` is *not* needed. The "paused" state is fully recoverable from the message history alone: an assistant message whose latest `toolCalls` entry has a matching `TOOL` message with `content` parseable as `{ pending: true, ... }` is the resumption point. The `confirm-tool` endpoint replays history into TanStack AI starting from there.
-
-**Implementation note:** TanStack AI's documented auto-execution loop does not natively expose a human-in-the-loop interrupt-and-resume primitive. The deferred-execution mechanism above is implemented at the tool-implementation layer of *this* app. If TanStack AI exposes a more idiomatic primitive when this is implemented, we switch to it and note the change in the implementation plan.
+**Persistence of the approval state.** The framework's tool-call parts carry their full state (`'approval-requested'` → `'approval-responded'` → `'output-available'`) through the stream. `persistOnComplete` writes the final assistant message with its `parts` array (including the resolved tool-call parts) into a single `ChatMessage` row. If the user closes the browser mid-approval, the persisted message will have a tool-call part stuck in `'approval-requested'` state — on reopening the thread, the UI re-renders the same approval card from the persisted state, and clicking Approve/Deny posts a new request that resumes the loop. (This means `useChat` needs to be hydrated with `initialMessages` from the DB and have a way to re-issue an approval against an already-persisted tool call. Confirming the exact API for this is part of the implementation plan; if `useChat` cannot resume an approval against a hydrated message, the fallback is a thin custom endpoint that re-runs the agent loop from history with the approval response pre-applied.)
 
 ### 6.3 System prompt
 
@@ -344,7 +366,7 @@ npm install @tanstack/ai @tanstack/ai-ollama @tanstack/ai-react react-markdown
 
 ## 11. Risks
 
-1. **TanStack AI confirmation interrupt is not idiomatic.** Documented in §6.2. Mitigation: implement at the tool-implementation layer; revisit if their API exposes a primitive.
+1. **Hydrating an in-progress approval from persisted state.** TanStack AI's built-in `needsApproval` flow handles approvals while the SSE stream is open. If the user closes the browser mid-approval and reopens the thread, the approval card is re-rendered from the persisted message but `useChat` may not natively support resuming an approval against a hydrated (rather than live) tool call. Documented in §6.2. Mitigation: confirm exact API behavior during implementation; fallback is a thin re-entry endpoint that replays history with the approval response pre-applied.
 2. **Streaming persistence completeness.** §5.2. Mitigation: incremental persistence on chunk boundaries, not only on stream completion.
 3. **`gemma4:latest` tool-calling fidelity.** Smaller local models can hallucinate tool args. Mitigation: server-side zod validation on every tool input; validation errors surface back to the model so it can self-correct on the next turn.
 4. **Tool schema drift between `mcp-server/` and `src/lib/agent-tools/`.** Mitigation: a note in `CLAUDE.md` that any tool change must touch both layers. Long-term: extract a shared package if the maintenance pain becomes real.
