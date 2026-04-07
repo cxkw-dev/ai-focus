@@ -30,6 +30,7 @@ import {
   Clock,
   Eye,
   Pause,
+  Ban,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
@@ -135,6 +136,12 @@ const STATUS_CONFIG: Record<
     colorVar: 'var(--status-on-hold)',
     bgVar: 'var(--status-on-hold)',
   },
+  BLOCKED: {
+    label: 'Blocked',
+    icon: Ban,
+    colorVar: 'var(--status-blocked)',
+    bgVar: 'var(--status-blocked)',
+  },
   COMPLETED: {
     label: 'Done',
     icon: CheckCircle2,
@@ -153,6 +160,7 @@ const COLLAPSED_STATUSES = new Set<Status>([
   'WAITING',
   'UNDER_REVIEW',
   'ON_HOLD',
+  'BLOCKED',
 ])
 
 const PRIORITY_CONFIG: Record<
@@ -172,7 +180,7 @@ const PRIORITY_CONFIG: Record<
       colorVar: p.colorVar,
       bgVar: p.colorVar,
       icon: p.icon,
-      ...(key === 'URGENT' ? { pulse: true } : {}),
+      ...(key === 'URGENT' || key === 'HIGH' ? { pulse: true } : {}),
     },
   ]),
 ) as Record<
@@ -1021,7 +1029,21 @@ function TodoItemContent({
       )}
 
       {/* Subtasks */}
-      {!compact && shouldShowSubtasks && (
+      {!compact &&
+        shouldShowSubtasks &&
+        (!hasSubtasks && !isAddingSubtask ? (
+          canAddSubtasks && (
+            <button
+              type="button"
+              onClick={() => setIsAddingSubtask(true)}
+              className="mt-1 inline-flex items-center gap-1 rounded px-1 py-0.5 text-[10px] transition-colors hover:bg-white/5"
+              style={{ color: 'var(--text-muted)', opacity: 0.6 }}
+            >
+              <Plus className="h-2.5 w-2.5" />
+              Add subtask
+            </button>
+          )
+        ) : (
         <div
           className="pt-1.5"
           style={{
@@ -1075,7 +1097,7 @@ function TodoItemContent({
               </button>
             )}
           </div>
-          {subtasksExpanded && (
+          {(subtasksExpanded || (!hasSubtasks && isAddingSubtask)) && (
             <>
               {hasSubtasks &&
                 (canInlineEditSubtasks ? (
@@ -1189,7 +1211,7 @@ function TodoItemContent({
             </>
           )}
         </div>
-      )}
+        ))}
 
       {!compact && todo.sessions && todo.sessions.length > 0 && (
         <SessionList sessions={todo.sessions} />

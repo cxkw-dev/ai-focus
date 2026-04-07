@@ -9,6 +9,7 @@ export function registerTodoTools(server) {
             'WAITING',
             'UNDER_REVIEW',
             'ON_HOLD',
+            'BLOCKED',
             'COMPLETED',
             'CANCELLED',
         ])
@@ -87,6 +88,7 @@ PATTERN — description brevity:
             'WAITING',
             'UNDER_REVIEW',
             'ON_HOLD',
+            'BLOCKED',
             'COMPLETED',
         ])
             .optional()
@@ -185,6 +187,7 @@ Description handling:
             'WAITING',
             'UNDER_REVIEW',
             'ON_HOLD',
+            'BLOCKED',
             'COMPLETED',
         ])
             .optional()

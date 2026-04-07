@@ -7,6 +7,7 @@ export const TODO_STATUS_VALUES = [
   'WAITING',
   'UNDER_REVIEW',
   'ON_HOLD',
+  'BLOCKED',
   'COMPLETED',
   'CANCELLED',
 ] as const

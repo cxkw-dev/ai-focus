@@ -41,6 +41,7 @@ export interface ThemeColors {
   statusWaiting: string
   statusUnderReview: string
   statusOnHold: string
+  statusBlocked: string
   statusDone: string
 
   // Priority colors
@@ -112,6 +113,7 @@ export const themes: Theme[] = [
       statusWaiting: '#FFCB8E',
       statusUnderReview: '#D4A5FF',
       statusOnHold: '#FF7D8C',
+      statusBlocked: '#E04848',
       statusDone: '#7DD3A8',
 
       // Priority colors
@@ -169,6 +171,7 @@ export const themes: Theme[] = [
       statusWaiting: '#FEE75C',
       statusUnderReview: '#A78BFA',
       statusOnHold: '#EB459E',
+      statusBlocked: '#ED4245',
       statusDone: '#57F287',
 
       // Priority colors
@@ -227,6 +230,7 @@ export const themes: Theme[] = [
       statusWaiting: '#DDA15E',
       statusUnderReview: '#C49DD8',
       statusOnHold: '#BC6C5A',
+      statusBlocked: '#DC4C4C',
       statusDone: '#8FB67A',
 
       // Priority colors
@@ -284,6 +288,7 @@ export const themes: Theme[] = [
       statusWaiting: '#E5C07B',
       statusUnderReview: '#C678DD',
       statusOnHold: '#BE5046',
+      statusBlocked: '#E06C75',
       statusDone: '#98C379',
 
       // Priority colors
@@ -344,6 +349,7 @@ export const themes: Theme[] = [
       statusWaiting: '#DF740C',
       statusUnderReview: '#9A5CCF',
       statusOnHold: '#DF3B57',
+      statusBlocked: '#FF1744',
       statusDone: '#7AD4A0',
 
       // Priority colors
@@ -407,6 +413,7 @@ export function applyTheme(theme: Theme): void {
   root.style.setProperty('--status-waiting', colors.statusWaiting)
   root.style.setProperty('--status-under-review', colors.statusUnderReview)
   root.style.setProperty('--status-on-hold', colors.statusOnHold)
+  root.style.setProperty('--status-blocked', colors.statusBlocked)
   root.style.setProperty('--status-done', colors.statusDone)
   root.style.setProperty('--priority-low', colors.priorityLow)
   root.style.setProperty('--priority-medium', colors.priorityMedium)

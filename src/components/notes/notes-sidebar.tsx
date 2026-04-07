@@ -43,6 +43,7 @@ const STATUS_LABELS: Record<Status, string> = {
   WAITING: 'Waiting',
   UNDER_REVIEW: 'Under Review',
   ON_HOLD: 'On Hold',
+  BLOCKED: 'Blocked',
   COMPLETED: 'Completed',
   CANCELLED: 'Cancelled',
 }
@@ -53,6 +54,7 @@ const STATUS_COLORS: Record<Status, string> = {
   WAITING: 'var(--status-waiting)',
   UNDER_REVIEW: 'var(--status-in-progress)',
   ON_HOLD: 'var(--status-on-hold)',
+  BLOCKED: 'var(--status-blocked)',
   COMPLETED: 'var(--status-done)',
   CANCELLED: 'var(--status-on-hold)',
 }

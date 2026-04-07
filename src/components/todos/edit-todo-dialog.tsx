@@ -733,6 +733,7 @@ export function EditTodoDialog({
                       <SelectItem value="WAITING">Waiting</SelectItem>
                       <SelectItem value="UNDER_REVIEW">Under Review</SelectItem>
                       <SelectItem value="ON_HOLD">On Hold</SelectItem>
+                      <SelectItem value="BLOCKED">Blocked</SelectItem>
                       <SelectItem value="COMPLETED">Completed</SelectItem>
                       <SelectItem value="CANCELLED">Cancelled</SelectItem>
                     </SelectContent>

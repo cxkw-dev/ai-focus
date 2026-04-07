@@ -55,6 +55,7 @@ Examples:
           'WAITING',
           'UNDER_REVIEW',
           'ON_HOLD',
+          'BLOCKED',
           'COMPLETED',
           'CANCELLED',
         ])

@@ -23,6 +23,7 @@ function readChartColors() {
     statusWaiting: getCssVar('--status-waiting'),
     statusUnderReview: getCssVar('--status-under-review'),
     statusOnHold: getCssVar('--status-on-hold'),
+    statusBlocked: getCssVar('--status-blocked'),
     statusDone: getCssVar('--status-done'),
     priorityLow: getCssVar('--priority-low'),
     priorityMedium: getCssVar('--priority-medium'),

@@ -119,6 +119,7 @@ export async function GET(request: NextRequest) {
       'WAITING',
       'UNDER_REVIEW',
       'ON_HOLD',
+      'BLOCKED',
       'COMPLETED',
     ].map((status) => ({
       status,

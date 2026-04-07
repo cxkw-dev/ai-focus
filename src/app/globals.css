@@ -103,6 +103,7 @@
   --status-in-progress: #ffb199;
   --status-waiting: #ffcb8e;
   --status-on-hold: #ff7d8c;
+  --status-blocked: #e04848;
   --status-done: #7dd3a8;
 
   /* Priority colors */
