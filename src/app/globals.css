@@ -653,13 +653,6 @@ h6 {
   color: var(--text-muted);
 }
 
-/* Side drawer tabs — subtle distinct accents per tab */
-:root {
-  --tab-billing: #10b981; /* emerald */
-  --tab-contacts: #8b5cf6; /* violet */
-  --tab-timeline: #f59e0b; /* amber */
-}
-
 .todo-billing-tab,
 .todo-contacts-tab,
 .todo-timeline-tab {
@@ -668,30 +661,46 @@ h6 {
 }
 
 .todo-billing-tab:hover {
-  color: var(--tab-billing);
-  background-color: color-mix(in srgb, var(--tab-billing) 12%, var(--surface-2));
+  color: var(--status-done);
+  background-color: color-mix(in srgb, var(--status-done) 12%, var(--surface-2));
 }
 .todo-billing-tab-active {
-  color: var(--tab-billing);
-  background-color: color-mix(in srgb, var(--tab-billing) 14%, var(--surface-2));
+  color: var(--status-done);
+  background-color: color-mix(in srgb, var(--status-done) 14%, var(--surface-2));
 }
 
 .todo-contacts-tab:hover {
-  color: var(--tab-contacts);
-  background-color: color-mix(in srgb, var(--tab-contacts) 12%, var(--surface-2));
+  color: var(--status-under-review);
+  background-color: color-mix(
+    in srgb,
+    var(--status-under-review) 12%,
+    var(--surface-2)
+  );
 }
 .todo-contacts-tab-active {
-  color: var(--tab-contacts);
-  background-color: color-mix(in srgb, var(--tab-contacts) 14%, var(--surface-2));
+  color: var(--status-under-review);
+  background-color: color-mix(
+    in srgb,
+    var(--status-under-review) 14%,
+    var(--surface-2)
+  );
 }
 
 .todo-timeline-tab:hover {
-  color: var(--tab-timeline);
-  background-color: color-mix(in srgb, var(--tab-timeline) 12%, var(--surface-2));
+  color: var(--status-waiting);
+  background-color: color-mix(
+    in srgb,
+    var(--status-waiting) 12%,
+    var(--surface-2)
+  );
 }
 .todo-timeline-tab-active {
-  color: var(--tab-timeline);
-  background-color: color-mix(in srgb, var(--tab-timeline) 14%, var(--surface-2));
+  color: var(--status-waiting);
+  background-color: color-mix(
+    in srgb,
+    var(--status-waiting) 14%,
+    var(--surface-2)
+  );
 }
 
 /* Note drawer tab (kept for legacy use) */

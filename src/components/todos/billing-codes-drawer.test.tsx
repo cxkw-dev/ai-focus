@@ -85,4 +85,33 @@ describe('BillingCodesDrawer', () => {
       expect(screen.getByText('Copied')).toBeInTheDocument()
     })
   })
+
+  it('resets copy feedback when the drawer closes and reopens', async () => {
+    const onClose = vi.fn()
+    const { rerender } = render(
+      <BillingCodesDrawer entries={[createEntry()]} open={true} onClose={onClose} />,
+    )
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /cus\/00396-0076\.l\.01/i }),
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Copied')).toBeInTheDocument()
+    })
+
+    rerender(
+      <BillingCodesDrawer entries={[createEntry()]} open={false} onClose={onClose} />,
+    )
+
+    await waitFor(() => {
+      expect(screen.queryByText('Copied')).not.toBeInTheDocument()
+    })
+
+    rerender(
+      <BillingCodesDrawer entries={[createEntry()]} open={true} onClose={onClose} />,
+    )
+
+    expect(screen.getByText('Copy')).toBeInTheDocument()
+  })
 })

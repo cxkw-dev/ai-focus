@@ -29,6 +29,12 @@ export function BillingCodesDrawer({
   const [copyFeedback, setCopyFeedback] = React.useState<CopyFeedback | null>(
     null,
   )
+  const clearFeedbackTimeout = React.useCallback(() => {
+    if (feedbackTimeoutRef.current) {
+      clearTimeout(feedbackTimeoutRef.current)
+      feedbackTimeoutRef.current = null
+    }
+  }, [])
   const groupedEntries = React.useMemo(() => {
     const groups = new Map<
       string,
@@ -57,9 +63,7 @@ export function BillingCodesDrawer({
   const setTemporaryFeedback = React.useCallback((feedback: CopyFeedback) => {
     setCopyFeedback(feedback)
 
-    if (feedbackTimeoutRef.current) {
-      clearTimeout(feedbackTimeoutRef.current)
-    }
+    clearFeedbackTimeout()
 
     feedbackTimeoutRef.current = setTimeout(
       () => {
@@ -68,7 +72,7 @@ export function BillingCodesDrawer({
       },
       feedback.status === 'copied' ? 1600 : 2200,
     )
-  }, [])
+  }, [clearFeedbackTimeout])
 
   const handleCopy = React.useCallback(
     async (entry: BillingCodeEntry) => {
@@ -103,13 +107,14 @@ export function BillingCodesDrawer({
     return () => document.removeEventListener('mousedown', handleClick)
   }, [open, onClose])
 
-  React.useEffect(() => {
-    return () => {
-      if (feedbackTimeoutRef.current) {
-        clearTimeout(feedbackTimeoutRef.current)
-      }
-    }
-  }, [])
+  React.useLayoutEffect(() => {
+    if (open) return
+
+    setCopyFeedback(null)
+    clearFeedbackTimeout()
+  }, [open, clearFeedbackTimeout])
+
+  React.useEffect(() => clearFeedbackTimeout, [clearFeedbackTimeout])
 
   return (
     <AnimatePresence>
@@ -135,11 +140,11 @@ export function BillingCodesDrawer({
               <div className="flex items-center gap-1.5">
                 <DollarSign
                   className="h-3 w-3"
-                  style={{ color: 'var(--tab-billing)' }}
+                  style={{ color: 'var(--status-done)' }}
                 />
                 <span
                   className="text-[10px] font-semibold tracking-wide uppercase"
-                  style={{ color: 'var(--tab-billing)' }}
+                  style={{ color: 'var(--status-done)' }}
                 >
                   Billing
                 </span>

@@ -104,11 +104,11 @@ export function ContactsDrawer({
               <div className="flex items-center gap-1.5">
                 <Users
                   className="h-3 w-3"
-                  style={{ color: 'var(--tab-contacts)' }}
+                  style={{ color: 'var(--status-under-review)' }}
                 />
                 <span
                   className="text-[10px] font-semibold tracking-wide uppercase"
-                  style={{ color: 'var(--tab-contacts)' }}
+                  style={{ color: 'var(--status-under-review)' }}
                 >
                   Contacts
                 </span>
