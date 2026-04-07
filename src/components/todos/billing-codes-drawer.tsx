@@ -1,14 +1,9 @@
 'use client'
 
 import * as React from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
-import { Copy, DollarSign, X } from 'lucide-react'
-import { useToast } from '@/components/ui/use-toast'
-import {
-  buildBillingCodeTitle,
-  formatBillingCodeDisplay,
-  type BillingCodeEntry,
-} from '@/lib/labels'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { Check, Copy, DollarSign, X } from 'lucide-react'
+import { buildBillingCodeTitle, type BillingCodeEntry } from '@/lib/labels'
 
 interface BillingCodesDrawerProps {
   entries: BillingCodeEntry[]
@@ -16,15 +11,24 @@ interface BillingCodesDrawerProps {
   onClose: () => void
 }
 
+type CopyFeedback = {
+  entryId: string
+  status: 'copied' | 'error'
+}
+
 export function BillingCodesDrawer({
   entries,
   open,
   onClose,
 }: BillingCodesDrawerProps) {
-  const { toast } = useToast()
   const drawerRef = React.useRef<HTMLDivElement>(null)
-  const drawerWidth = 'min(17rem, calc(100% - 1rem), calc(100vw - 1.5rem))'
-
+  const feedbackTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  )
+  const shouldReduceMotion = useReducedMotion()
+  const [copyFeedback, setCopyFeedback] = React.useState<CopyFeedback | null>(
+    null,
+  )
   const groupedEntries = React.useMemo(() => {
     const groups = new Map<
       string,
@@ -49,34 +53,39 @@ export function BillingCodesDrawer({
     return Array.from(groups.values())
   }, [entries])
   const showLabelContext = groupedEntries.length > 1
-  const flatEntries = React.useMemo(
-    () =>
-      groupedEntries.flatMap((group) =>
-        group.entries.map((entry) => ({
-          ...entry,
-          labelName: group.labelName,
-        })),
-      ),
-    [groupedEntries],
-  )
+
+  const setTemporaryFeedback = React.useCallback((feedback: CopyFeedback) => {
+    setCopyFeedback(feedback)
+
+    if (feedbackTimeoutRef.current) {
+      clearTimeout(feedbackTimeoutRef.current)
+    }
+
+    feedbackTimeoutRef.current = setTimeout(
+      () => {
+        setCopyFeedback(null)
+        feedbackTimeoutRef.current = null
+      },
+      feedback.status === 'copied' ? 1600 : 2200,
+    )
+  }, [])
 
   const handleCopy = React.useCallback(
     async (entry: BillingCodeEntry) => {
       try {
         await navigator.clipboard.writeText(entry.billingCode.code)
-        toast({
-          title: 'Billing code copied',
-          description: `${entry.labelName}: ${entry.billingCode.code}`,
+        setTemporaryFeedback({
+          entryId: entry.billingCode.id,
+          status: 'copied',
         })
       } catch {
-        toast({
-          title: 'Copy failed',
-          description: 'Unable to copy the billing code.',
-          variant: 'destructive',
+        setTemporaryFeedback({
+          entryId: entry.billingCode.id,
+          status: 'error',
         })
       }
     },
-    [toast],
+    [setTemporaryFeedback],
   )
 
   React.useEffect(() => {
@@ -94,114 +103,195 @@ export function BillingCodesDrawer({
     return () => document.removeEventListener('mousedown', handleClick)
   }, [open, onClose])
 
+  React.useEffect(() => {
+    return () => {
+      if (feedbackTimeoutRef.current) {
+        clearTimeout(feedbackTimeoutRef.current)
+      }
+    }
+  }, [])
+
   return (
     <AnimatePresence>
       {open && (
         <motion.div
           ref={drawerRef}
-          initial={{ opacity: 0, x: 18, scale: 0.98 }}
-          animate={{ opacity: 1, x: 0, scale: 1 }}
-          exit={{ opacity: 0, x: 18, scale: 0.98 }}
-          transition={{ duration: 0.18, ease: 'easeOut' }}
-          className="absolute top-1.5 right-1.5 bottom-1.5 z-30 overflow-hidden rounded-lg"
+          initial={{ width: 0, opacity: 0 }}
+          animate={{ width: '100%', opacity: 1 }}
+          exit={{ width: 0, opacity: 0 }}
+          transition={{ duration: 0.2, ease: 'easeInOut' }}
+          className="absolute inset-0 z-30 overflow-hidden rounded-lg"
           style={{
-            width: drawerWidth,
-            backgroundColor: 'color-mix(in srgb, var(--surface) 96%, transparent)',
-            border: '1px solid color-mix(in srgb, var(--border-color) 78%, transparent)',
-            boxShadow: '-8px 0 18px rgba(0,0,0,0.14)',
+            backgroundColor: 'var(--surface)',
+            boxShadow: '0 0 16px rgba(0,0,0,0.2)',
           }}
           onClick={(event) => event.stopPropagation()}
         >
           <div className="flex h-full w-full flex-col">
             <div
-              className="flex shrink-0 items-center justify-between border-b px-3 py-2"
-              style={{
-                borderColor:
-                  'color-mix(in srgb, var(--border-color) 78%, transparent)',
-              }}
+              className="flex shrink-0 items-center justify-between border-b px-3 py-1.5"
+              style={{ borderColor: 'var(--border-color)' }}
             >
               <div className="flex items-center gap-1.5">
                 <DollarSign
-                  className="h-3.5 w-3.5"
-                  style={{ color: 'var(--text-muted)' }}
+                  className="h-3 w-3"
+                  style={{ color: 'var(--tab-billing)' }}
                 />
                 <span
-                  className="text-xs font-medium"
-                  style={{ color: 'var(--text-muted)' }}
+                  className="text-[10px] font-semibold tracking-wide uppercase"
+                  style={{ color: 'var(--tab-billing)' }}
                 >
                   Billing
                 </span>
               </div>
               <button
                 onClick={onClose}
-                className="rounded p-0.5 transition-colors hover:bg-white/5"
+                className="rounded p-0.5 transition-colors hover:bg-black/10"
+                aria-label="Close billing drawer"
               >
                 <X className="h-3 w-3" style={{ color: 'var(--text-muted)' }} />
               </button>
             </div>
 
             <div className="flex-1 overflow-y-auto px-3 py-2.5">
-              {flatEntries.length === 0 ? (
-                <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+              {entries.length === 0 ? (
+                <p
+                  className="text-[11px]"
+                  style={{ color: 'var(--text-muted)' }}
+                >
                   No billing codes linked to this task.
                 </p>
               ) : (
-                <div className="space-y-2">
-                  {flatEntries.map((entry) => (
-                    <button
-                      key={entry.billingCode.id}
-                      type="button"
-                      onClick={() => void handleCopy(entry)}
-                      className="w-full rounded-md border px-3 py-2 text-left transition-colors hover:bg-white/5"
-                      style={{
-                        borderColor:
-                          'color-mix(in srgb, var(--border-color) 72%, transparent)',
-                        backgroundColor:
-                          'color-mix(in srgb, var(--surface-2) 56%, transparent)',
-                      }}
-                      title={buildBillingCodeTitle(
-                        entry.labelName,
-                        entry.billingCode,
-                      )}
-                    >
+                <div className="space-y-4">
+                  {groupedEntries.map((group) => (
+                    <div key={group.labelName} className="space-y-2">
                       {showLabelContext && (
-                        <div
-                          className="mb-1 text-[10px]"
-                          style={{ color: 'var(--text-muted)' }}
-                        >
-                          {entry.labelName}
+                        <div className="flex items-center gap-2 px-0.5">
+                          <span
+                            className="h-1.5 w-1.5 rounded-full"
+                            style={{ backgroundColor: group.labelColor }}
+                          />
+                          <p
+                            className="truncate text-[9px] font-semibold tracking-[0.16em] uppercase"
+                            style={{ color: 'var(--text-muted)' }}
+                          >
+                            {group.labelName}
+                          </p>
                         </div>
                       )}
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <div
-                            className="truncate font-mono text-[11px] font-semibold"
-                            style={{ color: 'var(--text-primary)' }}
-                          >
-                            {formatBillingCodeDisplay(entry.billingCode)}
-                          </div>
-                          {entry.billingCode.description && (
-                            <p
-                              className="mt-1 text-[10px] leading-relaxed break-words"
-                              style={{ color: 'var(--text-muted)' }}
+
+                      <div className="space-y-2">
+                        {group.entries.map((entry) => {
+                          const feedbackState =
+                            copyFeedback?.entryId === entry.billingCode.id
+                              ? copyFeedback.status
+                              : null
+                          const isCopied = feedbackState === 'copied'
+                          const isError = feedbackState === 'error'
+
+                          return (
+                            <motion.button
+                              key={entry.billingCode.id}
+                              type="button"
+                              onClick={() => void handleCopy(entry)}
+                              initial={false}
+                              animate={
+                                shouldReduceMotion
+                                  ? undefined
+                                  : isCopied
+                                    ? { scale: [1, 0.992, 1] }
+                                    : { scale: 1 }
+                              }
+                              transition={{ duration: 0.26, ease: 'easeOut' }}
+                              className="group relative block w-full rounded-md border px-3 py-2.5 text-left transition-colors duration-150 hover:border-[color:var(--primary)]/40"
+                              style={{
+                                backgroundColor: isCopied
+                                  ? 'color-mix(in srgb, var(--status-done) 10%, var(--surface-2) 90%)'
+                                  : isError
+                                    ? 'color-mix(in srgb, var(--destructive) 10%, var(--surface-2) 90%)'
+                                    : 'var(--surface-2)',
+                                borderColor: isCopied
+                                  ? 'color-mix(in srgb, var(--status-done) 40%, transparent)'
+                                  : isError
+                                    ? 'color-mix(in srgb, var(--destructive) 40%, transparent)'
+                                    : 'var(--border-color)',
+                              }}
+                              title={buildBillingCodeTitle(
+                                entry.labelName,
+                                entry.billingCode,
+                              )}
                             >
-                              {entry.billingCode.description}
-                            </p>
-                          )}
-                        </div>
-                        <span
-                          className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium"
-                          style={{
-                            color: 'var(--text-muted)',
-                            backgroundColor:
-                              'color-mix(in srgb, var(--background) 26%, transparent)',
-                          }}
-                        >
-                          <Copy className="h-3 w-3" />
-                          Copy
-                        </span>
+                              <div className="flex items-center justify-between gap-2">
+                                <span
+                                  className="text-[9px] font-semibold tracking-[0.16em] uppercase"
+                                  style={{ color: 'var(--text-muted)' }}
+                                >
+                                  {entry.billingCode.type}
+                                </span>
+                                <AnimatePresence initial={false} mode="wait">
+                                  <motion.span
+                                    key={feedbackState ?? 'idle'}
+                                    initial={
+                                      shouldReduceMotion
+                                        ? false
+                                        : { opacity: 0, scale: 0.9 }
+                                    }
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={
+                                      shouldReduceMotion
+                                        ? undefined
+                                        : { opacity: 0, scale: 0.9 }
+                                    }
+                                    transition={{
+                                      duration: 0.16,
+                                      ease: 'easeOut',
+                                    }}
+                                    className="inline-flex items-center gap-1 text-[10px] font-medium"
+                                    style={{
+                                      color: isCopied
+                                        ? 'var(--status-done)'
+                                        : isError
+                                          ? 'var(--destructive)'
+                                          : 'var(--text-muted)',
+                                    }}
+                                  >
+                                    {isCopied ? (
+                                      <>
+                                        <Check className="h-3 w-3" />
+                                        Copied
+                                      </>
+                                    ) : isError ? (
+                                      'Retry'
+                                    ) : (
+                                      <>
+                                        <Copy className="h-3 w-3" />
+                                        Copy
+                                      </>
+                                    )}
+                                  </motion.span>
+                                </AnimatePresence>
+                              </div>
+
+                              <div
+                                className="mt-1.5 font-mono text-xs leading-snug font-semibold break-all"
+                                style={{ color: 'var(--text-primary)' }}
+                              >
+                                {entry.billingCode.code}
+                              </div>
+
+                              {entry.billingCode.description && (
+                                <p
+                                  className="mt-1.5 text-[10px] leading-relaxed break-words"
+                                  style={{ color: 'var(--text-muted)' }}
+                                >
+                                  {entry.billingCode.description}
+                                </p>
+                              )}
+                            </motion.button>
+                          )
+                        })}
                       </div>
-                    </button>
+                    </div>
                   ))}
                 </div>
               )}

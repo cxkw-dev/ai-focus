@@ -61,11 +61,13 @@ describe('BillingCodesDrawer', () => {
     )
 
     expect(screen.queryByText('PROJECT - AMEX')).not.toBeInTheDocument()
-    expect(screen.getByText('WBS · CUS/00396-0076.L.01')).toBeInTheDocument()
-    expect(screen.getByText('Cost Center · AMEX-ENG-42')).toBeInTheDocument()
+    expect(screen.getByText('WBS')).toBeInTheDocument()
+    expect(screen.getByText('CUS/00396-0076.L.01')).toBeInTheDocument()
+    expect(screen.getByText('Cost Center')).toBeInTheDocument()
+    expect(screen.getByText('AMEX-ENG-42')).toBeInTheDocument()
   })
 
-  it('copies only the billing code value', async () => {
+  it('copies only the billing code value and shows inline feedback', async () => {
     render(
       <BillingCodesDrawer
         entries={[createEntry()]}
@@ -75,11 +77,12 @@ describe('BillingCodesDrawer', () => {
     )
 
     fireEvent.click(
-      screen.getByRole('button', { name: /wbs · cus\/00396-0076\.l\.01/i }),
+      screen.getByRole('button', { name: /cus\/00396-0076\.l\.01/i }),
     )
 
     await waitFor(() => {
       expect(writeText).toHaveBeenCalledWith('CUS/00396-0076.L.01')
+      expect(screen.getByText('Copied')).toBeInTheDocument()
     })
   })
 })

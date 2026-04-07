@@ -119,11 +119,11 @@ export function StatusUpdatesDrawer({
               <div className="flex items-center gap-1.5">
                 <Clock
                   className="h-3 w-3"
-                  style={{ color: 'var(--text-muted)' }}
+                  style={{ color: 'var(--tab-timeline)' }}
                 />
                 <span
                   className="text-[10px] font-semibold tracking-wide uppercase"
-                  style={{ color: 'var(--text-muted)' }}
+                  style={{ color: 'var(--tab-timeline)' }}
                 >
                   Timeline
                 </span>
