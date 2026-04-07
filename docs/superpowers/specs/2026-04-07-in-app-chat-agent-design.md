@@ -59,14 +59,12 @@ model ChatThread {
 }
 
 model ChatMessage {
-  id         String     @id @default(cuid())
-  threadId   String
-  thread     ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
-  role       ChatRole
-  content    String     // text body; for tool messages, JSON-stringified result
-  toolCalls  Json?      // assistant turns: [{id, name, arguments}] when LLM requests tools
-  toolCallId String?    // tool turns: links result back to the call that produced it
-  createdAt  DateTime   @default(now())
+  id        String     @id @default(cuid())
+  threadId  String
+  thread    ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  role      ChatRole
+  parts     Json       // TanStack AI UIMessage.parts array — array of {type, ...} parts
+  createdAt DateTime   @default(now())
 
   @@index([threadId, createdAt])
 }
@@ -74,10 +72,15 @@ model ChatMessage {
 enum ChatRole {
   USER
   ASSISTANT
-  TOOL
   SYSTEM
 }
 ```
+
+**Why one row per UIMessage with `parts: Json`:** TanStack AI's `UIMessage` is the natural unit of persistence. A single assistant turn may contain one text part, multiple tool-call parts (each with their own state machine: `input-streaming` → `input-complete` → `approval-requested` → `approval-responded` → `output-available`), thinking parts, and resulting tool-result parts — all bundled into one logical assistant message. Splitting these across multiple DB rows would force us to reassemble them on every read; storing the canonical `parts` array as JSON is simpler and lossless.
+
+**Replay into the chat() function:** When the streaming chat route loads thread history to feed into `chat()`, it converts DB rows back into `UIMessage[]` (trivial: each row is `{ id, role, parts: row.parts as MessagePart[], createdAt }`) and passes them through TanStack AI's `convertMessagesToModelMessages()` helper, which produces the `ModelMessage[]` the `chat()` function expects.
+
+There is no `TOOL` enum value: tool calls and tool results live as parts inside assistant messages, not as standalone messages.
 
 **Migration:** `npm run db:push` per the project's Prisma 7 conventions.
 
@@ -115,11 +118,13 @@ export async function POST(
   const { id: threadId } = await params
   const { message } = await req.json()
 
-  // This route handles new user messages only. Resumption after a destructive-tool
-  // confirmation goes through POST /api/chat/threads/:id/confirm-tool, which does
-  // not insert a USER row.
+  // Persist the new user message as a single UIMessage with one text part.
   await db.chatMessage.create({
-    data: { threadId, role: 'USER', content: message },
+    data: {
+      threadId,
+      role: 'USER',
+      parts: [{ type: 'text', content: message }],
+    },
   })
 
   const history = await db.chatMessage.findMany({
@@ -129,7 +134,7 @@ export async function POST(
 
   const stream = chat({
     adapter: ollamaText(process.env.OLLAMA_MODEL ?? 'gemma4:latest'),
-    messages: toAgentMessages(history),
+    messages: convertMessagesToModelMessages(toUiMessages(history)),
     tools: agentTools,
     system: AGENT_SYSTEM_PROMPT(new Date()),
   })
@@ -140,11 +145,11 @@ export async function POST(
 
 ### 5.2 `persistOnComplete` wrapper
 
-A small helper that wraps the TanStack AI stream, forwards every chunk untouched to the SSE response, and on stream completion writes the assistant's final message(s) + tool calls + tool results into `ChatMessage` rows. Also bumps `ChatThread.updatedAt` and triggers fire-and-forget title synthesis on the first assistant turn.
+A small helper that wraps the TanStack AI stream, forwards every chunk untouched to the SSE response, and on stream completion writes the assistant's final `UIMessage` (with its full `parts` array) into a single `ChatMessage` row. Also bumps `ChatThread.updatedAt` and triggers fire-and-forget title synthesis on the first assistant turn.
 
-**Risk:** The exact event shape TanStack AI emits for "stream finished, here's the final structured message list" must be confirmed during implementation. Fallback: a `transformStream` that buffers canonical messages alongside SSE forwarding.
+The framework's stream emits the canonical assistant `UIMessage` at the end of each turn. The wrapper subscribes to that completion signal (via the chat stream's iterator or an `onFinish`-style callback if exposed) and writes the row. The exact event name for "assistant turn finalized" must be confirmed against `@tanstack/ai`'s stream API during implementation; fallback is a `TransformStream` that forwards bytes to the SSE response while accumulating the parts in parallel and writes on stream end.
 
-**Risk:** If the SSE stream is interrupted mid-turn (browser closes, network drop), the assistant turn will not be fully persisted. Mitigation: persist incrementally on each significant boundary (each delta chunk past a threshold), not only on completion.
+**Risk:** If the SSE stream is interrupted mid-turn (browser closes, network drop), the assistant turn will not be fully persisted. Mitigation: persist incrementally at significant part boundaries (after each tool-call part finalizes, after each text part finalizes), not only on stream end. The persisted row is an upsert on the in-progress assistant message ID so that partial state is overwritten when more parts arrive.
 
 ### 5.3 Cross-tab cache invalidation
 
@@ -158,7 +163,7 @@ After the assistant turn completes, the route inspects which tools ran and emits
 src/lib/agent-tools/
 ├── index.ts           # exports `agentTools`, `AGENT_SYSTEM_PROMPT`
 ├── helpers.ts         # apiFetch, resolveKey, formatTodoSummary (mirrors mcp-server/src/helpers.ts)
-├── streaming.ts       # persistOnComplete, toAgentMessages
+├── streaming.ts       # persistOnComplete, toUiMessages
 ├── todos.ts           # 12 tools
 ├── labels.ts          # 4 tools
 ├── notebook.ts        # 7 tools
