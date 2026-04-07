@@ -9,11 +9,14 @@ import {
   BarChart3,
   CheckSquare,
   ChevronLeft,
+  Clock,
+  ExternalLink,
   FileText,
   PenLine,
   Settings,
   Tags,
 } from 'lucide-react'
+import { useVpnStatus } from '@/hooks/use-vpn-status'
 import {
   Tooltip,
   TooltipContent,
@@ -110,6 +113,46 @@ export function Sidebar({
   transition = { duration: 0.2, ease: 'easeInOut' },
 }: SidebarProps) {
   const pathname = usePathname()
+  const { data: vpnConnected, isLoading: vpnLoading } = useVpnStatus()
+
+  const timesheetButton = (
+    <a
+      href="https://s4hprd.sap.kyndryl.net/sap/bc/gui/sap/its/webgui#"
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`flex items-center rounded-lg py-2.5 text-sm font-medium transition-colors duration-200 ${collapsed ? 'justify-center px-0' : 'gap-3 px-3'}`}
+      style={{ color: 'var(--text-muted)' }}
+    >
+      <span className="relative shrink-0">
+        <Clock className="h-5 w-5" />
+        <span
+          className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full border"
+          style={{
+            borderColor: 'var(--surface)',
+            backgroundColor: vpnLoading
+              ? 'var(--text-muted)'
+              : vpnConnected
+                ? '#22c55e'
+                : '#ef4444',
+          }}
+        />
+      </span>
+      <AnimatePresence mode="wait">
+        {!collapsed && (
+          <motion.span
+            initial={{ opacity: 0, width: 0 }}
+            animate={{ opacity: 1, width: 'auto' }}
+            exit={{ opacity: 0, width: 0 }}
+            transition={{ duration: 0.15 }}
+            className="flex items-center gap-2 overflow-hidden whitespace-nowrap"
+          >
+            Timesheet
+            <ExternalLink className="h-3 w-3 opacity-50" />
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </a>
+  )
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -171,6 +214,22 @@ export function Sidebar({
         <nav
           className={`flex flex-1 flex-col gap-1 ${collapsed ? 'px-2 py-3' : 'p-3'}`}
         >
+          {collapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>{timesheetButton}</TooltipTrigger>
+              <TooltipContent side="right" className="font-medium">
+                Timesheet {vpnConnected ? '(VPN connected)' : '(VPN off)'}
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            timesheetButton
+          )}
+
+          <div
+            className="my-1 border-b"
+            style={{ borderColor: 'var(--border-color)' }}
+          />
+
           {topNavItems.map((item) => renderNavItem(item, pathname, collapsed))}
         </nav>
 
