@@ -33,6 +33,9 @@ interface SidebarProps {
   }
 }
 
+const TIMESHEET_URL =
+  'https://s4hprd.sap.kyndryl.net/sap/bc/gui/sap/its/webgui#'
+
 const topNavItems = [
   { title: 'Todos', href: '/todos', icon: RiTaskLine },
   { title: 'Notes', href: '/notes', icon: RiStickyNoteLine },
@@ -180,11 +183,12 @@ export function Sidebar({
   const { data: vpnConnected, isLoading: vpnLoading } = useVpnStatus()
 
   const timesheetButton = (
-    <a
-      href="https://s4hprd.sap.kyndryl.net/sap/bc/gui/sap/its/webgui#"
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`flex items-center rounded-lg py-2.5 text-sm font-medium transition-colors duration-200 ${collapsed ? 'justify-center px-0' : 'gap-3 px-3'}`}
+    <button
+      type="button"
+      onClick={() =>
+        window.open(TIMESHEET_URL, '_blank', 'noopener,noreferrer')
+      }
+      className={`flex w-full items-center rounded-lg py-2.5 text-sm font-medium transition-colors duration-200 ${collapsed ? 'justify-center px-0' : 'gap-3 px-3'}`}
       style={{ color: 'var(--text-muted)' }}
     >
       <span className="relative shrink-0">
@@ -215,7 +219,7 @@ export function Sidebar({
           </motion.span>
         )}
       </AnimatePresence>
-    </a>
+    </button>
   )
 
   return (
