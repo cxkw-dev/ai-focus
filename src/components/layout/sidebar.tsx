@@ -5,18 +5,18 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
+import { ChevronLeft, ExternalLink } from 'lucide-react'
+import type { IconType } from 'react-icons'
 import {
-  BarChart3,
-  CheckSquare,
-  ChevronLeft,
-  Clock,
-  ExternalLink,
-  FileText,
-  PenLine,
-  Settings,
-  Tags,
-} from 'lucide-react'
+  RiDonutChartLine,
+  RiPriceTag3Line,
+  RiSettings4Line,
+  RiStickyNoteLine,
+  RiTaskLine,
+  RiTimeLine,
+} from 'react-icons/ri'
 import { useVpnStatus } from '@/hooks/use-vpn-status'
+import { useOllamaStatus } from '@/hooks/use-ollama-status'
 import {
   Tooltip,
   TooltipContent,
@@ -34,22 +34,86 @@ interface SidebarProps {
 }
 
 const topNavItems = [
-  { title: 'Todos', href: '/todos', icon: CheckSquare },
-  { title: 'Scratch Pad', href: '/scratchpad', icon: PenLine },
-  { title: 'Notes', href: '/notes', icon: FileText },
+  { title: 'Todos', href: '/todos', icon: RiTaskLine },
+  { title: 'Notes', href: '/notes', icon: RiStickyNoteLine },
 ]
 
 const bottomNavItems = [
-  { title: 'Review', href: '/review', icon: BarChart3 },
-  { title: 'Labels', href: '/labels', icon: Tags },
-  { title: 'Settings', href: '/settings', icon: Settings },
+  { title: 'Review', href: '/review', icon: RiDonutChartLine },
+  { title: 'Labels', href: '/labels', icon: RiPriceTag3Line },
+  { title: 'Settings', href: '/settings', icon: RiSettings4Line },
 ]
+
+function OllamaStatusBar({ collapsed }: { collapsed: boolean }) {
+  const { data, isLoading, refetch, isFetching } = useOllamaStatus()
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted || isLoading) return null
+
+  const connected = data?.connected ?? false
+  const model = data?.model ?? ''
+  const url = data?.url ?? ''
+
+  const dotColor = isFetching
+    ? 'var(--text-muted)'
+    : connected
+      ? '#22c55e'
+      : '#ef4444'
+
+  const button = (
+    <button
+      type="button"
+      onClick={() => refetch()}
+      className={`flex w-full items-center text-[10px] tracking-wide uppercase transition-opacity hover:opacity-100 ${collapsed ? 'justify-center' : 'gap-2'}`}
+      style={{ color: 'var(--text-muted)', opacity: 0.7 }}
+    >
+      <span
+        className="h-1.5 w-1.5 shrink-0 rounded-full"
+        style={{ backgroundColor: dotColor }}
+      />
+      <AnimatePresence mode="wait">
+        {!collapsed && (
+          <motion.span
+            initial={{ opacity: 0, width: 0 }}
+            animate={{ opacity: 1, width: 'auto' }}
+            exit={{ opacity: 0, width: 0 }}
+            transition={{ duration: 0.15 }}
+            className="overflow-hidden truncate whitespace-nowrap"
+          >
+            {model || 'ollama'}
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </button>
+  )
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{button}</TooltipTrigger>
+      <TooltipContent side="right" sideOffset={8}>
+        <div className="text-xs">
+          <p className="font-medium">
+            {connected ? 'Ollama connected' : 'Ollama unreachable'}
+          </p>
+          {url && <p style={{ color: 'var(--text-muted)' }}>{url}</p>}
+          <p style={{ color: 'var(--text-muted)', marginTop: 2 }}>
+            Click to refresh
+          </p>
+        </div>
+      </TooltipContent>
+    </Tooltip>
+  )
+}
 
 function renderNavItem(
   item: {
     title: string
     href: string
-    icon: React.ComponentType<{ className?: string }>
+    icon: IconType
   },
   pathname: string,
   collapsed: boolean,
@@ -124,7 +188,7 @@ export function Sidebar({
       style={{ color: 'var(--text-muted)' }}
     >
       <span className="relative shrink-0">
-        <Clock className="h-5 w-5" />
+        <RiTimeLine className="h-5 w-5" />
         <span
           className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full border"
           style={{
@@ -210,28 +274,33 @@ export function Sidebar({
           </Link>
         </div>
 
-        {/* Top Navigation */}
-        <nav
-          className={`flex flex-1 flex-col gap-1 ${collapsed ? 'px-2 py-3' : 'p-3'}`}
-        >
-          {collapsed ? (
-            <Tooltip>
-              <TooltipTrigger asChild>{timesheetButton}</TooltipTrigger>
-              <TooltipContent side="right" className="font-medium">
-                Timesheet {vpnConnected ? '(VPN connected)' : '(VPN off)'}
-              </TooltipContent>
-            </Tooltip>
-          ) : (
-            timesheetButton
-          )}
+        <div className="flex flex-1 flex-col">
+          {/* Top Navigation */}
+          <nav
+            className={`flex flex-col gap-1 ${collapsed ? 'px-2 py-3' : 'p-3'}`}
+          >
+            {topNavItems.map((item) =>
+              renderNavItem(item, pathname, collapsed),
+            )}
+          </nav>
 
-          <div
-            className="my-1 border-b"
+          {/* Timesheet Section */}
+          <nav
+            className={`flex flex-col gap-1 border-t ${collapsed ? 'px-2 py-3' : 'p-3'}`}
             style={{ borderColor: 'var(--border-color)' }}
-          />
-
-          {topNavItems.map((item) => renderNavItem(item, pathname, collapsed))}
-        </nav>
+          >
+            {collapsed ? (
+              <Tooltip>
+                <TooltipTrigger asChild>{timesheetButton}</TooltipTrigger>
+                <TooltipContent side="right" className="font-medium">
+                  Timesheet {vpnConnected ? '(VPN connected)' : '(VPN off)'}
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              timesheetButton
+            )}
+          </nav>
+        </div>
 
         {/* Bottom Navigation */}
         <nav
@@ -242,6 +311,14 @@ export function Sidebar({
             renderNavItem(item, pathname, collapsed),
           )}
         </nav>
+
+        {/* Status bar (vscode-style) */}
+        <div
+          className={`border-t ${collapsed ? 'px-2 py-2' : 'px-4 py-2'}`}
+          style={{ borderColor: 'var(--border-color)' }}
+        >
+          <OllamaStatusBar collapsed={collapsed} />
+        </div>
 
         {/* Collapse Toggle - Edge positioned */}
         <Tooltip>
