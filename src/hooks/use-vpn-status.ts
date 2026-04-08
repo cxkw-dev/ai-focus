@@ -9,7 +9,7 @@ export function useVpnStatus() {
       return data.connected as boolean
     },
     staleTime: Infinity,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
     refetchOnReconnect: false,
   })
 }
