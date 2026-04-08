@@ -51,7 +51,17 @@
       "Bash(system_profiler SPHardwareDataType 2>/dev/null)",
       "Bash(sysctl -n machdep.cpu.brand_string)",
       "Bash(sysctl -n hw.memsize)",
-      "Bash(brew list:*)"
+      "Bash(brew list:*)",
+      "mcp__ai-focus__add_status_update",
+      "Bash(npx vitest:*)",
+      "Bash(npx eslint:*)",
+      "Read(//private/tmp/**)",
+      "Read(//Users/andynguyen/Library/Logs/**)",
+      "Read(//tmp/**)",
+      "Bash(xxd)",
+      "Bash(echo \"Lint exit status: $?\")",
+      "Bash(echo \"Typecheck exit status: $?\")",
+      "Bash(echo \"LINT FAILED \\(exit $?\\)\")"
     ]
   }
 }

@@ -1,21 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import type { YearStats, MonthlyData } from '@/types/stats'
-
-const MONTH_LABELS = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-]
+import { MONTH_LABELS, buildReviewFocusFlow } from '@/lib/review-focus-flow'
 
 export async function GET(request: NextRequest) {
   try {
@@ -156,6 +142,8 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => b.count - a.count)
       .slice(0, 10)
 
+    const focusFlow = buildReviewFocusFlow(todosCompleted)
+
     // --- Highlights ---
     const busiestMonthIdx = monthly.reduce(
       (max, m, i) => (m.created > monthly[max].created ? i : max),
@@ -226,6 +214,7 @@ export async function GET(request: NextRequest) {
       byStatus,
       byPriority,
       topLabels,
+      focusFlow,
       highlights,
       accomplishments: {
         total: accomplishments.length,

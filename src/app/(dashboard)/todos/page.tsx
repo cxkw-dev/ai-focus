@@ -1,10 +1,14 @@
 'use client'
 
 import * as React from 'react'
-import { Plus, Rows3, Eye, EyeOff } from 'lucide-react'
+import { Plus, Eye, EyeOff, Circle, CheckCircle2, Trash2 } from 'lucide-react'
 import { HeaderActions } from '@/components/layout/header-actions-context'
 import { BlockedExpandedProvider } from '@/components/todos/todo-item'
 import { TodoColumn } from '@/components/todos/todo-column'
+import {
+  LabelStatusBoard,
+  type LabelStatusBoardFilter,
+} from '@/components/todos/label-status-board'
 import { EditTodoDialog } from '@/components/todos/edit-todo-dialog'
 import { CreateTodoModal } from '@/components/todos/create-todo-modal'
 import { NoteDrawer } from '@/components/todos/note-drawer'
@@ -50,48 +54,12 @@ export default function TodosPage() {
     noteId: string
     todoTitle: string
   } | null>(null)
-  const [compact, setCompact] = React.useState(() => {
-    if (typeof window === 'undefined') return false
-    return localStorage.getItem('ai-focus-compact-mode') === 'true'
-  })
-
-  const toggleCompact = React.useCallback(() => {
-    setCompact((prev) => {
-      const next = !prev
-      localStorage.setItem('ai-focus-compact-mode', String(next))
-      return next
-    })
-  }, [])
-
   const [blockedExpanded, setBlockedExpanded] = React.useState(false)
+  const [responsiveFilter, setResponsiveFilter] =
+    React.useState<LabelStatusBoardFilter>('active')
 
   // Build dynamic columns from labels
   const columns = React.useMemo(() => buildColumns(labels), [labels])
-
-  // Mobile category defaults to first column
-  const [mobileCategory, setMobileCategory] = React.useState<string>('')
-  React.useEffect(() => {
-    if (
-      columns.length > 0 &&
-      (!mobileCategory || !columns.some((c) => c.key === mobileCategory))
-    ) {
-      setMobileCategory(columns[0].key)
-    }
-  }, [columns, mobileCategory])
-
-  const handleMobileCategoryKeyDown = React.useCallback(
-    (event: React.KeyboardEvent<HTMLButtonElement>, currentKey: string) => {
-      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
-      event.preventDefault()
-
-      const currentIndex = columns.findIndex((col) => col.key === currentKey)
-      const offset = event.key === 'ArrowRight' ? 1 : -1
-      const nextIndex =
-        (currentIndex + offset + columns.length) % columns.length
-      setMobileCategory(columns[nextIndex].key)
-    },
-    [columns],
-  )
 
   // Categorize all todo lists by label
   const categorizedActive = React.useMemo(
@@ -105,6 +73,52 @@ export default function TodosPage() {
   const categorizedDeleted = React.useMemo(
     () => categorizeTodosByLabel(deletedTodos, columns),
     [deletedTodos, columns],
+  )
+
+  // Responsive view: hide labels that have nothing for the active filter
+  const categorizedForFilter =
+    responsiveFilter === 'completed'
+      ? categorizedCompleted
+      : responsiveFilter === 'deleted'
+        ? categorizedDeleted
+        : categorizedActive
+
+  const responsiveColumns = React.useMemo(
+    () =>
+      columns.filter(
+        (col) => (categorizedForFilter[col.key]?.length ?? 0) > 0,
+      ),
+    [columns, categorizedForFilter],
+  )
+
+  // Mobile category defaults to first non-empty column
+  const [mobileCategory, setMobileCategory] = React.useState<string>('')
+  React.useEffect(() => {
+    if (
+      responsiveColumns.length > 0 &&
+      (!mobileCategory ||
+        !responsiveColumns.some((c) => c.key === mobileCategory))
+    ) {
+      setMobileCategory(responsiveColumns[0].key)
+    }
+  }, [responsiveColumns, mobileCategory])
+
+  const handleMobileCategoryKeyDown = React.useCallback(
+    (event: React.KeyboardEvent<HTMLButtonElement>, currentKey: string) => {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+      event.preventDefault()
+
+      const currentIndex = responsiveColumns.findIndex(
+        (col) => col.key === currentKey,
+      )
+      if (currentIndex === -1) return
+      const offset = event.key === 'ArrowRight' ? 1 : -1
+      const nextIndex =
+        (currentIndex + offset + responsiveColumns.length) %
+        responsiveColumns.length
+      setMobileCategory(responsiveColumns[nextIndex].key)
+    },
+    [responsiveColumns],
   )
   const subtaskMentions = React.useMemo(
     () =>
@@ -246,68 +260,82 @@ export default function TodosPage() {
     )
   }
 
-  const mobileCol = columns.find((c) => c.key === mobileCategory) ?? columns[0]
+  const mobileCol =
+    responsiveColumns.find((c) => c.key === mobileCategory) ??
+    responsiveColumns[0]
 
   return (
     <BlockedExpandedProvider expanded={blockedExpanded}>
     <div className="flex h-[calc(100vh-120px)] flex-col">
-      {/* Portal compact toggle into header */}
       <HeaderActions>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setBlockedExpanded((prev) => !prev)}
-            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all"
-            style={{
-              backgroundColor: blockedExpanded
-                ? 'color-mix(in srgb, var(--primary) 16%, var(--surface-2) 84%)'
-                : 'var(--surface-2)',
-              color: blockedExpanded ? 'var(--primary)' : 'var(--text-muted)',
-              border: blockedExpanded
-                ? '1px solid color-mix(in srgb, var(--primary) 30%, transparent)'
-                : '1px solid var(--border-color)',
-            }}
-            title={
-              blockedExpanded
-                ? 'Collapse blocked cards'
-                : 'Expand blocked cards'
-            }
-            aria-label={
-              blockedExpanded
-                ? 'Collapse blocked cards'
-                : 'Expand blocked cards'
-            }
-          >
-            {blockedExpanded ? (
-              <EyeOff className="h-3.5 w-3.5" />
-            ) : (
-              <Eye className="h-3.5 w-3.5" />
-            )}
-            <span>{blockedExpanded ? 'Collapse blocked' : 'Show blocked'}</span>
-          </button>
-          <button
-            type="button"
-            onClick={toggleCompact}
-            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all"
-            style={{
-              backgroundColor: compact
-                ? 'color-mix(in srgb, var(--primary) 16%, var(--surface-2) 84%)'
-                : 'var(--surface-2)',
-              color: compact ? 'var(--primary)' : 'var(--text-muted)',
-              border: compact
-                ? '1px solid color-mix(in srgb, var(--primary) 30%, transparent)'
-                : '1px solid var(--border-color)',
-            }}
-            title={
-              compact ? 'Switch to comfortable view' : 'Switch to compact view'
-            }
-            aria-label={
-              compact ? 'Switch to comfortable view' : 'Switch to compact view'
-            }
-          >
-            <Rows3 className="h-3.5 w-3.5" />
-            <span>{compact ? 'Compact' : 'Comfortable'}</span>
-          </button>
+        {/* Desktop (xl+): show "Show blocked" toggle */}
+        <button
+          type="button"
+          onClick={() => setBlockedExpanded((prev) => !prev)}
+          className="hidden items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all xl:flex"
+          style={{
+            backgroundColor: blockedExpanded
+              ? 'color-mix(in srgb, var(--primary) 16%, var(--surface-2) 84%)'
+              : 'var(--surface-2)',
+            color: blockedExpanded ? 'var(--primary)' : 'var(--text-muted)',
+            border: blockedExpanded
+              ? '1px solid color-mix(in srgb, var(--primary) 30%, transparent)'
+              : '1px solid var(--border-color)',
+          }}
+          title={
+            blockedExpanded ? 'Collapse blocked cards' : 'Expand blocked cards'
+          }
+          aria-label={
+            blockedExpanded ? 'Collapse blocked cards' : 'Expand blocked cards'
+          }
+        >
+          {blockedExpanded ? (
+            <EyeOff className="h-3.5 w-3.5" />
+          ) : (
+            <Eye className="h-3.5 w-3.5" />
+          )}
+          <span>{blockedExpanded ? 'Collapse blocked' : 'Show blocked'}</span>
+        </button>
+
+        {/* Responsive (< xl): active / completed / deleted filter */}
+        <div
+          className="flex items-center gap-0.5 rounded-lg p-0.5 xl:hidden"
+          style={{
+            backgroundColor: 'var(--surface-2)',
+            border: '1px solid var(--border-color)',
+          }}
+          role="tablist"
+          aria-label="Filter todos"
+        >
+          {(
+            [
+              { key: 'active', label: 'Active', icon: Circle },
+              { key: 'completed', label: 'Done', icon: CheckCircle2 },
+              { key: 'deleted', label: 'Trash', icon: Trash2 },
+            ] as const
+          ).map((tab) => {
+            const Icon = tab.icon
+            const isActive = responsiveFilter === tab.key
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setResponsiveFilter(tab.key)}
+                className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors"
+                style={{
+                  backgroundColor: isActive
+                    ? 'color-mix(in srgb, var(--primary) 16%, transparent)'
+                    : 'transparent',
+                  color: isActive ? 'var(--primary)' : 'var(--text-muted)',
+                }}
+              >
+                <Icon className="h-3 w-3" />
+                <span>{tab.label}</span>
+              </button>
+            )
+          })}
         </div>
       </HeaderActions>
 
@@ -323,12 +351,12 @@ export default function TodosPage() {
           }}
         >
           <div
-            className="scrollbar-hide flex gap-1.5 overflow-x-auto"
+            className="flex gap-1.5"
             role="tablist"
             aria-label="Task categories"
           >
-            {columns.map((col) => {
-              const count = (categorizedActive[col.key] ?? []).length
+            {responsiveColumns.map((col) => {
+              const count = (categorizedForFilter[col.key] ?? []).length
               const isActive = mobileCategory === col.key
 
               return (
@@ -343,7 +371,7 @@ export default function TodosPage() {
                   onKeyDown={(event) =>
                     handleMobileCategoryKeyDown(event, col.key)
                   }
-                  className="flex min-w-[152px] flex-1 items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left transition-all active:scale-[0.99]"
+                  className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left transition-all active:scale-[0.99]"
                   style={{
                     border: `1px solid ${
                       isActive
@@ -377,7 +405,7 @@ export default function TodosPage() {
                   </span>
 
                   <span
-                    className="rounded-full px-2 py-0.5 text-[10px] font-semibold tabular-nums"
+                    className="flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold tabular-nums"
                     style={{
                       backgroundColor: isActive
                         ? `color-mix(in srgb, ${col.color} 20%, transparent)`
@@ -395,14 +423,13 @@ export default function TodosPage() {
 
         {mobileCol && (
           <div
-            className="min-h-0 flex-1 lg:mx-auto lg:w-full lg:max-w-2xl"
+            className="min-h-0 flex-1"
             role="tabpanel"
             id={`todos-category-panel-${mobileCategory}`}
             aria-labelledby={`todos-category-tab-${mobileCategory}`}
           >
-            <TodoColumn
-              title={mobileCol.title}
-              color={mobileCol.color}
+            <LabelStatusBoard
+              filter={responsiveFilter}
               activeTodos={categorizedActive[mobileCol.key] ?? []}
               completedTodos={categorizedCompleted[mobileCol.key] ?? []}
               deletedTodos={categorizedDeleted[mobileCol.key] ?? []}
@@ -415,15 +442,8 @@ export default function TodosPage() {
               onToggleSubtask={handleToggleSubtask}
               onUpdateSubtasks={handleUpdateSubtasks}
               onOpenNote={handleOpenNote}
-              onReorder={handleReorder}
-              onCreateTodo={handleCreate}
-              isSaving={isSaving}
-              defaultLabelIds={mobileCol.labelId ? [mobileCol.labelId] : []}
               people={people}
               subtaskMentions={subtaskMentions}
-              showInlineForm={false}
-              animateListTransitions={false}
-              compact={compact}
             />
           </div>
         )}
@@ -499,7 +519,6 @@ export default function TodosPage() {
                 people={people}
                 subtaskMentions={subtaskMentions}
                 showInlineForm={false}
-                compact={compact}
               />
             )
           })}

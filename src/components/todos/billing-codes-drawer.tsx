@@ -125,10 +125,11 @@ export function BillingCodesDrawer({
           animate={{ width: '100%', opacity: 1 }}
           exit={{ width: 0, opacity: 0 }}
           transition={{ duration: 0.2, ease: 'easeInOut' }}
-          className="absolute inset-0 z-30 overflow-hidden rounded-lg"
+          className="absolute inset-y-0 right-0 z-30 overflow-hidden rounded-lg"
           style={{
             backgroundColor: 'var(--surface)',
             boxShadow: '0 0 16px rgba(0,0,0,0.2)',
+            transformOrigin: 'right center',
           }}
           onClick={(event) => event.stopPropagation()}
         >

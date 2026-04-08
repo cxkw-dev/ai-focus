@@ -5,8 +5,8 @@ import { ChevronDown } from 'lucide-react'
 import { useYearStats } from '@/hooks/use-year-stats'
 import { useAccomplishments } from '@/hooks/use-accomplishments'
 import { useChartColors } from '@/hooks/use-chart-colors'
+import { FocusSankeyChart } from '@/components/review/focus-sankey-chart'
 import { MonthlyChart } from '@/components/review/monthly-chart'
-import { LabelsChart } from '@/components/review/labels-chart'
 import { AccomplishmentsSection } from '@/components/review/accomplishments-section'
 
 const currentYear = new Date().getFullYear()
@@ -26,63 +26,41 @@ export default function ReviewPage() {
 
   return (
     <div className="flex flex-col gap-4 pb-8 sm:gap-6">
-      <div
-        className="rounded-2xl border px-4 py-5 sm:px-6 sm:py-6"
-        style={{
-          backgroundColor: 'var(--surface)',
-          borderColor: 'var(--border-color)',
-        }}
-      >
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-2">
-            <p
-              className="text-xs font-semibold tracking-[0.24em] uppercase"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              Year in Review
-            </p>
-            <div>
-              <h1
-                className="text-2xl font-semibold sm:text-3xl"
-                style={{ color: 'var(--text-primary)' }}
-              >
-                {year} at a glance
-              </h1>
-              <p
-                className="mt-1 text-sm sm:text-base"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                Scan the charts first, then dive into the accomplishment
-                timeline below.
-              </p>
-            </div>
-          </div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1
+            className="text-lg font-semibold sm:text-xl"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            {year} snapshot
+          </h1>
+          <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
+            Focus flow, pace shifts, and accomplishments.
+          </p>
+        </div>
 
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <select
-                value={year}
-                onChange={(e) => setYear(Number(e.target.value))}
-                className="appearance-none rounded-lg border px-4 py-2 pr-9 text-sm font-medium focus:ring-2 focus:outline-none"
-                style={{
-                  backgroundColor: 'var(--surface-2)',
-                  borderColor: 'var(--border-color)',
-                  color: 'var(--text-primary)',
-                  ['--tw-ring-color' as string]: 'var(--primary)',
-                }}
-              >
-                {yearOptions.map((y) => (
-                  <option key={y} value={y}>
-                    {y}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown
-                className="pointer-events-none absolute top-1/2 right-2.5 h-4 w-4 -translate-y-1/2"
-                style={{ color: 'var(--text-muted)' }}
-              />
-            </div>
-          </div>
+        <div className="relative self-start sm:self-auto">
+          <select
+            value={year}
+            onChange={(e) => setYear(Number(e.target.value))}
+            className="appearance-none rounded-full border px-4 py-2 pr-9 text-sm font-medium focus:ring-2 focus:outline-none"
+            style={{
+              backgroundColor: 'var(--surface-2)',
+              borderColor: 'var(--border-color)',
+              color: 'var(--text-primary)',
+              ['--tw-ring-color' as string]: 'var(--primary)',
+            }}
+          >
+            {yearOptions.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            className="pointer-events-none absolute top-1/2 right-2.5 h-4 w-4 -translate-y-1/2"
+            style={{ color: 'var(--text-muted)' }}
+          />
         </div>
       </div>
 
@@ -120,9 +98,9 @@ export default function ReviewPage() {
 
       {stats && hasData && (
         <>
-          <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.95fr)]">
+          <div className="grid grid-cols-1 items-stretch gap-4 sm:gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+            <FocusSankeyChart data={stats.focusFlow} colors={colors} />
             <MonthlyChart data={stats.monthly} colors={colors} />
-            <LabelsChart data={stats.topLabels} colors={colors} />
           </div>
 
           <AccomplishmentsSection

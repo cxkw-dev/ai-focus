@@ -1,15 +1,9 @@
 'use client'
 
 import * as React from 'react'
-import { Menu } from 'lucide-react'
+import { Menu, PenLine } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
-import { useOllamaStatus } from '@/hooks/use-ollama-status'
+import { ScratchPadDrawer } from '@/components/todos/scratch-pad-drawer'
 
 interface HeaderProps {
   title: string
@@ -18,72 +12,28 @@ interface HeaderProps {
   actions?: React.ReactNode
 }
 
-function OllamaStatus() {
-  const { data, isLoading, refetch, isFetching } = useOllamaStatus()
-  const [mounted, setMounted] = React.useState(false)
-
-  React.useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  if (!mounted || isLoading) return null
-
-  const connected = data?.connected ?? false
-  const model = data?.model ?? ''
-  const url = data?.url ?? ''
+function ScratchPadButton() {
+  const [open, setOpen] = React.useState(false)
 
   return (
-    <TooltipProvider delayDuration={200}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button
-            onClick={() => refetch()}
-            className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors select-none hover:brightness-110"
-            style={{
-              backgroundColor: 'var(--surface)',
-              border: '1px solid var(--border-color)',
-              color: 'var(--text-muted)',
-            }}
-          >
-            <span className="relative flex h-2 w-2">
-              {isFetching ? (
-                <span
-                  className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"
-                  style={{ backgroundColor: 'var(--text-muted)' }}
-                />
-              ) : connected ? (
-                <span
-                  className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"
-                  style={{ backgroundColor: '#22c55e' }}
-                />
-              ) : null}
-              <span
-                className="relative inline-flex h-2 w-2 rounded-full"
-                style={{
-                  backgroundColor: isFetching
-                    ? 'var(--text-muted)'
-                    : connected
-                      ? '#22c55e'
-                      : '#ef4444',
-                }}
-              />
-            </span>
-            <span className="hidden sm:inline">{model || 'ollama'}</span>
-          </button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">
-          <div className="text-xs">
-            <p className="font-medium">
-              {connected ? 'Ollama connected' : 'Ollama unreachable'}
-            </p>
-            <p style={{ color: 'var(--text-muted)' }}>{url}</p>
-            <p style={{ color: 'var(--text-muted)', marginTop: 2 }}>
-              Click to refresh
-            </p>
-          </div>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex h-9 w-9 items-center justify-center rounded-md transition-colors"
+        style={{
+          color: open ? 'var(--primary)' : 'var(--text-muted)',
+          backgroundColor: open
+            ? 'color-mix(in srgb, var(--primary) 12%, transparent)'
+            : 'transparent',
+        }}
+        title="Scratch pad"
+        aria-label="Open scratch pad"
+      >
+        <PenLine className="h-4 w-4" />
+      </button>
+      <ScratchPadDrawer open={open} onClose={() => setOpen(false)} />
+    </>
   )
 }
 
@@ -123,7 +73,7 @@ export function Header({
 
       <div className="flex items-center gap-2">
         {actions}
-        <OllamaStatus />
+        <ScratchPadButton />
       </div>
     </header>
   )

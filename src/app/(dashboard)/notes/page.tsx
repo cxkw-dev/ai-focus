@@ -69,7 +69,7 @@ export default function NotesPage() {
     <div className="flex h-[calc(100vh-120px)] flex-col">
       {/* Desktop layout */}
       <div
-        className="hidden h-full rounded-lg border lg:grid lg:grid-cols-[280px_1fr]"
+        className="hidden h-full overflow-hidden rounded-lg border lg:grid lg:grid-cols-[280px_1fr]"
         style={{
           borderColor: 'var(--border-color)',
           backgroundColor: 'var(--surface)',

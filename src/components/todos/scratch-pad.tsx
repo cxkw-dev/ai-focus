@@ -150,16 +150,9 @@ function ScratchPadEditor({ initialContent }: { initialContent: string }) {
           — {getStatusText().toLowerCase()}
         </span>
       </div>
-      <div className="group/pad relative min-h-0 flex-1">
+      <div className="relative min-h-0 flex-1">
         <div
-          className="absolute -inset-px rounded-lg opacity-0 blur-sm transition-opacity duration-300 group-focus-within/pad:opacity-100"
-          style={{
-            background: `linear-gradient(135deg, color-mix(in srgb, var(--primary) 40%, transparent), color-mix(in srgb, var(--accent) 30%, transparent))`,
-          }}
-        />
-
-        <div
-          className="relative h-full overflow-hidden rounded-lg transition-all duration-300"
+          className="relative h-full overflow-hidden rounded-lg"
           style={{
             backgroundColor: 'var(--surface)',
           }}

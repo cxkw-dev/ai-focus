@@ -8,8 +8,8 @@ export function useVpnStatus() {
       const data = await res.json()
       return data.connected as boolean
     },
-    staleTime: Infinity,
+    staleTime: 30_000,
     refetchOnWindowFocus: true,
-    refetchOnReconnect: false,
+    refetchOnReconnect: true,
   })
 }

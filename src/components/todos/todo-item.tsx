@@ -244,7 +244,6 @@ interface TodoItemProps {
   viewMode?: ViewMode
   dropIndicator?: 'above' | 'below' | null
   animateTransitions?: boolean
-  compact?: boolean
   onCollapse?: () => void
 }
 
@@ -624,7 +623,6 @@ function TodoItemContent({
   subtaskMentions,
   isDragging,
   viewMode = 'active',
-  compact = false,
   onCollapse,
 }: TodoItemProps) {
   const isCompleted = todo.status === 'COMPLETED'
@@ -951,10 +949,7 @@ function TodoItemContent({
           </div>
 
           <div
-            className={cn(
-              'relative rounded-md',
-              compact ? 'px-2 py-1.5' : 'px-2.5 py-2',
-            )}
+            className="relative rounded-md px-2.5 py-2"
             style={{
               backgroundColor:
                 'color-mix(in srgb, var(--background) 50%, transparent)',
@@ -974,17 +969,6 @@ function TodoItemContent({
               >
                 {renderTextWithLinks(todo.title)}
               </h3>
-              {compact && subtasks.length > 0 && (
-                <span
-                  className="inline-flex flex-shrink-0 items-center gap-0.5 text-[10px] font-medium"
-                  style={{
-                    color: allDone ? 'var(--status-done)' : 'var(--text-muted)',
-                  }}
-                >
-                  {completedCount}/{subtasks.length}
-                  <CheckSquare className="h-2.5 w-2.5" />
-                </span>
-              )}
               {todo.dueDate && (
                 <span
                   className="inline-flex flex-shrink-0 items-center gap-1 text-[10px]"
@@ -995,8 +979,7 @@ function TodoItemContent({
                 </span>
               )}
             </div>
-            {!compact &&
-              todo.description &&
+            {todo.description &&
               (todo.description.startsWith('<') ? (
                 <div
                   className="rich-text-display mt-1.5 line-clamp-2 leading-snug break-words"
@@ -1029,8 +1012,7 @@ function TodoItemContent({
       )}
 
       {/* Subtasks */}
-      {!compact &&
-        shouldShowSubtasks &&
+      {shouldShowSubtasks &&
         (!hasSubtasks && !isAddingSubtask ? (
           canAddSubtasks && (
             <button
@@ -1213,7 +1195,7 @@ function TodoItemContent({
         </div>
         ))}
 
-      {!compact && todo.sessions && todo.sessions.length > 0 && (
+      {todo.sessions && todo.sessions.length > 0 && (
         <SessionList sessions={todo.sessions} />
       )}
     </div>
@@ -1236,7 +1218,6 @@ export function TodoItem({
   viewMode = 'active',
   dropIndicator,
   animateTransitions = true,
-  compact = false,
 }: TodoItemProps) {
   const {
     attributes,
@@ -1352,8 +1333,7 @@ export function TodoItem({
         {/* Card */}
         <div
           className={cn(
-            'group todo-card relative min-w-0 flex-1 overflow-visible transition-all duration-150',
-            compact ? 'px-2.5 py-1.5' : 'px-3 py-2.5',
+            'group todo-card relative min-w-0 flex-1 overflow-visible px-3 py-2.5 transition-all duration-150',
             dragging ? 'rounded-lg' : 'rounded-l-lg',
             dragging && 'z-50 shadow-lg',
             (isCompleted || viewMode !== 'active') && 'opacity-50',
@@ -1379,7 +1359,6 @@ export function TodoItem({
             subtaskMentions={subtaskMentions}
             isDragging={dragging}
             viewMode={viewMode}
-            compact={compact}
             onCollapse={
               manuallyExpanded
                 ? () => setManuallyExpanded(false)
@@ -1472,7 +1451,6 @@ export function TodoItemOverlay({
   onEdit,
   people,
   subtaskMentions,
-  compact = false,
 }: Omit<TodoItemProps, 'isDragging' | 'viewMode' | 'dropIndicator'>) {
   const isCompleted = todo.status === 'COMPLETED'
 
@@ -1484,8 +1462,7 @@ export function TodoItemOverlay({
 
       <div
         className={cn(
-          'group relative flex-1 overflow-visible rounded-lg shadow-2xl',
-          compact ? 'px-2.5 py-1.5' : 'px-3 py-2.5',
+          'group relative flex-1 overflow-visible rounded-lg px-3 py-2.5 shadow-2xl',
           isCompleted && 'opacity-50',
         )}
         style={{
@@ -1503,7 +1480,6 @@ export function TodoItemOverlay({
           people={people}
           subtaskMentions={subtaskMentions}
           isDragging={true}
-          compact={compact}
         />
       </div>
     </div>

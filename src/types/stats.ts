@@ -21,6 +21,29 @@ export interface LabelData {
   count: number
 }
 
+export type FocusFlowNodeKind = 'month' | 'label' | 'other' | 'unlabeled'
+
+export interface FocusFlowNode {
+  id: string
+  name: string
+  shortLabel: string
+  kind: FocusFlowNodeKind
+  total: number
+  month?: number
+  labelColor?: string | null
+}
+
+export interface FocusFlowLink {
+  source: number
+  target: number
+  value: number
+}
+
+export interface FocusFlowData {
+  nodes: FocusFlowNode[]
+  links: FocusFlowLink[]
+}
+
 export interface AccomplishmentCategoryData {
   category: string
   count: number
@@ -46,6 +69,7 @@ export interface YearStats {
   byStatus: StatusData[]
   byPriority: PriorityData[]
   topLabels: LabelData[]
+  focusFlow: FocusFlowData
   highlights: Highlights
   accomplishments: {
     total: number

@@ -212,45 +212,52 @@ export function NotesSidebar({
   isLoading,
 }: NotesSidebarProps) {
   const [search, setSearch] = React.useState('')
-  const [confirmDeleteId, setConfirmDeleteId] = React.useState<string | null>(
-    null,
+  const [activeTab, setActiveTab] = React.useState<'notes' | 'tasks' | 'archived'>(
+    'notes',
   )
-  const [showArchived, setShowArchived] = React.useState(false)
 
-  const { activeNotes, archivedNotes } = React.useMemo(() => {
-    const active: NotebookNote[] = []
+  const { standaloneNotes, taskNotes, archivedNotes } = React.useMemo(() => {
+    const standalone: NotebookNote[] = []
+    const tasks: NotebookNote[] = []
     const archived: NotebookNote[] = []
     for (const n of notes) {
-      if (n.archived) archived.push(n)
-      else active.push(n)
+      if (
+        n.todo &&
+        (n.todo.status === 'COMPLETED' || n.todo.status === 'CANCELLED')
+      ) {
+        continue
+      }
+      if (n.archived) {
+        archived.push(n)
+      } else if (n.todo) {
+        tasks.push(n)
+      } else {
+        standalone.push(n)
+      }
     }
-    return { activeNotes: active, archivedNotes: archived }
+    return {
+      standaloneNotes: standalone,
+      taskNotes: tasks,
+      archivedNotes: archived,
+    }
   }, [notes])
 
   const filteredNotes = React.useMemo(() => {
-    const source = showArchived ? archivedNotes : activeNotes
+    const source =
+      activeTab === 'archived'
+        ? archivedNotes
+        : activeTab === 'tasks'
+          ? taskNotes
+          : standaloneNotes
     if (!search.trim()) return source
     const q = search.toLowerCase()
     return source.filter((n) => n.title.toLowerCase().includes(q))
-  }, [activeNotes, archivedNotes, showArchived, search])
+  }, [standaloneNotes, taskNotes, archivedNotes, activeTab, search])
 
   const handleDelete = (e: React.MouseEvent, id: string) => {
     e.stopPropagation()
-    if (confirmDeleteId === id) {
-      onDelete(id)
-      setConfirmDeleteId(null)
-    } else {
-      setConfirmDeleteId(id)
-    }
+    onDelete(id)
   }
-
-  // Reset confirm state when clicking elsewhere
-  React.useEffect(() => {
-    if (!confirmDeleteId) return
-    const handle = () => setConfirmDeleteId(null)
-    const timer = setTimeout(handle, 3000)
-    return () => clearTimeout(timer)
-  }, [confirmDeleteId])
 
   return (
     <div
@@ -258,9 +265,9 @@ export function NotesSidebar({
       style={{ borderColor: 'var(--border-color)' }}
     >
       {/* Header with tabs */}
-      <div className="flex items-center justify-between px-3 pt-4 pb-3">
+      <div className="flex items-center justify-between gap-2 px-3 pt-4 pb-3">
         <div
-          className="flex rounded-lg p-0.5"
+          className="flex min-w-0 rounded-lg p-0.5"
           style={{
             backgroundColor:
               'color-mix(in srgb, var(--text-muted) 10%, transparent)',
@@ -268,28 +275,45 @@ export function NotesSidebar({
         >
           <button
             type="button"
-            onClick={() => setShowArchived(false)}
-            className="rounded-md px-3 py-1 text-xs font-medium transition-colors"
+            onClick={() => setActiveTab('notes')}
+            className="rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
             style={{
-              color: !showArchived
-                ? 'var(--text-primary)'
-                : 'var(--text-muted)',
-              backgroundColor: !showArchived
-                ? 'var(--surface-2)'
-                : 'transparent',
+              color:
+                activeTab === 'notes'
+                  ? 'var(--text-primary)'
+                  : 'var(--text-muted)',
+              backgroundColor:
+                activeTab === 'notes' ? 'var(--surface-2)' : 'transparent',
             }}
           >
             Notes
           </button>
           <button
             type="button"
-            onClick={() => setShowArchived(true)}
-            className="rounded-md px-3 py-1 text-xs font-medium transition-colors"
+            onClick={() => setActiveTab('tasks')}
+            className="rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
             style={{
-              color: showArchived ? 'var(--text-primary)' : 'var(--text-muted)',
-              backgroundColor: showArchived
-                ? 'var(--surface-2)'
-                : 'transparent',
+              color:
+                activeTab === 'tasks'
+                  ? 'var(--text-primary)'
+                  : 'var(--text-muted)',
+              backgroundColor:
+                activeTab === 'tasks' ? 'var(--surface-2)' : 'transparent',
+            }}
+          >
+            Tasks
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('archived')}
+            className="rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
+            style={{
+              color:
+                activeTab === 'archived'
+                  ? 'var(--text-primary)'
+                  : 'var(--text-muted)',
+              backgroundColor:
+                activeTab === 'archived' ? 'var(--surface-2)' : 'transparent',
             }}
           >
             Archived
@@ -298,7 +322,7 @@ export function NotesSidebar({
         <button
           type="button"
           onClick={onCreate}
-          className="rounded-md p-1.5 transition-colors"
+          className="shrink-0 rounded-md p-1.5 transition-colors"
           style={{ color: 'var(--primary)' }}
           title="New note"
         >
@@ -347,9 +371,11 @@ export function NotesSidebar({
             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
               {search
                 ? 'No notes found'
-                : showArchived
+                : activeTab === 'archived'
                   ? 'No archived notes'
-                  : 'No notes yet'}
+                  : activeTab === 'tasks'
+                    ? 'No task notes yet'
+                    : 'No notes yet'}
             </p>
           </div>
         ) : (
@@ -390,7 +416,7 @@ export function NotesSidebar({
                       }}
                     />
                   )}
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
                         <p
@@ -429,22 +455,9 @@ export function NotesSidebar({
                     <button
                       type="button"
                       onClick={(e) => handleDelete(e, note.id)}
-                      className="shrink-0 rounded p-1 opacity-0 transition-all group-hover:opacity-100"
-                      style={{
-                        color:
-                          confirmDeleteId === note.id
-                            ? 'var(--destructive)'
-                            : 'var(--text-muted)',
-                        backgroundColor:
-                          confirmDeleteId === note.id
-                            ? 'color-mix(in srgb, var(--destructive) 15%, transparent)'
-                            : 'transparent',
-                      }}
-                      title={
-                        confirmDeleteId === note.id
-                          ? 'Click again to confirm'
-                          : 'Delete note'
-                      }
+                      className="flex shrink-0 items-center justify-center rounded p-1 opacity-0 transition-all group-hover:opacity-100"
+                      style={{ color: 'var(--text-muted)' }}
+                      title="Delete note"
                     >
                       <Trash2 className="h-3 w-3" />
                     </button>

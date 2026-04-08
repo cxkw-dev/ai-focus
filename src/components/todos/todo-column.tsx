@@ -61,7 +61,6 @@ interface TodoColumnProps {
   subtaskMentions: Array<Pick<Person, 'id' | 'name' | 'email'>>
   showInlineForm?: boolean
   animateListTransitions?: boolean
-  compact?: boolean
 }
 
 export function TodoColumn({
@@ -87,7 +86,6 @@ export function TodoColumn({
   subtaskMentions,
   showInlineForm = true,
   animateListTransitions = true,
-  compact = false,
 }: TodoColumnProps) {
   const [filter, setFilter] = React.useState<Filter>('active')
   const [completedSearch, setCompletedSearch] = React.useState('')
@@ -428,7 +426,6 @@ export function TodoColumn({
                           viewMode={filter}
                           dropIndicator={dropIndicator}
                           animateTransitions={true}
-                          compact={compact}
                         />
                       )
                     })}
@@ -471,7 +468,6 @@ export function TodoColumn({
                         viewMode={filter}
                         dropIndicator={dropIndicator}
                         animateTransitions={false}
-                        compact={compact}
                       />
                     )
                   })
@@ -489,7 +485,6 @@ export function TodoColumn({
                   onEdit={() => {}}
                   people={people}
                   subtaskMentions={subtaskMentions}
-                  compact={compact}
                 />
               ) : null}
             </DragOverlay>

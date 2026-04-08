@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft, ExternalLink } from 'lucide-react'
+import { CircleAlert, ChevronLeft, ExternalLink } from 'lucide-react'
 import type { IconType } from 'react-icons'
 import {
   RiDonutChartLine,
@@ -186,63 +186,104 @@ export function Sidebar({
   type TimesheetTooltipState =
     | 'idle'
     | 'checking'
-    | 'connected'
     | 'still-disconnected'
   const [tooltipState, setTooltipState] =
     React.useState<TimesheetTooltipState>('idle')
   const [isTimesheetHovered, setIsTimesheetHovered] = React.useState(false)
+  const [isCheckingTimesheet, setIsCheckingTimesheet] = React.useState(false)
+  const checkingTooltipTimerRef = React.useRef<number | null>(null)
+  const tooltipResetTimerRef = React.useRef<number | null>(null)
 
-  const handleTimesheetClick = React.useCallback(() => {
-    // Treat both `true` (connected) and `undefined` (still loading) as
-    // "open anyway". Only the explicit `false` (known disconnected)
-    // triggers the recheck flow.
-    if (vpnConnected !== false) {
-      window.open(TIMESHEET_URL, '_blank', 'noopener,noreferrer')
+  const clearCheckingTooltipTimer = React.useCallback(() => {
+    if (checkingTooltipTimerRef.current !== null) {
+      window.clearTimeout(checkingTooltipTimerRef.current)
+      checkingTooltipTimerRef.current = null
+    }
+  }, [])
+
+  const clearTooltipResetTimer = React.useCallback(() => {
+    if (tooltipResetTimerRef.current !== null) {
+      window.clearTimeout(tooltipResetTimerRef.current)
+      tooltipResetTimerRef.current = null
+    }
+  }, [])
+
+  React.useEffect(() => {
+    return () => {
+      clearCheckingTooltipTimer()
+      clearTooltipResetTimer()
+    }
+  }, [clearCheckingTooltipTimer, clearTooltipResetTimer])
+
+  const handleTimesheetClick = React.useCallback(async () => {
+    if (isCheckingTimesheet) {
       return
     }
-    // Known disconnected — open about:blank synchronously inside the
-    // user-gesture window so the popup blocker doesn't bite, then run
-    // the recheck and either redirect or close the new tab.
-    const newTab = window.open(
-      'about:blank',
-      '_blank',
-      'noopener,noreferrer',
-    )
-    setTooltipState('checking')
-    refetchVpn().then((result) => {
+
+    setIsTimesheetHovered(false)
+    setIsCheckingTimesheet(true)
+    clearCheckingTooltipTimer()
+    clearTooltipResetTimer()
+    checkingTooltipTimerRef.current = window.setTimeout(() => {
+      setTooltipState('checking')
+      checkingTooltipTimerRef.current = null
+    }, 180)
+
+    try {
+      const result = await refetchVpn()
+      clearCheckingTooltipTimer()
+
       if (result.data === true) {
-        setTooltipState('connected')
-        setTimeout(() => {
-          if (newTab) newTab.location.href = TIMESHEET_URL
-          setTooltipState('idle')
-        }, 500)
-      } else {
-        setTooltipState('still-disconnected')
-        if (newTab) newTab.close()
-        setTimeout(() => setTooltipState('idle'), 2500)
+        setTooltipState('idle')
+        window.open(TIMESHEET_URL, '_blank', 'noopener,noreferrer')
+        return
       }
-    })
-  }, [vpnConnected, refetchVpn])
+
+      setTooltipState('still-disconnected')
+      tooltipResetTimerRef.current = window.setTimeout(() => {
+        setTooltipState('idle')
+        tooltipResetTimerRef.current = null
+      }, 2400)
+    } finally {
+      clearCheckingTooltipTimer()
+      setIsCheckingTimesheet(false)
+    }
+  }, [
+    clearCheckingTooltipTimer,
+    clearTooltipResetTimer,
+    isCheckingTimesheet,
+    refetchVpn,
+  ])
 
   const tooltipOpen =
     tooltipState !== 'idle' || (collapsed && isTimesheetHovered)
 
+  const timesheetTooltipSide = collapsed ? 'right' : 'bottom'
+  const timesheetTooltipAlign = collapsed ? 'center' : 'start'
+
   let tooltipMessage: string
   if (tooltipState === 'checking') {
     tooltipMessage = 'Checking VPN…'
-  } else if (tooltipState === 'connected') {
-    tooltipMessage = 'VPN connected — opening timesheet'
   } else if (tooltipState === 'still-disconnected') {
     tooltipMessage = 'VPN still disconnected'
+  } else if (vpnLoading) {
+    tooltipMessage = 'Checking VPN status…'
+  } else if (vpnConnected === false) {
+    tooltipMessage = 'VPN off — click to re-check'
   } else {
-    tooltipMessage = `Timesheet ${vpnConnected ? '(VPN connected)' : '(VPN off)'}`
+    tooltipMessage = 'Timesheet (VPN connected)'
   }
+
+  const showDisconnectedTooltipIcon =
+    tooltipState === 'still-disconnected' ||
+    (!vpnLoading && tooltipState === 'idle' && vpnConnected === false)
 
   const timesheetButton = (
     <button
       type="button"
       onClick={handleTimesheetClick}
-      className={`flex w-full items-center rounded-lg py-2.5 text-sm font-medium transition-colors duration-200 ${collapsed ? 'justify-center px-0' : 'gap-3 px-3'} ${vpnConnected === false ? 'cursor-not-allowed opacity-60' : ''}`}
+      aria-disabled={isCheckingTimesheet}
+      className={`flex w-full items-center rounded-lg py-2.5 text-sm font-medium transition-colors duration-200 ${isCheckingTimesheet ? 'opacity-80' : ''} ${collapsed ? 'justify-center px-0' : 'gap-3 px-3'} ${vpnConnected === false ? 'opacity-70' : ''}`}
       style={{ color: 'var(--text-muted)' }}
     >
       <span className="relative shrink-0">
@@ -251,7 +292,9 @@ export function Sidebar({
           className={`absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full border ${tooltipState === 'checking' ? 'animate-pulse' : ''}`}
           style={{
             borderColor: 'var(--surface)',
-            backgroundColor: vpnLoading
+            backgroundColor: tooltipState === 'checking'
+              ? 'var(--primary)'
+              : vpnLoading
               ? 'var(--text-muted)'
               : vpnConnected
                 ? '#22c55e'
@@ -358,8 +401,48 @@ export function Sidebar({
               }}
             >
               <TooltipTrigger asChild>{timesheetButton}</TooltipTrigger>
-              <TooltipContent side="right" className="font-medium">
-                {tooltipMessage}
+              <TooltipContent
+                side={timesheetTooltipSide}
+                align={timesheetTooltipAlign}
+                sideOffset={collapsed ? 10 : 8}
+                collisionPadding={16}
+                className={
+                  collapsed
+                    ? 'font-medium'
+                    : 'w-[208px] rounded-lg px-2.5 py-2 shadow-lg shadow-black/20'
+                }
+              >
+                <div className="space-y-0.5">
+                  <div className="flex items-start gap-2">
+                    {showDisconnectedTooltipIcon ? (
+                      <span
+                        className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full"
+                        style={{
+                          backgroundColor:
+                            'color-mix(in srgb, #ef4444 16%, transparent)',
+                          color: '#ef4444',
+                        }}
+                      >
+                        <CircleAlert className="h-3 w-3" />
+                      </span>
+                    ) : null}
+                    <p className="font-medium">{tooltipMessage}</p>
+                  </div>
+                  {!collapsed && (
+                    <p
+                      className={`text-xs ${showDisconnectedTooltipIcon ? 'pl-6' : ''}`}
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      {tooltipState === 'still-disconnected'
+                        ? 'Reconnect VPN, then try again.'
+                        : tooltipState === 'checking'
+                          ? 'Hold on while we verify the connection.'
+                          : vpnConnected === false
+                            ? 'Click to re-check before opening.'
+                            : 'Opens in a new tab.'}
+                    </p>
+                  )}
+                </div>
               </TooltipContent>
             </Tooltip>
           </nav>
