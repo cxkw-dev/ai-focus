@@ -190,6 +190,7 @@ export function Sidebar({
     | 'still-disconnected'
   const [tooltipState, setTooltipState] =
     React.useState<TimesheetTooltipState>('idle')
+  const [isTimesheetHovered, setIsTimesheetHovered] = React.useState(false)
 
   const handleTimesheetClick = React.useCallback(() => {
     // Treat both `true` (connected) and `undefined` (still loading) as
@@ -222,6 +223,20 @@ export function Sidebar({
       }
     })
   }, [vpnConnected, refetchVpn])
+
+  const tooltipOpen =
+    tooltipState !== 'idle' || (collapsed && isTimesheetHovered)
+
+  let tooltipMessage: string
+  if (tooltipState === 'checking') {
+    tooltipMessage = 'Checking VPN…'
+  } else if (tooltipState === 'connected') {
+    tooltipMessage = 'VPN connected — opening timesheet'
+  } else if (tooltipState === 'still-disconnected') {
+    tooltipMessage = 'VPN still disconnected'
+  } else {
+    tooltipMessage = `Timesheet ${vpnConnected ? '(VPN connected)' : '(VPN off)'}`
+  }
 
   const timesheetButton = (
     <button
@@ -332,16 +347,21 @@ export function Sidebar({
             className={`flex flex-col gap-1 border-t ${collapsed ? 'px-2 py-3' : 'p-3'}`}
             style={{ borderColor: 'var(--border-color)' }}
           >
-            {collapsed ? (
-              <Tooltip>
-                <TooltipTrigger asChild>{timesheetButton}</TooltipTrigger>
-                <TooltipContent side="right" className="font-medium">
-                  Timesheet {vpnConnected ? '(VPN connected)' : '(VPN off)'}
-                </TooltipContent>
-              </Tooltip>
-            ) : (
-              timesheetButton
-            )}
+            <Tooltip
+              open={tooltipOpen}
+              onOpenChange={(next) => {
+                // Only let hover toggle the tooltip when the sidebar is collapsed
+                // and the recheck flow isn't actively driving the open state.
+                if (tooltipState === 'idle' && collapsed) {
+                  setIsTimesheetHovered(next)
+                }
+              }}
+            >
+              <TooltipTrigger asChild>{timesheetButton}</TooltipTrigger>
+              <TooltipContent side="right" className="font-medium">
+                {tooltipMessage}
+              </TooltipContent>
+            </Tooltip>
           </nav>
         </div>
 
