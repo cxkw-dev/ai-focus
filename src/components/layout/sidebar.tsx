@@ -180,14 +180,53 @@ export function Sidebar({
   transition = { duration: 0.2, ease: 'easeInOut' },
 }: SidebarProps) {
   const pathname = usePathname()
-  const { data: vpnConnected, isLoading: vpnLoading } = useVpnStatus()
+  const { data: vpnConnected, isLoading: vpnLoading, refetch: refetchVpn } =
+    useVpnStatus()
+
+  type TimesheetTooltipState =
+    | 'idle'
+    | 'checking'
+    | 'connected'
+    | 'still-disconnected'
+  const [tooltipState, setTooltipState] =
+    React.useState<TimesheetTooltipState>('idle')
+
+  const handleTimesheetClick = React.useCallback(() => {
+    // Treat both `true` (connected) and `undefined` (still loading) as
+    // "open anyway". Only the explicit `false` (known disconnected)
+    // triggers the recheck flow.
+    if (vpnConnected !== false) {
+      window.open(TIMESHEET_URL, '_blank', 'noopener,noreferrer')
+      return
+    }
+    // Known disconnected — open about:blank synchronously inside the
+    // user-gesture window so the popup blocker doesn't bite, then run
+    // the recheck and either redirect or close the new tab.
+    const newTab = window.open(
+      'about:blank',
+      '_blank',
+      'noopener,noreferrer',
+    )
+    setTooltipState('checking')
+    refetchVpn().then((result) => {
+      if (result.data === true) {
+        setTooltipState('connected')
+        setTimeout(() => {
+          if (newTab) newTab.location.href = TIMESHEET_URL
+          setTooltipState('idle')
+        }, 500)
+      } else {
+        setTooltipState('still-disconnected')
+        if (newTab) newTab.close()
+        setTimeout(() => setTooltipState('idle'), 2500)
+      }
+    })
+  }, [vpnConnected, refetchVpn])
 
   const timesheetButton = (
     <button
       type="button"
-      onClick={() =>
-        window.open(TIMESHEET_URL, '_blank', 'noopener,noreferrer')
-      }
+      onClick={handleTimesheetClick}
       className={`flex w-full items-center rounded-lg py-2.5 text-sm font-medium transition-colors duration-200 ${collapsed ? 'justify-center px-0' : 'gap-3 px-3'}`}
       style={{ color: 'var(--text-muted)' }}
     >
