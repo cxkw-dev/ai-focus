@@ -242,7 +242,7 @@ export function Sidebar({
     <button
       type="button"
       onClick={handleTimesheetClick}
-      className={`flex w-full items-center rounded-lg py-2.5 text-sm font-medium transition-colors duration-200 ${collapsed ? 'justify-center px-0' : 'gap-3 px-3'}`}
+      className={`flex w-full items-center rounded-lg py-2.5 text-sm font-medium transition-colors duration-200 ${collapsed ? 'justify-center px-0' : 'gap-3 px-3'} ${vpnConnected === false ? 'cursor-not-allowed opacity-60' : ''}`}
       style={{ color: 'var(--text-muted)' }}
     >
       <span className="relative shrink-0">
