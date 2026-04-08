@@ -248,7 +248,7 @@ export function Sidebar({
       <span className="relative shrink-0">
         <RiTimeLine className="h-5 w-5" />
         <span
-          className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full border"
+          className={`absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full border ${tooltipState === 'checking' ? 'animate-pulse' : ''}`}
           style={{
             borderColor: 'var(--surface)',
             backgroundColor: vpnLoading
