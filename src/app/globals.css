@@ -425,6 +425,11 @@ h6 {
 }
 
 /* Compact mention editor for subtask rows */
+.subtask-mention-editor {
+  display: block;
+  width: 100%;
+}
+
 .subtask-mention-editor > * + * {
   margin-top: 0;
 }
@@ -560,10 +565,13 @@ h6 {
   border-radius: 9999px;
 }
 
-/* Ensure long URLs wrap inside the rich text editor */
+/* Wrap long content in the rich text editor without shattering normal words.
+ * `break-word` only breaks within a word when it would otherwise overflow,
+ * and `text-wrap: pretty` produces nicer line balancing. Long URLs keep
+ * aggressive breaking via the `a` selector below. */
 .ProseMirror {
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  overflow-wrap: break-word;
+  text-wrap: pretty;
 }
 
 .ProseMirror a {

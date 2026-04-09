@@ -196,5 +196,5 @@ export function SubtaskMentionInput({
 
   if (!editor) return null
 
-  return <EditorContent editor={editor} className="min-w-0 flex-1" />
+  return <EditorContent editor={editor} className="block w-full min-w-0" />
 }

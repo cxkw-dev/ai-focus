@@ -320,7 +320,7 @@ function SortableEditableSubtaskRow({
         style={{ backgroundColor: 'var(--primary)' }}
       />
       <motion.div
-        className="group/subtask flex items-center rounded pr-0.5 pl-1 transition-colors hover:bg-white/5"
+        className="group/subtask flex w-full items-center rounded pr-0.5 pl-1 transition-colors hover:bg-white/5"
         animate={{
           backgroundColor: isEditing
             ? 'color-mix(in srgb, var(--primary) 10%, transparent)'
@@ -333,7 +333,7 @@ function SortableEditableSubtaskRow({
         transition={{ type: 'spring', stiffness: 300, damping: 28, mass: 0.6 }}
       >
         <motion.div
-          className="flex w-full min-w-0 items-center gap-2"
+          className="flex w-full min-w-0 items-center gap-1.5"
           animate={commitFxControls}
         >
           <button
@@ -341,13 +341,13 @@ function SortableEditableSubtaskRow({
             {...attributes}
             {...listeners}
             className={cn(
-              'flex-shrink-0 cursor-grab rounded p-0.5 transition-colors active:cursor-grabbing',
+              'flex-shrink-0 cursor-grab rounded transition-colors active:cursor-grabbing',
               isDragging && 'cursor-grabbing',
             )}
             style={{ color: 'var(--text-muted)', opacity: 0.7 }}
             aria-label="Reorder subtask"
           >
-            <GripVertical className="h-3.5 w-3.5" />
+            <GripVertical className="h-3 w-3" />
           </button>
           <button type="button" onClick={onToggle} className="flex-shrink-0">
             {subtask.completed ? (
@@ -379,18 +379,10 @@ function SortableEditableSubtaskRow({
               ariaLabel="Subtask title"
             />
           </div>
-          <motion.span
-            className="flex-shrink-0 text-[9px] font-semibold tracking-wide uppercase"
-            animate={{ opacity: isEditing ? 1 : 0, x: isEditing ? 0 : -2 }}
-            transition={{ duration: 0.14, ease: 'easeOut' }}
-            style={{ color: 'var(--primary)' }}
-          >
-            editing
-          </motion.span>
           <button
             type="button"
             onClick={onDelete}
-            className="flex-shrink-0 rounded p-0.5 opacity-0 transition-opacity group-hover/subtask:opacity-60 hover:!opacity-100"
+            className="flex-shrink-0 rounded opacity-40 transition-opacity hover:opacity-100"
             style={{ color: 'var(--destructive)' }}
             title="Delete subtask"
           >
