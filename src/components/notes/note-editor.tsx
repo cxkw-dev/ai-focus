@@ -1,10 +1,16 @@
 'use client'
 
 import * as React from 'react'
-import { useEditor, useEditorState, EditorContent } from '@tiptap/react'
+import {
+  useEditor,
+  useEditorState,
+  EditorContent,
+  ReactNodeViewRenderer,
+} from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import Link from '@tiptap/extension-link'
+import { TextStyle } from '@tiptap/extension-text-style'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import { common, createLowlight } from 'lowlight'
 import {
@@ -19,6 +25,8 @@ import {
   Undo,
   Redo,
 } from 'lucide-react'
+import { FontSize } from '@/lib/tiptap-font-size'
+import { CodeBlockView } from './code-block-view'
 import { cn } from '@/lib/utils'
 import type { NotebookNote } from '@/types/notebook'
 
@@ -90,7 +98,13 @@ export function NoteEditor({
           codeBlock: false,
           heading: { levels: [2, 3] },
         }),
-        CodeBlockLowlight.configure({ lowlight }),
+        CodeBlockLowlight.configure({ lowlight }).extend({
+          addNodeView() {
+            return ReactNodeViewRenderer(CodeBlockView)
+          },
+        }),
+        TextStyle,
+        FontSize,
         Link.configure({
           openOnClick: true,
           autolink: true,
@@ -146,6 +160,7 @@ export function NoteEditor({
           isCodeBlock: false,
           canUndo: false,
           canRedo: false,
+          fontSize: null as string | null,
         }
       return {
         isBold: e.isActive('bold'),
@@ -158,6 +173,7 @@ export function NoteEditor({
         isCodeBlock: e.isActive('codeBlock'),
         canUndo: e.can().undo(),
         canRedo: e.can().redo(),
+        fontSize: (e.getAttributes('textStyle').fontSize as string) || null,
       }
     },
   })
@@ -251,6 +267,36 @@ export function NoteEditor({
         >
           <Strikethrough className="h-3.5 w-3.5" />
         </ToolbarButton>
+
+        <div
+          className="mx-1 h-4 w-px"
+          style={{ backgroundColor: 'var(--border-color)' }}
+        />
+
+        <select
+          title="Font size"
+          value={editorState?.fontSize || ''}
+          onChange={(e) => {
+            const val = e.target.value
+            if (val) {
+              editor.chain().focus().setFontSize(val).run()
+            } else {
+              editor.chain().focus().unsetFontSize().run()
+            }
+          }}
+          className="h-7 rounded border px-1 text-xs outline-none"
+          style={{
+            backgroundColor: 'transparent',
+            borderColor: 'var(--border-color)',
+            color: 'var(--text-muted)',
+          }}
+        >
+          <option value="">Size</option>
+          <option value="12px">Small</option>
+          <option value="14px">Normal</option>
+          <option value="18px">Large</option>
+          <option value="24px">XL</option>
+        </select>
 
         <div
           className="mx-1 h-4 w-px"
