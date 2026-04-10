@@ -43,6 +43,8 @@ import {
   DollarSign,
   XCircle,
   Minimize2,
+  ArrowDown,
+  ShieldCheck,
 } from 'lucide-react'
 import { cn, formatRelativeDate } from '@/lib/utils'
 import { getBillingCodeEntries } from '@/lib/labels'
@@ -69,6 +71,7 @@ import {
   mentionifyHtml,
   normalizeSubtaskTitle,
 } from '@/lib/rich-text'
+import { useGithubPrStatuses } from '@/hooks/use-github-pr-status'
 import { PrDependencyTree } from './pr-dependency-tree'
 import { ContactsDrawer } from './contacts-drawer'
 import { StatusUpdatesDrawer } from './status-updates-drawer'
@@ -546,6 +549,18 @@ function CollapsedTodoRow({
 }) {
   const config = STATUS_CONFIG[todo.status]
   const Icon = config.icon
+  const myPrUrls = todo.myPrUrls ?? []
+  const { statuses } = useGithubPrStatuses(myPrUrls)
+
+  // Find worst-case behindBy across open PRs
+  const openStatuses = statuses.filter(
+    (s) => s && s.state === 'open' && s.behindBy != null,
+  )
+  const maxBehind = openStatuses.reduce(
+    (max, s) => Math.max(max, s!.behindBy!),
+    0,
+  )
+  const hasOpenPrs = openStatuses.length > 0
 
   return (
     <div
@@ -580,6 +595,24 @@ function CollapsedTodoRow({
       >
         {todo.title}
       </span>
+      {hasOpenPrs &&
+        (maxBehind > 0 ? (
+          <span
+            className="inline-flex flex-shrink-0 items-center gap-px text-[10px] font-semibold"
+            style={{ color: '#d29922' }}
+            title={`${maxBehind} commit${maxBehind !== 1 ? 's' : ''} behind main`}
+          >
+            <ArrowDown className="h-2.5 w-2.5" />
+            {maxBehind}
+          </span>
+        ) : (
+          <span className="flex-shrink-0" title="Up to date with main">
+            <ShieldCheck
+              className="h-3 w-3"
+              style={{ color: '#58a6ff' }}
+            />
+          </span>
+        ))}
       {todo.labels?.map((label) => (
         <span
           key={label.id}

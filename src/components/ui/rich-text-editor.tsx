@@ -1,10 +1,18 @@
 'use client'
 
 import * as React from 'react'
-import { useEditor, useEditorState, EditorContent } from '@tiptap/react'
+import {
+  useEditor,
+  useEditorState,
+  EditorContent,
+  ReactNodeViewRenderer,
+} from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import Link from '@tiptap/extension-link'
+import { TextStyle } from '@tiptap/extension-text-style'
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
+import { common, createLowlight } from 'lowlight'
 import {
   Bold,
   Italic,
@@ -13,14 +21,19 @@ import {
   ListOrdered,
   Heading2,
   Link as LinkIcon,
+  Code,
   Undo,
   Redo,
   RemoveFormatting,
 } from 'lucide-react'
+import { FontSize } from '@/lib/tiptap-font-size'
+import { CodeBlockView } from '@/components/notes/code-block-view'
 import { cn } from '@/lib/utils'
 import { CustomMention } from '@/lib/tiptap-mention'
 import { createMentionSuggestion } from '@/lib/mention-suggestion'
 import type { MentionSuggestionItem } from '@/components/ui/mention-suggestion'
+
+const lowlight = createLowlight(common)
 
 interface RichTextEditorProps {
   value: string
@@ -92,10 +105,18 @@ export function RichTextEditor({
     immediatelyRender: false,
     extensions: [
       StarterKit.configure({
+        codeBlock: false,
         heading: {
           levels: [2, 3],
         },
       }),
+      CodeBlockLowlight.configure({ lowlight }).extend({
+        addNodeView() {
+          return ReactNodeViewRenderer(CodeBlockView)
+        },
+      }),
+      TextStyle,
+      FontSize,
       Link.configure({
         openOnClick: true,
         autolink: true,
@@ -152,9 +173,11 @@ export function RichTextEditor({
           isBulletList: false,
           isOrderedList: false,
           isLink: false,
+          isCodeBlock: false,
           canUndo: false,
           canRedo: false,
           isFocused: false,
+          fontSize: null as string | null,
         }
       }
 
@@ -166,9 +189,11 @@ export function RichTextEditor({
         isBulletList: editorInstance.isActive('bulletList'),
         isOrderedList: editorInstance.isActive('orderedList'),
         isLink: editorInstance.isActive('link'),
+        isCodeBlock: editorInstance.isActive('codeBlock'),
         canUndo: editorInstance.can().undo(),
         canRedo: editorInstance.can().redo(),
         isFocused: editorInstance.isFocused,
+        fontSize: (editorInstance.getAttributes('textStyle').fontSize as string) || null,
       }
     },
   })
@@ -246,6 +271,36 @@ export function RichTextEditor({
           style={{ backgroundColor: 'var(--border-color)' }}
         />
 
+        <select
+          title="Font size"
+          value={editorState?.fontSize || ''}
+          onChange={(e) => {
+            const val = e.target.value
+            if (val) {
+              editor.chain().focus().setFontSize(val).run()
+            } else {
+              editor.chain().focus().unsetFontSize().run()
+            }
+          }}
+          className="h-6 rounded border px-1 text-[10px] outline-none"
+          style={{
+            backgroundColor: 'transparent',
+            borderColor: 'var(--border-color)',
+            color: 'var(--text-muted)',
+          }}
+        >
+          <option value="">Size</option>
+          <option value="12px">Small</option>
+          <option value="14px">Normal</option>
+          <option value="18px">Large</option>
+          <option value="24px">XL</option>
+        </select>
+
+        <div
+          className="mx-1 h-4 w-px"
+          style={{ backgroundColor: 'var(--border-color)' }}
+        />
+
         <ToolbarButton
           onClick={() =>
             editor.chain().focus().toggleHeading({ level: 2 }).run()
@@ -296,6 +351,14 @@ export function RichTextEditor({
           title="Insert Link"
         >
           <LinkIcon className="h-3.5 w-3.5" />
+        </ToolbarButton>
+        <ToolbarButton
+          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+          isActive={editorState?.isCodeBlock}
+          disabled={disabled}
+          title="Code Block"
+        >
+          <Code className="h-3.5 w-3.5" />
         </ToolbarButton>
 
         <div
