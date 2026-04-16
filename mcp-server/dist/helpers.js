@@ -1,20 +1,31 @@
 import { marked } from 'marked';
 const API_BASE = process.env.AI_FOCUS_API_URL || 'http://localhost:4444';
+const DEFAULT_TIMEOUT_MS = Number.parseInt(process.env.AI_FOCUS_API_TIMEOUT_MS ?? '15000', 10);
 // --- API helpers ---
 export async function apiFetch(path, init) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
     let res;
     try {
         res = await fetch(`${API_BASE}${path}`, {
             ...init,
+            signal: init?.signal ?? controller.signal,
             headers: { 'Content-Type': 'application/json', ...init?.headers },
         });
     }
     catch (err) {
+        const aborted = err instanceof Error &&
+            (err.name === 'AbortError' || err.name === 'TimeoutError');
         return {
             _error: true,
-            message: `Cannot reach AI Focus at ${API_BASE}. Is the Docker container running?`,
+            message: aborted
+                ? `Request to AI Focus at ${API_BASE} timed out after ${DEFAULT_TIMEOUT_MS}ms.`
+                : `Cannot reach AI Focus at ${API_BASE}. Is the Docker container running?`,
             details: String(err),
         };
+    }
+    finally {
+        clearTimeout(timeout);
     }
     if (!res.ok) {
         const body = await res.text();

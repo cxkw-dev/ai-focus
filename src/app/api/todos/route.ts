@@ -89,8 +89,10 @@ function buildTodoOrderBy(
   return activeTodoOrderBy
 }
 
-async function getNextTodoOrder() {
-  const minOrderTodo = await db.todo.findFirst({
+async function getNextTodoOrder(
+  client: Prisma.TransactionClient | typeof db = db,
+) {
+  const minOrderTodo = await client.todo.findFirst({
     orderBy: { order: 'asc' },
     select: { order: true },
   })
@@ -142,30 +144,33 @@ export async function POST(request: Request) {
     const initialStatus = (data.status ?? 'TODO') as PrismaStatus
     const isInitiallyCompleted = initialStatus === PrismaStatus.COMPLETED
 
-    const todo = await db.todo.create({
-      data: {
-        ...todoData,
-        priority: (data.priority ?? 'MEDIUM') as PrismaPriority,
-        status: initialStatus,
-        archived: isInitiallyCompleted,
-        completedAt: isInitiallyCompleted ? new Date() : null,
-        dueDate: data.dueDate ? new Date(data.dueDate) : null,
-        labels: labelIds?.length
-          ? { connect: labelIds.map((id) => ({ id })) }
-          : undefined,
-        subtasks: subtasks?.length
-          ? {
-              create: subtasks.map((subtask) => ({
-                ...(subtask.id ? { id: subtask.id } : {}),
-                title: subtask.title,
-                completed: subtask.completed ?? false,
-                order: subtask.order,
-              })),
-            }
-          : undefined,
-        order: await getNextTodoOrder(),
-      },
-      include: todoInclude,
+    const todo = await db.$transaction(async (tx) => {
+      const order = await getNextTodoOrder(tx)
+      return tx.todo.create({
+        data: {
+          ...todoData,
+          priority: (data.priority ?? 'MEDIUM') as PrismaPriority,
+          status: initialStatus,
+          archived: isInitiallyCompleted,
+          completedAt: isInitiallyCompleted ? new Date() : null,
+          dueDate: data.dueDate ? new Date(data.dueDate) : null,
+          labels: labelIds?.length
+            ? { connect: labelIds.map((id) => ({ id })) }
+            : undefined,
+          subtasks: subtasks?.length
+            ? {
+                create: subtasks.map((subtask) => ({
+                  ...(subtask.id ? { id: subtask.id } : {}),
+                  title: subtask.title,
+                  completed: subtask.completed ?? false,
+                  order: subtask.order,
+                })),
+              }
+            : undefined,
+          order,
+        },
+        include: todoInclude,
+      })
     })
 
     if (isInitiallyCompleted) {

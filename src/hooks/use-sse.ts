@@ -12,6 +12,15 @@ function getPayloadTodoId(payload: unknown) {
   return typeof todoId === 'string' && todoId.length > 0 ? todoId : null
 }
 
+const INITIAL_BACKOFF_MS = 1_000
+const MAX_BACKOFF_MS = 60_000
+
+function nextBackoff(currentMs: number) {
+  const doubled = Math.min(currentMs * 2, MAX_BACKOFF_MS)
+  // Full jitter: random value between 0 and doubled to spread reconnects.
+  return Math.floor(Math.random() * doubled)
+}
+
 export function useSSE() {
   const queryClient = useQueryClient()
 
@@ -19,6 +28,7 @@ export function useSSE() {
     let isDisposed = false
     let es: EventSource | null = null
     let retryTimeout: ReturnType<typeof setTimeout> | null = null
+    let backoffMs = INITIAL_BACKOFF_MS
 
     function connect() {
       if (isDisposed) return
@@ -59,12 +69,13 @@ export function useSSE() {
           } else if (entity === 'notebook') {
             queryClient.invalidateQueries({ queryKey: queryKeys.notebook })
           }
-        } catch {
-          // ignore malformed events
+        } catch (error) {
+          console.warn('[sse] failed to handle event', error)
         }
       }
 
       es.onopen = () => {
+        backoffMs = INITIAL_BACKOFF_MS
         if (retryTimeout) {
           clearTimeout(retryTimeout)
           retryTimeout = null
@@ -74,13 +85,14 @@ export function useSSE() {
       es.onerror = () => {
         if (isDisposed) return
         es?.close()
-        // Reconnect after 5s on error (single scheduled retry only).
-        if (!retryTimeout) {
-          retryTimeout = setTimeout(() => {
-            retryTimeout = null
-            connect()
-          }, 5_000)
-        }
+        if (retryTimeout) return
+
+        const delay = nextBackoff(backoffMs)
+        backoffMs = Math.min(backoffMs * 2, MAX_BACKOFF_MS)
+        retryTimeout = setTimeout(() => {
+          retryTimeout = null
+          connect()
+        }, delay)
       }
     }
 

@@ -42,6 +42,9 @@ model Todo {
   @@index([dueDate])
   @@index([order])
   @@index([completedAt])
+  // Supports the board query (active / completed / deleted slices)
+  // which always filters by archived AND status together.
+  @@index([archived, status])
 }
 
 model Subtask {

@@ -63,7 +63,11 @@
       "Bash(echo \"Typecheck exit status: $?\")",
       "Bash(echo \"LINT FAILED \\(exit $?\\)\")",
       "WebFetch(domain:github.com)",
-      "Bash(python3 -m http.server 5555 --bind 127.0.0.1)"
+      "Bash(python3 -m http.server 5555 --bind 127.0.0.1)",
+      "Bash(wc -l /Users/andynguyen/ai-focus/mcp-server/src/*.ts /Users/andynguyen/ai-focus/mcp-server/src/tools/*.ts)",
+      "Bash(npx husky:*)",
+      "Bash(PGPASSWORD=\"\" psql -h localhost -U postgres -d aifocus -c \"\\\\d \\\\\"Todo\\\\\"\")",
+      "Bash(npx prettier:*)"
     ]
   }
 }
