@@ -10,8 +10,8 @@ RUN apk add --no-cache openssl
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json package-lock.json* ./
+# Copy package files (.npmrc silences update-notifier during npm ci)
+COPY package.json package-lock.json* .npmrc* ./
 COPY prisma ./prisma/
 
 # Install dependencies

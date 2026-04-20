@@ -60,16 +60,11 @@
   --font-mono: var(--font-geist-mono), monospace;
   --font-pixelify: var(--font-pixelify), system-ui, sans-serif;
 
-  /* ---- Type scale (compact — Focus defaults to 13–14px body) ---- */
-  --text-2xs: 10px;
-  --text-xs: 11px;
-  --text-sm: 12px;
-  --text-base: 13px;
-  --text-md: 14px;
-  --text-lg: 16px;
-  --text-xl: 20px;
-  --text-2xl: 24px;
-  --text-3xl: 30px;
+  /* ---- Type scale ----
+   * text-xs through text-3xl use Tailwind v4 defaults (12/14/16/18/20/24/30).
+   * Only additive tokens here, to avoid silently resizing existing usages.
+   */
+  --text-2xs: 10px; /* section eyebrows (SUBTASKS, LABELS) */
 
   /* ---- Shadows ---- */
   --shadow-sm: 0 1px 2px color-mix(in srgb, var(--background) 50%, transparent);
