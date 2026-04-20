@@ -321,6 +321,41 @@ Instead, use a **small colored dot next to the heading** inside the card:
 
 **Never nest `<button>` inside `<button>`.** This is invalid HTML and causes React hydration errors. If an item is clickable and contains a delete/action button, use `<div role="button" tabIndex={0}>` for the outer element with keyboard event handling.
 
+### Voice & copy
+
+- Lowercase-friendly, calm, second-person sparingly. Examples: "No active tasks", "VPN off — click to re-check", "Opens in a new tab."
+- **No emoji.** Ever. Not in tooltips, empty states, toasts, button labels, placeholders.
+- No "awesome", no "let's", no confetti language.
+- Technical fluency assumed: PRs, Azure DevOps, VPN, MCP, Ollama — don't explain them.
+- Chip labels use Title Case: "To Do", "In Progress", "Under Review", "Done".
+
+### Iconography
+
+- **`lucide-react`** — primary icon set. 2px stroke, `h-4 w-4` default, `h-3 w-3` inside chips.
+- **`react-icons/ri`** (Remix) — sidebar nav icons only, `h-5 w-5`.
+- **`@phosphor-icons/react`** — edge cases only.
+- Unicode `✓` for dropdown active-state indicators only. No other emoji or unicode glyphs.
+
+### Typography patterns
+
+- **Section eyebrows** (SUBTASKS, LABELS, etc.) — `text-2xs uppercase tracking-wide text-text-muted`.
+- **Tabular-nums** (`tabular-nums`) on counts, task numbers (`#42`), subtask progress (`3/7`), stats — anywhere numbers should align or not jitter on change.
+- Default body is 13–14px. Todo rows sit at 11–13px. `text-2xs` = 10px for chips / eyebrows.
+
+### Touch targets
+
+- Mobile minimum: 44px. Mobile primary CTAs: 48px.
+- Desktop dense toolbars can go down to 32px.
+
+### Motion
+
+Motion is utility, not decoration.
+
+- 150–300ms duration, `easeInOut` or `ease-out`.
+- Springs for subtle editable-row cues: `{ stiffness: 300, damping: 28, mass: 0.6 }`.
+- No bounce. No confetti. No elastic overshoots.
+- Framer Motion for visual transitions; `@dnd-kit` owns drag/reorder state (never mix the two).
+
 ## MCP Server
 
 The `mcp-server/` directory contains a Model Context Protocol server for Codex agent integration.
