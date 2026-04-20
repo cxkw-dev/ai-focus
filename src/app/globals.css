@@ -8,21 +8,75 @@
  */
 
 @theme {
-  /* Theme colors as Tailwind variables */
-  --color-theme-background: var(--background);
-  --color-theme-surface: var(--surface);
-  --color-theme-surface-2: var(--surface-2);
-  --color-theme-primary: var(--primary);
-  --color-theme-accent: var(--accent);
+  /* ---- Colors ----
+   * Mapped to var(--xxx) (not hex) so runtime theme switching via
+   * applyTheme() in src/lib/themes.ts keeps working. Tailwind v4
+   * generates utilities (bg-background, text-text-muted, etc.) that
+   * resolve at render time against whatever theme is active.
+   */
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
 
-  /* Border radius */
-  --radius-lg: 0.5rem;
-  --radius-md: 0.375rem;
-  --radius-sm: 0.25rem;
+  --color-text-primary: var(--text-primary);
+  --color-text-muted: var(--text-muted);
 
-  /* Fonts */
+  --color-border-color: var(--border-color);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-pressed: var(--primary-pressed);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-link: var(--link);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-status-todo: var(--status-todo);
+  --color-status-in-progress: var(--status-in-progress);
+  --color-status-waiting: var(--status-waiting);
+  --color-status-under-review: var(--status-under-review);
+  --color-status-on-hold: var(--status-on-hold);
+  --color-status-blocked: var(--status-blocked);
+  --color-status-done: var(--status-done);
+
+  --color-priority-low: var(--priority-low);
+  --color-priority-medium: var(--priority-medium);
+  --color-priority-high: var(--priority-high);
+  --color-priority-urgent: var(--priority-urgent);
+
+  /* ---- Radii ---- */
+  --radius-sm: 0.25rem; /* 4px  — chips */
+  --radius-md: 0.375rem; /* 6px  — buttons, inputs */
+  --radius-lg: 0.5rem; /* 8px  — nav items */
+  --radius-xl: 0.75rem; /* 12px — cards */
+
+  /* ---- Fonts (next/font variables are set on <body> in layout.tsx) ---- */
   --font-sans: var(--font-geist-sans), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), monospace;
+  --font-pixelify: var(--font-pixelify), system-ui, sans-serif;
+
+  /* ---- Type scale (compact — Focus defaults to 13–14px body) ---- */
+  --text-2xs: 10px;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 30px;
+
+  /* ---- Shadows ---- */
+  --shadow-sm: 0 1px 2px color-mix(in srgb, var(--background) 50%, transparent);
+  --shadow-md: 0 2px 8px color-mix(in srgb, var(--background) 50%, transparent);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-primary-glow: 0 1px 3px
+    color-mix(in srgb, var(--primary) 20%, transparent);
 
   /* Animations */
   --animate-accordion-down: accordion-down 0.2s ease-out;
@@ -69,10 +123,11 @@
    * MIDNIGHT PEACH THEME
    * ======================================== */
 
-  /* Backgrounds */
-  --background: #0f0b0a;
-  --surface: #171110;
-  --surface-2: #221817;
+  /* Backgrounds — kept in sync with themes.ts midnight-peach so there's no
+   * flash before applyTheme() runs on mount. */
+  --background: #0d0908;
+  --surface: #1a1412;
+  --surface-2: #261e1b;
 
   /* Text */
   --text-primary: #f6e9e3;
@@ -102,6 +157,7 @@
   --status-todo: #c9b6ae;
   --status-in-progress: #ffb199;
   --status-waiting: #ffcb8e;
+  --status-under-review: #d4a5ff;
   --status-on-hold: #ff7d8c;
   --status-blocked: #e04848;
   --status-done: #7dd3a8;
@@ -670,11 +726,19 @@ h6 {
 
 .todo-billing-tab:hover {
   color: var(--status-done);
-  background-color: color-mix(in srgb, var(--status-done) 12%, var(--surface-2));
+  background-color: color-mix(
+    in srgb,
+    var(--status-done) 12%,
+    var(--surface-2)
+  );
 }
 .todo-billing-tab-active {
   color: var(--status-done);
-  background-color: color-mix(in srgb, var(--status-done) 14%, var(--surface-2));
+  background-color: color-mix(
+    in srgb,
+    var(--status-done) 14%,
+    var(--surface-2)
+  );
 }
 
 .todo-contacts-tab:hover {

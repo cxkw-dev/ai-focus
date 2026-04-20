@@ -10,7 +10,11 @@ const config = [
   },
   eslintConfigPrettier,
   {
-    ignores: ['coverage/**', 'mcp-server/dist/**'],
+    ignores: [
+      'coverage/**',
+      'mcp-server/dist/**',
+      'design_handoff_focus_design_system/**',
+    ],
   },
 ]
 

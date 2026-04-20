@@ -43,3 +43,6 @@ prisma/*.db-journal
 
 # Superpowers
 .superpowers/
+
+# Design handoff (reference material, not shipped)
+design_handoff_focus_design_system/
