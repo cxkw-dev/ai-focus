@@ -74,35 +74,41 @@ Implemented as `vi.mock('@/lib/db', () => ({ prisma: prismaMock }))` at module s
 | `fetch`                     | Not used — Prisma is the boundary for route tests |
 | External APIs (GitHub)      | Routes using them are intentionally not tested    |
 
-### Test inventory
+### Starting point
 
-**Tier 1 — pure logic**
+A partial suite already exists: 10 test files, 35 passing tests, 2.5s runtime. Covers: `todo-board`, `labels` lib, `subtask-commit`, `review-focus-flow`, `todo-response`, `validation/todo`, `validation/label`, plus three component tests (`sidebar`, `billing-codes-drawer`, `session-list`). These stay as-is. Prisma client is exported as `db` from `@/lib/db` — the mock helper must mirror this export name.
 
-- `src/lib/utils.test.ts` — `cn()`
-- `src/lib/themes.test.ts` — `applyTheme()` CSS-var + font resolution
-- `src/lib/events.test.ts` — emit/subscribe/unsubscribe
-- `src/hooks/use-todo-form.test.tsx` — initial state, updates, reset, validation gate
-- Any pure helper in `src/lib/api.ts` (query-string builder etc.) — if present; omit if the file is only `fetch(...)` wrappers
+### Test inventory — NEW tests to add
+
+**Tier 1 — pure logic (additions only)**
+
+- `src/lib/utils.test.ts` — `cn()`, `formatDate`, `formatRelativeTime`, `formatRelativeDate`
+- `src/lib/themes.test.ts` — `applyTheme()` sets all CSS vars, `resolveFontValue` handles `var()` refs, `getThemeById` falls back to default
+- `src/lib/events.test.ts` — subscribe/emit/unsubscribe + multiple listeners
+- `src/lib/http-client.test.ts` — `buildUrl` (empty params, null/undefined strip, real URL params), `requestJson` happy + error-with-JSON-body + error-without-JSON-body, `withJsonBody` headers + body
+- `src/hooks/use-todo-form.test.tsx` — initial state, field updates, reset, validation gate before submit
 
 **Tier 2 — API routes (happy + invalid-input + not-found where relevant)**
 
-- `src/app/api/todos/route.test.ts` — GET, POST
-- `src/app/api/todos/[id]/route.test.ts` — GET, PATCH, DELETE
-- `src/app/api/todos/[id]/archive/route.test.ts`
-- `src/app/api/todos/[id]/restore/route.test.ts`
-- `src/app/api/todos/reorder/route.test.ts`
-- `src/app/api/todos/[id]/subtasks/route.test.ts` (and `[subtaskId]` if it exists)
-- `src/app/api/labels/route.test.ts`, `src/app/api/labels/[id]/route.test.ts`
-- `src/app/api/notebook/route.test.ts`, `src/app/api/notebook/[id]/route.test.ts`
-- `src/app/api/note/route.test.ts` — GET, PATCH
-- `src/app/api/people/route.test.ts`, `src/app/api/people/[id]/route.test.ts`
-- `src/app/api/stats/year/route.test.ts` — one happy path
+Each file: happy path, invalid-input → 400, not-found → 404 where the route fetches by id. No HTTP-verb permutation explosion. The `@/lib/db`, `@/lib/events`, and any agent/sideeffect modules (e.g. `@/lib/accomplishment-agent`) are mocked per file.
 
-Each file: one happy path, one invalid-input (400) test, one not-found (404) test where applicable. No HTTP-verb permutation explosion.
+- `src/app/api/todos/route.test.ts` — GET list, POST create (valid + invalid)
+- `src/app/api/todos/[id]/route.test.ts` — GET, PATCH, DELETE (valid + not-found)
+- `src/app/api/todos/board/route.test.ts` — GET board happy path
+- `src/app/api/todos/reorder/route.test.ts` — POST happy + invalid input
+- `src/app/api/todos/[id]/subtasks/[subtaskId]/route.test.ts` — PATCH toggle
+- `src/app/api/labels/route.test.ts` — GET, POST
+- `src/app/api/labels/[id]/route.test.ts` — PATCH, DELETE
+- `src/app/api/notebook/route.test.ts` — GET, POST
+- `src/app/api/notebook/[id]/route.test.ts` — GET, PATCH, DELETE
+- `src/app/api/note/route.test.ts` — GET, PATCH
+- `src/app/api/people/route.test.ts` — GET, POST
+- `src/app/api/people/[id]/route.test.ts` — PATCH, DELETE
+- `src/app/api/stats/year/route.test.ts` — GET one happy path
 
 **Tier 3 — hook integration**
 
-- `src/hooks/use-todos.test.tsx` — optimistic status update: assert optimistic state flashes, then resolves on success; assert rollback on failure. This is the canary for React Query major bumps.
+- `src/hooks/use-todos.test.tsx` — optimistic `update` mutation: assert optimistic board state flashes, then resolves on success; assert rollback on failure. This is the canary for React Query major bumps.
 
 **Explicitly skipped**
 
@@ -158,7 +164,7 @@ Gate: `npm run validate`. Commit: `bump minor versions: next, react, prisma, tip
 
 Gate: `npm run validate` + brief manual sidebar render. Commit: `migrate to lucide-react v1`.
 
-### Phase 6 — Docker + build-context hygiene
+### Phase 6 — Docker + build-context hygiene + rebuild/deploy
 
 `.dockerignore` additions:
 
@@ -172,7 +178,16 @@ coverage/
 docs/
 ```
 
-No Dockerfile changes — the production image already only copies `.next/standalone`, so test files never reached the runtime. This change just trims the build context for faster `docker build`. Gate: `docker-compose build` completes without error. Commit: `exclude tests from docker build context`.
+No Dockerfile changes — the production image already only copies `.next/standalone`, so test files never reached the runtime. This change just trims the build context for faster `docker build`.
+
+After the `.dockerignore` commit is on `main`:
+
+1. `docker-compose down`
+2. `docker-compose build --no-cache`
+3. `docker-compose up -d`
+4. Verify `http://localhost:4444/` returns 200 and container healthcheck reports healthy
+
+Gate: container starts and healthcheck passes. Commit (for the dockerignore change): `exclude tests from docker build context`. The rebuild/deploy itself doesn't produce a commit.
 
 ## Verification gates
 
@@ -201,3 +216,4 @@ Every phase must pass `npm run validate` (format:check + lint + test + build) be
 - Test suite runs in under 15s locally
 - Running `npm run test` in a fresh clone works without any DB/network setup
 - `docker-compose build` context is smaller (test files excluded); image still builds and runs identically
+- After all phases: `main` is pushed, docker image is rebuilt from scratch, and the container at `localhost:4444` is live and healthy
