@@ -8,6 +8,7 @@ type MockMethods =
   | 'create'
   | 'createMany'
   | 'update'
+  | 'updateMany'
   | 'upsert'
   | 'delete'
   | 'deleteMany'
@@ -26,6 +27,7 @@ function makeModel(): MockModel {
     create: vi.fn(),
     createMany: vi.fn(),
     update: vi.fn(),
+    updateMany: vi.fn(),
     upsert: vi.fn(),
     delete: vi.fn(),
     deleteMany: vi.fn(),
