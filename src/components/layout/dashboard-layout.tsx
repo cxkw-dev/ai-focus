@@ -10,6 +10,31 @@ import {
   useHeaderActions,
 } from './header-actions-context'
 
+const SIDEBAR_COLLAPSED_KEY = 'sidebar-collapsed'
+const SIDEBAR_COLLAPSED_EVENT = 'ai-focus-sidebar-collapsed'
+
+function subscribeSidebarCollapsed(callback: () => void) {
+  window.addEventListener('storage', callback)
+  window.addEventListener(SIDEBAR_COLLAPSED_EVENT, callback)
+  return () => {
+    window.removeEventListener('storage', callback)
+    window.removeEventListener(SIDEBAR_COLLAPSED_EVENT, callback)
+  }
+}
+
+function getSidebarCollapsedSnapshot(): boolean {
+  try {
+    const saved = localStorage.getItem(SIDEBAR_COLLAPSED_KEY)
+    return saved ? (JSON.parse(saved) as boolean) : false
+  } catch {
+    return false
+  }
+}
+
+function getSidebarCollapsedServerSnapshot(): boolean {
+  return false
+}
+
 const pageTitles: Record<string, string> = {
   '/todos': 'Todos',
   '/labels': 'Labels',
@@ -35,19 +60,25 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
   const title = pageTitles[pathname] || 'Focus'
   const { actions } = useHeaderActions()
 
-  const [collapsed, setCollapsed] = React.useState(false)
+  const collapsed = React.useSyncExternalStore(
+    subscribeSidebarCollapsed,
+    getSidebarCollapsedSnapshot,
+    getSidebarCollapsedServerSnapshot,
+  )
   const [isMobile, setIsMobile] = React.useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
   const [isReady, setIsReady] = React.useState(false)
+  const [prevPathname, setPrevPathname] = React.useState(pathname)
 
-  // Read localStorage after mount to avoid SSR hydration mismatch
+  // Reset mobile menu when navigation happens (React 19 "reset on prop change" pattern)
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname)
+    setMobileMenuOpen(false)
+  }
+
   React.useEffect(() => {
-    try {
-      const saved = localStorage.getItem('sidebar-collapsed')
-      if (saved) setCollapsed(JSON.parse(saved))
-    } catch {}
-    // Enable animations after the initial state applies
-    requestAnimationFrame(() => setIsReady(true))
+    const raf = requestAnimationFrame(() => setIsReady(true))
+    return () => cancelAnimationFrame(raf)
   }, [])
 
   React.useEffect(() => {
@@ -63,14 +94,9 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // Close mobile menu on navigation
-  React.useEffect(() => {
-    setMobileMenuOpen(false)
-  }, [pathname])
-
   const handleCollapse = (newCollapsed: boolean) => {
-    setCollapsed(newCollapsed)
-    localStorage.setItem('sidebar-collapsed', JSON.stringify(newCollapsed))
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, JSON.stringify(newCollapsed))
+    window.dispatchEvent(new Event(SIDEBAR_COLLAPSED_EVENT))
   }
 
   const transition = isReady

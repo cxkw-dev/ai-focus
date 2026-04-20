@@ -71,7 +71,17 @@
       "Bash(git -c commit.gpgsign=false commit -m \"add package updates + test suite design spec\")",
       "Bash(npm test *)",
       "Bash(git -c commit.gpgsign=false commit -m \"add implementation plan for package updates + test suite\")",
-      "Bash(git -c commit.gpgsign=false commit -m \"chore: fix pre-existing prettier and lint issues to unblock validate gate\")"
+      "Bash(git -c commit.gpgsign=false commit -m \"chore: fix pre-existing prettier and lint issues to unblock validate gate\")",
+      "Bash(git -c commit.gpgsign=false commit -m \"add shared test helpers for db mock, react query, and requests\")",
+      "Bash(git -c commit.gpgsign=false commit -m \"add tier 1 tests: utils, events, http-client, themes, use-todo-form\")",
+      "Bash(git -c commit.gpgsign=false commit -m \"add api route tests for todos, labels, notebook, note, people, stats\")",
+      "Bash(git -c commit.gpgsign=false commit -m \"add use-todos canary test for optimistic update and rollback\")",
+      "Bash(git -c commit.gpgsign=false commit -m \"bump minor versions: next, react, prisma, tiptap, react query, tailwind\")",
+      "Bash(git -c commit.gpgsign=false commit -m \"bump typescript to 6.0\")",
+      "Bash(npm info *)",
+      "Bash(npm ls *)",
+      "Bash(npm view *)",
+      "Bash(git -c commit.gpgsign=false commit -m \"bump eslint to 10 and refactor set-state-in-effect patterns\")"
     ]
   }
 }

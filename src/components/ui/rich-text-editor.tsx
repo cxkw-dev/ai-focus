@@ -94,11 +94,15 @@ export function RichTextEditor({
     peopleRef.current = mentions ?? []
   }, [mentions])
 
+  // The suggestion config captures `peopleRef` and reads `.current` inside tiptap
+  // event callbacks (not during render). Memoize once per mount so tiptap doesn't
+  // re-register the suggestion plugin; the ref pointer stays stable.
+  const hasMentions = Boolean(mentions)
   const mentionSuggestion = React.useMemo(
-    () => (mentions ? createMentionSuggestion(peopleRef) : null),
-    // Only compute once based on whether mentions is provided
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [!!mentions],
+    () =>
+      // eslint-disable-next-line react-hooks/refs -- peopleRef is captured for later read by tiptap, not read here
+      hasMentions ? createMentionSuggestion(peopleRef) : null,
+    [hasMentions],
   )
 
   const editor = useEditor({

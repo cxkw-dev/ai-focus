@@ -77,6 +77,7 @@ export function NoteEditor({
   onSaveTitle,
 }: NoteEditorProps) {
   const [title, setTitle] = React.useState(note.title)
+  const [prevNoteTitle, setPrevNoteTitle] = React.useState(note.title)
   const saveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
   const titleTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
   const latestContentRef = React.useRef(note.content)
@@ -85,10 +86,11 @@ export function NoteEditor({
     'saved' | 'saving' | 'unsaved'
   >('saved')
 
-  // Sync title when note changes
-  React.useEffect(() => {
+  // Reset local title when the note prop changes externally (React 19 reset-on-prop pattern)
+  if (prevNoteTitle !== note.title) {
+    setPrevNoteTitle(note.title)
     setTitle(note.title)
-  }, [note.id, note.title])
+  }
 
   const editor = useEditor(
     {

@@ -123,13 +123,22 @@ export function useTodoForm(
     setGithubIssueUrls(t.githubIssueUrls ?? [])
   }, [])
 
-  React.useEffect(() => {
+  // Reset / repopulate the form when the passed-in todo changes identity.
+  // Uses the React 19 "reset state on prop change" pattern (compare prev during render).
+  // The sentinel ensures the first render runs population even when todoId is null.
+  const todoId = todo?.id ?? null
+  const UNSET = Symbol.for('use-todo-form.unset')
+  const [prevTodoId, setPrevTodoId] = React.useState<
+    string | null | typeof UNSET
+  >(UNSET)
+  if (prevTodoId !== todoId) {
+    setPrevTodoId(todoId)
     if (todo) {
       populateFromTodo(todo)
     } else {
       reset()
     }
-  }, [todo, populateFromTodo, reset])
+  }
 
   const addSubtask = React.useCallback((subtaskTitle: string) => {
     const normalized = normalizeSubtaskTitle(subtaskTitle)

@@ -17,6 +17,7 @@ import {
 } from 'react-icons/ri'
 import { useVpnStatus } from '@/hooks/use-vpn-status'
 import { useOllamaStatus } from '@/hooks/use-ollama-status'
+import { useIsClient } from '@/hooks/use-is-client'
 import {
   Tooltip,
   TooltipContent,
@@ -49,11 +50,7 @@ const bottomNavItems = [
 
 function OllamaStatusBar({ collapsed }: { collapsed: boolean }) {
   const { data, isLoading, refetch, isFetching } = useOllamaStatus()
-  const [mounted, setMounted] = React.useState(false)
-
-  React.useEffect(() => {
-    setMounted(true)
-  }, [])
+  const mounted = useIsClient()
 
   if (!mounted || isLoading) return null
 

@@ -110,11 +110,20 @@ export function BillingCodesDrawer({
     return () => document.removeEventListener('mousedown', handleClick)
   }, [open, onClose])
 
-  React.useLayoutEffect(() => {
-    if (open) return
+  // Reset feedback state when the drawer closes (React 19 reset-on-prop pattern).
+  const [prevOpen, setPrevOpen] = React.useState(open)
+  if (prevOpen !== open) {
+    setPrevOpen(open)
+    if (!open) {
+      setCopyFeedback(null)
+    }
+  }
 
-    setCopyFeedback(null)
-    clearFeedbackTimeout()
+  // Timeout cleanup lives in an effect — refs are not readable during render.
+  React.useEffect(() => {
+    if (!open) {
+      clearFeedbackTimeout()
+    }
   }, [open, clearFeedbackTimeout])
 
   React.useEffect(() => clearFeedbackTimeout, [clearFeedbackTimeout])

@@ -70,14 +70,16 @@ export function ContactsDrawer({
     return () => document.removeEventListener('mousedown', handleClick)
   }, [open, onClose])
 
-  // Reset state when drawer closes
-  React.useEffect(() => {
+  // Reset state when drawer closes (React 19 reset-on-prop pattern).
+  const [prevOpen, setPrevOpen] = React.useState(open)
+  if (prevOpen !== open) {
+    setPrevOpen(open)
     if (!open) {
       setSelectedPersonId('')
       setRole('')
       setEditingContactId(null)
     }
-  }, [open])
+  }
 
   return (
     <AnimatePresence>

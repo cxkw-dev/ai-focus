@@ -12,8 +12,10 @@ import {
   applyTheme,
   type Theme,
 } from '@/lib/themes'
+import { useIsClient } from '@/hooks/use-is-client'
 
 const THEME_STORAGE_KEY = 'ai-focus-theme'
+const THEME_EVENT = 'ai-focus-theme-change'
 
 interface AppThemeContextType {
   theme: Theme
@@ -33,32 +35,41 @@ export function useAppTheme() {
   return context
 }
 
+function subscribeTheme(callback: () => void) {
+  window.addEventListener('storage', callback)
+  window.addEventListener(THEME_EVENT, callback)
+  return () => {
+    window.removeEventListener('storage', callback)
+    window.removeEventListener(THEME_EVENT, callback)
+  }
+}
+
+function getThemeIdSnapshot() {
+  return localStorage.getItem(THEME_STORAGE_KEY) ?? defaultTheme.id
+}
+
+function getServerThemeIdSnapshot() {
+  return defaultTheme.id
+}
+
 function AppThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = React.useState<Theme>(defaultTheme)
-  const [mounted, setMounted] = React.useState(false)
+  const themeId = React.useSyncExternalStore(
+    subscribeTheme,
+    getThemeIdSnapshot,
+    getServerThemeIdSnapshot,
+  )
+  const theme = getThemeById(themeId)
+  const mounted = useIsClient()
 
-  // Load saved theme on mount
-  React.useEffect(() => {
-    const savedThemeId = localStorage.getItem(THEME_STORAGE_KEY)
-    if (savedThemeId) {
-      const savedTheme = getThemeById(savedThemeId)
-      setThemeState(savedTheme)
-      applyTheme(savedTheme)
-    }
-    setMounted(true)
-  }, [])
-
-  // Apply theme when it changes
   React.useEffect(() => {
     if (mounted) {
       applyTheme(theme)
     }
   }, [theme, mounted])
 
-  const setTheme = React.useCallback((themeId: string) => {
-    const newTheme = getThemeById(themeId)
-    setThemeState(newTheme)
-    localStorage.setItem(THEME_STORAGE_KEY, themeId)
+  const setTheme = React.useCallback((nextThemeId: string) => {
+    localStorage.setItem(THEME_STORAGE_KEY, nextThemeId)
+    window.dispatchEvent(new Event(THEME_EVENT))
   }, [])
 
   return (

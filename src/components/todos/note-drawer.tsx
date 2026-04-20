@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, FileText, Unlink } from 'lucide-react'
 import { notebookApi } from '@/lib/api'
 import { RichTextEditor } from '@/components/ui/rich-text-editor'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 interface NoteDrawerProps {
   noteId: string | null
@@ -26,19 +26,23 @@ export function NoteDrawer({
   const queryClient = useQueryClient()
   const [title, setTitle] = React.useState('')
   const [content, setContent] = React.useState('')
-  const [isLoading, setIsLoading] = React.useState(true)
   const saveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
 
-  // Fetch note content when opened
-  React.useEffect(() => {
-    if (!open || !noteId) return
-    setIsLoading(true)
-    notebookApi.get(noteId).then((note) => {
-      setTitle(note.title)
-      setContent(note.content)
-      setIsLoading(false)
-    })
-  }, [open, noteId])
+  const noteQuery = useQuery({
+    queryKey: ['notebook', noteId],
+    queryFn: () => notebookApi.get(noteId as string),
+    enabled: Boolean(open && noteId),
+  })
+  const isLoading = noteQuery.isLoading || noteQuery.isFetching
+
+  // Seed local edit state when the fetched note changes.
+  const loadedId = noteQuery.data?.id ?? null
+  const [lastLoadedId, setLastLoadedId] = React.useState<string | null>(null)
+  if (noteQuery.data && loadedId !== lastLoadedId) {
+    setLastLoadedId(loadedId)
+    setTitle(noteQuery.data.title)
+    setContent(noteQuery.data.content)
+  }
 
   // Debounced auto-save
   const saveNote = React.useCallback(

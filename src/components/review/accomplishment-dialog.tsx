@@ -46,7 +46,11 @@ export function AccomplishmentDialog({
     React.useState<AccomplishmentCategory>('DELIVERY')
   const [date, setDate] = React.useState('')
 
-  React.useEffect(() => {
+  // Reset form whenever the dialog opens or the target accomplishment changes.
+  const resetKey = open ? (accomplishment?.id ?? 'new') : null
+  const [prevResetKey, setPrevResetKey] = React.useState<string | null>(null)
+  if (resetKey !== prevResetKey) {
+    setPrevResetKey(resetKey)
     if (open) {
       if (accomplishment) {
         setTitle(accomplishment.title)
@@ -60,7 +64,7 @@ export function AccomplishmentDialog({
         setDate(new Date().toISOString().split('T')[0])
       }
     }
-  }, [open, accomplishment])
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

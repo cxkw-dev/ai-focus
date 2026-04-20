@@ -347,23 +347,8 @@ export function LabelManager({
   disabled,
 }: LabelManagerProps) {
   const [newDraft, setNewDraft] = React.useState<LabelDraft>(EMPTY_LABEL_DRAFT)
-  const [presetColors, setPresetColors] = React.useState<
-    Array<{ varName: string; value: string }>
-  >([])
-  const [drafts, setDrafts] = React.useState<Record<string, LabelDraft>>({})
-  const [isSaving, setIsSaving] = React.useState(false)
-  const isCompact = labels.length > 6
-  const newDraftError = getBillingDraftError(newDraft.billingCodes)
-
-  React.useEffect(() => {
-    const nextDrafts: Record<string, LabelDraft> = {}
-    labels.forEach((label) => {
-      nextDrafts[label.id] = createDraftFromLabel(label)
-    })
-    setDrafts(nextDrafts)
-  }, [labels])
-
-  React.useEffect(() => {
+  const presetColors = React.useMemo(() => {
+    if (typeof document === 'undefined') return []
     const rootStyles = getComputedStyle(document.documentElement)
     const presetVars = [
       '--primary',
@@ -395,8 +380,25 @@ export function LabelManager({
       seen.add(key)
       uniquePresets.push({ varName, value })
     })
-    setPresetColors(uniquePresets)
+    return uniquePresets
   }, [])
+  const [drafts, setDrafts] = React.useState<Record<string, LabelDraft>>({})
+  const [isSaving, setIsSaving] = React.useState(false)
+  const isCompact = labels.length > 6
+  const newDraftError = getBillingDraftError(newDraft.billingCodes)
+
+  // Resync drafts when the labels prop changes (React 19 reset-on-prop pattern).
+  const labelsSignature = labels.map((l) => `${l.id}:${l.updatedAt}`).join('|')
+  const [prevLabelsSignature, setPrevLabelsSignature] =
+    React.useState<string>('')
+  if (prevLabelsSignature !== labelsSignature) {
+    setPrevLabelsSignature(labelsSignature)
+    const nextDrafts: Record<string, LabelDraft> = {}
+    labels.forEach((label) => {
+      nextDrafts[label.id] = createDraftFromLabel(label)
+    })
+    setDrafts(nextDrafts)
+  }
 
   const updateDraft = React.useCallback(
     (id: string, updates: Partial<LabelDraft>) => {

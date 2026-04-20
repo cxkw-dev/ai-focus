@@ -663,9 +663,14 @@ function TodoItemContent({
     }),
   )
 
-  React.useEffect(() => {
+  // Resync subtasks when the todo prop's subtasks change (React 19 reset-on-prop pattern).
+  const [prevSubtasksRef, setPrevSubtasksRef] = React.useState(
+    todo.subtasks ?? [],
+  )
+  if (prevSubtasksRef !== (todo.subtasks ?? [])) {
+    setPrevSubtasksRef(todo.subtasks ?? [])
     setSubtasks(todo.subtasks ?? [])
-  }, [todo.subtasks])
+  }
 
   const persistSubtasks = React.useCallback(
     (nextSubtasks: Subtask[]) => {
@@ -1271,18 +1276,24 @@ export function TodoItem({
     viewMode === 'active' && COLLAPSED_STATUSES.has(todo.status)
   const [manuallyExpanded, setManuallyExpanded] = React.useState(false)
 
-  // Reset expanded state when status changes away from collapsed
-  React.useEffect(() => {
+  // Reset manually-expanded flag when the todo's status moves out of a collapsed state.
+  const [prevStatus, setPrevStatus] = React.useState(todo.status)
+  if (prevStatus !== todo.status) {
+    setPrevStatus(todo.status)
     if (!COLLAPSED_STATUSES.has(todo.status)) {
       setManuallyExpanded(false)
     }
-  }, [todo.status])
+  }
 
-  React.useEffect(() => {
+  // Collapse the billing drawer if the todo no longer has billing entries.
+  const [prevHasBillingEntries, setPrevHasBillingEntries] =
+    React.useState(hasBillingEntries)
+  if (prevHasBillingEntries !== hasBillingEntries) {
+    setPrevHasBillingEntries(hasBillingEntries)
     if (!hasBillingEntries) {
       setBillingOpen(false)
     }
-  }, [hasBillingEntries])
+  }
 
   const dropLine = (
     <div

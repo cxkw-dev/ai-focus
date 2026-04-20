@@ -79,12 +79,15 @@ export function SubtaskMentionInput({
     peopleRef.current = mentions ?? []
   }, [mentions])
 
+  // Suggestion config captures refs and reads `.current` inside tiptap event
+  // callbacks (not during render). Memoize once per mount so tiptap doesn't
+  // re-register the plugin; the ref pointers stay stable.
+  const hasMentions = Boolean(mentions)
   const mentionSuggestion = React.useMemo(
     () =>
-      mentions ? createMentionSuggestion(peopleRef, mentionActiveRef) : null,
-    // Only compute once based on whether mentions is provided
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [!!mentions],
+      // eslint-disable-next-line react-hooks/refs -- refs are captured for later read by tiptap, not read here
+      hasMentions ? createMentionSuggestion(peopleRef, mentionActiveRef) : null,
+    [hasMentions],
   )
 
   const editor = useEditor({

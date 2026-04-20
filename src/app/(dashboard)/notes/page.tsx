@@ -17,14 +17,6 @@ export default function NotesPage() {
     [notes, selectedId],
   )
 
-  // Clear selection if note was deleted
-  React.useEffect(() => {
-    if (selectedId && !notes.find((n) => n.id === selectedId)) {
-      setSelectedId(null)
-      setMobileShowEditor(false)
-    }
-  }, [notes, selectedId])
-
   const handleCreate = React.useCallback(async () => {
     try {
       const newNote = await create.mutateAsync()

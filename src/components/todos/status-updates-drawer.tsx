@@ -88,11 +88,14 @@ export function StatusUpdatesDrawer({
     return () => document.removeEventListener('mousedown', handleClick)
   }, [open, onClose])
 
-  React.useEffect(() => {
+  // Reset new-content draft when the drawer closes.
+  const [prevOpen, setPrevOpen] = React.useState(open)
+  if (prevOpen !== open) {
+    setPrevOpen(open)
     if (!open) {
       setNewContent('')
     }
-  }, [open])
+  }
 
   return (
     <AnimatePresence>

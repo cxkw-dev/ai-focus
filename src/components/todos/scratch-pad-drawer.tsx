@@ -4,6 +4,7 @@ import * as React from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
+import { useIsClient } from '@/hooks/use-is-client'
 import { ScratchPad } from './scratch-pad'
 
 interface ScratchPadDrawerProps {
@@ -12,11 +13,7 @@ interface ScratchPadDrawerProps {
 }
 
 export function ScratchPadDrawer({ open, onClose }: ScratchPadDrawerProps) {
-  const [mounted, setMounted] = React.useState(false)
-
-  React.useEffect(() => {
-    setMounted(true)
-  }, [])
+  const mounted = useIsClient()
 
   // Close on Escape
   React.useEffect(() => {

@@ -41,18 +41,10 @@ function SettingsPageContent() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const queryTab = searchParams.get(TAB_QUERY_KEY)
-  const [activeTab, setActiveTab] = React.useState<SettingsTab>(
-    isSettingsTab(queryTab) ? queryTab : 'contacts',
-  )
+  const activeTab: SettingsTab = isSettingsTab(queryTab) ? queryTab : 'contacts'
 
   React.useEffect(() => {
-    if (isSettingsTab(queryTab)) {
-      setActiveTab(queryTab)
-      return
-    }
-
-    if (queryTab !== null) {
-      setActiveTab('contacts')
+    if (queryTab !== null && !isSettingsTab(queryTab)) {
       const params = new URLSearchParams(searchParams.toString())
       params.set(TAB_QUERY_KEY, 'contacts')
       router.replace(`${pathname}?${params.toString()}`, { scroll: false })
@@ -81,7 +73,6 @@ function SettingsPageContent() {
 
   const changeTab = React.useCallback(
     (nextTab: SettingsTab) => {
-      setActiveTab(nextTab)
       const params = new URLSearchParams(searchParams.toString())
       params.set(TAB_QUERY_KEY, nextTab)
       router.replace(`${pathname}?${params.toString()}`, { scroll: false })

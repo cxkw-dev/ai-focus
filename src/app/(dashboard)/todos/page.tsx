@@ -89,17 +89,18 @@ export default function TodosPage() {
     [columns, categorizedForFilter],
   )
 
-  // Mobile category defaults to first non-empty column
-  const [mobileCategory, setMobileCategory] = React.useState<string>('')
-  React.useEffect(() => {
-    if (
-      responsiveColumns.length > 0 &&
-      (!mobileCategory ||
-        !responsiveColumns.some((c) => c.key === mobileCategory))
-    ) {
-      setMobileCategory(responsiveColumns[0].key)
-    }
-  }, [responsiveColumns, mobileCategory])
+  // Mobile category defaults to first non-empty column. Stored as an override that
+  // may or may not exist in the current column set; we fall back to the first column
+  // during render so the derived value is always valid.
+  const [mobileCategoryOverride, setMobileCategoryOverride] = React.useState<
+    string | null
+  >(null)
+  const mobileCategory =
+    mobileCategoryOverride &&
+    responsiveColumns.some((c) => c.key === mobileCategoryOverride)
+      ? mobileCategoryOverride
+      : (responsiveColumns[0]?.key ?? '')
+  const setMobileCategory = setMobileCategoryOverride
 
   const handleMobileCategoryKeyDown = React.useCallback(
     (event: React.KeyboardEvent<HTMLButtonElement>, currentKey: string) => {
@@ -116,7 +117,7 @@ export default function TodosPage() {
         responsiveColumns.length
       setMobileCategory(responsiveColumns[nextIndex].key)
     },
-    [responsiveColumns],
+    [responsiveColumns, setMobileCategory],
   )
   const subtaskMentions = React.useMemo(
     () =>
