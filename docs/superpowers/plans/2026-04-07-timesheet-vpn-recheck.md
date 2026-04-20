@@ -14,9 +14,9 @@
 
 ## File Structure
 
-| File | Action | Responsibility |
-|---|---|---|
-| `src/hooks/use-vpn-status.ts` | Modify | Refetch VPN status when the user tabs back into the app |
+| File                                | Action | Responsibility                                                                                               |
+| ----------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------ |
+| `src/hooks/use-vpn-status.ts`       | Modify | Refetch VPN status when the user tabs back into the app                                                      |
 | `src/components/layout/sidebar.tsx` | Modify | Replace the timesheet `<a>` with a state-driven `<button>` and a controlled tooltip; render the recheck flow |
 
 No new files. No new dependencies.
@@ -40,6 +40,7 @@ The full end-to-end checks from the spec run as Task 7.
 ## Task 1: Refetch VPN status on tab focus
 
 **Files:**
+
 - Modify: `src/hooks/use-vpn-status.ts:1-15`
 
 - [ ] **Step 1: Change `refetchOnWindowFocus` to `true`**
@@ -79,14 +80,17 @@ export function useVpnStatus() {
 - [ ] **Step 2: Verify lint and typecheck pass**
 
 Run:
+
 ```bash
 npm run lint && npx tsc --noEmit
 ```
+
 Expected: both commands exit cleanly with no errors.
 
 - [ ] **Step 3: Manual verification — tab-focus refetch**
 
 With the dev server running:
+
 1. Disconnect from VPN.
 2. Reload the app — confirm the dot on the timesheet icon (sidebar) is **red**.
 3. Connect to VPN.
@@ -109,6 +113,7 @@ git commit -m "vpn status: refetch on window focus"
 **Goal of this task:** Pure refactor — no observable behavior change. The button still opens the timesheet on click via `window.open`. This task isolates the element-type swap so subsequent tasks can layer on the tooltip and recheck flow against a known-good baseline.
 
 **Files:**
+
 - Modify: `src/components/layout/sidebar.tsx` (top of file + the `timesheetButton` JSX, currently around lines 182–219)
 
 - [ ] **Step 1: Add the `TIMESHEET_URL` constant near the top of the file**
@@ -136,7 +141,7 @@ const timesheetButton = (
     <span className="relative shrink-0">
       <Clock className="h-5 w-5" />
       <span
-        className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full border"
+        className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full border"
         style={{
           borderColor: 'var(--surface)',
           backgroundColor: vpnLoading
@@ -171,16 +176,14 @@ Replace it with:
 const timesheetButton = (
   <button
     type="button"
-    onClick={() =>
-      window.open(TIMESHEET_URL, '_blank', 'noopener,noreferrer')
-    }
+    onClick={() => window.open(TIMESHEET_URL, '_blank', 'noopener,noreferrer')}
     className={`flex w-full items-center rounded-lg py-2.5 text-sm font-medium transition-colors duration-200 ${collapsed ? 'justify-center px-0' : 'gap-3 px-3'}`}
     style={{ color: 'var(--text-muted)' }}
   >
     <span className="relative shrink-0">
       <Clock className="h-5 w-5" />
       <span
-        className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full border"
+        className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full border"
         style={{
           borderColor: 'var(--surface)',
           backgroundColor: vpnLoading
@@ -210,6 +213,7 @@ const timesheetButton = (
 ```
 
 Notes on what changed:
+
 - `<a href target rel>` → `<button type="button" onClick>`
 - Added `w-full` to the className so the button stretches to fill the nav width (the `<a>` was a flex child and stretched implicitly; `<button>` does not).
 - Inner spans, dot logic, and `AnimatePresence` block are unchanged — copy them verbatim.
@@ -219,11 +223,13 @@ Notes on what changed:
 ```bash
 npm run lint && npx tsc --noEmit
 ```
+
 Expected: both commands exit cleanly.
 
 - [ ] **Step 4: Manual verification — clicking still opens timesheet**
 
 In the running dev app:
+
 1. Click the Timesheet button in the sidebar.
 2. Confirm a new tab opens to the SAP timesheet URL.
 3. Confirm the button still looks visually identical to before (full width, same dot, same Clock icon, same hover behavior).
@@ -242,6 +248,7 @@ git commit -m "sidebar: convert timesheet link to button"
 **Goal of this task:** Wire up the recheck behavior. After this task, clicking the button when disconnected will run `refetch()`, open a blank tab, and either redirect or close it. The recheck-state tooltip is **not yet rendered** — that's Task 4. The disabled visual style is also not yet present — that's Task 5. So in this interim state, the recheck happens silently from the user's perspective; you verify it via DevTools.
 
 **Files:**
+
 - Modify: `src/components/layout/sidebar.tsx` (the `Sidebar` function body — destructure, state, handler)
 
 - [ ] **Step 1: Destructure `refetch` from `useVpnStatus`**
@@ -255,8 +262,11 @@ const { data: vpnConnected, isLoading: vpnLoading } = useVpnStatus()
 Change it to:
 
 ```tsx
-const { data: vpnConnected, isLoading: vpnLoading, refetch: refetchVpn } =
-  useVpnStatus()
+const {
+  data: vpnConnected,
+  isLoading: vpnLoading,
+  refetch: refetchVpn,
+} = useVpnStatus()
 ```
 
 - [ ] **Step 2: Add the `TooltipState` type and `tooltipState` state hook**
@@ -291,11 +301,7 @@ const handleTimesheetClick = React.useCallback(() => {
   // Known disconnected — open about:blank synchronously inside the
   // user-gesture window so the popup blocker doesn't bite, then run
   // the recheck and either redirect or close the new tab.
-  const newTab = window.open(
-    'about:blank',
-    '_blank',
-    'noopener,noreferrer',
-  )
+  const newTab = window.open('about:blank', '_blank', 'noopener,noreferrer')
   setTooltipState('checking')
   refetchVpn().then((result) => {
     if (result.data === true) {
@@ -326,7 +332,7 @@ onClick={() =>
 to:
 
 ```tsx
-onClick={handleTimesheetClick}
+onClick = { handleTimesheetClick }
 ```
 
 - [ ] **Step 5: Verify lint and typecheck pass**
@@ -334,21 +340,25 @@ onClick={handleTimesheetClick}
 ```bash
 npm run lint && npx tsc --noEmit
 ```
+
 Expected: both commands exit cleanly.
 
 - [ ] **Step 6: Manual verification — recheck flow runs (no visible feedback yet)**
 
 In the running dev app, with VPN **disconnected**:
+
 1. Open DevTools → Network and filter to `vpn-status`.
 2. Click the Timesheet button.
 3. Confirm a new tab opens to `about:blank` and then **closes** automatically within ~3 seconds (recheck failure path).
 4. Confirm a fresh `GET /api/vpn-status` request appears in the Network panel.
 
 With VPN **connected**:
+
 1. Click the Timesheet button.
 2. Confirm a new tab opens to the SAP timesheet URL **immediately** (the `vpnConnected !== false` branch — no recheck, no blank tab).
 
 Then disconnect from VPN, reload (so the dot is red), reconnect from VPN, and click:
+
 1. Confirm a new tab opens to `about:blank`.
 2. After ~3 seconds the recheck succeeds and the blank tab redirects to the SAP timesheet URL.
 
@@ -368,6 +378,7 @@ git commit -m "sidebar: add timesheet vpn recheck click handler"
 **Goal of this task:** Render the recheck-state feedback. Use one Radix `Tooltip` that wraps the button always, with a controlled `open` state that fires when `tooltipState !== 'idle'` OR when the sidebar is collapsed and the user is hovering. After this task, the user sees the "Checking VPN…" / "VPN connected — opening timesheet" / "VPN still disconnected" feedback.
 
 **Files:**
+
 - Modify: `src/components/layout/sidebar.tsx` (the `Sidebar` function body — add hover state; the timesheet section JSX, currently around lines 287–302)
 
 - [ ] **Step 1: Add an `isHovering` state for the collapsed-hover fallback**
@@ -383,8 +394,7 @@ const [isTimesheetHovered, setIsTimesheetHovered] = React.useState(false)
 Immediately below the `handleTimesheetClick` declaration from Task 3, add:
 
 ```tsx
-const tooltipOpen =
-  tooltipState !== 'idle' || (collapsed && isTimesheetHovered)
+const tooltipOpen = tooltipState !== 'idle' || (collapsed && isTimesheetHovered)
 
 let tooltipMessage: string
 if (tooltipState === 'checking') {
@@ -403,8 +413,10 @@ if (tooltipState === 'checking') {
 Find this block in the JSX (currently around lines 287–302):
 
 ```tsx
-{/* Timesheet Section */}
-<nav
+{
+  /* Timesheet Section */
+}
+;<nav
   className={`flex flex-col gap-1 border-t ${collapsed ? 'px-2 py-3' : 'p-3'}`}
   style={{ borderColor: 'var(--border-color)' }}
 >
@@ -424,8 +436,10 @@ Find this block in the JSX (currently around lines 287–302):
 Replace it with:
 
 ```tsx
-{/* Timesheet Section */}
-<nav
+{
+  /* Timesheet Section */
+}
+;<nav
   className={`flex flex-col gap-1 border-t ${collapsed ? 'px-2 py-3' : 'p-3'}`}
   style={{ borderColor: 'var(--border-color)' }}
 >
@@ -448,6 +462,7 @@ Replace it with:
 ```
 
 What this does:
+
 - The `Tooltip` is always rendered (no `collapsed ? : :` branch).
 - `open={tooltipOpen}` makes it controlled. The tooltip opens when the recheck flow drives it (any non-idle state) OR when the user hovers in the collapsed sidebar.
 - `onOpenChange` lets Radix tell us about hover events; we only honor them when we're idle AND collapsed (otherwise the recheck flow owns the open state).
@@ -459,6 +474,7 @@ What this does:
 ```bash
 npm run lint && npx tsc --noEmit
 ```
+
 Expected: both commands exit cleanly.
 
 - [ ] **Step 5: Manual verification — tooltip feedback renders**
@@ -466,24 +482,29 @@ Expected: both commands exit cleanly.
 With the dev app running:
 
 **Expanded sidebar, VPN connected:**
+
 1. Hover the Timesheet button → no tooltip (matches today).
 2. Click → new tab opens immediately (no tooltip flash).
 
 **Expanded sidebar, VPN disconnected:**
+
 1. Hover the Timesheet button → no tooltip.
 2. Click → tooltip appears: "Checking VPN…" → after ~3s, "VPN still disconnected" → auto-dismisses after 2.5s.
 
 **Expanded sidebar, VPN reconnected after page load:**
+
 1. Reload while VPN is off (dot red).
 2. Reconnect to VPN.
 3. Click the button → tooltip: "Checking VPN…" → "VPN connected — opening timesheet" → blank tab redirects to SAP URL → tooltip closes.
 
 **Collapsed sidebar, VPN connected:**
+
 1. Collapse the sidebar.
 2. Hover the Timesheet button → tooltip: "Timesheet (VPN connected)".
 3. Mouse away → tooltip closes.
 
 **Collapsed sidebar, VPN disconnected:**
+
 1. Collapse the sidebar with VPN off.
 2. Hover → tooltip: "Timesheet (VPN off)".
 
@@ -501,6 +522,7 @@ git commit -m "sidebar: merged controlled tooltip for timesheet recheck feedback
 **Goal of this task:** When `vpnConnected === false`, show the button as visually disabled (reduced opacity, `cursor-not-allowed`). The button still receives clicks because the click handler needs to fire the recheck.
 
 **Files:**
+
 - Modify: `src/components/layout/sidebar.tsx` (the `timesheetButton` JSX className)
 
 - [ ] **Step 1: Add the conditional disabled styling**
@@ -534,11 +556,13 @@ The change adds `cursor-not-allowed opacity-60` to the className only when `vpnC
 ```bash
 npm run lint && npx tsc --noEmit
 ```
+
 Expected: both commands exit cleanly.
 
 - [ ] **Step 3: Manual verification — visual disabled state**
 
 With the dev app running:
+
 1. **VPN connected:** Confirm the Timesheet button looks normal (full opacity, pointer cursor on hover).
 2. **VPN disconnected:** Confirm the button looks dimmed (reduced opacity) and the cursor changes to `not-allowed` on hover.
 3. **Loading state (page reload):** Confirm during the brief gray-dot window the button looks normal — `vpnConnected === undefined`, not `false`.
@@ -558,6 +582,7 @@ git commit -m "sidebar: visual disabled style for timesheet when vpn off"
 **Goal of this task:** Visual reinforcement that something is happening. While `tooltipState === 'checking'`, the small status dot on the Clock icon pulses.
 
 **Files:**
+
 - Modify: `src/components/layout/sidebar.tsx` (the dot `<span>` inside `timesheetButton`)
 
 - [ ] **Step 1: Add the pulse class conditionally**
@@ -566,7 +591,7 @@ In the `timesheetButton` JSX, find the inner status dot span:
 
 ```tsx
 <span
-  className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full border"
+  className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full border"
   style={{
     borderColor: 'var(--surface)',
     backgroundColor: vpnLoading
@@ -582,7 +607,7 @@ Replace with:
 
 ```tsx
 <span
-  className={`absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full border ${tooltipState === 'checking' ? 'animate-pulse' : ''}`}
+  className={`absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full border ${tooltipState === 'checking' ? 'animate-pulse' : ''}`}
   style={{
     borderColor: 'var(--surface)',
     backgroundColor: vpnLoading
@@ -599,11 +624,13 @@ Replace with:
 ```bash
 npm run lint && npx tsc --noEmit
 ```
+
 Expected: both commands exit cleanly.
 
 - [ ] **Step 3: Manual verification — dot pulses during recheck**
 
 With VPN disconnected:
+
 1. Click the Timesheet button.
 2. Confirm the small red dot on the Clock icon **pulses** (Tailwind `animate-pulse` — opacity ramps up and down) during the ~3-second recheck.
 3. After the recheck resolves, the pulse stops.

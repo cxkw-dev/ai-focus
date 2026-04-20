@@ -212,9 +212,9 @@ export function NotesSidebar({
   isLoading,
 }: NotesSidebarProps) {
   const [search, setSearch] = React.useState('')
-  const [activeTab, setActiveTab] = React.useState<'notes' | 'tasks' | 'archived'>(
-    'notes',
-  )
+  const [activeTab, setActiveTab] = React.useState<
+    'notes' | 'tasks' | 'archived'
+  >('notes')
 
   const { standaloneNotes, taskNotes, archivedNotes } = React.useMemo(() => {
     const standalone: NotebookNote[] = []

@@ -29,14 +29,14 @@ The timesheet button in the sidebar (`src/components/layout/sidebar.tsx`) curren
 
 ### Visual states
 
-| State | Dot | Button opacity | Cursor | Click action |
-|---|---|---|---|---|
-| `loading` (initial fetch) | gray | normal | pointer | opens timesheet |
-| `connected` | green | normal | pointer | opens timesheet |
-| `disconnected` | red | reduced (`opacity-60`) | `not-allowed` | triggers recheck flow |
-| `rechecking` | pulsing/animated | reduced | `wait` | tooltip pinned: "Checking VPN…" |
-| `recheck → connected` | green | normal | pointer | tooltip flashes "VPN connected — opening timesheet", auto-opens |
-| `recheck → still disconnected` | red | reduced | `not-allowed` | tooltip stays: "VPN still disconnected"; auto-dismisses after ~2.5s |
+| State                          | Dot              | Button opacity         | Cursor        | Click action                                                        |
+| ------------------------------ | ---------------- | ---------------------- | ------------- | ------------------------------------------------------------------- |
+| `loading` (initial fetch)      | gray             | normal                 | pointer       | opens timesheet                                                     |
+| `connected`                    | green            | normal                 | pointer       | opens timesheet                                                     |
+| `disconnected`                 | red              | reduced (`opacity-60`) | `not-allowed` | triggers recheck flow                                               |
+| `rechecking`                   | pulsing/animated | reduced                | `wait`        | tooltip pinned: "Checking VPN…"                                     |
+| `recheck → connected`          | green            | normal                 | pointer       | tooltip flashes "VPN connected — opening timesheet", auto-opens     |
+| `recheck → still disconnected` | red              | reduced                | `not-allowed` | tooltip stays: "VPN still disconnected"; auto-dismisses after ~2.5s |
 
 ### Click flow
 

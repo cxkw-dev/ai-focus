@@ -197,7 +197,10 @@ function BillingCodeFields({
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <ReceiptText className="h-4 w-4" style={{ color: 'var(--primary)' }} />
+          <ReceiptText
+            className="h-4 w-4"
+            style={{ color: 'var(--primary)' }}
+          />
           <span
             className="text-xs font-semibold tracking-wide uppercase"
             style={{ color: 'var(--text-muted)' }}
@@ -317,7 +320,7 @@ function BillingCodeFields({
                   disabled={disabled}
                   rows={2}
                   placeholder="Description (optional)"
-                  className="mt-3 w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none transition-colors"
+                  className="mt-3 w-full rounded-md border bg-transparent px-3 py-2 text-sm transition-colors outline-none"
                   style={{
                     borderColor: 'var(--border-color)',
                     color: 'var(--text-primary)',
@@ -416,8 +419,11 @@ export function LabelManager({
           ...prev,
           [id]: {
             ...currentDraft,
-            billingCodes: currentDraft.billingCodes.map((billingCode, itemIndex) =>
-              itemIndex === index ? { ...billingCode, ...updates } : billingCode,
+            billingCodes: currentDraft.billingCodes.map(
+              (billingCode, itemIndex) =>
+                itemIndex === index
+                  ? { ...billingCode, ...updates }
+                  : billingCode,
             ),
           },
         }
@@ -433,26 +439,32 @@ export function LabelManager({
         ...prev,
         [id]: {
           ...currentDraft,
-          billingCodes: [...currentDraft.billingCodes, createBillingCodeDraft()],
+          billingCodes: [
+            ...currentDraft.billingCodes,
+            createBillingCodeDraft(),
+          ],
         },
       }
     })
   }, [])
 
-  const removeDraftBillingCode = React.useCallback((id: string, index: number) => {
-    setDrafts((prev) => {
-      const currentDraft = prev[id] ?? EMPTY_LABEL_DRAFT
-      return {
-        ...prev,
-        [id]: {
-          ...currentDraft,
-          billingCodes: currentDraft.billingCodes.filter(
-            (_billingCode, itemIndex) => itemIndex !== index,
-          ),
-        },
-      }
-    })
-  }, [])
+  const removeDraftBillingCode = React.useCallback(
+    (id: string, index: number) => {
+      setDrafts((prev) => {
+        const currentDraft = prev[id] ?? EMPTY_LABEL_DRAFT
+        return {
+          ...prev,
+          [id]: {
+            ...currentDraft,
+            billingCodes: currentDraft.billingCodes.filter(
+              (_billingCode, itemIndex) => itemIndex !== index,
+            ),
+          },
+        }
+      })
+    },
+    [],
+  )
 
   const updateNewBillingCode = React.useCallback(
     (index: number, updates: Partial<BillingCodeDraft>) => {
@@ -480,7 +492,10 @@ export function LabelManager({
 
   const commitUpdate = async (label: TodoLabel, draft: LabelDraft) => {
     const updates = buildUpdatePayload(label, draft)
-    if (Object.keys(updates).length === 0 || getBillingDraftError(draft.billingCodes)) {
+    if (
+      Object.keys(updates).length === 0 ||
+      getBillingDraftError(draft.billingCodes)
+    ) {
       return
     }
 
@@ -633,12 +648,18 @@ export function LabelManager({
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-            Create the label first, then attach it to tasks and open the billing drawer when you need to copy a code.
+            Create the label first, then attach it to tasks and open the billing
+            drawer when you need to copy a code.
           </div>
           <Button
             type="button"
             onClick={handleCreate}
-            disabled={!newDraft.name.trim() || Boolean(newDraftError) || disabled || isSaving}
+            disabled={
+              !newDraft.name.trim() ||
+              Boolean(newDraftError) ||
+              disabled ||
+              isSaving
+            }
           >
             Add label
           </Button>
@@ -715,8 +736,11 @@ export function LabelManager({
                       className="text-[10px] tracking-wide uppercase"
                       style={{ color: 'var(--text-muted)' }}
                     >
-                      {normalizeBillingCodes(draft.billingCodes).length} billing code
-                      {normalizeBillingCodes(draft.billingCodes).length === 1 ? '' : 's'}
+                      {normalizeBillingCodes(draft.billingCodes).length} billing
+                      code
+                      {normalizeBillingCodes(draft.billingCodes).length === 1
+                        ? ''
+                        : 's'}
                     </span>
                   ) : (
                     <span

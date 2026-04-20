@@ -607,10 +607,7 @@ function CollapsedTodoRow({
           </span>
         ) : (
           <span className="flex-shrink-0" title="Up to date with main">
-            <ShieldCheck
-              className="h-3 w-3"
-              style={{ color: '#58a6ff' }}
-            />
+            <ShieldCheck className="h-3 w-3" style={{ color: '#58a6ff' }} />
           </span>
         ))}
       {todo.labels?.map((label) => (
@@ -1051,173 +1048,173 @@ function TodoItemContent({
             </button>
           )
         ) : (
-        <div
-          className="pt-1.5"
-          style={{
-            borderTop:
-              '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)',
-          }}
-        >
-          <div className="mb-1 flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => setSubtasksExpanded((prev) => !prev)}
-              className="flex cursor-pointer items-center gap-1.5 transition-opacity hover:opacity-80"
-            >
-              {subtasksExpanded ? (
-                <ChevronDown
-                  className="h-3 w-3"
-                  style={{ color: 'var(--text-muted)', opacity: 0.6 }}
-                />
-              ) : (
-                <ChevronRight
-                  className="h-3 w-3"
-                  style={{ color: 'var(--text-muted)', opacity: 0.6 }}
-                />
-              )}
-              <span
-                className="text-[10px] font-semibold tracking-wide uppercase"
-                style={{ color: 'var(--text-muted)', opacity: 0.6 }}
-              >
-                Subtasks
-              </span>
-            </button>
-            {hasSubtasks && (
-              <span
-                className="text-[10px] font-medium"
-                style={{
-                  color: allDone ? 'var(--status-done)' : 'var(--text-muted)',
-                }}
-              >
-                {completedCount}/{subtasks.length}
-              </span>
-            )}
-            {canAddSubtasks && !isAddingSubtask && subtasksExpanded && (
+          <div
+            className="pt-1.5"
+            style={{
+              borderTop:
+                '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)',
+            }}
+          >
+            <div className="mb-1 flex items-center gap-1.5">
               <button
                 type="button"
-                onClick={() => setIsAddingSubtask(true)}
-                className="ml-auto inline-flex items-center gap-1 rounded px-1 py-0.5 text-[10px] transition-colors hover:bg-white/5"
-                style={{ color: 'var(--text-muted)' }}
+                onClick={() => setSubtasksExpanded((prev) => !prev)}
+                className="flex cursor-pointer items-center gap-1.5 transition-opacity hover:opacity-80"
               >
-                <Plus className="h-2.5 w-2.5" />
-                Add
-              </button>
-            )}
-          </div>
-          {(subtasksExpanded || (!hasSubtasks && isAddingSubtask)) && (
-            <>
-              {hasSubtasks &&
-                (canInlineEditSubtasks ? (
-                  <DndContext
-                    sensors={subtaskSensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleSubtaskDragEnd}
-                  >
-                    <SortableContext
-                      items={subtasks.map((subtask) =>
-                        subtaskDndId(subtask.id),
-                      )}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      <div className="space-y-0.5">
-                        {subtasks.map((subtask) => (
-                          <SortableEditableSubtaskRow
-                            key={subtask.id}
-                            subtask={subtask}
-                            onToggle={() =>
-                              handleSubtaskToggle(
-                                subtask.id,
-                                !subtask.completed,
-                              )
-                            }
-                            onTitleChange={(title) =>
-                              handleSubtaskTitleChange(subtask.id, title)
-                            }
-                            onTitleCommit={() =>
-                              handleSubtaskTitleCommit(subtask.id)
-                            }
-                            onDelete={() => handleSubtaskDelete(subtask.id)}
-                            mentions={subtaskMentions}
-                          />
-                        ))}
-                      </div>
-                    </SortableContext>
-                  </DndContext>
+                {subtasksExpanded ? (
+                  <ChevronDown
+                    className="h-3 w-3"
+                    style={{ color: 'var(--text-muted)', opacity: 0.6 }}
+                  />
                 ) : (
-                  <div className="space-y-0.5">
-                    {subtasks.map((subtask) => (
-                      <div
-                        key={subtask.id}
-                        className="flex w-full items-center gap-2 rounded px-0.5 py-0.5 text-left"
-                      >
-                        {subtask.completed ? (
-                          <CheckSquare
-                            className="h-3.5 w-3.5 flex-shrink-0"
-                            style={{ color: 'var(--status-done)' }}
-                          />
-                        ) : (
-                          <Square
-                            className="h-3.5 w-3.5 flex-shrink-0"
-                            style={{ color: 'var(--text-muted)' }}
-                          />
-                        )}
-                        <div
-                          className="text-[11px] leading-snug"
-                          style={{
-                            color: subtask.completed
-                              ? 'var(--text-muted)'
-                              : 'var(--text-primary)',
-                            textDecoration: subtask.completed
-                              ? 'line-through'
-                              : 'none',
-                          }}
-                        >
-                          {isHtmlContent(subtask.title) ? (
-                            <div
-                              className="[&_.mention]:font-medium [&_.mention:hover]:underline [&_a]:text-[var(--primary)] [&_a:hover]:underline [&_p]:my-0 [&_p]:leading-snug"
-                              dangerouslySetInnerHTML={{
-                                __html: linkifyHtml(
-                                  mentionifyHtml(subtask.title),
-                                ),
-                              }}
-                            />
-                          ) : (
-                            subtask.title
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              {canAddSubtasks && isAddingSubtask && (
-                <div
-                  className="mt-1 rounded px-1 py-0.5"
+                  <ChevronRight
+                    className="h-3 w-3"
+                    style={{ color: 'var(--text-muted)', opacity: 0.6 }}
+                  />
+                )}
+                <span
+                  className="text-[10px] font-semibold tracking-wide uppercase"
+                  style={{ color: 'var(--text-muted)', opacity: 0.6 }}
+                >
+                  Subtasks
+                </span>
+              </button>
+              {hasSubtasks && (
+                <span
+                  className="text-[10px] font-medium"
                   style={{
-                    backgroundColor:
-                      'color-mix(in srgb, var(--surface) 45%, transparent)',
+                    color: allDone ? 'var(--status-done)' : 'var(--text-muted)',
                   }}
                 >
-                  <div className="flex items-center gap-1.5">
-                    <Plus
-                      className="h-3 w-3 flex-shrink-0"
-                      style={{ color: 'var(--text-muted)' }}
-                    />
-                    <SubtaskMentionInput
-                      value={newSubtaskTitle}
-                      onChange={setNewSubtaskTitle}
-                      onCommit={handleAddSubtaskCommit}
-                      commitOnBlur={false}
-                      mentions={subtaskMentions}
-                      placeholder="Add a subtask..."
-                      className="!text-[11px] !leading-snug text-[var(--text-primary)]"
-                      ariaLabel="New subtask title"
-                    />
-                  </div>
-                </div>
+                  {completedCount}/{subtasks.length}
+                </span>
               )}
-            </>
-          )}
-        </div>
+              {canAddSubtasks && !isAddingSubtask && subtasksExpanded && (
+                <button
+                  type="button"
+                  onClick={() => setIsAddingSubtask(true)}
+                  className="ml-auto inline-flex items-center gap-1 rounded px-1 py-0.5 text-[10px] transition-colors hover:bg-white/5"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  <Plus className="h-2.5 w-2.5" />
+                  Add
+                </button>
+              )}
+            </div>
+            {(subtasksExpanded || (!hasSubtasks && isAddingSubtask)) && (
+              <>
+                {hasSubtasks &&
+                  (canInlineEditSubtasks ? (
+                    <DndContext
+                      sensors={subtaskSensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleSubtaskDragEnd}
+                    >
+                      <SortableContext
+                        items={subtasks.map((subtask) =>
+                          subtaskDndId(subtask.id),
+                        )}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div className="space-y-0.5">
+                          {subtasks.map((subtask) => (
+                            <SortableEditableSubtaskRow
+                              key={subtask.id}
+                              subtask={subtask}
+                              onToggle={() =>
+                                handleSubtaskToggle(
+                                  subtask.id,
+                                  !subtask.completed,
+                                )
+                              }
+                              onTitleChange={(title) =>
+                                handleSubtaskTitleChange(subtask.id, title)
+                              }
+                              onTitleCommit={() =>
+                                handleSubtaskTitleCommit(subtask.id)
+                              }
+                              onDelete={() => handleSubtaskDelete(subtask.id)}
+                              mentions={subtaskMentions}
+                            />
+                          ))}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
+                  ) : (
+                    <div className="space-y-0.5">
+                      {subtasks.map((subtask) => (
+                        <div
+                          key={subtask.id}
+                          className="flex w-full items-center gap-2 rounded px-0.5 py-0.5 text-left"
+                        >
+                          {subtask.completed ? (
+                            <CheckSquare
+                              className="h-3.5 w-3.5 flex-shrink-0"
+                              style={{ color: 'var(--status-done)' }}
+                            />
+                          ) : (
+                            <Square
+                              className="h-3.5 w-3.5 flex-shrink-0"
+                              style={{ color: 'var(--text-muted)' }}
+                            />
+                          )}
+                          <div
+                            className="text-[11px] leading-snug"
+                            style={{
+                              color: subtask.completed
+                                ? 'var(--text-muted)'
+                                : 'var(--text-primary)',
+                              textDecoration: subtask.completed
+                                ? 'line-through'
+                                : 'none',
+                            }}
+                          >
+                            {isHtmlContent(subtask.title) ? (
+                              <div
+                                className="[&_.mention]:font-medium [&_.mention:hover]:underline [&_a]:text-[var(--primary)] [&_a:hover]:underline [&_p]:my-0 [&_p]:leading-snug"
+                                dangerouslySetInnerHTML={{
+                                  __html: linkifyHtml(
+                                    mentionifyHtml(subtask.title),
+                                  ),
+                                }}
+                              />
+                            ) : (
+                              subtask.title
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                {canAddSubtasks && isAddingSubtask && (
+                  <div
+                    className="mt-1 rounded px-1 py-0.5"
+                    style={{
+                      backgroundColor:
+                        'color-mix(in srgb, var(--surface) 45%, transparent)',
+                    }}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <Plus
+                        className="h-3 w-3 flex-shrink-0"
+                        style={{ color: 'var(--text-muted)' }}
+                      />
+                      <SubtaskMentionInput
+                        value={newSubtaskTitle}
+                        onChange={setNewSubtaskTitle}
+                        onCommit={handleAddSubtaskCommit}
+                        commitOnBlur={false}
+                        mentions={subtaskMentions}
+                        placeholder="Add a subtask..."
+                        className="!text-[11px] !leading-snug text-[var(--text-primary)]"
+                        ariaLabel="New subtask title"
+                      />
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         ))}
 
       {todo.sessions && todo.sessions.length > 0 && (
@@ -1294,7 +1291,8 @@ export function TodoItem({
     />
   )
 
-  const showCollapsed = isCollapsible && !manuallyExpanded && !blockedExpanded && !dragging
+  const showCollapsed =
+    isCollapsible && !manuallyExpanded && !blockedExpanded && !dragging
 
   return (
     <motion.div
@@ -1313,7 +1311,10 @@ export function TodoItem({
           ? { duration: 0.16, ease: 'easeOut' }
           : { duration: 0.01 }
       }
-      className={cn('min-w-0 transition-opacity duration-150', dragging && 'opacity-50')}
+      className={cn(
+        'min-w-0 transition-opacity duration-150',
+        dragging && 'opacity-50',
+      )}
     >
       {dropIndicator === 'above' && dropLine}
       {showCollapsed ? (
@@ -1338,130 +1339,128 @@ export function TodoItem({
           </div>
         </div>
       ) : (
-      <div className="flex items-center gap-0.5">
-        {/* Reserve a consistent gutter so the card body stays aligned across filters */}
-        <div className="flex w-[18px] flex-shrink-0 justify-center">
-          {viewMode === 'active' && (
-            <button
-              {...attributes}
-              {...listeners}
-              className={cn(
-                'todo-drag-handle cursor-grab touch-none self-center rounded p-0.5 transition-colors',
-                dragging && 'cursor-grabbing',
+        <div className="flex items-center gap-0.5">
+          {/* Reserve a consistent gutter so the card body stays aligned across filters */}
+          <div className="flex w-[18px] flex-shrink-0 justify-center">
+            {viewMode === 'active' && (
+              <button
+                {...attributes}
+                {...listeners}
+                className={cn(
+                  'todo-drag-handle cursor-grab touch-none self-center rounded p-0.5 transition-colors',
+                  dragging && 'cursor-grabbing',
+                )}
+              >
+                <GripVertical className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Card */}
+          <div
+            className={cn(
+              'group todo-card relative min-w-0 flex-1 overflow-visible px-3 py-2.5 transition-all duration-150',
+              dragging ? 'rounded-lg' : 'rounded-l-lg',
+              dragging && 'z-50 shadow-lg',
+              (isCompleted || viewMode !== 'active') && 'opacity-50',
+            )}
+            style={{
+              backgroundColor: 'var(--surface-2)',
+              boxShadow: dragging
+                ? '0 0 0 2px color-mix(in srgb, var(--primary) 30%, transparent)'
+                : undefined,
+            }}
+          >
+            <TodoItemContent
+              todo={todo}
+              onStatusChange={onStatusChange}
+              onPriorityChange={onPriorityChange}
+              onDelete={onDelete}
+              onEdit={onEdit}
+              onRestore={onRestore}
+              onToggleSubtask={onToggleSubtask}
+              onUpdateSubtasks={onUpdateSubtasks}
+              onOpenNote={onOpenNote}
+              people={people}
+              subtaskMentions={subtaskMentions}
+              isDragging={dragging}
+              viewMode={viewMode}
+              onCollapse={
+                manuallyExpanded ? () => setManuallyExpanded(false) : undefined
+              }
+            />
+            <BillingCodesDrawer
+              entries={billingEntries}
+              open={billingOpen}
+              onClose={() => setBillingOpen(false)}
+            />
+            <ContactsDrawer
+              todoId={todo.id}
+              open={contactsOpen}
+              onClose={() => setContactsOpen(false)}
+              people={people}
+            />
+            <StatusUpdatesDrawer
+              todoId={todo.id}
+              open={timelineOpen}
+              onClose={() => setTimelineOpen(false)}
+            />
+          </div>
+
+          {/* Side tabs — stacked vertically */}
+          {!dragging && (
+            <div className="flex flex-shrink-0 flex-col gap-px self-stretch">
+              {hasBillingEntries && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setBillingOpen((prev) => !prev)
+                    setContactsOpen(false)
+                    setTimelineOpen(false)
+                  }}
+                  className={cn(
+                    'todo-billing-tab flex w-5 flex-1 items-center justify-center rounded-tr-lg transition-all duration-150',
+                    billingOpen && 'todo-billing-tab-active',
+                  )}
+                  title="Billing codes"
+                >
+                  <DollarSign className="h-3 w-3" />
+                </button>
               )}
-            >
-              <GripVertical className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-
-        {/* Card */}
-        <div
-          className={cn(
-            'group todo-card relative min-w-0 flex-1 overflow-visible px-3 py-2.5 transition-all duration-150',
-            dragging ? 'rounded-lg' : 'rounded-l-lg',
-            dragging && 'z-50 shadow-lg',
-            (isCompleted || viewMode !== 'active') && 'opacity-50',
-          )}
-          style={{
-            backgroundColor: 'var(--surface-2)',
-            boxShadow: dragging
-              ? '0 0 0 2px color-mix(in srgb, var(--primary) 30%, transparent)'
-              : undefined,
-          }}
-        >
-          <TodoItemContent
-            todo={todo}
-            onStatusChange={onStatusChange}
-            onPriorityChange={onPriorityChange}
-            onDelete={onDelete}
-            onEdit={onEdit}
-            onRestore={onRestore}
-            onToggleSubtask={onToggleSubtask}
-            onUpdateSubtasks={onUpdateSubtasks}
-            onOpenNote={onOpenNote}
-            people={people}
-            subtaskMentions={subtaskMentions}
-            isDragging={dragging}
-            viewMode={viewMode}
-            onCollapse={
-              manuallyExpanded
-                ? () => setManuallyExpanded(false)
-                : undefined
-            }
-          />
-          <BillingCodesDrawer
-            entries={billingEntries}
-            open={billingOpen}
-            onClose={() => setBillingOpen(false)}
-          />
-          <ContactsDrawer
-            todoId={todo.id}
-            open={contactsOpen}
-            onClose={() => setContactsOpen(false)}
-            people={people}
-          />
-          <StatusUpdatesDrawer
-            todoId={todo.id}
-            open={timelineOpen}
-            onClose={() => setTimelineOpen(false)}
-          />
-        </div>
-
-        {/* Side tabs — stacked vertically */}
-        {!dragging && (
-          <div className="flex flex-shrink-0 flex-col gap-px self-stretch">
-            {hasBillingEntries && (
               <button
                 onClick={(e) => {
                   e.stopPropagation()
-                  setBillingOpen((prev) => !prev)
-                  setContactsOpen(false)
+                  setContactsOpen((prev) => !prev)
+                  setBillingOpen(false)
                   setTimelineOpen(false)
                 }}
                 className={cn(
-                  'todo-billing-tab flex w-5 flex-1 items-center justify-center rounded-tr-lg transition-all duration-150',
-                  billingOpen && 'todo-billing-tab-active',
+                  'todo-contacts-tab flex w-5 flex-1 items-center justify-center transition-all duration-150',
+                  !hasBillingEntries && 'rounded-tr-lg',
+                  contactsOpen && 'todo-contacts-tab-active',
                 )}
-                title="Billing codes"
+                title="Contacts"
               >
-                <DollarSign className="h-3 w-3" />
+                <Users className="h-3 w-3" />
               </button>
-            )}
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                setContactsOpen((prev) => !prev)
-                setBillingOpen(false)
-                setTimelineOpen(false)
-              }}
-              className={cn(
-                'todo-contacts-tab flex w-5 flex-1 items-center justify-center transition-all duration-150',
-                !hasBillingEntries && 'rounded-tr-lg',
-                contactsOpen && 'todo-contacts-tab-active',
-              )}
-              title="Contacts"
-            >
-              <Users className="h-3 w-3" />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                setTimelineOpen((prev) => !prev)
-                setBillingOpen(false)
-                setContactsOpen(false)
-              }}
-              className={cn(
-                'todo-timeline-tab flex w-5 flex-1 items-center justify-center rounded-br-lg transition-all duration-150',
-                timelineOpen && 'todo-timeline-tab-active',
-              )}
-              title="Timeline"
-            >
-              <Clock className="h-3 w-3" />
-            </button>
-          </div>
-        )}
-      </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setTimelineOpen((prev) => !prev)
+                  setBillingOpen(false)
+                  setContactsOpen(false)
+                }}
+                className={cn(
+                  'todo-timeline-tab flex w-5 flex-1 items-center justify-center rounded-br-lg transition-all duration-150',
+                  timelineOpen && 'todo-timeline-tab-active',
+                )}
+                title="Timeline"
+              >
+                <Clock className="h-3 w-3" />
+              </button>
+            </div>
+          )}
+        </div>
       )}
       {dropIndicator === 'below' && dropLine}
     </motion.div>

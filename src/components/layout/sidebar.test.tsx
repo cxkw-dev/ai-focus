@@ -23,28 +23,44 @@ vi.mock('next/link', () => ({
 }))
 
 vi.mock('next/image', () => ({
-  default: (props: React.ImgHTMLAttributes<HTMLImageElement>) => <img {...props} />,
+  default: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
+    // eslint-disable-next-line jsx-a11y/alt-text -- test stub forwards alt prop via spread
+    <img {...props} />
+  ),
 }))
 
 vi.mock('framer-motion', () => ({
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  AnimatePresence: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
   motion: new Proxy(
     {},
     {
-      get: (_, tag: string) =>
-        React.forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>(
-          ({ children, ...props }, ref) =>
-            React.createElement(tag, { ref, ...props }, children),
-        ),
+      get: (_, tag: string) => {
+        const Forwarded = React.forwardRef<
+          HTMLElement,
+          React.HTMLAttributes<HTMLElement>
+        >(({ children, ...props }, ref) =>
+          React.createElement(tag, { ref, ...props }, children),
+        )
+        Forwarded.displayName = `motion.${tag}`
+        return Forwarded
+      },
     },
   ),
 }))
 
 vi.mock('@/components/ui/tooltip', () => ({
-  TooltipProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  TooltipProvider: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
   Tooltip: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  TooltipTrigger: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  TooltipContent: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  TooltipTrigger: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
+  TooltipContent: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
 }))
 
 vi.mock('@/hooks/use-vpn-status', () => ({
@@ -81,12 +97,7 @@ describe('Sidebar timesheet link', () => {
   it('re-checks VPN before opening the timesheet when the last known status is disconnected', async () => {
     mockRefetchVpn.mockResolvedValue({ data: true })
 
-    render(
-      <Sidebar
-        collapsed={false}
-        onCollapse={() => {}}
-      />,
-    )
+    render(<Sidebar collapsed={false} onCollapse={() => {}} />)
 
     fireEvent.click(screen.getByRole('button', { name: /timesheet/i }))
 
@@ -106,12 +117,7 @@ describe('Sidebar timesheet link', () => {
   it('keeps the timesheet closed when the VPN re-check still fails', async () => {
     mockRefetchVpn.mockResolvedValue({ data: false })
 
-    render(
-      <Sidebar
-        collapsed={false}
-        onCollapse={() => {}}
-      />,
-    )
+    render(<Sidebar collapsed={false} onCollapse={() => {}} />)
 
     fireEvent.click(screen.getByRole('button', { name: /timesheet/i }))
 

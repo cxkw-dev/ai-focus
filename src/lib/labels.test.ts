@@ -7,9 +7,7 @@ import {
 import type { BillingCode, Label } from '@/types/todo'
 import { describe, expect, it } from 'vitest'
 
-function createBillingCode(
-  overrides: Partial<BillingCode> = {},
-): BillingCode {
+function createBillingCode(overrides: Partial<BillingCode> = {}): BillingCode {
   return {
     id: overrides.id ?? 'billing-1',
     type: overrides.type ?? 'WBS',
@@ -29,8 +27,7 @@ function createLabel(overrides: Partial<Label> = {}): Label {
     id: overrides.id ?? 'label-1',
     name: overrides.name ?? 'Amex',
     color: overrides.color ?? '#22c55e',
-    billingCodes:
-      overrides.billingCodes ?? [createBillingCode()],
+    billingCodes: overrides.billingCodes ?? [createBillingCode()],
     createdAt: overrides.createdAt ?? '2026-04-03T12:00:00.000Z',
     updatedAt: overrides.updatedAt ?? '2026-04-03T12:00:00.000Z',
   }
@@ -49,9 +46,7 @@ describe('labels helpers', () => {
   })
 
   it('builds a descriptive billing title', () => {
-    expect(
-      buildBillingCodeTitle('Amex', createBillingCode()),
-    ).toBe(
+    expect(buildBillingCodeTitle('Amex', createBillingCode())).toBe(
       'Amex · WBS · CUS/00396-0076.L.01 · Amex client work',
     )
   })

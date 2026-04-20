@@ -3,12 +3,7 @@
 import * as React from 'react'
 import { Inbox, CheckCircle2, Trash2 } from 'lucide-react'
 import { TodoItem, BlockedExpandedProvider } from './todo-item'
-import type {
-  Todo,
-  Status,
-  Priority,
-  SubtaskInput,
-} from '@/types/todo'
+import type { Todo, Status, Priority, SubtaskInput } from '@/types/todo'
 import type { Person } from '@/types/person'
 
 export type LabelStatusBoardFilter = 'active' | 'completed' | 'deleted'
@@ -123,10 +118,7 @@ export function LabelStatusBoard({
     return () => ro.disconnect()
   }, [updateHorizontalFades])
 
-  const renderTodoItem = (
-    todo: Todo,
-    viewMode: LabelStatusBoardFilter,
-  ) => (
+  const renderTodoItem = (todo: Todo, viewMode: LabelStatusBoardFilter) => (
     <TodoItem
       key={todo.id}
       todo={todo}
@@ -152,10 +144,7 @@ export function LabelStatusBoard({
         visibleStatusColumns.length === 0 ? (
           <EmptyState
             icon={
-              <Inbox
-                className="h-6 w-6"
-                style={{ color: 'var(--accent)' }}
-              />
+              <Inbox className="h-6 w-6" style={{ color: 'var(--accent)' }} />
             }
             bg="color-mix(in srgb, var(--accent) 15%, transparent)"
             message="No active tasks for this label"
@@ -173,7 +162,7 @@ export function LabelStatusBoard({
                   return (
                     <div
                       key={col.key}
-                      className="flex flex-shrink-0 flex-col md:h-full md:w-72 md:min-w-72 md:max-w-72"
+                      className="flex flex-shrink-0 flex-col md:h-full md:w-72 md:max-w-72 md:min-w-72"
                     >
                       {/* Status column header */}
                       <div className="mb-2 flex items-center gap-2">
@@ -199,9 +188,7 @@ export function LabelStatusBoard({
                       </div>
                       {/* Cards */}
                       <div className="scrollbar-hide flex flex-col gap-1 md:min-h-0 md:flex-1 md:overflow-y-auto md:pr-1">
-                        {colTodos.map((todo) =>
-                          renderTodoItem(todo, 'active'),
-                        )}
+                        {colTodos.map((todo) => renderTodoItem(todo, 'active'))}
                       </div>
                     </div>
                   )
@@ -218,7 +205,7 @@ export function LabelStatusBoard({
                 }}
               />
               <div
-                className="pointer-events-none absolute top-0 bottom-0 right-0 hidden w-10 transition-opacity duration-200 md:block"
+                className="pointer-events-none absolute top-0 right-0 bottom-0 hidden w-10 transition-opacity duration-200 md:block"
                 style={{
                   background:
                     'linear-gradient(to left, var(--background), transparent)',

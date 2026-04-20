@@ -98,25 +98,25 @@ The container connects to your host PostgreSQL via `host.docker.internal:5432`. 
 
 This project uses Prisma 7 with a TypeScript config file. npm scripts handle the `--config` flag:
 
-| Command              | Description                                |
-| -------------------- | ------------------------------------------ |
-| `npm run db:push`    | Sync schema to DB (recommended for dev)    |
-| `npm run db:migrate` | Run migrations (needs CREATE DB permission)|
-| `npm run db:generate`| Regenerate Prisma client                   |
-| `npm run db:studio`  | Open Prisma Studio (visual DB browser)     |
+| Command               | Description                                 |
+| --------------------- | ------------------------------------------- |
+| `npm run db:push`     | Sync schema to DB (recommended for dev)     |
+| `npm run db:migrate`  | Run migrations (needs CREATE DB permission) |
+| `npm run db:generate` | Regenerate Prisma client                    |
+| `npm run db:studio`   | Open Prisma Studio (visual DB browser)      |
 
 ## Scripts
 
-| Command              | Description                  |
-| -------------------- | ---------------------------- |
-| `npm run dev`        | Start dev server (port 4444) |
-| `npm run build`      | Production build             |
-| `npm run start`      | Start production server      |
-| `npm run lint`       | Run ESLint                   |
-| `npm run lint:fix`   | Run ESLint with auto-fix     |
-| `npm run typecheck`  | TypeScript type checking     |
-| `npm run test`       | Run tests                    |
-| `npm run validate`   | Format + lint + test + build |
+| Command             | Description                  |
+| ------------------- | ---------------------------- |
+| `npm run dev`       | Start dev server (port 4444) |
+| `npm run build`     | Production build             |
+| `npm run start`     | Start production server      |
+| `npm run lint`      | Run ESLint                   |
+| `npm run lint:fix`  | Run ESLint with auto-fix     |
+| `npm run typecheck` | TypeScript type checking     |
+| `npm run test`      | Run tests                    |
+| `npm run validate`  | Format + lint + test + build |
 
 ## Tech Stack
 

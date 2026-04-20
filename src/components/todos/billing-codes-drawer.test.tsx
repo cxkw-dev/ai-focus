@@ -89,7 +89,11 @@ describe('BillingCodesDrawer', () => {
   it('resets copy feedback when the drawer closes and reopens', async () => {
     const onClose = vi.fn()
     const { rerender } = render(
-      <BillingCodesDrawer entries={[createEntry()]} open={true} onClose={onClose} />,
+      <BillingCodesDrawer
+        entries={[createEntry()]}
+        open={true}
+        onClose={onClose}
+      />,
     )
 
     fireEvent.click(
@@ -101,7 +105,11 @@ describe('BillingCodesDrawer', () => {
     })
 
     rerender(
-      <BillingCodesDrawer entries={[createEntry()]} open={false} onClose={onClose} />,
+      <BillingCodesDrawer
+        entries={[createEntry()]}
+        open={false}
+        onClose={onClose}
+      />,
     )
 
     await waitFor(() => {
@@ -109,7 +117,11 @@ describe('BillingCodesDrawer', () => {
     })
 
     rerender(
-      <BillingCodesDrawer entries={[createEntry()]} open={true} onClose={onClose} />,
+      <BillingCodesDrawer
+        entries={[createEntry()]}
+        open={true}
+        onClose={onClose}
+      />,
     )
 
     expect(screen.getByText('Copy')).toBeInTheDocument()

@@ -93,18 +93,16 @@ function unwrapTooltipPayload(payload: unknown) {
   return payload
 }
 
-function isLinkPayload(
-  payload: unknown,
-): payload is {
+function isLinkPayload(payload: unknown): payload is {
   source: FocusFlowNode
   target: FocusFlowNode
   value: number
 } {
   return Boolean(
     payload &&
-      typeof payload === 'object' &&
-      'source' in payload &&
-      'target' in payload,
+    typeof payload === 'object' &&
+    'source' in payload &&
+    'target' in payload,
   )
 }
 
@@ -288,7 +286,8 @@ export function FocusSankeyChart({ data, colors }: FocusSankeyChartProps) {
           <div
             className="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-[0.18em] uppercase"
             style={{
-              borderColor: 'color-mix(in srgb, var(--primary) 24%, var(--border-color))',
+              borderColor:
+                'color-mix(in srgb, var(--primary) 24%, var(--border-color))',
               color: 'var(--primary)',
               backgroundColor:
                 'color-mix(in srgb, var(--primary) 8%, var(--surface))',
@@ -388,10 +387,7 @@ export function FocusSankeyChart({ data, colors }: FocusSankeyChartProps) {
               >
                 <Tooltip
                   content={
-                    <FocusTooltip
-                      colors={colors}
-                      monthPalette={monthPalette}
-                    />
+                    <FocusTooltip colors={colors} monthPalette={monthPalette} />
                   }
                 />
               </Sankey>

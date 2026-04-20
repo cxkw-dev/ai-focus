@@ -22,18 +22,16 @@ export const subtaskInputSchema = z.object({
   order: z.number().int(),
 })
 
-const subtaskArraySchema = z
-  .array(subtaskInputSchema)
-  .refine(
-    (subtasks) => {
-      const ids = subtasks
-        .map((subtask) => subtask.id)
-        .filter((subtaskId): subtaskId is string => Boolean(subtaskId))
+const subtaskArraySchema = z.array(subtaskInputSchema).refine(
+  (subtasks) => {
+    const ids = subtasks
+      .map((subtask) => subtask.id)
+      .filter((subtaskId): subtaskId is string => Boolean(subtaskId))
 
-      return new Set(ids).size === ids.length
-    },
-    { message: 'Subtask ids must be unique' },
-  )
+    return new Set(ids).size === ids.length
+  },
+  { message: 'Subtask ids must be unique' },
+)
 
 export const createTodoSchema = z.object({
   title: z.string().trim().min(1, 'Title is required').max(200),

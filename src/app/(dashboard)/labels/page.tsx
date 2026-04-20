@@ -39,7 +39,8 @@ export default function LabelsPage() {
         className="overflow-hidden rounded-xl border"
         style={{
           borderColor: 'var(--border-color)',
-          backgroundColor: 'color-mix(in srgb, var(--surface) 82%, transparent)',
+          backgroundColor:
+            'color-mix(in srgb, var(--surface) 82%, transparent)',
         }}
       >
         <div
@@ -61,7 +62,10 @@ export default function LabelsPage() {
                   Labels & Billing Codes
                 </h2>
               </div>
-              <p className="max-w-2xl text-sm" style={{ color: 'var(--text-muted)' }}>
+              <p
+                className="max-w-2xl text-sm"
+                style={{ color: 'var(--text-muted)' }}
+              >
                 Manage reusable labels and the SAP HANA billing codes linked to
                 each one. Tasks can expose those codes from a dedicated billing
                 drawer so you can open the list and copy the exact one you need.
@@ -114,7 +118,9 @@ export default function LabelsPage() {
           >
             <div className="flex items-center gap-2 text-sm font-semibold">
               <Tags className="h-4 w-4" style={{ color: 'var(--primary)' }} />
-              <span style={{ color: 'var(--text-primary)' }}>Label identity</span>
+              <span style={{ color: 'var(--text-primary)' }}>
+                Label identity
+              </span>
             </div>
             <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
               Each label keeps its name and color so your todo columns and chips
@@ -140,8 +146,8 @@ export default function LabelsPage() {
               </span>
             </div>
             <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-              Add one or more billing codes with a type and optional
-              description when that label needs SAP-ready copy targets.
+              Add one or more billing codes with a type and optional description
+              when that label needs SAP-ready copy targets.
             </p>
           </div>
         </div>

@@ -76,7 +76,10 @@ export function buildReviewFocusFlow(todos: FocusFlowTodo[]): FocusFlowData {
     const monthMap = monthBuckets.get(month) ?? new Map<string, number>()
 
     if (todo.labels.length === 0) {
-      monthMap.set(UNLABELED_FOCUS_ID, (monthMap.get(UNLABELED_FOCUS_ID) ?? 0) + 1)
+      monthMap.set(
+        UNLABELED_FOCUS_ID,
+        (monthMap.get(UNLABELED_FOCUS_ID) ?? 0) + 1,
+      )
       bucketTotals.set(
         UNLABELED_FOCUS_ID,
         (bucketTotals.get(UNLABELED_FOCUS_ID) ?? 0) + 1,
@@ -133,14 +136,16 @@ export function buildReviewFocusFlow(todos: FocusFlowTodo[]): FocusFlowData {
     .filter((node) => node.total > 0)
     .sort((a, b) => (a.month ?? 0) - (b.month ?? 0))
 
-  const focusNodes: FocusFlowNode[] = featuredBuckets.map(({ meta, total }) => ({
-    id: meta.id,
-    name: meta.name,
-    shortLabel: meta.shortLabel,
-    kind: meta.kind,
-    total: roundFlow(total),
-    labelColor: meta.labelColor,
-  }))
+  const focusNodes: FocusFlowNode[] = featuredBuckets.map(
+    ({ meta, total }) => ({
+      id: meta.id,
+      name: meta.name,
+      shortLabel: meta.shortLabel,
+      kind: meta.kind,
+      total: roundFlow(total),
+      labelColor: meta.labelColor,
+    }),
+  )
 
   if (otherTotal > 0) {
     focusNodes.push({

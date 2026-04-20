@@ -96,10 +96,7 @@ export const todosApi = {
       withJsonBody({ completed }, { method: 'PATCH' }),
     ),
 
-  createSession: (
-    todoId: string,
-    data: CreateSessionInput,
-  ): Promise<Session> =>
+  createSession: (todoId: string, data: CreateSessionInput): Promise<Session> =>
     requestJson(
       `/api/todos/${todoId}/sessions`,
       withJsonBody(data, { method: 'POST' }),

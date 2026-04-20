@@ -90,14 +90,14 @@ There is no `TOOL` enum value: tool calls and tool results live as parts inside 
 
 All routes live under `src/app/api/chat/`.
 
-| Method | Path | Purpose |
-|---|---|---|
-| `POST` | `/api/chat/threads` | Create empty thread |
-| `GET` | `/api/chat/threads` | List threads sorted by `updatedAt DESC` (returns `id, title, updatedAt, messageCount`) |
-| `GET` | `/api/chat/threads/:id` | Get one thread + ordered messages |
-| `PATCH` | `/api/chat/threads/:id` | Inline rename (`{ title }`) |
-| `DELETE` | `/api/chat/threads/:id` | Delete thread (cascades messages) |
-| `POST` | `/api/chat/threads/:id/messages` | Streaming chat endpoint — accepts new user message, runs TanStack AI agent loop (including paused approval flow), streams SSE response |
+| Method   | Path                             | Purpose                                                                                                                                |
+| -------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST`   | `/api/chat/threads`              | Create empty thread                                                                                                                    |
+| `GET`    | `/api/chat/threads`              | List threads sorted by `updatedAt DESC` (returns `id, title, updatedAt, messageCount`)                                                 |
+| `GET`    | `/api/chat/threads/:id`          | Get one thread + ordered messages                                                                                                      |
+| `PATCH`  | `/api/chat/threads/:id`          | Inline rename (`{ title }`)                                                                                                            |
+| `DELETE` | `/api/chat/threads/:id`          | Delete thread (cascades messages)                                                                                                      |
+| `POST`   | `/api/chat/threads/:id/messages` | Streaming chat endpoint — accepts new user message, runs TanStack AI agent loop (including paused approval flow), streams SSE response |
 
 ### 5.1 Streaming chat route shape
 
@@ -109,7 +109,7 @@ import { db } from '@/lib/db'
 import { agentTools, AGENT_SYSTEM_PROMPT } from '@/lib/agent-tools'
 import { persistOnComplete, toAgentMessages } from '@/lib/agent-tools/streaming'
 
-export const runtime = 'nodejs'  // not edge — needs Prisma + node fetch + child fetch to localhost
+export const runtime = 'nodejs' // not edge — needs Prisma + node fetch + child fetch to localhost
 
 export async function POST(
   req: Request,
@@ -178,18 +178,18 @@ src/lib/agent-tools/
 
 ### 6.1 Tool inventory (41 tools)
 
-| Module | Tools |
-|---|---|
-| **todos** | `list_todos`, `get_todo`, `create_todo`, `update_todo`, `delete_todo`, `archive_todo`, `restore_todo`, `complete_todo`, `start_todo`, `search_todos`, `toggle_subtask`, `reorder_todos` |
-| **labels** | `list_labels`, `create_label`, `update_label`, `delete_label` |
-| **notebook** | `list_notes`, `get_note`, `create_note`, `update_note`, `delete_note`, `get_scratchpad`, `update_scratchpad` |
-| **people** | `list_people`, `create_person`, `update_person`, `delete_person` |
-| **contacts** | `list_todo_contacts`, `add_todo_contact`, `remove_todo_contact` |
-| **accomplishments** | `list_accomplishments`, `create_accomplishment`, `update_accomplishment`, `delete_accomplishment` |
-| **status updates** | `add_status_update`, `list_status_updates` |
-| **sessions** | `add_session`, `remove_session` |
-| **azure** | `get_azure_work_item_context`, `get_todo_execution_context` |
-| **stats** | `get_year_stats` |
+| Module              | Tools                                                                                                                                                                                   |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **todos**           | `list_todos`, `get_todo`, `create_todo`, `update_todo`, `delete_todo`, `archive_todo`, `restore_todo`, `complete_todo`, `start_todo`, `search_todos`, `toggle_subtask`, `reorder_todos` |
+| **labels**          | `list_labels`, `create_label`, `update_label`, `delete_label`                                                                                                                           |
+| **notebook**        | `list_notes`, `get_note`, `create_note`, `update_note`, `delete_note`, `get_scratchpad`, `update_scratchpad`                                                                            |
+| **people**          | `list_people`, `create_person`, `update_person`, `delete_person`                                                                                                                        |
+| **contacts**        | `list_todo_contacts`, `add_todo_contact`, `remove_todo_contact`                                                                                                                         |
+| **accomplishments** | `list_accomplishments`, `create_accomplishment`, `update_accomplishment`, `delete_accomplishment`                                                                                       |
+| **status updates**  | `add_status_update`, `list_status_updates`                                                                                                                                              |
+| **sessions**        | `add_session`, `remove_session`                                                                                                                                                         |
+| **azure**           | `get_azure_work_item_context`, `get_todo_execution_context`                                                                                                                             |
+| **stats**           | `get_year_stats`                                                                                                                                                                        |
 
 Each tool is a `toolDefinition().server()` whose implementation makes a single internal `fetch` to the matching REST endpoint. Input zod schemas are duplicated from `mcp-server/src/tools/*.ts`. The `taskNumber → cuid` resolver and `formatTodoSummary` are duplicated from `mcp-server/src/helpers.ts`.
 
@@ -205,7 +205,10 @@ import { toolDefinition } from '@tanstack/ai'
 const deleteTodoDef = toolDefinition({
   name: 'delete_todo',
   description: 'Permanently delete a todo by taskNumber or id.',
-  inputSchema: z.object({ taskNumber: z.number().int().positive().optional(), id: z.string().optional() }),
+  inputSchema: z.object({
+    taskNumber: z.number().int().positive().optional(),
+    id: z.string().optional(),
+  }),
   outputSchema: z.object({ success: z.boolean() }),
   needsApproval: true,
 })
@@ -222,10 +225,14 @@ const deleteTodo = deleteTodoDef.server(async ({ taskNumber, id }) => {
 
 ```ts
 const DESTRUCTIVE_TOOL_NAMES = new Set([
-  'delete_todo', 'delete_label', 'delete_note',
-  'delete_person', 'delete_accomplishment',
+  'delete_todo',
+  'delete_label',
+  'delete_note',
+  'delete_person',
+  'delete_accomplishment',
   'archive_todo',
-  'remove_todo_contact', 'remove_session',
+  'remove_todo_contact',
+  'remove_session',
 ])
 ```
 
@@ -242,14 +249,20 @@ The same `POST /api/chat/threads/:id/messages` SSE stream stays open across the 
 **Client flow.** The `useChat` hook returns `addToolApprovalResponse({ id, approved })` along with `messages`. The drawer renders messages by walking each message's `parts` array and matching on `part.type === 'tool-call'`:
 
 ```tsx
-{part.type === 'tool-call' && part.state === 'approval-requested' && (
-  <ChatConfirmationCard
-    toolName={part.name}
-    args={part.arguments}
-    onConfirm={() => addToolApprovalResponse({ id: part.approval.id, approved: true })}
-    onDeny={() => addToolApprovalResponse({ id: part.approval.id, approved: false })}
-  />
-)}
+{
+  part.type === 'tool-call' && part.state === 'approval-requested' && (
+    <ChatConfirmationCard
+      toolName={part.name}
+      args={part.arguments}
+      onConfirm={() =>
+        addToolApprovalResponse({ id: part.approval.id, approved: true })
+      }
+      onDeny={() =>
+        addToolApprovalResponse({ id: part.approval.id, approved: false })
+      }
+    />
+  )
+}
 ```
 
 When the user approves, the framework resumes the paused server tool, runs its `.server()` body, captures the result, and continues the agent loop. When the user denies, the framework injects a rejection result back to the LLM so it can react (apologize, offer an alternative, etc.) — all on the same stream.
@@ -287,6 +300,7 @@ Current date: {TODAY}
 ### 7.1 Remove Compact/Comfortable
 
 Files touched:
+
 - `src/app/(dashboard)/todos/page.tsx` — delete the `compact` state and `toggleCompact` callback (`:53-64`), the toggle button JSX (`:288-310`), the `Rows3` import, and the `compact` props passed to `TodoColumn`.
 - `src/components/todos/todo-column.tsx` — drop `compact` from `TodoColumnProps` and stop forwarding it.
 - `src/components/todos/todo-item.tsx` — drop the `compact` prop and any conditional density styling it gates.
@@ -297,6 +311,7 @@ The `Show blocked` button at `src/app/(dashboard)/todos/page.tsx:268-287` is lef
 ### 7.2 Relocate Ollama status to sidebar
 
 Files touched:
+
 - `src/components/layout/header.tsx` — delete the `OllamaStatus` component (`:21-88`), its `useOllamaStatus` import, and the `<OllamaStatus />` render at `:126`. The header `actions` slot is now free.
 - `src/components/layout/sidebar.tsx` — render a new Ollama status block immediately above the existing `bottomNavItems` `<nav>` (`:238`). Uses the same `useOllamaStatus` hook and the same green/red dot pattern. Two variants:
   - **Collapsed sidebar:** dot indicator only, wrapped in a Tooltip showing `model • connected/unreachable • url`. Matches the timesheet button's collapsed treatment at `:218-227`.
@@ -320,6 +335,7 @@ src/components/chat/
 **Container:** built on `@radix-ui/react-dialog` (already installed). Width `420px` desktop, full-width mobile. Internal two-pane layout: 160px-wide thread sidebar on the left (collapsible on narrow screens) + active conversation on the right.
 
 **Hooks:**
+
 - `src/hooks/use-chat-threads.ts` — React Query wrapper around `/api/chat/threads` CRUD with optimistic updates for rename and delete.
 - `src/hooks/use-chat-messages.ts` — wraps `@tanstack/ai-react`'s `useChat` configured with `fetchServerSentEvents('/api/chat/threads/:id/messages')`. Hydrates initial messages from `GET /api/chat/threads/:id` so revisiting a past thread loads its history.
 - `src/hooks/use-chat-drawer.ts` — small React context for `{ isOpen, activeThreadId, openDrawer, closeDrawer, setActiveThread }`. Mounted at the dashboard layout level so the trigger (header) and drawer (layout root) can share state.
@@ -335,6 +351,7 @@ src/components/chat/
 Default model switches from `gemma3:latest` to `gemma4:latest`.
 
 Files touched:
+
 - `src/app/api/ollama/route.ts:4` — `OLLAMA_MODEL` default.
 - `src/lib/accomplishment-agent.ts:5` — `OLLAMA_MODEL` default.
 - `.env.example` (if present) — document the new default.
@@ -350,14 +367,17 @@ npm install @tanstack/ai @tanstack/ai-ollama @tanstack/ai-react react-markdown
 ## 10. Testing
 
 **Unit (vitest):**
+
 - `src/lib/agent-tools/helpers.ts` — taskNumber resolution, formatting helpers.
 - `src/lib/agent-tools/streaming.ts` — `persistOnComplete` wrapper against a mocked TanStack AI stream, asserting DB writes on completion.
 - Tool catalog smoke test — every tool in `agentTools` has a non-empty description and a parseable zod input schema.
 
 **Integration:**
+
 - A single end-to-end test that boots a fake Ollama responder (returning a canned tool-call → tool-result → final-text sequence), spins up the chat route, and asserts the resulting `ChatMessage` rows match expectations.
 
 **Manual smoke checklist** (in the implementation plan, not the spec):
+
 - Open drawer from header button.
 - Start new chat → ask "list my todos" → verify `list_todos` tool runs and assistant summarizes.
 - Ask "create a task called X with priority high" → verify task appears in todos page (cross-tab via SSE).

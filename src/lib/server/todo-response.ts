@@ -40,11 +40,13 @@ export function validateTodosForResponse<T extends TodoWithRelations[]>(
   return todos
 }
 
-export function validateTodoBoardForResponse<T extends {
-  active: TodoWithRelations[]
-  completed: TodoWithRelations[]
-  deleted: TodoWithRelations[]
-}>(board: T) {
+export function validateTodoBoardForResponse<
+  T extends {
+    active: TodoWithRelations[]
+    completed: TodoWithRelations[]
+    deleted: TodoWithRelations[]
+  },
+>(board: T) {
   validateTodosForResponse(board.active)
   validateTodosForResponse(board.completed)
   validateTodosForResponse(board.deleted)

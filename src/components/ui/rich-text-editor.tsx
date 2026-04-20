@@ -193,7 +193,9 @@ export function RichTextEditor({
         canUndo: editorInstance.can().undo(),
         canRedo: editorInstance.can().redo(),
         isFocused: editorInstance.isFocused,
-        fontSize: (editorInstance.getAttributes('textStyle').fontSize as string) || null,
+        fontSize:
+          (editorInstance.getAttributes('textStyle').fontSize as string) ||
+          null,
       }
     },
   })

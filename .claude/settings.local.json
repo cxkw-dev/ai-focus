@@ -67,7 +67,11 @@
       "Bash(wc -l /Users/andynguyen/ai-focus/mcp-server/src/*.ts /Users/andynguyen/ai-focus/mcp-server/src/tools/*.ts)",
       "Bash(npx husky:*)",
       "Bash(PGPASSWORD=\"\" psql -h localhost -U postgres -d aifocus -c \"\\\\d \\\\\"Todo\\\\\"\")",
-      "Bash(npx prettier:*)"
+      "Bash(npx prettier:*)",
+      "Bash(git -c commit.gpgsign=false commit -m \"add package updates + test suite design spec\")",
+      "Bash(npm test *)",
+      "Bash(git -c commit.gpgsign=false commit -m \"add implementation plan for package updates + test suite\")",
+      "Bash(git -c commit.gpgsign=false commit -m \"chore: fix pre-existing prettier and lint issues to unblock validate gate\")"
     ]
   }
 }

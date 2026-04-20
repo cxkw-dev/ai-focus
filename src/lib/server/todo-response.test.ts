@@ -52,7 +52,10 @@ function createTodo(overrides: Partial<TodoResponse> = {}): TodoResponse {
 describe('todo-response', () => {
   it('accepts todos with supported session tools', () => {
     const todo = createTodo({
-      sessions: [createSession({ tool: 'codex' }), createSession({ tool: 'claude' })],
+      sessions: [
+        createSession({ tool: 'codex' }),
+        createSession({ tool: 'claude' }),
+      ],
     })
 
     expect(validateTodoForResponse(todo)).toBe(todo)

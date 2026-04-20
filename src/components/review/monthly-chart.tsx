@@ -77,7 +77,9 @@ function getPressureMonth(data: MonthlyStoryPoint[]) {
 }
 
 function getStorySummary(data: MonthlyStoryPoint[]) {
-  const monthsWithWork = data.filter((month) => month.created > 0 || month.completed > 0)
+  const monthsWithWork = data.filter(
+    (month) => month.created > 0 || month.completed > 0,
+  )
   if (monthsWithWork.length === 0) {
     return {
       insight: 'No task activity yet for this year.',
@@ -91,7 +93,8 @@ function getStorySummary(data: MonthlyStoryPoint[]) {
   const peakCompleted = getPeakMonth(monthsWithWork, 'completed')
   const catchUpMonth = getPeakMonth(monthsWithWork, 'delta', true)
   const pressureMonth = getPressureMonth(monthsWithWork)
-  const finalBalance = monthsWithWork[monthsWithWork.length - 1]?.runningBalance ?? 0
+  const finalBalance =
+    monthsWithWork[monthsWithWork.length - 1]?.runningBalance ?? 0
 
   let insight = `${peakCompleted?.label ?? monthsWithWork[0].label} was your strongest delivery month.`
 
@@ -185,8 +188,10 @@ function MonthlyStoryTooltip({
 
 export function MonthlyChart({ data, colors }: MonthlyChartProps) {
   const storyData = React.useMemo(() => buildStoryData(data), [data])
-  const { insight, pressureLabel, catchUpLabel, balanceLabel } =
-    React.useMemo(() => getStorySummary(storyData), [storyData])
+  const { insight, pressureLabel, catchUpLabel, balanceLabel } = React.useMemo(
+    () => getStorySummary(storyData),
+    [storyData],
+  )
   const hasActivity = storyData.some(
     (month) => month.created > 0 || month.completed > 0,
   )
@@ -234,11 +239,7 @@ export function MonthlyChart({ data, colors }: MonthlyChartProps) {
         </div>
 
         <div className="flex flex-wrap gap-2 lg:max-w-[240px] lg:justify-end">
-          {[
-            pressureLabel,
-            catchUpLabel,
-            balanceLabel,
-          ].map((label) => (
+          {[pressureLabel, catchUpLabel, balanceLabel].map((label) => (
             <div
               key={label}
               className="rounded-full border px-3 py-1.5 text-sm"

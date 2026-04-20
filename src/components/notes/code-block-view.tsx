@@ -54,12 +54,12 @@ export function CodeBlockView({
 
   const currentLang = (node.attrs.language as string) || ''
   const currentLabel =
-    LANGUAGES.find((l) => l.value === currentLang)?.label || currentLang || 'plain text'
+    LANGUAGES.find((l) => l.value === currentLang)?.label ||
+    currentLang ||
+    'plain text'
 
   const filtered = search
-    ? LANGUAGES.filter((l) =>
-        l.label.includes(search.toLowerCase()),
-      )
+    ? LANGUAGES.filter((l) => l.label.includes(search.toLowerCase()))
     : LANGUAGES
 
   React.useEffect(() => {

@@ -34,13 +34,8 @@ export function useLabels() {
   })
 
   const update = useMutation({
-    mutationFn: ({
-      id,
-      data,
-    }: {
-      id: string
-      data: UpdateLabelInput
-    }) => labelsApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: UpdateLabelInput }) =>
+      labelsApi.update(id, data),
     onSuccess: (updatedLabel) => {
       queryClient.setQueryData<Label[]>(queryKeys.labels, (prev = []) =>
         prev
@@ -89,10 +84,7 @@ export function useLabels() {
     }
   }
 
-  const handleUpdate = async (
-    id: string,
-    data: UpdateLabelInput,
-  ) => {
+  const handleUpdate = async (id: string, data: UpdateLabelInput) => {
     try {
       await update.mutateAsync({ id, data })
       return true

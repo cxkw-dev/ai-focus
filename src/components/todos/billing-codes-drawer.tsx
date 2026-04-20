@@ -60,19 +60,22 @@ export function BillingCodesDrawer({
   }, [entries])
   const showLabelContext = groupedEntries.length > 1
 
-  const setTemporaryFeedback = React.useCallback((feedback: CopyFeedback) => {
-    setCopyFeedback(feedback)
+  const setTemporaryFeedback = React.useCallback(
+    (feedback: CopyFeedback) => {
+      setCopyFeedback(feedback)
 
-    clearFeedbackTimeout()
+      clearFeedbackTimeout()
 
-    feedbackTimeoutRef.current = setTimeout(
-      () => {
-        setCopyFeedback(null)
-        feedbackTimeoutRef.current = null
-      },
-      feedback.status === 'copied' ? 1600 : 2200,
-    )
-  }, [clearFeedbackTimeout])
+      feedbackTimeoutRef.current = setTimeout(
+        () => {
+          setCopyFeedback(null)
+          feedbackTimeoutRef.current = null
+        },
+        feedback.status === 'copied' ? 1600 : 2200,
+      )
+    },
+    [clearFeedbackTimeout],
+  )
 
   const handleCopy = React.useCallback(
     async (entry: BillingCodeEntry) => {

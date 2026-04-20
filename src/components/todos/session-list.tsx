@@ -68,9 +68,7 @@ export function SessionList({
 
     return SESSION_TOOL_VALUES.flatMap((tool) => {
       const toolSessions = groups[tool]
-      return toolSessions.length > 0
-        ? [{ tool, toolSessions }]
-        : []
+      return toolSessions.length > 0 ? [{ tool, toolSessions }] : []
     })
   }, [sessions])
 

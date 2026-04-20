@@ -85,7 +85,7 @@ function OllamaStatusBar({ collapsed }: { collapsed: boolean }) {
             animate={{ opacity: 1, width: 'auto' }}
             exit={{ opacity: 0, width: 0 }}
             transition={{ duration: 0.15 }}
-            className="overflow-hidden truncate whitespace-nowrap"
+            className="truncate overflow-hidden whitespace-nowrap"
           >
             {model || 'ollama'}
           </motion.span>
@@ -180,13 +180,13 @@ export function Sidebar({
   transition = { duration: 0.2, ease: 'easeInOut' },
 }: SidebarProps) {
   const pathname = usePathname()
-  const { data: vpnConnected, isLoading: vpnLoading, refetch: refetchVpn } =
-    useVpnStatus()
+  const {
+    data: vpnConnected,
+    isLoading: vpnLoading,
+    refetch: refetchVpn,
+  } = useVpnStatus()
 
-  type TimesheetTooltipState =
-    | 'idle'
-    | 'checking'
-    | 'still-disconnected'
+  type TimesheetTooltipState = 'idle' | 'checking' | 'still-disconnected'
   const [tooltipState, setTooltipState] =
     React.useState<TimesheetTooltipState>('idle')
   const [isTimesheetHovered, setIsTimesheetHovered] = React.useState(false)
@@ -292,13 +292,14 @@ export function Sidebar({
           className={`absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full border ${tooltipState === 'checking' ? 'animate-pulse' : ''}`}
           style={{
             borderColor: 'var(--surface)',
-            backgroundColor: tooltipState === 'checking'
-              ? 'var(--primary)'
-              : vpnLoading
-              ? 'var(--text-muted)'
-              : vpnConnected
-                ? '#22c55e'
-                : '#ef4444',
+            backgroundColor:
+              tooltipState === 'checking'
+                ? 'var(--primary)'
+                : vpnLoading
+                  ? 'var(--text-muted)'
+                  : vpnConnected
+                    ? '#22c55e'
+                    : '#ef4444',
           }}
         />
       </span>
