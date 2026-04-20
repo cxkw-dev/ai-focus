@@ -129,9 +129,16 @@ async function applyStatusTransition(
     transition.statusChangedAt = new Date()
   }
 
-  const terminalStatuses = [PrismaStatus.COMPLETED, PrismaStatus.CANCELLED] as const
-  const isTerminal = terminalStatuses.includes(nextStatus as (typeof terminalStatuses)[number])
-  const wasTerminal = terminalStatuses.includes(todo.status as (typeof terminalStatuses)[number])
+  const terminalStatuses = [
+    PrismaStatus.COMPLETED,
+    PrismaStatus.CANCELLED,
+  ] as const
+  const isTerminal = terminalStatuses.includes(
+    nextStatus as (typeof terminalStatuses)[number],
+  )
+  const wasTerminal = terminalStatuses.includes(
+    todo.status as (typeof terminalStatuses)[number],
+  )
 
   if (isTerminal) {
     transition.archived = true
@@ -335,33 +342,40 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const todo = await db.todo.findUnique({
-      where: todoWhere(id),
-      select: { id: true, notebookNoteId: true },
+
+    const deletedNoteId = await db.$transaction(async (tx) => {
+      const todo = await tx.todo.findUnique({
+        where: todoWhere(id),
+        select: { id: true, notebookNoteId: true },
+      })
+
+      if (!todo) {
+        throw createRouteError('todoNotFound')
+      }
+
+      await tx.accomplishment.deleteMany({ where: { todoId: todo.id } })
+      await tx.todo.delete({ where: { id: todo.id } })
+
+      if (todo.notebookNoteId) {
+        await tx.notebookNote
+          .delete({ where: { id: todo.notebookNoteId } })
+          .catch(() => {})
+      }
+
+      return todo.notebookNoteId
     })
 
-    if (!todo) {
-      return notFound('Todo not found')
-    }
-
-    await db.accomplishment.deleteMany({ where: { todoId: todo.id } })
-
-    if (todo.notebookNoteId) {
-      await db.notebookNote
-        .delete({ where: { id: todo.notebookNoteId } })
-        .catch(() => {})
-    }
-
-    await db.todo.delete({ where: { id: todo.id } })
-
     emit('todos')
-    if (todo.notebookNoteId) {
+    if (deletedNoteId) {
       emit('notebook')
     }
 
     return ok({ success: true })
   } catch (error) {
-    if (isPrismaErrorCode(error, 'P2025')) {
+    if (
+      isRouteError(error, 'todoNotFound') ||
+      isPrismaErrorCode(error, 'P2025')
+    ) {
       return notFound('Todo not found')
     }
 

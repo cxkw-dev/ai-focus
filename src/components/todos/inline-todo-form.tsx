@@ -295,7 +295,7 @@ export function InlineTodoForm({
                 <div className="space-y-1">
                   {form.subtasks.map((subtask, index) => (
                     <div
-                      key={index}
+                      key={subtask.id ?? `subtask-${index}`}
                       className="group/subtask flex items-center gap-2"
                     >
                       <span
@@ -439,7 +439,6 @@ export function InlineTodoForm({
           )}
         </div>
       </div>
-
     </form>
   )
 }

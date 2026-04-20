@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { emit } from '@/lib/events'
 import { z } from 'zod'
 
 const updateNoteSchema = z.object({
@@ -69,6 +70,7 @@ export async function PATCH(
       },
     })
 
+    emit('notebook')
     return NextResponse.json(note)
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -96,6 +98,7 @@ export async function DELETE(
       where: { id },
     })
 
+    emit('notebook')
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error deleting notebook note:', error)

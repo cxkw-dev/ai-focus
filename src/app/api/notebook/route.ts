@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { emit } from '@/lib/events'
 import { z } from 'zod'
 
 const createNoteSchema = z.object({
@@ -56,6 +57,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    emit('notebook')
     return NextResponse.json(note, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {

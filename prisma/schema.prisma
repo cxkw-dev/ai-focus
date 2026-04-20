@@ -159,8 +159,7 @@ model StatusUpdate {
   todo      Todo     @relation(fields: [todoId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
-  @@index([todoId])
-  @@index([createdAt])
+  @@index([todoId, createdAt])
 }
 
 model Session {
@@ -172,8 +171,7 @@ model Session {
   todoId      String
   todo        Todo     @relation(fields: [todoId], references: [id], onDelete: Cascade)
 
-  @@index([todoId])
-  @@index([createdAt])
+  @@index([todoId, createdAt])
 }
 
 enum ChatRole {
