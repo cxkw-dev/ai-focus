@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { ZodError } from 'zod'
+import { ZodError, ZodIssueCode } from 'zod'
 
 export function ok<T>(data: T, init?: ResponseInit) {
   return NextResponse.json(data, init)
@@ -45,6 +45,23 @@ export async function parseJsonBody<T>(
   request: Request,
   schema: { parse(data: unknown): T },
 ): Promise<T> {
-  const body = await request.json()
+  let body: unknown
+
+  try {
+    body = await request.json()
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      throw new ZodError([
+        {
+          code: ZodIssueCode.custom,
+          path: [],
+          message: 'Request body must be valid JSON',
+        },
+      ])
+    }
+
+    throw error
+  }
+
   return schema.parse(body)
 }

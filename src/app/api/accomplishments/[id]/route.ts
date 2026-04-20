@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { parseJsonBody } from '@/lib/server/api-responses'
 import { z } from 'zod'
 
 const CATEGORIES = [
@@ -27,8 +28,7 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params
-    const body = await request.json()
-    const data = updateSchema.parse(body)
+    const data = await parseJsonBody(request, updateSchema)
 
     const updateData: Record<string, unknown> = { ...data }
     if (data.date) {

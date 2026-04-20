@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/lib/db'
+import { parseJsonBody } from '@/lib/server/api-responses'
 
 const NOTE_ID = 'default'
 
@@ -27,8 +28,7 @@ export async function GET() {
 
 export async function PUT(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { content } = noteSchema.parse(body)
+    const { content } = await parseJsonBody(request, noteSchema)
 
     const note = await db.note.upsert({
       where: { id: NOTE_ID },

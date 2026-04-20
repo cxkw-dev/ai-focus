@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
+import { parseJsonBody } from '@/lib/server/api-responses'
 import { z } from 'zod'
 
 const createNoteSchema = z.object({
@@ -47,8 +48,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const validatedData = createNoteSchema.parse(body)
+    const validatedData = await parseJsonBody(request, createNoteSchema)
 
     const note = await db.notebookNote.create({
       data: {

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { NextRequest } from 'next/server'
 import { dbMock, resetDbMock } from '@/test/db-mock'
 import { makeTodoRow } from '@/test/fixtures'
 import { makeRequest } from '@/test/request'
@@ -67,5 +68,28 @@ describe('POST /api/todos', () => {
       }),
     )
     expect(res.status).toBe(400)
+  })
+
+  it('returns 400 for malformed JSON', async () => {
+    const { POST } = await import('./route')
+    const res = await POST(
+      new NextRequest('http://localhost/api/todos', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{"title"',
+      }),
+    )
+
+    expect(res.status).toBe(400)
+    expect(await res.json()).toEqual(
+      expect.objectContaining({
+        error: 'Validation failed',
+        details: expect.arrayContaining([
+          expect.objectContaining({
+            message: 'Request body must be valid JSON',
+          }),
+        ]),
+      }),
+    )
   })
 })

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { parseJsonBody } from '@/lib/server/api-responses'
 import { z } from 'zod'
 
 const CATEGORIES = [
@@ -44,8 +45,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const data = createSchema.parse(body)
+    const data = await parseJsonBody(request, createSchema)
     const date = new Date(data.date)
 
     const accomplishment = await db.accomplishment.create({

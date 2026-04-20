@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { NextRequest } from 'next/server'
 import { dbMock, resetDbMock } from '@/test/db-mock'
 import { makeRequest } from '@/test/request'
 
@@ -92,5 +93,28 @@ describe('PUT /api/note', () => {
       }),
     )
     expect(res.status).toBe(400)
+  })
+
+  it('returns 400 for malformed JSON', async () => {
+    const { PUT } = await import('./route')
+    const res = await PUT(
+      new NextRequest('http://localhost/api/note', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: '{"content"',
+      }),
+    )
+
+    expect(res.status).toBe(400)
+    expect(await res.json()).toEqual(
+      expect.objectContaining({
+        error: 'Validation failed',
+        details: expect.arrayContaining([
+          expect.objectContaining({
+            message: 'Request body must be valid JSON',
+          }),
+        ]),
+      }),
+    )
   })
 })

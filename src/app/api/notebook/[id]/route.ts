@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
+import { parseJsonBody } from '@/lib/server/api-responses'
 import { z } from 'zod'
 
 const updateNoteSchema = z.object({
@@ -49,8 +50,7 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params
-    const body = await request.json()
-    const validatedData = updateNoteSchema.parse(body)
+    const validatedData = await parseJsonBody(request, updateNoteSchema)
 
     const note = await db.notebookNote.update({
       where: { id },

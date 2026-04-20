@@ -5,6 +5,7 @@ import { emit } from '@/lib/events'
 import {
   internalError,
   notFound,
+  parseJsonBody,
   validationError,
 } from '@/lib/server/api-responses'
 
@@ -19,8 +20,7 @@ export async function PATCH(
 ) {
   try {
     const { id, contactId } = await params
-    const body = await request.json()
-    const data = updateContactSchema.parse(body)
+    const data = await parseJsonBody(request, updateContactSchema)
 
     const updated = await db.todoContact.updateMany({
       where: { id: contactId, todoId: id },
