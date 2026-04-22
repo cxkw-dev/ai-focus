@@ -20,9 +20,16 @@ describe('SessionList', () => {
   beforeEach(() => {
     writeText.mockResolvedValue(undefined)
 
+    const clipboard = { writeText }
+
     Object.defineProperty(window.navigator, 'clipboard', {
       configurable: true,
-      value: { writeText },
+      value: clipboard,
+    })
+
+    Object.defineProperty(global.navigator, 'clipboard', {
+      configurable: true,
+      value: clipboard,
     })
   })
 
@@ -75,10 +82,15 @@ describe('SessionList', () => {
     )
 
     await user.click(screen.getByRole('button', { name: /sessions/i }))
-    await user.click(screen.getByTitle('Copy to terminal'))
+    await user.click(
+      screen.getByRole('button', { name: 'Copy session command' }),
+    )
 
     await waitFor(() => {
-      expect(screen.getByTitle('Copied!')).toBeInTheDocument()
+      expect(
+        screen.getByRole('button', { name: 'Session command copied' }),
+      ).toBeInTheDocument()
+      expect(screen.getByText('Copied')).toBeInTheDocument()
     })
   })
 })
