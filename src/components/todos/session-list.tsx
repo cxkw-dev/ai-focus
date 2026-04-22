@@ -204,26 +204,47 @@ export function SessionList({
                           shouldReduceMotion
                             ? undefined
                             : isCopied
-                              ? { scale: [1, 0.992, 1] }
+                              ? { y: [0, -1, 0] }
                               : isError
                                 ? { x: [0, -2, 2, 0] }
-                                : { scale: 1, x: 0 }
+                                : { x: 0, y: 0 }
                         }
-                        transition={{ duration: 0.24, ease: 'easeOut' }}
-                        className="group/session flex items-center gap-1.5 rounded-md px-2 py-1"
+                        transition={{ duration: 0.22, ease: 'easeOut' }}
+                        className="group/session relative flex items-center gap-1.5 overflow-hidden rounded-md px-2 py-1"
                         style={{
-                          background: isCopied
-                            ? 'color-mix(in srgb, var(--status-done) 10%, var(--surface-2) 90%)'
-                            : isError
-                              ? 'color-mix(in srgb, var(--destructive) 8%, var(--surface-2) 92%)'
-                              : config.bgTint,
+                          background: config.bgTint,
                           border: isCopied
-                            ? '1px solid color-mix(in srgb, var(--status-done) 34%, transparent)'
+                            ? '1px solid color-mix(in srgb, var(--status-done) 22%, transparent)'
                             : isError
-                              ? '1px solid color-mix(in srgb, var(--destructive) 34%, transparent)'
+                              ? '1px solid color-mix(in srgb, var(--destructive) 24%, transparent)'
                               : `1px solid ${config.borderTint}`,
                         }}
                       >
+                        <AnimatePresence initial={false}>
+                          {(isCopied || isError) && (
+                            <motion.span
+                              aria-hidden
+                              initial={
+                                shouldReduceMotion
+                                  ? false
+                                  : { opacity: 0, scaleX: 0.4 }
+                              }
+                              animate={{ opacity: 1, scaleX: 1 }}
+                              exit={
+                                shouldReduceMotion
+                                  ? undefined
+                                  : { opacity: 0, scaleX: 0.7 }
+                              }
+                              transition={{ duration: 0.2, ease: 'easeOut' }}
+                              className="absolute inset-x-2 bottom-0 h-px origin-left"
+                              style={{
+                                background: isCopied
+                                  ? 'color-mix(in srgb, var(--status-done) 55%, transparent)'
+                                  : 'color-mix(in srgb, var(--destructive) 55%, transparent)',
+                              }}
+                            />
+                          )}
+                        </AnimatePresence>
                         <div className="min-w-0 flex-1">
                           <div
                             className="truncate font-mono text-[10px]"
@@ -231,15 +252,53 @@ export function SessionList({
                           >
                             {session.command}
                           </div>
-                          <div
-                            className="mt-0.5 text-[8px]"
-                            style={{
-                              color: 'var(--text-muted)',
-                              opacity: 0.6,
-                            }}
-                          >
-                            {session.workingPath} ·{' '}
-                            {formatRelativeTime(session.createdAt)}
+                          <div className="mt-0.5 flex items-center gap-1.5 text-[8px]">
+                            <span
+                              style={{
+                                color: 'var(--text-muted)',
+                                opacity: 0.6,
+                              }}
+                            >
+                              {session.workingPath} ·{' '}
+                              {formatRelativeTime(session.createdAt)}
+                            </span>
+                            <AnimatePresence initial={false} mode="wait">
+                              {feedbackState ? (
+                                <motion.span
+                                  key={feedbackState}
+                                  initial={
+                                    shouldReduceMotion
+                                      ? false
+                                      : { opacity: 0, x: 4 }
+                                  }
+                                  animate={{ opacity: 1, x: 0 }}
+                                  exit={
+                                    shouldReduceMotion
+                                      ? undefined
+                                      : { opacity: 0, x: 2 }
+                                  }
+                                  transition={{
+                                    duration: 0.18,
+                                    ease: 'easeOut',
+                                  }}
+                                  className="inline-flex items-center gap-1 font-medium"
+                                  style={{
+                                    color: isCopied
+                                      ? 'var(--status-done)'
+                                      : 'var(--destructive)',
+                                  }}
+                                >
+                                  {isCopied ? (
+                                    <>
+                                      <Check className="h-2.5 w-2.5" />
+                                      Copied
+                                    </>
+                                  ) : (
+                                    'Copy failed'
+                                  )}
+                                </motion.span>
+                              ) : null}
+                            </AnimatePresence>
                           </div>
                         </div>
                         <motion.button
@@ -251,17 +310,17 @@ export function SessionList({
                             event.stopPropagation()
                             void handleCopy(session)
                           }}
-                          className="relative flex-shrink-0 overflow-hidden rounded-full px-2 py-1 transition-colors duration-150"
+                          className="relative flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md transition-colors duration-150"
                           style={{
                             background: isCopied
-                              ? 'color-mix(in srgb, var(--status-done) 16%, transparent)'
+                              ? 'color-mix(in srgb, var(--status-done) 12%, transparent)'
                               : isError
-                                ? 'color-mix(in srgb, var(--destructive) 14%, transparent)'
+                                ? 'color-mix(in srgb, var(--destructive) 12%, transparent)'
                                 : config.buttonBg,
                             border: isCopied
-                              ? '1px solid color-mix(in srgb, var(--status-done) 28%, transparent)'
+                              ? '1px solid color-mix(in srgb, var(--status-done) 20%, transparent)'
                               : isError
-                                ? '1px solid color-mix(in srgb, var(--destructive) 26%, transparent)'
+                                ? '1px solid color-mix(in srgb, var(--destructive) 20%, transparent)'
                                 : `1px solid ${config.buttonBorder}`,
                             color: isCopied
                               ? 'var(--status-done)'
@@ -284,51 +343,27 @@ export function SessionList({
                                 : 'Copy session command'
                           }
                         >
-                          <AnimatePresence>
-                            {(isCopied || isError) && !shouldReduceMotion && (
-                              <motion.span
-                                aria-hidden
-                                initial={{ opacity: 0.3, scale: 0.7 }}
-                                animate={{ opacity: 0, scale: 1.4 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.35, ease: 'easeOut' }}
-                                className="absolute inset-0 rounded-full"
-                                style={{
-                                  background: isCopied
-                                    ? 'color-mix(in srgb, var(--status-done) 18%, transparent)'
-                                    : 'color-mix(in srgb, var(--destructive) 16%, transparent)',
-                                }}
-                              />
-                            )}
-                          </AnimatePresence>
                           <AnimatePresence initial={false} mode="wait">
                             <motion.span
                               key={feedbackState ?? 'idle'}
                               initial={
                                 shouldReduceMotion
                                   ? false
-                                  : { opacity: 0, scale: 0.88, y: 2 }
+                                  : { opacity: 0, rotate: -8, scale: 0.92 }
                               }
-                              animate={{ opacity: 1, scale: 1, y: 0 }}
+                              animate={{ opacity: 1, rotate: 0, scale: 1 }}
                               exit={
                                 shouldReduceMotion
                                   ? undefined
-                                  : { opacity: 0, scale: 0.9, y: -2 }
+                                  : { opacity: 0, rotate: 8, scale: 0.92 }
                               }
                               transition={{ duration: 0.16, ease: 'easeOut' }}
-                              className="relative z-10 inline-flex items-center gap-1"
+                              className="relative z-10 inline-flex items-center justify-center"
                             >
                               {isCopied ? (
-                                <>
-                                  <Check className="h-2.5 w-2.5" />
-                                  <span className="text-[9px] font-semibold">
-                                    Copied
-                                  </span>
-                                </>
+                                <Check className="h-2.5 w-2.5" />
                               ) : isError ? (
-                                <span className="text-[9px] font-semibold">
-                                  Retry
-                                </span>
+                                <X className="h-2.5 w-2.5" />
                               ) : (
                                 <Terminal className="h-2.5 w-2.5" />
                               )}
