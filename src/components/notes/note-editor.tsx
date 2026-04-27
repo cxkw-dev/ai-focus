@@ -76,21 +76,33 @@ export function NoteEditor({
   onSaveContent,
   onSaveTitle,
 }: NoteEditorProps) {
+  // The parent keys this component by note.id, so a different note remounts the
+  // editor and these refs/state initialise fresh from the new prop. Within a
+  // single note's lifetime, local state is the source of truth — never reset
+  // from the prop, or echoed server responses (and SSE refetches) will clobber
+  // characters the user has typed since the last debounced save.
   const [title, setTitle] = React.useState(note.title)
-  const [prevNoteTitle, setPrevNoteTitle] = React.useState(note.title)
-  const saveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
-  const titleTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
-  const latestContentRef = React.useRef(note.content)
-  const hasUnsavedChangesRef = React.useRef(false)
   const [saveStatus, setSaveStatus] = React.useState<
     'saved' | 'saving' | 'unsaved'
   >('saved')
+  const contentTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
+  const titleTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
+  const savedFlashTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
+  const latestContentRef = React.useRef(note.content)
+  const latestTitleRef = React.useRef(note.title)
+  const lastSavedTitleRef = React.useRef(note.title)
+  const lastSavedContentRef = React.useRef(note.content)
+  const hasUnsavedTitleRef = React.useRef(false)
+  const hasUnsavedContentRef = React.useRef(false)
 
-  // Reset local title when the note prop changes externally (React 19 reset-on-prop pattern)
-  if (prevNoteTitle !== note.title) {
-    setPrevNoteTitle(note.title)
-    setTitle(note.title)
-  }
+  const flashSaved = React.useCallback(() => {
+    if (savedFlashTimeoutRef.current) clearTimeout(savedFlashTimeoutRef.current)
+    savedFlashTimeoutRef.current = setTimeout(() => {
+      if (!hasUnsavedTitleRef.current && !hasUnsavedContentRef.current) {
+        setSaveStatus('saved')
+      }
+    }, 300)
+  }, [])
 
   const editor = useEditor(
     {
@@ -125,17 +137,23 @@ export function NoteEditor({
         const html = ed.getHTML()
         const value = html === '<p></p>' ? '' : html
         latestContentRef.current = value
-        hasUnsavedChangesRef.current = true
+        if (value === lastSavedContentRef.current) return
+        hasUnsavedContentRef.current = true
         setSaveStatus('unsaved')
 
-        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-        saveTimeoutRef.current = setTimeout(() => {
+        if (contentTimeoutRef.current) clearTimeout(contentTimeoutRef.current)
+        contentTimeoutRef.current = setTimeout(() => {
+          if (latestContentRef.current === lastSavedContentRef.current) {
+            hasUnsavedContentRef.current = false
+            return
+          }
           setSaveStatus('saving')
-          onSaveContent(note.id, value)
-          hasUnsavedChangesRef.current = false
-          // Small delay to show "saving" briefly
-          setTimeout(() => setSaveStatus('saved'), 300)
-        }, 1000)
+          const snapshot = latestContentRef.current
+          onSaveContent(note.id, snapshot)
+          lastSavedContentRef.current = snapshot
+          hasUnsavedContentRef.current = false
+          flashSaved()
+        }, 600)
       },
       editorProps: {
         attributes: {
@@ -180,16 +198,26 @@ export function NoteEditor({
     },
   })
 
-  // Save on unmount if dirty
+  // Flush any pending writes when switching notes / unmounting.
   React.useEffect(() => {
     return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+      if (contentTimeoutRef.current) clearTimeout(contentTimeoutRef.current)
       if (titleTimeoutRef.current) clearTimeout(titleTimeoutRef.current)
-      if (hasUnsavedChangesRef.current) {
+      if (savedFlashTimeoutRef.current)
+        clearTimeout(savedFlashTimeoutRef.current)
+
+      const pendingBody: Record<string, string> = {}
+      if (hasUnsavedTitleRef.current) {
+        pendingBody.title = latestTitleRef.current.trim() || 'Untitled'
+      }
+      if (hasUnsavedContentRef.current) {
+        pendingBody.content = latestContentRef.current
+      }
+      if (Object.keys(pendingBody).length > 0) {
         fetch(`/api/notebook/${note.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content: latestContentRef.current }),
+          body: JSON.stringify(pendingBody),
           keepalive: true,
         }).catch((err) => console.error('Unmount save failed:', err))
       }
@@ -199,9 +227,32 @@ export function NoteEditor({
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTitle = e.target.value
     setTitle(newTitle)
+    latestTitleRef.current = newTitle
+
+    const normalized = newTitle.trim() || 'Untitled'
+    if (normalized === lastSavedTitleRef.current) {
+      // Reverted to last-saved value — drop any pending save.
+      if (titleTimeoutRef.current) clearTimeout(titleTimeoutRef.current)
+      hasUnsavedTitleRef.current = false
+      if (!hasUnsavedContentRef.current) setSaveStatus('saved')
+      return
+    }
+
+    hasUnsavedTitleRef.current = true
+    setSaveStatus('unsaved')
+
     if (titleTimeoutRef.current) clearTimeout(titleTimeoutRef.current)
     titleTimeoutRef.current = setTimeout(() => {
-      onSaveTitle(note.id, newTitle || 'Untitled')
+      const toSave = latestTitleRef.current.trim() || 'Untitled'
+      if (toSave === lastSavedTitleRef.current) {
+        hasUnsavedTitleRef.current = false
+        return
+      }
+      setSaveStatus('saving')
+      onSaveTitle(note.id, toSave)
+      lastSavedTitleRef.current = toSave
+      hasUnsavedTitleRef.current = false
+      flashSaved()
     }, 500)
   }
 
@@ -222,19 +273,25 @@ export function NoteEditor({
   return (
     <div className="flex h-full flex-col">
       {/* Title */}
-      <div className="flex items-center gap-3 px-4 pt-4 pb-2">
+      <div className="flex items-center gap-3 px-4 pt-4 pb-2.5">
         <input
           type="text"
           value={title}
           onChange={handleTitleChange}
           placeholder="Untitled"
-          className="flex-1 bg-transparent text-lg font-semibold uppercase outline-none placeholder:opacity-40"
+          spellCheck={false}
+          autoComplete="off"
+          className="flex-1 bg-transparent text-lg font-semibold tracking-wide uppercase outline-none placeholder:opacity-40"
           style={{ color: 'var(--text-primary)' }}
         />
         <span
-          className="shrink-0 text-[10px] tracking-wide italic transition-colors duration-300"
+          className="text-2xs flex shrink-0 items-center gap-1.5 tracking-wide tabular-nums transition-colors duration-300"
           style={{ color: getStatusColor() }}
         >
+          <span
+            className="inline-block h-1.5 w-1.5 rounded-full transition-colors"
+            style={{ backgroundColor: getStatusColor() }}
+          />
           {getStatusText()}
         </span>
       </div>
