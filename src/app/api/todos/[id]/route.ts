@@ -277,10 +277,14 @@ export async function PATCH(
   try {
     const { id } = await params
     const data = await parseJsonBody(request, updateTodoSchema)
+    let shouldEvaluateAccomplishment = false
 
     const todo = await db.$transaction(async (tx) => {
       const existingTodo = await loadTodoForMutation(tx, id)
       const nextStatus = data.status as PrismaStatus | undefined
+      shouldEvaluateAccomplishment =
+        nextStatus === PrismaStatus.COMPLETED &&
+        existingTodo.status !== PrismaStatus.COMPLETED
 
       if (data.subtasks !== undefined) {
         await syncSubtasks(tx, existingTodo, data.subtasks)
@@ -300,7 +304,7 @@ export async function PATCH(
       })
     })
 
-    if (data.status === 'COMPLETED') {
+    if (shouldEvaluateAccomplishment) {
       evaluateAccomplishment({
         id: todo.id,
         title: todo.title,

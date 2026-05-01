@@ -72,6 +72,26 @@ function emitEval(
 }
 
 async function doEvaluate(task: CompletedTaskInfo): Promise<void> {
+  const existingAccomplishment = await db.accomplishment.findUnique({
+    where: { todoId: task.id },
+    select: { title: true, category: true },
+  })
+
+  if (existingAccomplishment) {
+    console.log(
+      '[accomplishment-agent] Accomplishment already exists for task:',
+      task.title,
+    )
+    emitEval('result', task, {
+      outcome: {
+        created: false,
+        title: existingAccomplishment.title,
+        category: existingAccomplishment.category,
+      },
+    })
+    return
+  }
+
   const prompt = PROMPT.replace('{TITLE}', task.title)
     .replace('{DESCRIPTION}', task.description || '(none)')
     .replace('{LABELS}', task.labels.map((l) => l.name).join(', ') || '(none)')
@@ -176,8 +196,10 @@ async function doEvaluate(task: CompletedTaskInfo): Promise<void> {
     parsed.description ||
     (task.description ? stripHtml(task.description).slice(0, 500) : null)
 
-  await db.accomplishment.create({
-    data: {
+  await db.accomplishment.upsert({
+    where: { todoId: task.id },
+    update: {},
+    create: {
       title,
       description,
       category,

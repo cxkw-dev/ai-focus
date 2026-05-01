@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { dbMock, resetDbMock } from '@/test/db-mock'
 import { makeTodoRow, prismaError } from '@/test/fixtures'
 import { makeParams, makeRequest } from '@/test/request'
+import { evaluateAccomplishment } from '@/lib/accomplishment-agent'
 
 vi.mock('@/lib/db', () => ({ db: dbMock }))
 vi.mock('@/lib/events', () => ({
@@ -14,6 +15,7 @@ vi.mock('@/lib/accomplishment-agent', () => ({
 
 beforeEach(() => {
   resetDbMock()
+  vi.mocked(evaluateAccomplishment).mockReset()
 })
 
 describe('GET /api/todos/[id]', () => {
@@ -87,6 +89,74 @@ describe('PATCH /api/todos/[id]', () => {
       makeParams({ id: 'x' }),
     )
     expect(res.status).toBe(404)
+  })
+
+  it('evaluates accomplishments when transitioning to completed', async () => {
+    const { PATCH } = await import('./route')
+    const completedAt = new Date('2026-05-01T16:00:00.000Z')
+    dbMock.todo.findUnique.mockResolvedValue({
+      id: 't-1',
+      status: 'TODO',
+      notebookNoteId: null,
+      subtasks: [],
+    })
+    dbMock.todo.update.mockResolvedValue(
+      makeTodoRow({
+        id: 't-1',
+        title: 'Ship fix',
+        status: 'COMPLETED',
+        archived: true,
+        completedAt,
+      }),
+    )
+
+    const res = await PATCH(
+      makeRequest({
+        method: 'PATCH',
+        url: 'http://localhost/api/todos/t-1',
+        body: { status: 'COMPLETED' },
+      }),
+      makeParams({ id: 't-1' }),
+    )
+
+    expect(res.status).toBe(200)
+    expect(evaluateAccomplishment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 't-1',
+        title: 'Ship fix',
+        completedAt,
+      }),
+    )
+  })
+
+  it('does not evaluate accomplishments when already completed', async () => {
+    const { PATCH } = await import('./route')
+    dbMock.todo.findUnique.mockResolvedValue({
+      id: 't-1',
+      status: 'COMPLETED',
+      notebookNoteId: null,
+      subtasks: [],
+    })
+    dbMock.todo.update.mockResolvedValue(
+      makeTodoRow({
+        id: 't-1',
+        status: 'COMPLETED',
+        archived: true,
+        completedAt: new Date('2026-05-01T16:00:00.000Z'),
+      }),
+    )
+
+    const res = await PATCH(
+      makeRequest({
+        method: 'PATCH',
+        url: 'http://localhost/api/todos/t-1',
+        body: { status: 'COMPLETED' },
+      }),
+      makeParams({ id: 't-1' }),
+    )
+
+    expect(res.status).toBe(200)
+    expect(evaluateAccomplishment).not.toHaveBeenCalled()
   })
 })
 
