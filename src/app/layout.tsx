@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from 'next'
-import { GeistSans } from 'geist/font/sans'
-import { GeistMono } from 'geist/font/mono'
 import {
   DM_Sans,
+  Geist,
+  Geist_Mono,
   Inconsolata,
   Inter,
   Lora,
@@ -42,6 +42,16 @@ const inter = Inter({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
   variable: '--font-inter',
+})
+
+const geistSans = Geist({
+  subsets: ['latin'],
+  variable: '--font-geist-sans',
+})
+
+const geistMono = Geist_Mono({
+  subsets: ['latin'],
+  variable: '--font-geist-mono',
 })
 
 export const metadata: Metadata = {
@@ -87,7 +97,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${GeistSans.variable} ${GeistMono.variable} ${pixelifySans.variable} ${inconsolata.variable} ${lora.variable} ${dmSans.variable} ${inter.variable} font-sans antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${pixelifySans.variable} ${inconsolata.variable} ${lora.variable} ${dmSans.variable} ${inter.variable} font-sans antialiased`}
       >
         <QueryProvider>
           <ThemeProvider

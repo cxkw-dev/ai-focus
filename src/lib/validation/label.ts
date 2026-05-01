@@ -19,14 +19,16 @@ const billingDescriptionSchema = z
   .max(200, 'Description must be 200 characters or fewer')
 
 const nullableTrimmedString = (schema: z.ZodString) =>
-  z.preprocess((value) => {
-    if (value === undefined) return undefined
-    if (value === null) return null
-    if (typeof value !== 'string') return value
+  z
+    .preprocess((value) => {
+      if (value === undefined) return undefined
+      if (value === null) return null
+      if (typeof value !== 'string') return value
 
-    const trimmed = value.trim()
-    return trimmed === '' ? null : trimmed
-  }, schema.nullable().optional())
+      const trimmed = value.trim()
+      return trimmed === '' ? null : trimmed
+    }, schema.nullable())
+    .optional()
 
 const billingCodeEntrySchema = z.object({
   type: billingTypeSchema,
