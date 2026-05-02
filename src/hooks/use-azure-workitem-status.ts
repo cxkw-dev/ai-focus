@@ -2,12 +2,13 @@
 
 import { useQuery, useQueries } from '@tanstack/react-query'
 import { azureApi } from '@/lib/api'
+import { queryKeys } from '@/lib/query-keys'
 import type { AzureWorkItemStatus } from '@/types/todo'
 
 const RESOLVED_STATES = ['Done', 'Closed', 'Resolved', 'Removed']
 
 const queryOptions = (url: string) => ({
-  queryKey: ['azure-workitem', url],
+  queryKey: queryKeys.azureWorkItemStatus(url),
   queryFn: () => azureApi.getWorkItemStatus(url),
   enabled: !!url,
   staleTime: 5 * 60 * 1000,

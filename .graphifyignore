@@ -1,0 +1,22 @@
+# Local assistant instructions
+AGENTS.md
+
+# Runtime config and local-only tool state
+.env
+.env.*
+.codex/
+.agents/
+
+# Framework/build artifacts not covered by graphify defaults
+.next/
+.vercel/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# Local database files
+prisma/*.db
+prisma/*.db-journal
+
+# Reference material that should not be part of the app graph
+design_handoff_focus_design_system/

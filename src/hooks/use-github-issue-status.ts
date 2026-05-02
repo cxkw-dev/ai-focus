@@ -2,10 +2,11 @@
 
 import { useQuery, useQueries } from '@tanstack/react-query'
 import { githubApi } from '@/lib/api'
+import { queryKeys } from '@/lib/query-keys'
 import type { GitHubIssueStatus } from '@/types/todo'
 
 const queryOptions = (url: string) => ({
-  queryKey: ['github-issue', url],
+  queryKey: queryKeys.githubIssueStatus(url),
   queryFn: () => githubApi.getIssueStatus(url),
   enabled: !!url,
   staleTime: 5 * 60 * 1000,

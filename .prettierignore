@@ -1,6 +1,22 @@
+# Dependencies
+node_modules
+
+# Build artifacts
 .next
+out
+build
 coverage
 dist
 mcp-server/dist
-node_modules
+
+# Local/generated tool state
+.codex
+.agents
+graphify-out
+*.tsbuildinfo
+next-env.d.ts
+
+# Local config and generated locks
+.env
+.env.*
 package-lock.json

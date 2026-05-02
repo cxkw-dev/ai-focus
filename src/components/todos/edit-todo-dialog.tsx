@@ -1,43 +1,20 @@
 'use client'
 
 import * as React from 'react'
-import { motion, useAnimationControls } from 'framer-motion'
 import {
   CalendarDays,
   Flame,
+  Plus,
   Tags,
   TrendingUp,
-  ListChecks,
-  Plus,
-  X,
-  Square,
-  CheckSquare,
-  GripVertical,
   Users,
   Trash2,
   FileText,
 } from 'lucide-react'
-import {
-  DndContext,
-  PointerSensor,
-  KeyboardSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from '@dnd-kit/core'
-import {
-  SortableContext,
-  useSortable,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RichTextEditor } from '@/components/ui/rich-text-editor'
-import { SubtaskMentionInput } from '@/components/ui/subtask-mention-input'
 import {
   Select,
   SelectContent,
@@ -57,163 +34,16 @@ import { openLabelsRoute } from '@/lib/labels'
 import { LabelMultiSelect } from './label-multi-select'
 import { SessionList } from './session-list'
 import { PrioritySelector } from './priority-selector'
-import {
-  SingleUrlField,
-  UrlListField,
-  AzureIcon,
-  GitHubIcon,
-} from './url-fields'
+import { EditTodoLinks } from './edit-todo-links'
+import { EditTodoSubtasks } from './edit-todo-subtasks'
 import { useLabels } from '@/hooks/use-labels'
 import { useTodoContacts } from '@/hooks/use-todo-contacts'
 import { useTodoForm } from '@/hooks/use-todo-form'
-import { hasMeaningfulText, normalizeSubtaskTitle } from '@/lib/rich-text'
 import { todosApi, notebookApi } from '@/lib/api'
 import { queryKeys } from '@/lib/query-keys'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Todo, UpdateTodoInput, Status } from '@/types/todo'
 import type { Person } from '@/types/person'
-
-function getSubtaskDndId(subtaskId: string | undefined, index: number): string {
-  return subtaskId ?? `new-subtask-${index}`
-}
-
-function SortableEditSubtaskRow({
-  dndId,
-  completed,
-  title,
-  onToggle,
-  onTitleChange,
-  onRemove,
-  mentions,
-}: {
-  dndId: string
-  completed: boolean
-  title: string
-  onToggle: () => void
-  onTitleChange: (title: string) => void
-  onRemove: () => void
-  mentions: { id: string; name: string; email: string }[]
-}) {
-  const [isEditing, setIsEditing] = React.useState(false)
-  const commitFxControls = useAnimationControls()
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: dndId })
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  }
-  const handleCommitFx = React.useCallback(() => {
-    void commitFxControls.start({
-      x: [0, -1.5, 1.5, -0.75, 0],
-      transition: { duration: 0.24, ease: 'easeOut' },
-    })
-  }, [commitFxControls])
-
-  return (
-    <div ref={setNodeRef} style={style} className="relative py-0.5">
-      <motion.span
-        className="pointer-events-none absolute top-1/2 left-0 h-3 w-0.5 rounded-full"
-        animate={
-          isEditing
-            ? { opacity: [0.45, 1, 0.45], scaleY: [0.75, 1, 0.75] }
-            : { opacity: 0, scaleY: 0.75 }
-        }
-        transition={
-          isEditing
-            ? {
-                duration: 1.2,
-                ease: 'easeInOut',
-                repeat: Number.POSITIVE_INFINITY,
-              }
-            : { duration: 0.12, ease: 'easeOut' }
-        }
-        style={{ backgroundColor: 'var(--primary)' }}
-      />
-      <motion.div
-        className="group/subtask flex items-center gap-2 rounded pr-0.5 pl-1 transition-colors hover:bg-white/5"
-        animate={{
-          backgroundColor: isEditing
-            ? 'color-mix(in srgb, var(--primary) 10%, transparent)'
-            : 'transparent',
-          boxShadow: isEditing
-            ? 'inset 0 0 0 1px color-mix(in srgb, var(--primary) 28%, transparent)'
-            : 'inset 0 0 0 1px transparent',
-          y: isEditing ? -0.5 : 0,
-        }}
-        transition={{ type: 'spring', stiffness: 300, damping: 28, mass: 0.6 }}
-      >
-        <motion.div
-          className="flex w-full min-w-0 items-center gap-2"
-          animate={commitFxControls}
-        >
-          <button
-            type="button"
-            {...attributes}
-            {...listeners}
-            className="flex-shrink-0 cursor-grab rounded p-0.5 transition-colors active:cursor-grabbing"
-            style={{
-              color: 'var(--text-muted)',
-              opacity: isDragging ? 1 : 0.6,
-            }}
-            aria-label="Reorder subtask"
-          >
-            <GripVertical className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={onToggle}
-            className="flex-shrink-0 transition-colors"
-            style={{
-              color: completed ? 'var(--status-done)' : 'var(--text-muted)',
-            }}
-          >
-            {completed ? (
-              <CheckSquare className="h-4 w-4" />
-            ) : (
-              <Square className="h-4 w-4" />
-            )}
-          </button>
-          <SubtaskMentionInput
-            value={title}
-            onChange={onTitleChange}
-            onCommit={handleCommitFx}
-            onFocusChange={setIsEditing}
-            mentions={mentions}
-            completed={completed}
-            className={
-              completed
-                ? 'flex-1 text-sm text-[var(--text-muted)]'
-                : 'flex-1 text-sm text-[var(--text-primary)]'
-            }
-            ariaLabel="Subtask title"
-          />
-          <motion.span
-            className="flex-shrink-0 text-[9px] font-semibold tracking-wide uppercase"
-            animate={{ opacity: isEditing ? 1 : 0, x: isEditing ? 0 : -2 }}
-            transition={{ duration: 0.14, ease: 'easeOut' }}
-            style={{ color: 'var(--primary)' }}
-          >
-            editing
-          </motion.span>
-          <button
-            type="button"
-            onClick={onRemove}
-            className="flex-shrink-0 opacity-0 transition-opacity group-hover/subtask:opacity-100"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </motion.div>
-      </motion.div>
-    </div>
-  )
-}
 
 interface EditTodoDialogProps {
   open: boolean
@@ -237,7 +67,6 @@ export function EditTodoDialog({
 }: EditTodoDialogProps) {
   const { labels } = useLabels()
   const form = useTodoForm(todo)
-  const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
   const [newMyPrUrl, setNewMyPrUrl] = React.useState('')
   const [newPrUrl, setNewPrUrl] = React.useState('')
   const [newAzureDepUrl, setNewAzureDepUrl] = React.useState('')
@@ -307,14 +136,6 @@ export function EditTodoDialog({
         email: person.email,
       })),
     [people],
-  )
-  const subtaskSensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 6 },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
   )
   const normalizeDescription = React.useCallback(
     (value: string | null | undefined) => {
@@ -395,13 +216,6 @@ export function EditTodoDialog({
     normalizeDescription,
   ])
 
-  const handleAddSubtask = React.useCallback(() => {
-    const normalized = normalizeSubtaskTitle(newSubtaskTitle)
-    if (!hasMeaningfulText(normalized)) return
-    form.addSubtask(normalized)
-    setNewSubtaskTitle('')
-  }, [newSubtaskTitle, form])
-
   const handleOpenChange = React.useCallback(
     (nextOpen: boolean) => {
       if (!nextOpen) {
@@ -414,25 +228,6 @@ export function EditTodoDialog({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
   }
-
-  const handleSubtaskDragEnd = React.useCallback(
-    (event: DragEndEvent) => {
-      const { active, over } = event
-      if (!over || active.id === over.id) return
-
-      const activeIndex = form.subtasks.findIndex(
-        (subtask, index) => getSubtaskDndId(subtask.id, index) === active.id,
-      )
-      const overIndex = form.subtasks.findIndex(
-        (subtask, index) => getSubtaskDndId(subtask.id, index) === over.id,
-      )
-
-      if (activeIndex !== -1 && overIndex !== -1) {
-        form.moveSubtask(activeIndex, overIndex)
-      }
-    },
-    [form],
-  )
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -500,209 +295,30 @@ export function EditTodoDialog({
                   />
                 </div>
 
-                {/* Subtasks */}
-                <div className="space-y-2">
-                  <Label
-                    className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    <ListChecks className="h-3.5 w-3.5" />
-                    Subtasks
-                    {form.subtasks.length > 0 && (
-                      <span
-                        className="text-[10px] font-normal"
-                        style={{ color: 'var(--text-muted)' }}
-                      >
-                        {form.subtasks.filter((s) => s.completed).length}/
-                        {form.subtasks.length}
-                      </span>
-                    )}
-                  </Label>
-                  <div className="space-y-1">
-                    <DndContext
-                      sensors={subtaskSensors}
-                      collisionDetection={closestCenter}
-                      onDragEnd={handleSubtaskDragEnd}
-                    >
-                      <SortableContext
-                        items={form.subtasks.map((subtask, index) =>
-                          getSubtaskDndId(subtask.id, index),
-                        )}
-                        strategy={verticalListSortingStrategy}
-                      >
-                        <div className="space-y-1">
-                          {form.subtasks.map((subtask, index) => (
-                            <SortableEditSubtaskRow
-                              key={getSubtaskDndId(subtask.id, index)}
-                              dndId={getSubtaskDndId(subtask.id, index)}
-                              completed={!!subtask.completed}
-                              title={subtask.title}
-                              onToggle={() => form.toggleSubtask(index)}
-                              onTitleChange={(title) =>
-                                form.updateSubtaskTitle(index, title)
-                              }
-                              onRemove={() => form.removeSubtask(index)}
-                              mentions={subtaskMentions}
-                            />
-                          ))}
-                        </div>
-                      </SortableContext>
-                    </DndContext>
-                    <div className="flex items-center gap-2">
-                      <Plus
-                        className="h-4 w-4 flex-shrink-0"
-                        style={{ color: 'var(--text-muted)' }}
-                      />
-                      <SubtaskMentionInput
-                        value={newSubtaskTitle}
-                        onChange={setNewSubtaskTitle}
-                        onCommit={handleAddSubtask}
-                        commitOnBlur={false}
-                        mentions={subtaskMentions}
-                        placeholder="Add a subtask..."
-                        className="flex-1 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
-                      />
-                    </div>
-                  </div>
-                </div>
+                <EditTodoSubtasks
+                  subtasks={form.subtasks}
+                  mentions={subtaskMentions}
+                  onAddSubtask={form.addSubtask}
+                  onMoveSubtask={form.moveSubtask}
+                  onToggleSubtask={form.toggleSubtask}
+                  onUpdateSubtaskTitle={form.updateSubtaskTitle}
+                  onRemoveSubtask={form.removeSubtask}
+                />
 
-                {/* Links & Integrations - below subtasks, uses empty left column space */}
-                <div
-                  className="mt-4 grid grid-cols-2 gap-4 pt-4"
-                  style={{ borderTop: '1px solid var(--border-color)' }}
-                >
-                  {/* Azure */}
-                  <div className="space-y-3">
-                    <Label
-                      className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
-                      style={{ color: 'var(--text-muted)' }}
-                    >
-                      <AzureIcon className="h-3.5 w-3.5" />
-                      Azure
-                    </Label>
-
-                    <div className="space-y-1.5">
-                      <span
-                        className="text-[10px] font-medium tracking-wide uppercase"
-                        style={{ color: 'var(--text-muted)' }}
-                      >
-                        My Work Item
-                      </span>
-                      <SingleUrlField
-                        value={form.azureWorkItemUrl}
-                        onChange={form.setAzureWorkItemUrl}
-                        type="azure"
-                        disabled={isLoading}
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <span
-                        className="text-[10px] font-medium tracking-wide uppercase"
-                        style={{ color: 'var(--text-muted)' }}
-                      >
-                        Waiting On
-                      </span>
-                      <UrlListField
-                        type="azure"
-                        urls={form.azureDepUrls}
-                        onAdd={(url) => form.addAzureDepUrl(url)}
-                        onRemove={(i) => form.removeAzureDepUrl(i)}
-                        inputValue={newAzureDepUrl}
-                        onInputChange={setNewAzureDepUrl}
-                        disabled={isLoading}
-                      />
-                    </div>
-                  </div>
-
-                  {/* GitHub */}
-                  <div className="space-y-3">
-                    <Label
-                      className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
-                      style={{ color: 'var(--text-muted)' }}
-                    >
-                      <GitHubIcon className="h-3.5 w-3.5" />
-                      GitHub PRs
-                    </Label>
-
-                    <div className="space-y-1.5">
-                      <span
-                        className="text-[10px] font-medium tracking-wide uppercase"
-                        style={{ color: 'var(--text-muted)' }}
-                      >
-                        My PRs
-                      </span>
-                      <UrlListField
-                        type="github"
-                        urls={form.myPrUrls}
-                        onAdd={(url) => form.addMyPrUrl(url)}
-                        onRemove={(i) => form.removeMyPrUrl(i)}
-                        inputValue={newMyPrUrl}
-                        onInputChange={setNewMyPrUrl}
-                        disabled={isLoading}
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <span
-                        className="text-[10px] font-medium tracking-wide uppercase"
-                        style={{ color: 'var(--text-muted)' }}
-                      >
-                        Waiting On
-                      </span>
-                      <UrlListField
-                        type="github"
-                        urls={form.githubPrUrls}
-                        onAdd={(url) => form.addGithubPrUrl(url)}
-                        onRemove={(i) => form.removeGithubPrUrl(i)}
-                        inputValue={newPrUrl}
-                        onInputChange={setNewPrUrl}
-                        disabled={isLoading}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* GitHub Issues */}
-                <div className="mt-4 grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label
-                      className="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
-                      style={{ color: 'var(--text-muted)' }}
-                    >
-                      <GitHubIcon className="h-3.5 w-3.5" />
-                      My Issues
-                    </Label>
-                    <UrlListField
-                      type="github-issue"
-                      urls={form.myIssueUrls}
-                      onAdd={(url) => form.addMyIssueUrl(url)}
-                      onRemove={(i) => form.removeMyIssueUrl(i)}
-                      inputValue={newMyIssueUrl}
-                      onInputChange={setNewMyIssueUrl}
-                      disabled={isLoading}
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label
-                      className="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
-                      style={{ color: 'var(--text-muted)' }}
-                    >
-                      <GitHubIcon className="h-3.5 w-3.5" />
-                      Waiting On Issues
-                    </Label>
-                    <UrlListField
-                      type="github-issue"
-                      urls={form.githubIssueUrls}
-                      onAdd={(url) => form.addGithubIssueUrl(url)}
-                      onRemove={(i) => form.removeGithubIssueUrl(i)}
-                      inputValue={newIssueUrl}
-                      onInputChange={setNewIssueUrl}
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
+                <EditTodoLinks
+                  form={form}
+                  disabled={isLoading}
+                  newAzureDepUrl={newAzureDepUrl}
+                  setNewAzureDepUrl={setNewAzureDepUrl}
+                  newMyPrUrl={newMyPrUrl}
+                  setNewMyPrUrl={setNewMyPrUrl}
+                  newPrUrl={newPrUrl}
+                  setNewPrUrl={setNewPrUrl}
+                  newMyIssueUrl={newMyIssueUrl}
+                  setNewMyIssueUrl={setNewMyIssueUrl}
+                  newIssueUrl={newIssueUrl}
+                  setNewIssueUrl={setNewIssueUrl}
+                />
               </div>
 
               {/* Right column - Meta */}

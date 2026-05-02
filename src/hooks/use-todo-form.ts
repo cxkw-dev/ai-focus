@@ -5,7 +5,7 @@ import type { Todo, Priority, Status, SubtaskInput } from '@/types/todo'
 import { hasMeaningfulText, normalizeSubtaskTitle } from '@/lib/rich-text'
 import { createClientSubtaskId } from '@/lib/subtask-ids'
 
-interface TodoFormState {
+export interface TodoFormState {
   title: string
   setTitle: (v: string) => void
   description: string
