@@ -255,10 +255,16 @@ h6 {
 }
 
 /* Todo card hover */
-.todo-card:hover {
-  outline: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
-  outline-offset: -1px;
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--background) 50%, transparent);
+.todo-card {
+  box-shadow:
+    inset 0 0 0 1px transparent,
+    0 2px 8px color-mix(in srgb, var(--background) 50%, transparent);
+}
+
+.todo-card-shell:hover .todo-card {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--border-color) 60%, transparent),
+    0 2px 8px color-mix(in srgb, var(--background) 50%, transparent);
 }
 
 /* Flame animations for urgent priority */

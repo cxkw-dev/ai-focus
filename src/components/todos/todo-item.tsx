@@ -401,7 +401,7 @@ export function TodoItem({
           </div>
         </div>
       ) : (
-        <div className="flex items-center gap-0.5">
+        <div className="todo-card-shell flex items-center gap-0.5">
           {/* Reserve a consistent gutter so the card body stays aligned across filters */}
           <div className="flex w-[18px] flex-shrink-0 justify-center">
             {viewMode === 'active' && (
