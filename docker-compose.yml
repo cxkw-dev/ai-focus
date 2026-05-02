@@ -16,6 +16,13 @@ services:
       GITHUB_TOKEN: ${GITHUB_TOKEN}
       AZURE_DEVOPS: ${AZURE_DEVOPS}
       AZURE_DEVOPS_ORG: ${AZURE_DEVOPS_ORG:-}
+      AI_PROVIDER: ${AI_PROVIDER:-}
+      AI_URL: ${AI_URL:-}
+      AI_MODEL: ${AI_MODEL:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      OMLX_URL: ${OMLX_URL:-}
+      OMLX_MODEL: ${OMLX_MODEL:-}
+      OMLX_API_KEY: ${OMLX_API_KEY:-}
       OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-gemma3:latest}
       NODE_ENV: production

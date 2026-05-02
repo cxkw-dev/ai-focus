@@ -55,6 +55,17 @@ DATABASE_URL="postgresql://your_user@localhost:5432/aifocus"
 
 The `GITHUB_TOKEN` and `AZURE_DEVOPS` variables are optional — only needed if you want PR/work item status tracking.
 
+Optional local AI powers the completed-task accomplishment classifier. Ollama is still supported, but on Apple Silicon you can use oMLX instead:
+
+```env
+AI_PROVIDER="omlx"
+AI_URL="http://localhost:11435/v1"
+AI_MODEL="gemma-3-text-4b-it-4bit"
+AI_API_KEY="your-omlx-api-key"
+```
+
+When running the app in Docker and oMLX on the host Mac, use `AI_URL="http://host.docker.internal:11435/v1"`.
+
 ### 4. Push the database schema
 
 ```bash

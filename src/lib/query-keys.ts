@@ -7,4 +7,9 @@ export const queryKeys = {
   notebook: ['notebook'] as const,
   accomplishments: (year: number) => ['accomplishments', year] as const,
   yearStats: (year: number) => ['stats', 'year', year] as const,
+  githubPrStatus: (url: string) => ['github-pr', url] as const,
+  githubIssueStatus: (url: string) => ['github-issue', url] as const,
+  azureWorkItemStatus: (url: string) => ['azure-workitem', url] as const,
+  localAiStatus: ['local-ai', 'status'] as const,
+  vpnStatus: ['vpn-status'] as const,
 }

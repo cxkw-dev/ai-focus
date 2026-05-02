@@ -16,7 +16,7 @@ import {
   RiTimeLine,
 } from 'react-icons/ri'
 import { useVpnStatus } from '@/hooks/use-vpn-status'
-import { useOllamaStatus } from '@/hooks/use-ollama-status'
+import { useLocalAiStatus } from '@/hooks/use-local-ai-status'
 import { useIsClient } from '@/hooks/use-is-client'
 import {
   Tooltip,
@@ -48,13 +48,14 @@ const bottomNavItems = [
   { title: 'Settings', href: '/settings', icon: RiSettings4Line },
 ]
 
-function OllamaStatusBar({ collapsed }: { collapsed: boolean }) {
-  const { data, isLoading, refetch, isFetching } = useOllamaStatus()
+function LocalAiStatusBar({ collapsed }: { collapsed: boolean }) {
+  const { data, isLoading, refetch, isFetching } = useLocalAiStatus()
   const mounted = useIsClient()
 
   if (!mounted || isLoading) return null
 
   const connected = data?.connected ?? false
+  const label = data?.label ?? 'Local AI'
   const model = data?.model ?? ''
   const url = data?.url ?? ''
 
@@ -84,7 +85,7 @@ function OllamaStatusBar({ collapsed }: { collapsed: boolean }) {
             transition={{ duration: 0.15 }}
             className="truncate overflow-hidden whitespace-nowrap"
           >
-            {model || 'ollama'}
+            {model || label}
           </motion.span>
         )}
       </AnimatePresence>
@@ -97,7 +98,7 @@ function OllamaStatusBar({ collapsed }: { collapsed: boolean }) {
       <TooltipContent side="right" sideOffset={8}>
         <div className="text-xs">
           <p className="font-medium">
-            {connected ? 'Ollama connected' : 'Ollama unreachable'}
+            {connected ? `${label} connected` : `${label} unreachable`}
           </p>
           {url && <p style={{ color: 'var(--text-muted)' }}>{url}</p>}
           <p style={{ color: 'var(--text-muted)', marginTop: 2 }}>
@@ -461,7 +462,7 @@ export function Sidebar({
           className={`border-t ${collapsed ? 'px-2 py-2' : 'px-4 py-2'}`}
           style={{ borderColor: 'var(--border-color)' }}
         >
-          <OllamaStatusBar collapsed={collapsed} />
+          <LocalAiStatusBar collapsed={collapsed} />
         </div>
 
         {/* Collapse Toggle - Edge positioned */}

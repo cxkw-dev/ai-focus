@@ -1,8 +1,6 @@
 import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
-
-const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434'
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'gemma3:latest'
+import { generateLocalAiText, getLocalAiConfig } from '@/lib/local-ai'
 
 const PROMPT = `You are a performance review assistant. A developer just completed a task. Decide if it belongs in their performance review and categorize it.
 
@@ -98,32 +96,18 @@ async function doEvaluate(task: CompletedTaskInfo): Promise<void> {
 
   emitEval('analyzing', task)
 
-  let response: Response
+  let responseText: string
+  const aiConfig = getLocalAiConfig()
   try {
-    response = await fetch(`${OLLAMA_URL}/api/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: OLLAMA_MODEL,
-        prompt,
-        stream: true,
-        options: { temperature: 0.1 },
-      }),
-    })
+    responseText = await generateLocalAiText(prompt, { temperature: 0.1 })
   } catch {
-    console.error('[accomplishment-agent] Cannot reach Ollama at', OLLAMA_URL)
+    console.error(
+      `[accomplishment-agent] Cannot reach ${aiConfig.label} at`,
+      aiConfig.url,
+    )
     emitEval('result', task, { outcome: { created: false } })
     return
   }
-
-  if (!response.ok || !response.body) {
-    console.error('[accomplishment-agent] Ollama returned', response.status)
-    emitEval('result', task, { outcome: { created: false } })
-    return
-  }
-
-  // Stream and collect the response
-  const responseText = await streamOllamaResponse(response.body)
 
   emitEval('classifying', task)
 
@@ -213,39 +197,6 @@ async function doEvaluate(task: CompletedTaskInfo): Promise<void> {
   console.log(
     `[accomplishment-agent] Created accomplishment: [${category}] ${title}`,
   )
-}
-
-async function streamOllamaResponse(
-  body: ReadableStream<Uint8Array>,
-): Promise<string> {
-  const reader = body.getReader()
-  const decoder = new TextDecoder()
-  let fullText = ''
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-
-      const chunk = decoder.decode(value, { stream: true })
-
-      for (const line of chunk.split('\n')) {
-        if (!line.trim()) continue
-        try {
-          const obj = JSON.parse(line) as { response?: string; done?: boolean }
-          if (obj.response) {
-            fullText += obj.response
-          }
-        } catch {
-          // skip malformed NDJSON lines
-        }
-      }
-    }
-  } finally {
-    reader.releaseLock()
-  }
-
-  return fullText.trim()
 }
 
 function stripHtml(html: string): string {

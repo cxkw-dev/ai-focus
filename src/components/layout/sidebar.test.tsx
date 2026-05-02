@@ -67,8 +67,8 @@ vi.mock('@/hooks/use-vpn-status', () => ({
   useVpnStatus: () => mockUseVpnStatus(),
 }))
 
-vi.mock('@/hooks/use-ollama-status', () => ({
-  useOllamaStatus: () => ({
+vi.mock('@/hooks/use-local-ai-status', () => ({
+  useLocalAiStatus: () => ({
     data: null,
     isLoading: true,
     refetch: vi.fn(),
