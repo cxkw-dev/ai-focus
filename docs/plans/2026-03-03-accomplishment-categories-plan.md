@@ -1,7 +1,5 @@
 # Accomplishment Categorization Improvements — Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
-
 **Goal:** Add an OTHER category for edge-case accomplishments, rewrite the Ollama agent prompt to exclude admin/operational tasks and remove inclusion bias.
 
 **Architecture:** Schema change (new enum value) propagated through all layers: Prisma → API validation → agent code → types → UI components → themes → MCP server. The agent prompt is rewritten with neutral bias and explicit admin exclusion rules.

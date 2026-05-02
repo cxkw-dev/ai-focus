@@ -1,7 +1,5 @@
 # Task Contacts Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
-
 **Goal:** Attach contacts (people) to tasks with a freeform role field, accessed via a slide-out drawer tab on the TodoItem card edge.
 
 **Architecture:** New `TodoContact` join table linking `Todo` and `Person` with a `role` field. Contacts loaded on-demand via `useTodoContacts` hook when the drawer opens. Drawer is a Framer Motion overlay panel attached to the card's right edge.

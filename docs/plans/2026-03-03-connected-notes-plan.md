@@ -1,7 +1,5 @@
 # Connected Notes Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
-
 **Goal:** Allow users to link a notebook note to a todo card and view/edit it in a right-side drawer without leaving the todos page.
 
 **Architecture:** Add optional `notebookNoteId` FK on Todo → NotebookNote. Include the relation in todo queries. Display a "Note" chip on the card that opens a slide-out drawer with a full TipTap editor. Manage linking in the edit dialog.

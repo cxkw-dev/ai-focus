@@ -37,12 +37,12 @@ next-env.d.ts
 .idea
 .vscode
 
+# Local agent config
+AGENTS.md
+
 # Prisma
 prisma/*.db
 prisma/*.db-journal
-
-# Superpowers
-.superpowers/
 
 # Design handoff (reference material, not shipped)
 design_handoff_focus_design_system/
