@@ -1,12 +1,11 @@
 'use client'
 
 import * as React from 'react'
-import { CalendarDays, Flame, Tags, ListChecks, Plus, X } from 'lucide-react'
+import { CalendarDays, Flame, Tags } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RichTextEditor } from '@/components/ui/rich-text-editor'
-import { SubtaskMentionInput } from '@/components/ui/subtask-mention-input'
 import { openLabelsRoute } from '@/lib/labels'
 import {
   Dialog,
@@ -18,6 +17,7 @@ import {
 } from '@/components/ui/dialog'
 import { LabelMultiSelect } from './label-multi-select'
 import { PrioritySelector } from './priority-selector'
+import { EditTodoSubtasks } from './edit-todo-subtasks'
 import {
   SingleUrlField,
   UrlListField,
@@ -26,13 +26,6 @@ import {
 } from './url-fields'
 import { useLabels } from '@/hooks/use-labels'
 import { useTodoForm } from '@/hooks/use-todo-form'
-import {
-  hasMeaningfulText,
-  isHtmlContent,
-  linkifyHtml,
-  mentionifyHtml,
-  normalizeSubtaskTitle,
-} from '@/lib/rich-text'
 import type { CreateTodoInput } from '@/types/todo'
 import type { Person } from '@/types/person'
 
@@ -55,7 +48,6 @@ export function CreateTodoModal({
 }: CreateTodoModalProps) {
   const { labels } = useLabels()
   const form = useTodoForm(null, { initialLabelIds: defaultLabelIds })
-  const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
   const [newMyPrUrl, setNewMyPrUrl] = React.useState('')
   const [newPrUrl, setNewPrUrl] = React.useState('')
   const [newAzureDepUrl, setNewAzureDepUrl] = React.useState('')
@@ -78,13 +70,6 @@ export function CreateTodoModal({
   React.useEffect(() => {
     if (!open) resetForm()
   }, [open, resetForm])
-
-  const handleAddSubtask = React.useCallback(() => {
-    const normalized = normalizeSubtaskTitle(newSubtaskTitle)
-    if (!hasMeaningfulText(normalized)) return
-    form.addSubtask(normalized)
-    setNewSubtaskTitle('')
-  }, [newSubtaskTitle, form])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -182,73 +167,15 @@ export function CreateTodoModal({
                   />
                 </div>
 
-                {/* Subtasks */}
-                <div className="space-y-2">
-                  <Label
-                    className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    <ListChecks className="h-3.5 w-3.5" />
-                    Subtasks
-                    {form.subtasks.length > 0 && (
-                      <span
-                        className="text-[10px] font-normal"
-                        style={{ color: 'var(--text-muted)' }}
-                      >
-                        {form.subtasks.length}
-                      </span>
-                    )}
-                  </Label>
-                  <div className="space-y-1">
-                    {form.subtasks.map((subtask, index) => (
-                      <div
-                        key={subtask.id ?? `subtask-${index}`}
-                        className="group/subtask flex items-center gap-2"
-                      >
-                        <div
-                          className="min-w-0 flex-1 text-xs"
-                          style={{ color: 'var(--text-primary)' }}
-                        >
-                          {isHtmlContent(subtask.title) ? (
-                            <div
-                              className="[&_.mention]:font-medium [&_.mention:hover]:underline [&_a]:text-[var(--primary)] [&_a:hover]:underline [&_p]:my-0 [&_p]:leading-snug"
-                              dangerouslySetInnerHTML={{
-                                __html: linkifyHtml(
-                                  mentionifyHtml(subtask.title),
-                                ),
-                              }}
-                            />
-                          ) : (
-                            subtask.title
-                          )}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => form.removeSubtask(index)}
-                          className="flex-shrink-0 opacity-0 transition-opacity group-hover/subtask:opacity-100"
-                          style={{ color: 'var(--text-muted)' }}
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                    <div className="flex items-center gap-2">
-                      <Plus
-                        className="h-4 w-4 flex-shrink-0"
-                        style={{ color: 'var(--text-muted)' }}
-                      />
-                      <SubtaskMentionInput
-                        value={newSubtaskTitle}
-                        onChange={setNewSubtaskTitle}
-                        onCommit={handleAddSubtask}
-                        commitOnBlur={false}
-                        mentions={subtaskMentions}
-                        placeholder="Add a subtask..."
-                        className="flex-1 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
-                      />
-                    </div>
-                  </div>
-                </div>
+                <EditTodoSubtasks
+                  subtasks={form.subtasks}
+                  mentions={subtaskMentions}
+                  onAddSubtask={form.addSubtask}
+                  onMoveSubtask={form.moveSubtask}
+                  onToggleSubtask={form.toggleSubtask}
+                  onUpdateSubtaskTitle={form.updateSubtaskTitle}
+                  onRemoveSubtask={form.removeSubtask}
+                />
               </div>
 
               {/* Right column - Meta */}
