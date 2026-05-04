@@ -34,6 +34,13 @@ import type { Person } from '@/types/person'
 
 type Filter = 'active' | 'completed' | 'deleted'
 
+const POINTER_SENSOR_OPTIONS = {
+  activationConstraint: { distance: 8 },
+} as const
+const KEYBOARD_SENSOR_OPTIONS = {
+  coordinateGetter: sortableKeyboardCoordinates,
+}
+
 interface TodoColumnProps {
   title: string
   color: string
@@ -109,12 +116,8 @@ export function TodoColumn({
   }, [])
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
+    useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
+    useSensor(KeyboardSensor, KEYBOARD_SENSOR_OPTIONS),
   )
 
   const filteredCompletedTodos = React.useMemo(() => {

@@ -25,6 +25,13 @@ import {
 } from './sortable-edit-subtask-row'
 import type { SubtaskInput } from '@/types/todo'
 
+const POINTER_SENSOR_OPTIONS = {
+  activationConstraint: { distance: 6 },
+} as const
+const KEYBOARD_SENSOR_OPTIONS = {
+  coordinateGetter: sortableKeyboardCoordinates,
+}
+
 interface EditTodoSubtasksProps {
   subtasks: SubtaskInput[]
   mentions: { id: string; name: string; email: string }[]
@@ -46,12 +53,8 @@ export function EditTodoSubtasks({
 }: EditTodoSubtasksProps) {
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 6 },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
+    useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
+    useSensor(KeyboardSensor, KEYBOARD_SENSOR_OPTIONS),
   )
 
   const handleAddSubtask = React.useCallback(() => {

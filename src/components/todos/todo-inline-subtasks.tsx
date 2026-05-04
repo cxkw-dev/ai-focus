@@ -46,6 +46,13 @@ import type { Person } from '@/types/person'
 
 const EMPTY_SUBTASKS: Subtask[] = []
 
+const POINTER_SENSOR_OPTIONS = {
+  activationConstraint: { distance: 6 },
+} as const
+const KEYBOARD_SENSOR_OPTIONS = {
+  coordinateGetter: sortableKeyboardCoordinates,
+}
+
 function toSubtaskInput(subtasks: Subtask[]): SubtaskInput[] {
   return subtasks.map((subtask, index) => ({
     id: subtask.id,
@@ -85,12 +92,8 @@ export function TodoInlineSubtasks({
   const [subtasksExpanded, setSubtasksExpanded] = React.useState(false)
   const lastAddedSubtaskRef = React.useRef<RecentSubtaskCommit | null>(null)
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 6 },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
+    useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
+    useSensor(KeyboardSensor, KEYBOARD_SENSOR_OPTIONS),
   )
 
   const [prevSubtasksRef, setPrevSubtasksRef] = React.useState(
