@@ -39,10 +39,10 @@ export function EditTodoLinks({
   return (
     <>
       <div
-        className="mt-4 grid grid-cols-2 gap-4 pt-4"
+        className="mt-4 grid grid-cols-1 gap-4 pt-4 sm:grid-cols-2"
         style={{ borderTop: '1px solid var(--border-color)' }}
       >
-        <div className="space-y-3">
+        <div className="min-w-0 space-y-3">
           <Label
             className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
             style={{ color: 'var(--text-muted)' }}
@@ -85,7 +85,7 @@ export function EditTodoLinks({
           </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="min-w-0 space-y-3">
           <Label
             className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
             style={{ color: 'var(--text-muted)' }}
@@ -132,8 +132,8 @@ export function EditTodoLinks({
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-4">
-        <div className="space-y-1.5">
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="min-w-0 space-y-1.5">
           <Label
             className="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
             style={{ color: 'var(--text-muted)' }}
@@ -152,7 +152,7 @@ export function EditTodoLinks({
           />
         </div>
 
-        <div className="space-y-1.5">
+        <div className="min-w-0 space-y-1.5">
           <Label
             className="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
             style={{ color: 'var(--text-muted)' }}

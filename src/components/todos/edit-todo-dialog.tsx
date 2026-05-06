@@ -231,32 +231,32 @@ export function EditTodoDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="flex max-h-[90vh] w-[98vw] max-w-[1320px] flex-col overflow-hidden p-0 sm:max-h-[85vh] sm:w-[96vw]">
+      <DialogContent className="flex max-h-[95vh] w-[98vw] max-w-[1320px] flex-col overflow-hidden p-0 sm:max-h-[90vh] sm:w-[96vw]">
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           {/* Header */}
           <div
-            className="shrink-0 border-b px-4 py-4 sm:px-6 sm:py-5"
+            className="shrink-0 border-b px-4 py-4 pr-12 sm:px-6 sm:py-5 sm:pr-14"
             style={{
               borderColor: 'var(--border-color)',
               background:
                 'linear-gradient(135deg, color-mix(in srgb, var(--primary) 8%, transparent), color-mix(in srgb, var(--accent) 8%, transparent))',
             }}
           >
-            <DialogHeader className="space-y-1.5">
-              <DialogTitle className="text-lg sm:text-xl">
+            <DialogHeader className="min-w-0 space-y-1.5">
+              <DialogTitle className="truncate text-lg sm:text-xl">
                 Edit Task
               </DialogTitle>
-              <DialogDescription className="text-sm">
+              <DialogDescription className="text-xs sm:text-sm">
                 Changes are saved when you close this dialog
               </DialogDescription>
             </DialogHeader>
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
-            <div className="grid grid-cols-1 gap-0 md:grid-cols-[1fr_300px] md:gap-0">
+          <div className="flex-1 overflow-x-hidden overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-0">
               {/* Left column - Content */}
-              <div className="space-y-4 md:pr-6">
+              <div className="min-w-0 space-y-4 lg:pr-6">
                 <div className="space-y-2">
                   <Label
                     htmlFor="title"
@@ -323,7 +323,7 @@ export function EditTodoDialog({
 
               {/* Right column - Meta */}
               <div
-                className="space-y-4 pt-6 md:border-l md:pt-0 md:pl-6"
+                className="min-w-0 space-y-4 border-t pt-4 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6"
                 style={{ borderColor: 'var(--border-color)' }}
               >
                 {/* Status */}
@@ -465,10 +465,11 @@ export function EditTodoDialog({
                           onChange={(e) =>
                             handleLinkExistingNote(e.target.value)
                           }
-                          className="w-full rounded border bg-transparent px-1.5 py-1 text-[11px] outline-none"
+                          className="w-full rounded border px-1.5 py-1 text-[11px] outline-none"
                           style={{
                             borderColor: 'var(--border-color)',
                             color: 'var(--text-primary)',
+                            backgroundColor: 'var(--surface)',
                           }}
                         >
                           <option value="">Link existing note...</option>
@@ -614,10 +615,11 @@ export function EditTodoDialog({
                           onChange={(e) =>
                             setNewContactPersonId(e.target.value)
                           }
-                          className="w-full rounded border bg-transparent px-1.5 py-1 text-[11px] outline-none"
+                          className="w-full rounded border px-1.5 py-1 text-[11px] outline-none"
                           style={{
                             borderColor: 'var(--border-color)',
                             color: 'var(--text-primary)',
+                            backgroundColor: 'var(--surface)',
                           }}
                         >
                           <option value="">Add contact...</option>

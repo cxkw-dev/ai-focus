@@ -49,8 +49,12 @@ const DialogContent = React.forwardRef<
     >
       {children}
       <DialogPrimitive.Close
-        className="absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none disabled:pointer-events-none"
-        style={{ color: 'var(--text-muted)' }}
+        className="absolute top-3 right-3 z-10 rounded-md p-1.5 opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] disabled:pointer-events-none sm:top-4 sm:right-4"
+        style={{
+          color: 'var(--text-muted)',
+          backgroundColor:
+            'color-mix(in srgb, var(--surface) 70%, transparent)',
+        }}
       >
         <X className="h-4 w-4" />
         <span className="sr-only">Close</span>
