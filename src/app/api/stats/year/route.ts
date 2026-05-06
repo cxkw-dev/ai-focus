@@ -15,33 +15,41 @@ export async function GET(request: NextRequest) {
     const startDate = new Date(year, 0, 1)
     const endDate = new Date(year + 1, 0, 1)
 
-    // Fetch all todos created in this year (for "created" counts)
-    const todosCreated = await db.todo.findMany({
-      where: { createdAt: { gte: startDate, lt: endDate } },
-      select: {
-        id: true,
-        status: true,
-        priority: true,
-        createdAt: true,
-        updatedAt: true,
-        labels: { select: { id: true, name: true, color: true } },
-      },
-    })
+    const [todosCreated, todosCompleted, accomplishments] = await Promise.all([
+      // Fetch all todos created in this year (for "created" counts)
+      db.todo.findMany({
+        where: { createdAt: { gte: startDate, lt: endDate } },
+        select: {
+          id: true,
+          status: true,
+          priority: true,
+          createdAt: true,
+          updatedAt: true,
+          labels: { select: { id: true, name: true, color: true } },
+        },
+      }),
 
-    // Fetch all todos completed in this year
-    const todosCompleted = await db.todo.findMany({
-      where: {
-        status: 'COMPLETED',
-        completedAt: { gte: startDate, lt: endDate },
-      },
-      select: {
-        id: true,
-        priority: true,
-        createdAt: true,
-        completedAt: true,
-        labels: { select: { id: true, name: true, color: true } },
-      },
-    })
+      // Fetch all todos completed in this year
+      db.todo.findMany({
+        where: {
+          status: 'COMPLETED',
+          completedAt: { gte: startDate, lt: endDate },
+        },
+        select: {
+          id: true,
+          priority: true,
+          createdAt: true,
+          completedAt: true,
+          labels: { select: { id: true, name: true, color: true } },
+        },
+      }),
+
+      // Fetch accomplishment categories for the same year
+      db.accomplishment.findMany({
+        where: { year },
+        select: { category: true },
+      }),
+    ])
 
     // --- Monthly data ---
     const monthly: MonthlyData[] = MONTH_LABELS.map((label, i) => ({
@@ -153,12 +161,6 @@ export async function GET(request: NextRequest) {
       (max, m, i) => (m.completed > monthly[max].completed ? i : max),
       0,
     )
-
-    // --- Accomplishments ---
-    const accomplishments = await db.accomplishment.findMany({
-      where: { year },
-      select: { category: true },
-    })
 
     const accomplishmentCategoryMap = new Map<string, number>()
     for (const a of accomplishments) {

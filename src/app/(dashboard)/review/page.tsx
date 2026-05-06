@@ -1,13 +1,46 @@
 'use client'
 
 import * as React from 'react'
+import dynamic from 'next/dynamic'
 import { ChevronDown } from 'lucide-react'
 import { useYearStats } from '@/hooks/use-year-stats'
 import { useAccomplishments } from '@/hooks/use-accomplishments'
 import { useChartColors } from '@/hooks/use-chart-colors'
-import { FocusSankeyChart } from '@/components/review/focus-sankey-chart'
-import { MonthlyChart } from '@/components/review/monthly-chart'
 import { AccomplishmentsSection } from '@/components/review/accomplishments-section'
+import type { FocusFlowData, MonthlyData } from '@/types/stats'
+
+interface FocusSankeyChartProps {
+  data: FocusFlowData
+  colors: Record<string, string>
+}
+
+interface MonthlyChartProps {
+  data: MonthlyData[]
+  colors: Record<string, string>
+}
+
+function ChartLoading() {
+  return (
+    <div
+      className="min-h-[280px] animate-pulse rounded-lg"
+      style={{ backgroundColor: 'var(--surface)' }}
+    />
+  )
+}
+
+const FocusSankeyChart = dynamic<FocusSankeyChartProps>(
+  () =>
+    import('@/components/review/focus-sankey-chart').then(
+      (mod) => mod.FocusSankeyChart,
+    ),
+  { loading: ChartLoading, ssr: false },
+)
+
+const MonthlyChart = dynamic<MonthlyChartProps>(
+  () =>
+    import('@/components/review/monthly-chart').then((mod) => mod.MonthlyChart),
+  { loading: ChartLoading, ssr: false },
+)
 
 const currentYear = new Date().getFullYear()
 const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - i)
