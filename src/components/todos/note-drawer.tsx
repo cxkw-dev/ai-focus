@@ -4,8 +4,11 @@ import * as React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, FileText, Unlink } from 'lucide-react'
 import { notebookApi } from '@/lib/api'
+import { queryKeys } from '@/lib/query-keys'
 import { RichTextEditor } from '@/components/ui/rich-text-editor'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { QueryClient } from '@tanstack/react-query'
+import type { NotebookNote, UpdateNotebookNoteInput } from '@/types/notebook'
 
 interface NoteDrawerProps {
   noteId: string | null
@@ -13,6 +16,122 @@ interface NoteDrawerProps {
   open: boolean
   onClose: () => void
   onUnlink: () => void
+}
+
+function pickNewestNote(current: NotebookNote, incoming: NotebookNote) {
+  return new Date(incoming.updatedAt).getTime() >=
+    new Date(current.updatedAt).getTime()
+    ? incoming
+    : current
+}
+
+function updateCachedNote(queryClient: QueryClient, updatedNote: NotebookNote) {
+  queryClient.setQueryData<NotebookNote>(
+    queryKeys.notebookNote(updatedNote.id),
+    (current) => (current ? pickNewestNote(current, updatedNote) : updatedNote),
+  )
+  queryClient.setQueryData<NotebookNote[]>(
+    queryKeys.notebook,
+    (currentNotes) => {
+      if (!currentNotes) return currentNotes
+      return currentNotes.map((note) =>
+        note.id === updatedNote.id ? pickNewestNote(note, updatedNote) : note,
+      )
+    },
+  )
+}
+
+function NoteDrawerEditor({ note }: { note: NotebookNote }) {
+  const queryClient = useQueryClient()
+  const [title, setTitle] = React.useState(note.title)
+  const [content, setContent] = React.useState(note.content)
+  const saveTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  )
+  const pendingUpdatesRef = React.useRef<UpdateNotebookNoteInput>({})
+
+  const { mutate: saveUpdates } = useMutation({
+    mutationFn: (updates: UpdateNotebookNoteInput) =>
+      notebookApi.update(note.id, updates),
+    onSuccess: (updatedNote) => {
+      updateCachedNote(queryClient, updatedNote)
+    },
+    onError: (error) => {
+      console.error('Failed to save note:', error)
+    },
+  })
+  const saveUpdatesRef = React.useRef(saveUpdates)
+
+  React.useEffect(() => {
+    saveUpdatesRef.current = saveUpdates
+  }, [saveUpdates])
+
+  const flushPendingSave = React.useCallback(() => {
+    const updates = pendingUpdatesRef.current
+    pendingUpdatesRef.current = {}
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+      saveTimeoutRef.current = null
+    }
+    if (Object.keys(updates).length > 0) {
+      saveUpdatesRef.current(updates)
+    }
+  }, [])
+
+  const saveNote = React.useCallback(
+    (updates: UpdateNotebookNoteInput) => {
+      pendingUpdatesRef.current = {
+        ...pendingUpdatesRef.current,
+        ...updates,
+      }
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+      saveTimeoutRef.current = setTimeout(flushPendingSave, 500)
+    },
+    [flushPendingSave],
+  )
+
+  React.useEffect(() => flushPendingSave, [flushPendingSave])
+
+  const handleTitleChange = React.useCallback(
+    (newTitle: string) => {
+      setTitle(newTitle)
+      saveNote({ title: newTitle })
+    },
+    [saveNote],
+  )
+
+  const handleContentChange = React.useCallback(
+    (newContent: string) => {
+      setContent(newContent)
+      saveNote({ content: newContent })
+    },
+    [saveNote],
+  )
+
+  return (
+    <>
+      <div
+        className="border-b px-5 py-3"
+        style={{ borderColor: 'var(--border-color)' }}
+      >
+        <input
+          value={title}
+          onChange={(e) => handleTitleChange(e.target.value)}
+          className="w-full bg-transparent text-sm font-semibold outline-none"
+          style={{ color: 'var(--text-primary)' }}
+          placeholder="Note title..."
+        />
+      </div>
+
+      <div className="flex min-h-0 flex-1 flex-col px-5 py-4">
+        <RichTextEditor
+          value={content}
+          onChange={handleContentChange}
+          fullHeight
+        />
+      </div>
+    </>
+  )
 }
 
 export function NoteDrawer({
@@ -23,56 +142,13 @@ export function NoteDrawer({
   onUnlink,
 }: NoteDrawerProps) {
   const drawerRef = React.useRef<HTMLDivElement>(null)
-  const queryClient = useQueryClient()
-  const [title, setTitle] = React.useState('')
-  const [content, setContent] = React.useState('')
-  const saveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
 
   const noteQuery = useQuery({
-    queryKey: ['notebook', noteId],
+    queryKey: queryKeys.notebookNote(noteId ?? '__idle__'),
     queryFn: () => notebookApi.get(noteId as string),
     enabled: Boolean(open && noteId),
   })
-  const isLoading = noteQuery.isLoading || noteQuery.isFetching
-
-  // Seed local edit state when the fetched note changes.
-  const loadedId = noteQuery.data?.id ?? null
-  const [lastLoadedId, setLastLoadedId] = React.useState<string | null>(null)
-  if (noteQuery.data && loadedId !== lastLoadedId) {
-    setLastLoadedId(loadedId)
-    setTitle(noteQuery.data.title)
-    setContent(noteQuery.data.content)
-  }
-
-  // Debounced auto-save
-  const saveNote = React.useCallback(
-    (updates: { title?: string; content?: string }) => {
-      if (!noteId) return
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-      saveTimeoutRef.current = setTimeout(async () => {
-        await notebookApi.update(noteId, updates)
-        queryClient.invalidateQueries({ queryKey: ['notebook'] })
-      }, 500)
-    },
-    [noteId, queryClient],
-  )
-
-  // Cleanup timeout on unmount
-  React.useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-    }
-  }, [])
-
-  const handleTitleChange = (newTitle: string) => {
-    setTitle(newTitle)
-    saveNote({ title: newTitle })
-  }
-
-  const handleContentChange = (newContent: string) => {
-    setContent(newContent)
-    saveNote({ content: newContent })
-  }
+  const isInitialLoading = noteQuery.isLoading && !noteQuery.data
 
   // Close on Escape
   React.useEffect(() => {
@@ -152,34 +228,19 @@ export function NoteDrawer({
               </div>
             </div>
 
-            {/* Title */}
-            <div
-              className="border-b px-5 py-3"
-              style={{ borderColor: 'var(--border-color)' }}
-            >
-              <input
-                value={title}
-                onChange={(e) => handleTitleChange(e.target.value)}
-                className="w-full bg-transparent text-sm font-semibold outline-none"
-                style={{ color: 'var(--text-primary)' }}
-                placeholder="Note title..."
-              />
-            </div>
-
-            {/* Editor */}
-            <div className="flex min-h-0 flex-1 flex-col px-5 py-4">
-              {isLoading ? (
+            {isInitialLoading ? (
+              <div className="flex min-h-0 flex-1 flex-col px-5 py-4">
                 <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
                   Loading...
                 </p>
-              ) : (
-                <RichTextEditor
-                  value={content}
-                  onChange={handleContentChange}
-                  fullHeight
-                />
-              )}
-            </div>
+              </div>
+            ) : noteQuery.data ? (
+              <NoteDrawerEditor key={noteQuery.data.id} note={noteQuery.data} />
+            ) : (
+              <div className="flex min-h-0 flex-1 flex-col px-5 py-4">
+                <p className="text-xs text-red-500">Failed to load note.</p>
+              </div>
+            )}
           </motion.div>
         </>
       )}

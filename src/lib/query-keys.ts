@@ -5,6 +5,7 @@ export const queryKeys = {
   labels: ['labels'] as const,
   people: ['people'] as const,
   notebook: ['notebook'] as const,
+  notebookNote: (id: string) => ['notebook', id] as const,
   accomplishments: (year: number) => ['accomplishments', year] as const,
   yearStats: (year: number) => ['stats', 'year', year] as const,
   githubPrStatus: (url: string) => ['github-pr', url] as const,
