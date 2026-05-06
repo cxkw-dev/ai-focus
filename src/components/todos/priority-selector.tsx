@@ -35,7 +35,7 @@ export function PrioritySelector({
             disabled={disabled}
             onClick={() => onChange(priority.value)}
             className={cn(
-              'relative flex-1 px-3 py-1.5 text-[11px] font-semibold tracking-wide transition-colors select-none',
+              'relative min-w-0 flex-1 basis-0 px-2 py-1.5 text-[11px] font-semibold tracking-wide transition-colors select-none',
               'rounded-full',
               disabled && 'cursor-not-allowed opacity-50',
             )}
@@ -53,16 +53,16 @@ export function PrioritySelector({
                 transition={{ type: 'spring', stiffness: 500, damping: 35 }}
               />
             )}
-            <span className="relative z-10 flex items-center justify-center gap-2">
+            <span className="relative z-10 flex min-w-0 items-center justify-center gap-1.5">
               <span
-                className="h-2 w-2 rounded-full"
+                className="h-2 w-2 shrink-0 rounded-full"
                 style={{
                   backgroundColor: isSelected
                     ? 'var(--primary-foreground)'
                     : priority.colorVar,
                 }}
               />
-              {priority.label}
+              <span className="truncate">{priority.label}</span>
             </span>
           </button>
         )
