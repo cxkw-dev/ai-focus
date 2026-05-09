@@ -5,10 +5,23 @@ ARG NODE_IMAGE=node:22-alpine
 # Build stage
 FROM ${NODE_IMAGE} AS builder
 
+WORKDIR /app
+
+# Trust optional corp SSL-inspection CA bundle during build (apk, npm, next/font).
+# certs/ is gitignored; bundle is empty/absent on machines without an MITM proxy.
+COPY certs/ /tmp/corp-certs/
+RUN mkdir -p /etc/ssl/corp && \
+    if ls /tmp/corp-certs/*.pem >/dev/null 2>&1; then \
+      cat /tmp/corp-certs/*.pem > /etc/ssl/corp/bundle.pem && \
+      cat /tmp/corp-certs/*.pem >> /etc/ssl/cert.pem; \
+    else \
+      : > /etc/ssl/corp/bundle.pem; \
+    fi && \
+    rm -rf /tmp/corp-certs
+ENV NODE_EXTRA_CA_CERTS=/etc/ssl/corp/bundle.pem
+
 # Install OpenSSL for Prisma detection
 RUN apk add --no-cache openssl
-
-WORKDIR /app
 
 # Copy package files (.npmrc silences update-notifier during npm ci)
 COPY package.json package-lock.json* .npmrc* ./
