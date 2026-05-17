@@ -18,8 +18,8 @@ import {
 } from 'lucide-react'
 import { cn, formatRelativeDate } from '@/lib/utils'
 import { getBillingCodeEntries } from '@/lib/labels'
-import { linkifyHtml, mentionifyHtml } from '@/lib/rich-text'
 import { PrDependencyTree } from './pr-dependency-tree'
+import { TodoDescriptionPreview } from './todo-description-preview'
 import { ContactsDrawer } from './contacts-drawer'
 import { StatusUpdatesDrawer } from './status-updates-drawer'
 import { SessionList } from './session-list'
@@ -232,22 +232,9 @@ function TodoItemContent({
                 </span>
               )}
             </div>
-            {todo.description &&
-              (todo.description.startsWith('<') ? (
-                <div
-                  className="rich-text-display mt-1.5 line-clamp-2 leading-snug break-words"
-                  dangerouslySetInnerHTML={{
-                    __html: linkifyHtml(mentionifyHtml(todo.description)),
-                  }}
-                />
-              ) : (
-                <p
-                  className="mt-1.5 line-clamp-2 text-[11px] leading-snug break-words"
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  {renderTextWithLinks(todo.description)}
-                </p>
-              ))}
+            {todo.description && (
+              <TodoDescriptionPreview description={todo.description} />
+            )}
           </div>
         </div>
       </div>
