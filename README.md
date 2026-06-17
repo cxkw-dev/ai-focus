@@ -60,7 +60,7 @@ Optional local AI powers the completed-task accomplishment classifier. Ollama is
 ```env
 AI_PROVIDER="omlx"
 AI_URL="http://localhost:11435/v1"
-AI_MODEL="gemma-3-text-4b-it-4bit"
+AI_MODEL="gemma-4-26b-a4b-it-4bit"
 AI_API_KEY="your-omlx-api-key"
 ```
 

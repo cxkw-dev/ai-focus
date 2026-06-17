@@ -1,6 +1,6 @@
 import { db } from '@/lib/db'
 import { validateTodoBoardForResponse } from '@/lib/server/todo-response'
-import { activeTodoOrderBy, todoInclude } from '@/lib/todo-queries'
+import { activeTodoOrderBy, todoBoardInclude } from '@/lib/todo-queries'
 import { internalError, ok } from '@/lib/server/api-responses'
 
 export async function GET() {
@@ -11,7 +11,7 @@ export async function GET() {
           archived: false,
           status: { notIn: ['COMPLETED', 'CANCELLED'] },
         },
-        include: todoInclude,
+        include: todoBoardInclude,
         orderBy: activeTodoOrderBy,
       }),
       db.todo.findMany({
@@ -19,7 +19,7 @@ export async function GET() {
           archived: true,
           status: { in: ['COMPLETED', 'CANCELLED'] },
         },
-        include: todoInclude,
+        include: todoBoardInclude,
         orderBy: activeTodoOrderBy,
       }),
       db.todo.findMany({
@@ -27,7 +27,7 @@ export async function GET() {
           archived: true,
           status: { notIn: ['COMPLETED', 'CANCELLED'] },
         },
-        include: todoInclude,
+        include: todoBoardInclude,
         orderBy: activeTodoOrderBy,
       }),
     ])

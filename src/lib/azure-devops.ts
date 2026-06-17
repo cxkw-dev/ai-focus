@@ -1,3 +1,5 @@
+import 'server-only'
+
 const DEFAULT_AZURE_API_VERSION = '7.1'
 const COMMENTS_AZURE_API_VERSION = '7.1-preview.4'
 

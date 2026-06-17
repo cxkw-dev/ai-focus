@@ -1,77 +1,108 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
-import { parseJsonBody } from '@/lib/server/api-responses'
-import { z } from 'zod'
-
-const CATEGORIES = [
-  'DELIVERY',
-  'HIRING',
-  'MENTORING',
-  'COLLABORATION',
-  'GROWTH',
-  'OTHER',
-] as const
-
-const updateSchema = z.object({
-  title: z.string().min(1).max(200).optional(),
-  description: z.string().max(1000).nullable().optional(),
-  category: z.enum(CATEGORIES).optional(),
-  date: z
-    .string()
-    .refine((s) => !isNaN(Date.parse(s)), 'Invalid date')
-    .optional(),
-})
+import { emit } from '@/lib/events'
+import {
+  internalError,
+  notFound,
+  ok,
+  parseJsonBody,
+  validationError,
+} from '@/lib/server/api-responses'
+import { updateAccomplishmentSchema } from '@/lib/validation/accomplishment'
+import { ZodError } from 'zod'
 
 export async function PATCH(
-  request: NextRequest,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params
-    const data = await parseJsonBody(request, updateSchema)
+    const data = await parseJsonBody(request, updateAccomplishmentSchema)
 
-    const updateData: Record<string, unknown> = { ...data }
-    if (data.date) {
-      const date = new Date(data.date)
-      updateData.date = date
-      updateData.year = date.getFullYear()
+    const updateData: Prisma.AccomplishmentUpdateInput = {}
+    if (data.title !== undefined) updateData.title = data.title
+    if (data.description !== undefined) {
+      updateData.description = data.description
+    }
+    if (data.category !== undefined) updateData.category = data.category
+    if (data.date !== undefined) {
+      const nextDate = new Date(data.date)
+      updateData.date = nextDate
+      updateData.year = nextDate.getFullYear()
     }
 
-    const accomplishment = await db.accomplishment.update({
-      where: { id },
-      data: updateData,
+    const result = await db.$transaction(async (tx) => {
+      const existing = await tx.accomplishment.findUnique({
+        where: { id },
+        select: { year: true },
+      })
+
+      if (!existing) {
+        return null
+      }
+
+      const accomplishment = await tx.accomplishment.update({
+        where: { id },
+        data: updateData,
+      })
+
+      return { accomplishment, previousYear: existing.year }
     })
 
-    return NextResponse.json(accomplishment)
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.issues },
-        { status: 400 },
-      )
+    if (!result) {
+      return notFound('Accomplishment not found')
     }
 
-    console.error('Error updating accomplishment:', error)
-    return NextResponse.json(
-      { error: 'Failed to update accomplishment' },
-      { status: 500 },
+    emit('accomplishments', { year: result.accomplishment.year })
+    if (result.previousYear !== result.accomplishment.year) {
+      emit('accomplishments', { year: result.previousYear })
+    }
+
+    return ok(result.accomplishment)
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return validationError(error)
+    }
+
+    return internalError(
+      'Failed to update accomplishment',
+      error,
+      'Error updating accomplishment',
     )
   }
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params
-    await db.accomplishment.delete({ where: { id } })
-    return NextResponse.json({ success: true })
+    const deleted = await db.$transaction(async (tx) => {
+      const existing = await tx.accomplishment.findUnique({
+        where: { id },
+        select: { year: true },
+      })
+
+      if (!existing) {
+        return null
+      }
+
+      await tx.accomplishment.delete({ where: { id } })
+      return existing
+    })
+
+    if (!deleted) {
+      return notFound('Accomplishment not found')
+    }
+
+    emit('accomplishments', { year: deleted.year })
+    return ok({ success: true })
   } catch (error) {
-    console.error('Error deleting accomplishment:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete accomplishment' },
-      { status: 500 },
+    return internalError(
+      'Failed to delete accomplishment',
+      error,
+      'Error deleting accomplishment',
     )
   }
 }

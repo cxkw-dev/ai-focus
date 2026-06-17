@@ -52,3 +52,6 @@ vitest.setup.ts
 # Misc
 *.md
 LICENSE
+
+# MCP server is a separate package, not part of Next build
+mcp-server

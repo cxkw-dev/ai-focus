@@ -5,8 +5,8 @@ describe('events', () => {
   it('notifies subscribed listeners', () => {
     const listener = vi.fn()
     const unsubscribe = subscribe(listener)
-    emit('todos', { id: 1 })
-    expect(listener).toHaveBeenCalledWith('todos', { id: 1 })
+    emit('todos', { todoId: 't-1' })
+    expect(listener).toHaveBeenCalledWith('todos', { todoId: 't-1' })
     unsubscribe()
   })
 

@@ -1,9 +1,9 @@
 'use client'
 
 import * as React from 'react'
+import dynamic from 'next/dynamic'
 import { Menu, PenLine } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { ScratchPadDrawer } from '@/components/todos/scratch-pad-drawer'
 
 interface HeaderProps {
   title: string
@@ -11,6 +11,14 @@ interface HeaderProps {
   showMenuButton?: boolean
   actions?: React.ReactNode
 }
+
+const ScratchPadDrawer = dynamic(
+  () =>
+    import('@/components/todos/scratch-pad-drawer').then(
+      (mod) => mod.ScratchPadDrawer,
+    ),
+  { ssr: false },
+)
 
 function ScratchPadButton() {
   const [open, setOpen] = React.useState(false)
@@ -32,7 +40,7 @@ function ScratchPadButton() {
       >
         <PenLine className="h-4 w-4" />
       </button>
-      <ScratchPadDrawer open={open} onClose={() => setOpen(false)} />
+      {open && <ScratchPadDrawer open={open} onClose={() => setOpen(false)} />}
     </>
   )
 }

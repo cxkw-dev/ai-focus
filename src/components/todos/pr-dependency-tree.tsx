@@ -1,5 +1,6 @@
 'use client'
 
+import type { ElementType } from 'react'
 import { Check, GitPullRequest, CircleDot, CircleDotDashed } from 'lucide-react'
 import { GitHubPrBadge } from './github-pr-badge'
 import { GitHubIssueBadge } from './github-issue-badge'
@@ -7,6 +8,36 @@ import { AzureWorkItemBadge } from './azure-workitem-badge'
 import { useGithubPrStatuses } from '@/hooks/use-github-pr-status'
 import { useGithubIssueStatuses } from '@/hooks/use-github-issue-status'
 import { useAzureWorkItemStatuses } from '@/hooks/use-azure-workitem-status'
+import type {
+  AzureWorkItemStatus,
+  GitHubIssueStatus,
+  GitHubPrStatus,
+} from '@/types/todo'
+
+const AZURE_RESOLVED_STATES = new Set(['Done', 'Closed', 'Resolved', 'Removed'])
+
+function buildStatusLookup<T>(urls: string[], statuses: Array<T | undefined>) {
+  const lookup = new Map<string, T | undefined>()
+  urls.forEach((url, index) => {
+    lookup.set(url, statuses[index])
+  })
+  return lookup
+}
+
+function getStatusSummary<T>(
+  urls: string[],
+  lookup: Map<string, T | undefined>,
+  isAggregateLoading: boolean,
+) {
+  const statuses = urls.map((url) => lookup.get(url))
+  const loaded = statuses.filter((status): status is T => Boolean(status))
+
+  return {
+    loaded,
+    isLoading: isAggregateLoading && loaded.length < urls.length,
+    allLoaded: loaded.length === urls.length,
+  }
+}
 
 interface PrDependencyTreeProps {
   myPrUrls: string[]
@@ -24,7 +55,7 @@ function SectionHeader({
   statusLabel,
   statusColor,
 }: {
-  icon: React.ElementType
+  icon: ElementType
   label: string
   statusLabel?: string
   statusColor?: string
@@ -69,8 +100,24 @@ function GitHubSection({
 }) {
   const hasMyPrs = myPrUrls.length > 0
   const hasDeps = githubPrUrls.length > 0
-  const { isLoading, allMergedOrClosed, allMerged } =
-    useGithubPrStatuses(githubPrUrls)
+  const allPrUrls = [...myPrUrls, ...githubPrUrls]
+  const { statuses: prStatuses, isLoading: isLoadingPrStatuses } =
+    useGithubPrStatuses(allPrUrls)
+  const prStatusByUrl = buildStatusLookup<GitHubPrStatus>(allPrUrls, prStatuses)
+  const dependencySummary = getStatusSummary(
+    githubPrUrls,
+    prStatusByUrl,
+    isLoadingPrStatuses,
+  )
+  const isLoading = dependencySummary.isLoading
+  const allMergedOrClosed =
+    dependencySummary.allLoaded &&
+    dependencySummary.loaded.every(
+      (status) => status.state === 'merged' || status.state === 'closed',
+    )
+  const allMerged =
+    dependencySummary.allLoaded &&
+    dependencySummary.loaded.every((status) => status.state === 'merged')
 
   let statusLabel: string | undefined
   let statusColor: string | undefined
@@ -110,14 +157,23 @@ function GitHubSection({
 
       {/* My PRs */}
       {hasMyPrs &&
-        myPrUrls.map((url) => (
-          <div
-            key={url}
-            className="flex w-full min-w-0 items-center gap-1.5 py-0.5"
-          >
-            <GitHubPrBadge url={url} showTitle />
-          </div>
-        ))}
+        myPrUrls.map((url) => {
+          const status = prStatusByUrl.get(url)
+          return (
+            <div
+              key={url}
+              className="flex w-full min-w-0 items-center gap-1.5 py-0.5"
+            >
+              <GitHubPrBadge
+                url={url}
+                showTitle
+                status={status}
+                isStatusLoading={isLoadingPrStatuses && !status}
+                fetchStatus={false}
+              />
+            </div>
+          )
+        })}
 
       {/* Dependency PRs */}
       {hasDeps && (
@@ -160,18 +216,27 @@ function GitHubSection({
             </div>
           )}
           <div className={hasMyPrs ? 'mt-0.5' : ''}>
-            {githubPrUrls.map((url, i) => (
-              <div
-                key={url}
-                className={
-                  hasMyPrs
-                    ? `pr-tree-branch min-w-0${i === githubPrUrls.length - 1 ? 'pr-tree-branch-last' : ''}`
-                    : 'min-w-0 py-0.5'
-                }
-              >
-                <GitHubPrBadge url={url} showTitle />
-              </div>
-            ))}
+            {githubPrUrls.map((url, i) => {
+              const status = prStatusByUrl.get(url)
+              return (
+                <div
+                  key={url}
+                  className={
+                    hasMyPrs
+                      ? `pr-tree-branch min-w-0${i === githubPrUrls.length - 1 ? 'pr-tree-branch-last' : ''}`
+                      : 'min-w-0 py-0.5'
+                  }
+                >
+                  <GitHubPrBadge
+                    url={url}
+                    showTitle
+                    status={status}
+                    isStatusLoading={isLoadingPrStatuses && !status}
+                    fetchStatus={false}
+                  />
+                </div>
+              )
+            })}
           </div>
         </>
       )}
@@ -191,7 +256,26 @@ function AzureSection({
   noBorder?: boolean
 }) {
   const hasAzureDeps = azureDepUrls.length > 0
-  const { isLoading, allResolved } = useAzureWorkItemStatuses(azureDepUrls)
+  const allAzureUrls = azureWorkItemUrl
+    ? [azureWorkItemUrl, ...azureDepUrls]
+    : azureDepUrls
+  const { statuses: azureStatuses, isLoading: isLoadingAzureStatuses } =
+    useAzureWorkItemStatuses(allAzureUrls)
+  const azureStatusByUrl = buildStatusLookup<AzureWorkItemStatus>(
+    allAzureUrls,
+    azureStatuses,
+  )
+  const dependencySummary = getStatusSummary(
+    azureDepUrls,
+    azureStatusByUrl,
+    isLoadingAzureStatuses,
+  )
+  const isLoading = dependencySummary.isLoading
+  const allResolved =
+    dependencySummary.allLoaded &&
+    dependencySummary.loaded.every((status) =>
+      AZURE_RESOLVED_STATES.has(status.state),
+    )
 
   let statusLabel: string | undefined
   let statusColor: string | undefined
@@ -229,7 +313,15 @@ function AzureSection({
       {/* My work item */}
       {azureWorkItemUrl && (
         <div className="flex w-full min-w-0 items-center gap-1.5 py-0.5">
-          <AzureWorkItemBadge url={azureWorkItemUrl} showTitle />
+          <AzureWorkItemBadge
+            url={azureWorkItemUrl}
+            showTitle
+            status={azureStatusByUrl.get(azureWorkItemUrl)}
+            isStatusLoading={
+              isLoadingAzureStatuses && !azureStatusByUrl.get(azureWorkItemUrl)
+            }
+            fetchStatus={false}
+          />
         </div>
       )}
 
@@ -266,18 +358,27 @@ function AzureSection({
             </div>
           )}
           <div className={azureWorkItemUrl ? 'mt-0.5' : ''}>
-            {azureDepUrls.map((url, i) => (
-              <div
-                key={url}
-                className={
-                  azureWorkItemUrl
-                    ? `pr-tree-branch min-w-0${i === azureDepUrls.length - 1 ? 'pr-tree-branch-last' : ''}`
-                    : 'min-w-0 py-0.5'
-                }
-              >
-                <AzureWorkItemBadge url={url} showTitle />
-              </div>
-            ))}
+            {azureDepUrls.map((url, i) => {
+              const status = azureStatusByUrl.get(url)
+              return (
+                <div
+                  key={url}
+                  className={
+                    azureWorkItemUrl
+                      ? `pr-tree-branch min-w-0${i === azureDepUrls.length - 1 ? 'pr-tree-branch-last' : ''}`
+                      : 'min-w-0 py-0.5'
+                  }
+                >
+                  <AzureWorkItemBadge
+                    url={url}
+                    showTitle
+                    status={status}
+                    isStatusLoading={isLoadingAzureStatuses && !status}
+                    fetchStatus={false}
+                  />
+                </div>
+              )
+            })}
           </div>
         </>
       )}
@@ -298,7 +399,22 @@ function GitHubIssuesSection({
 }) {
   const hasMyIssues = myIssueUrls.length > 0
   const hasDeps = githubIssueUrls.length > 0
-  const { isLoading, allClosed } = useGithubIssueStatuses(githubIssueUrls)
+  const allIssueUrls = [...myIssueUrls, ...githubIssueUrls]
+  const { statuses: issueStatuses, isLoading: isLoadingIssueStatuses } =
+    useGithubIssueStatuses(allIssueUrls)
+  const issueStatusByUrl = buildStatusLookup<GitHubIssueStatus>(
+    allIssueUrls,
+    issueStatuses,
+  )
+  const dependencySummary = getStatusSummary(
+    githubIssueUrls,
+    issueStatusByUrl,
+    isLoadingIssueStatuses,
+  )
+  const isLoading = dependencySummary.isLoading
+  const allClosed =
+    dependencySummary.allLoaded &&
+    dependencySummary.loaded.every((status) => status.state === 'closed')
 
   let statusLabel: string | undefined
   let statusColor: string | undefined
@@ -335,14 +451,23 @@ function GitHubIssuesSection({
 
       {/* My Issues */}
       {hasMyIssues &&
-        myIssueUrls.map((url) => (
-          <div
-            key={url}
-            className="flex w-full min-w-0 items-center gap-1.5 py-0.5"
-          >
-            <GitHubIssueBadge url={url} showTitle />
-          </div>
-        ))}
+        myIssueUrls.map((url) => {
+          const status = issueStatusByUrl.get(url)
+          return (
+            <div
+              key={url}
+              className="flex w-full min-w-0 items-center gap-1.5 py-0.5"
+            >
+              <GitHubIssueBadge
+                url={url}
+                showTitle
+                status={status}
+                isStatusLoading={isLoadingIssueStatuses && !status}
+                fetchStatus={false}
+              />
+            </div>
+          )
+        })}
 
       {/* Dependency Issues */}
       {hasDeps && (
@@ -377,18 +502,27 @@ function GitHubIssuesSection({
             </div>
           )}
           <div className={hasMyIssues ? 'mt-0.5' : ''}>
-            {githubIssueUrls.map((url, i) => (
-              <div
-                key={url}
-                className={
-                  hasMyIssues
-                    ? `pr-tree-branch min-w-0${i === githubIssueUrls.length - 1 ? 'pr-tree-branch-last' : ''}`
-                    : 'min-w-0 py-0.5'
-                }
-              >
-                <GitHubIssueBadge url={url} showTitle />
-              </div>
-            ))}
+            {githubIssueUrls.map((url, i) => {
+              const status = issueStatusByUrl.get(url)
+              return (
+                <div
+                  key={url}
+                  className={
+                    hasMyIssues
+                      ? `pr-tree-branch min-w-0${i === githubIssueUrls.length - 1 ? 'pr-tree-branch-last' : ''}`
+                      : 'min-w-0 py-0.5'
+                  }
+                >
+                  <GitHubIssueBadge
+                    url={url}
+                    showTitle
+                    status={status}
+                    isStatusLoading={isLoadingIssueStatuses && !status}
+                    fetchStatus={false}
+                  />
+                </div>
+              )
+            })}
           </div>
         </>
       )}

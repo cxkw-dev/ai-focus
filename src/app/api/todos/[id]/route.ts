@@ -29,7 +29,9 @@ const TODO_ROUTE_ERRORS = {
 type ExistingTodoSnapshot = {
   id: string
   status: PrismaStatus
+  completedAt: Date | null
   notebookNoteId: string | null
+  accomplishment: { year: number } | null
   subtasks: { id: string }[]
 }
 
@@ -119,6 +121,7 @@ async function applyStatusTransition(
     archived?: boolean
     completedAt?: Date | null
     statusChangedAt?: Date
+    accomplishmentYear?: number
   } = {}
 
   if (nextStatus === undefined) {
@@ -140,9 +143,10 @@ async function applyStatusTransition(
     todo.status as (typeof terminalStatuses)[number],
   )
 
-  if (isTerminal) {
+  if (nextStatus === PrismaStatus.COMPLETED) {
     transition.archived = true
-    if (nextStatus === PrismaStatus.COMPLETED) {
+
+    if (todo.status !== PrismaStatus.COMPLETED || !todo.completedAt) {
       transition.completedAt = new Date()
     }
 
@@ -156,13 +160,31 @@ async function applyStatusTransition(
     return transition
   }
 
-  if (wasTerminal) {
-    transition.archived = false
+  if (todo.status === PrismaStatus.COMPLETED) {
     transition.completedAt = null
+    transition.accomplishmentYear =
+      todo.accomplishment?.year ?? todo.completedAt?.getFullYear()
 
     await tx.accomplishment.deleteMany({
       where: { todoId: todo.id },
     })
+  }
+
+  if (isTerminal) {
+    transition.archived = true
+
+    if (todo.notebookNoteId) {
+      await tx.notebookNote.update({
+        where: { id: todo.notebookNoteId },
+        data: { archived: true },
+      })
+    }
+
+    return transition
+  }
+
+  if (wasTerminal) {
+    transition.archived = false
 
     if (todo.notebookNoteId) {
       await tx.notebookNote.update({
@@ -237,7 +259,9 @@ async function loadTodoForMutation(
     select: {
       id: true,
       status: true,
+      completedAt: true,
       notebookNoteId: true,
+      accomplishment: { select: { year: true } },
       subtasks: { select: { id: true } },
     },
   })
@@ -278,6 +302,7 @@ export async function PATCH(
     const { id } = await params
     const data = await parseJsonBody(request, updateTodoSchema)
     let shouldEvaluateAccomplishment = false
+    let accomplishmentYearToInvalidate: number | undefined
 
     const todo = await db.$transaction(async (tx) => {
       const existingTodo = await loadTodoForMutation(tx, id)
@@ -295,6 +320,7 @@ export async function PATCH(
         existingTodo,
         nextStatus,
       )
+      accomplishmentYearToInvalidate = transition.accomplishmentYear
       const updateData = buildTodoUpdateData(data, transition)
 
       return tx.todo.update({
@@ -315,6 +341,9 @@ export async function PATCH(
     }
 
     emit('todos')
+    if (accomplishmentYearToInvalidate !== undefined) {
+      emit('accomplishments', { year: accomplishmentYearToInvalidate })
+    }
     if (data.status !== undefined || data.notebookNoteId !== undefined) {
       emit('notebook')
     }
@@ -350,7 +379,12 @@ export async function DELETE(
     const deletedNoteId = await db.$transaction(async (tx) => {
       const todo = await tx.todo.findUnique({
         where: todoWhere(id),
-        select: { id: true, notebookNoteId: true },
+        select: {
+          id: true,
+          completedAt: true,
+          notebookNoteId: true,
+          accomplishment: { select: { year: true } },
+        },
       })
 
       if (!todo) {
@@ -366,11 +400,18 @@ export async function DELETE(
           .catch(() => {})
       }
 
-      return todo.notebookNoteId
+      return {
+        notebookNoteId: todo.notebookNoteId,
+        accomplishmentYear:
+          todo.accomplishment?.year ?? todo.completedAt?.getFullYear(),
+      }
     })
 
     emit('todos')
-    if (deletedNoteId) {
+    if (deletedNoteId.accomplishmentYear !== undefined) {
+      emit('accomplishments', { year: deletedNoteId.accomplishmentYear })
+    }
+    if (deletedNoteId.notebookNoteId) {
       emit('notebook')
     }
 

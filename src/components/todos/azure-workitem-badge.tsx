@@ -29,13 +29,22 @@ function extractWorkItemId(url: string): string {
 interface AzureWorkItemBadgeProps {
   url: string
   showTitle?: boolean
+  status?: AzureWorkItemStatus
+  isStatusLoading?: boolean
+  fetchStatus?: boolean
 }
 
 export function AzureWorkItemBadge({
   url,
   showTitle,
+  status,
+  isStatusLoading,
+  fetchStatus = true,
 }: AzureWorkItemBadgeProps) {
-  const { data, isLoading, isError } = useAzureWorkItemStatus(url)
+  const statusQuery = useAzureWorkItemStatus(fetchStatus && !status ? url : '')
+  const data = status ?? statusQuery.data
+  const isLoading = data ? false : (isStatusLoading ?? statusQuery.isLoading)
+  const isError = data ? false : fetchStatus ? statusQuery.isError : !isLoading
 
   const itemId = data?.id ?? extractWorkItemId(url)
 

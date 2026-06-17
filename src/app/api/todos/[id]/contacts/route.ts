@@ -55,15 +55,21 @@ export async function POST(
     }
 
     const data = await parseJsonBody(request, addTodoContactSchema)
-    const count = await db.todoContact.count({ where: { todoId: todo.id } })
-    const contact = await db.todoContact.create({
-      data: {
-        todoId: todo.id,
-        personId: data.personId,
-        role: data.role,
-        order: count,
-      },
-      include: { person: { select: { id: true, name: true, email: true } } },
+    const contact = await db.$transaction(async (tx) => {
+      const order = await tx.todoContact.aggregate({
+        where: { todoId: todo.id },
+        _max: { order: true },
+      })
+
+      return tx.todoContact.create({
+        data: {
+          todoId: todo.id,
+          personId: data.personId,
+          role: data.role,
+          order: (order._max.order ?? -1) + 1,
+        },
+        include: { person: { select: { id: true, name: true, email: true } } },
+      })
     })
 
     emit('todoContacts', { todoId: todo.id })

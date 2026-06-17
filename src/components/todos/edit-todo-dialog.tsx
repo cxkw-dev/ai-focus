@@ -84,9 +84,12 @@ export function EditTodoDialog({
   )
   const [editingContactRole, setEditingContactRole] = React.useState('')
   const queryClient = useQueryClient()
+  const isEditing = !!todo
+  const shouldLoadNotebookNotes = open && isEditing
   const { data: allNotes } = useQuery({
     queryKey: queryKeys.notebook,
     queryFn: () => notebookApi.list(),
+    enabled: shouldLoadNotebookNotes,
   })
   const unlinkedNotes = React.useMemo(
     () => (allNotes ?? []).filter((n) => !n.todo),
@@ -144,8 +147,6 @@ export function EditTodoDialog({
     },
     [],
   )
-
-  const isEditing = !!todo
 
   // Save changes when dialog closes (escape, overlay click, close button)
   const handleClose = React.useCallback(() => {

@@ -44,10 +44,22 @@ function getBadgeConfig(data: GitHubPrStatus) {
 interface GitHubPrBadgeProps {
   url: string
   showTitle?: boolean
+  status?: GitHubPrStatus
+  isStatusLoading?: boolean
+  fetchStatus?: boolean
 }
 
-export function GitHubPrBadge({ url, showTitle }: GitHubPrBadgeProps) {
-  const { data, isLoading, isError } = useGithubPrStatus(url)
+export function GitHubPrBadge({
+  url,
+  showTitle,
+  status,
+  isStatusLoading,
+  fetchStatus = true,
+}: GitHubPrBadgeProps) {
+  const statusQuery = useGithubPrStatus(fetchStatus && !status ? url : '')
+  const data = status ?? statusQuery.data
+  const isLoading = data ? false : (isStatusLoading ?? statusQuery.isLoading)
+  const isError = data ? false : fetchStatus ? statusQuery.isError : !isLoading
 
   // Extract PR number from URL as fallback
   const match = url.match(/\/pull\/(\d+)/)

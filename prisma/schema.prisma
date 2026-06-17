@@ -40,6 +40,7 @@ model Todo {
   @@index([archived])
   @@index([priority])
   @@index([dueDate])
+  @@index([createdAt])
   @@index([order])
   @@index([completedAt])
   // Supports the board query (active / completed / deleted slices)

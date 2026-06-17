@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { cn } from '@/lib/utils'
-import { linkifyHtml, mentionifyHtml } from '@/lib/rich-text'
+import { linkifyHtml, mentionifyHtml, sanitizeHtml } from '@/lib/rich-text'
 import { renderTextWithLinks } from './linkified-text'
 
 const COLLAPSED_MAX_HEIGHT = 80
@@ -46,7 +46,7 @@ export function TodoDescriptionPreview({
             <div
               className="rich-text-display leading-snug break-words"
               dangerouslySetInnerHTML={{
-                __html: linkifyHtml(mentionifyHtml(description)),
+                __html: sanitizeHtml(linkifyHtml(mentionifyHtml(description))),
               }}
             />
           ) : (

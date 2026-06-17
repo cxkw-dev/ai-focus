@@ -30,10 +30,22 @@ function getBadgeConfig(data: GitHubIssueStatus) {
 interface GitHubIssueBadgeProps {
   url: string
   showTitle?: boolean
+  status?: GitHubIssueStatus
+  isStatusLoading?: boolean
+  fetchStatus?: boolean
 }
 
-export function GitHubIssueBadge({ url, showTitle }: GitHubIssueBadgeProps) {
-  const { data, isLoading, isError } = useGithubIssueStatus(url)
+export function GitHubIssueBadge({
+  url,
+  showTitle,
+  status,
+  isStatusLoading,
+  fetchStatus = true,
+}: GitHubIssueBadgeProps) {
+  const statusQuery = useGithubIssueStatus(fetchStatus && !status ? url : '')
+  const data = status ?? statusQuery.data
+  const isLoading = data ? false : (isStatusLoading ?? statusQuery.isLoading)
+  const isError = data ? false : fetchStatus ? statusQuery.isError : !isLoading
 
   const match = url.match(/\/issues\/(\d+)/)
   const issueNumber = data?.number ?? (match ? match[1] : '?')

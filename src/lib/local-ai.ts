@@ -1,3 +1,5 @@
+import 'server-only'
+
 export type LocalAiProvider = 'ollama' | 'omlx'
 
 export interface LocalAiConfig {
@@ -20,7 +22,7 @@ interface GenerateOptions {
 const DEFAULT_OLLAMA_URL = 'http://localhost:11434'
 const DEFAULT_OLLAMA_MODEL = 'gemma3:latest'
 const DEFAULT_OMLX_URL = 'http://localhost:11435/v1'
-const DEFAULT_OMLX_MODEL = 'gemma-3-text-4b-it-4bit'
+const DEFAULT_OMLX_MODEL = 'gemma-4-26b-a4b-it-4bit'
 
 export function getLocalAiConfig(): LocalAiConfig {
   const provider = getProvider()

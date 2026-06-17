@@ -1,11 +1,20 @@
 import { Prisma } from '@prisma/client'
 import { labelInclude } from '@/lib/label-queries'
 
-export const todoInclude = Prisma.validator<Prisma.TodoInclude>()({
+export const todoBaseInclude = Prisma.validator<Prisma.TodoInclude>()({
   labels: { orderBy: { name: 'asc' }, include: labelInclude },
   subtasks: { orderBy: { order: 'asc' } },
   notebookNote: { select: { id: true, title: true } },
+})
+
+export const todoInclude = Prisma.validator<Prisma.TodoInclude>()({
+  ...todoBaseInclude,
   sessions: { orderBy: { createdAt: 'desc' } },
+})
+
+export const todoBoardInclude = Prisma.validator<Prisma.TodoInclude>()({
+  ...todoBaseInclude,
+  sessions: { orderBy: { createdAt: 'desc' }, take: 3 },
 })
 
 export const activeTodoOrderBy = Prisma.validator<

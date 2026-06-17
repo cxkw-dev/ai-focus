@@ -1,5 +1,7 @@
+import 'server-only'
+
 import { db } from '@/lib/db'
-import { emit } from '@/lib/events'
+import { emit, type EventPayload } from '@/lib/events'
 import { generateLocalAiText, getLocalAiConfig } from '@/lib/local-ai'
 
 const PROMPT = `You are a performance review assistant. A developer just completed a task. Decide if it belongs in their performance review and categorize it.
@@ -55,16 +57,16 @@ export function evaluateAccomplishment(task: CompletedTaskInfo): void {
 }
 
 function emitEval(
-  stage: string,
+  stage: EventPayload<'eval'>['stage'],
   task: CompletedTaskInfo,
-  extra?: Record<string, unknown>,
+  extra?: Pick<EventPayload<'eval'>, 'outcome'>,
 ) {
-  const payload: Record<string, unknown> = {
+  const payload: EventPayload<'eval'> = {
     stage,
     todoId: task.id,
     taskTitle: task.title,
+    ...extra,
   }
-  if (extra) Object.assign(payload, extra)
   console.log('[accomplishment-agent] emitEval:', stage, task.title)
   emit('eval', payload)
 }
@@ -193,6 +195,7 @@ async function doEvaluate(task: CompletedTaskInfo): Promise<void> {
     },
   })
 
+  emit('accomplishments', { year: date.getFullYear() })
   emitEval('result', task, { outcome: { created: true, title, category } })
   console.log(
     `[accomplishment-agent] Created accomplishment: [${category}] ${title}`,

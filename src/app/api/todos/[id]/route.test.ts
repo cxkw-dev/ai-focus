@@ -3,6 +3,7 @@ import { dbMock, resetDbMock } from '@/test/db-mock'
 import { makeTodoRow, prismaError } from '@/test/fixtures'
 import { makeParams, makeRequest } from '@/test/request'
 import { evaluateAccomplishment } from '@/lib/accomplishment-agent'
+import { emit } from '@/lib/events'
 
 vi.mock('@/lib/db', () => ({ db: dbMock }))
 vi.mock('@/lib/events', () => ({
@@ -16,6 +17,7 @@ vi.mock('@/lib/accomplishment-agent', () => ({
 beforeEach(() => {
   resetDbMock()
   vi.mocked(evaluateAccomplishment).mockReset()
+  vi.mocked(emit).mockReset()
 })
 
 describe('GET /api/todos/[id]', () => {
@@ -156,6 +158,51 @@ describe('PATCH /api/todos/[id]', () => {
     )
 
     expect(res.status).toBe(200)
+    expect(evaluateAccomplishment).not.toHaveBeenCalled()
+  })
+
+  it('clears completion state and accomplishment when moving from completed to cancelled', async () => {
+    const { PATCH } = await import('./route')
+    const completedAt = new Date('2026-05-01T16:00:00.000Z')
+    dbMock.todo.findUnique.mockResolvedValue({
+      id: 't-1',
+      status: 'COMPLETED',
+      completedAt,
+      notebookNoteId: null,
+      subtasks: [],
+    })
+    dbMock.accomplishment.deleteMany.mockResolvedValue({ count: 1 })
+    dbMock.todo.update.mockResolvedValue(
+      makeTodoRow({
+        id: 't-1',
+        status: 'CANCELLED',
+        archived: true,
+        completedAt: null,
+      }),
+    )
+
+    const res = await PATCH(
+      makeRequest({
+        method: 'PATCH',
+        url: 'http://localhost/api/todos/t-1',
+        body: { status: 'CANCELLED' },
+      }),
+      makeParams({ id: 't-1' }),
+    )
+
+    expect(res.status).toBe(200)
+    expect(dbMock.accomplishment.deleteMany).toHaveBeenCalledWith({
+      where: { todoId: 't-1' },
+    })
+    expect(dbMock.todo.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          archived: true,
+          completedAt: null,
+        }),
+      }),
+    )
+    expect(emit).toHaveBeenCalledWith('accomplishments', { year: 2026 })
     expect(evaluateAccomplishment).not.toHaveBeenCalled()
   })
 })

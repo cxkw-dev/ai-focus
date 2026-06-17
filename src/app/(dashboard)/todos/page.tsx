@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import dynamic from 'next/dynamic'
 import { Plus, Eye, EyeOff, Circle, CheckCircle2, Trash2 } from 'lucide-react'
 import { HeaderActions } from '@/components/layout/header-actions-context'
 import { BlockedExpandedProvider } from '@/components/todos/todo-item'
@@ -9,9 +10,6 @@ import {
   LabelStatusBoard,
   type LabelStatusBoardFilter,
 } from '@/components/todos/label-status-board'
-import { EditTodoDialog } from '@/components/todos/edit-todo-dialog'
-import { CreateTodoModal } from '@/components/todos/create-todo-modal'
-import { NoteDrawer } from '@/components/todos/note-drawer'
 import { useToast } from '@/components/ui/use-toast'
 import { useTodos } from '@/hooks/use-todos'
 import { useLabels } from '@/hooks/use-labels'
@@ -24,6 +22,27 @@ import type {
   CreateTodoInput,
   SubtaskInput,
 } from '@/types/todo'
+
+const EditTodoDialog = dynamic(
+  () =>
+    import('@/components/todos/edit-todo-dialog').then(
+      (mod) => mod.EditTodoDialog,
+    ),
+  { ssr: false },
+)
+
+const CreateTodoModal = dynamic(
+  () =>
+    import('@/components/todos/create-todo-modal').then(
+      (mod) => mod.CreateTodoModal,
+    ),
+  { ssr: false },
+)
+
+const NoteDrawer = dynamic(
+  () => import('@/components/todos/note-drawer').then((mod) => mod.NoteDrawer),
+  { ssr: false },
+)
 
 export default function TodosPage() {
   const {
@@ -529,32 +548,38 @@ export default function TodosPage() {
         </div>
 
         {/* Edit Dialog */}
-        <EditTodoDialog
-          open={isFormOpen}
-          onOpenChange={handleFormClose}
-          onSubmit={handleUpdate}
-          todo={editingTodo}
-          isLoading={isSaving}
-          people={people}
-        />
+        {isFormOpen && editingTodo && (
+          <EditTodoDialog
+            open={isFormOpen}
+            onOpenChange={handleFormClose}
+            onSubmit={handleUpdate}
+            todo={editingTodo}
+            isLoading={isSaving}
+            people={people}
+          />
+        )}
 
         {/* Create Modal */}
-        <CreateTodoModal
-          open={isCreateModalOpen}
-          onOpenChange={setIsCreateModalOpen}
-          onSubmit={handleCreate}
-          isLoading={isSaving}
-          people={people}
-        />
+        {isCreateModalOpen && (
+          <CreateTodoModal
+            open={isCreateModalOpen}
+            onOpenChange={setIsCreateModalOpen}
+            onSubmit={handleCreate}
+            isLoading={isSaving}
+            people={people}
+          />
+        )}
 
         {/* Note Drawer */}
-        <NoteDrawer
-          noteId={openNote?.noteId ?? null}
-          todoTitle={openNote?.todoTitle}
-          open={!!openNote}
-          onClose={() => setOpenNote(null)}
-          onUnlink={handleUnlinkNote}
-        />
+        {openNote && (
+          <NoteDrawer
+            noteId={openNote.noteId}
+            todoTitle={openNote.todoTitle}
+            open={true}
+            onClose={() => setOpenNote(null)}
+            onUnlink={handleUnlinkNote}
+          />
+        )}
 
         <button
           type="button"

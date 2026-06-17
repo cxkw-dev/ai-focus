@@ -30,6 +30,7 @@ import {
   linkifyHtml,
   mentionifyHtml,
   normalizeSubtaskTitle,
+  sanitizeHtml,
 } from '@/lib/rich-text'
 import {
   isRapidDuplicateSubtaskCommit,
@@ -439,7 +440,7 @@ function ReadOnlyInlineSubtask({ subtask }: { subtask: Subtask }) {
           <div
             className="[&_.mention]:font-medium [&_.mention:hover]:underline [&_a]:text-[var(--primary)] [&_a:hover]:underline [&_p]:my-0 [&_p]:leading-snug"
             dangerouslySetInnerHTML={{
-              __html: linkifyHtml(mentionifyHtml(subtask.title)),
+              __html: sanitizeHtml(linkifyHtml(mentionifyHtml(subtask.title))),
             }}
           />
         ) : (

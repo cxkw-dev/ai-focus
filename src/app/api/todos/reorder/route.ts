@@ -14,25 +14,33 @@ export async function POST(request: Request) {
   try {
     const { orderedIds } = await parseJsonBody(request, reorderTodosSchema)
 
-    const matchedTodoCount = await db.todo.count({
-      where: {
-        id: { in: orderedIds },
-        archived: false,
-      },
+    const didReorder = await db.$transaction(async (tx) => {
+      const matchedTodoCount = await tx.todo.count({
+        where: {
+          id: { in: orderedIds },
+          archived: false,
+        },
+      })
+
+      if (matchedTodoCount !== orderedIds.length) {
+        return false
+      }
+
+      await Promise.all(
+        orderedIds.map((id, index) =>
+          tx.todo.update({
+            where: { id },
+            data: { order: index },
+          }),
+        ),
+      )
+
+      return true
     })
 
-    if (matchedTodoCount !== orderedIds.length) {
+    if (!didReorder) {
       return badRequest('One or more todos are invalid or archived')
     }
-
-    await db.$transaction(
-      orderedIds.map((id, index) =>
-        db.todo.update({
-          where: { id },
-          data: { order: index },
-        }),
-      ),
-    )
 
     emit('todos')
     return ok({ success: true })

@@ -1,8 +1,11 @@
 import type { Prisma } from '@prisma/client'
-import { todoInclude } from '@/lib/todo-queries'
+import { todoBoardInclude, todoInclude } from '@/lib/todo-queries'
 import { SESSION_TOOL_VALUES, type SessionTool } from '@/types/todo'
 
 type TodoWithRelations = Prisma.TodoGetPayload<{ include: typeof todoInclude }>
+type TodoBoardWithRelations = Prisma.TodoGetPayload<{
+  include: typeof todoBoardInclude
+}>
 
 const sessionToolSet = new Set<string>(SESSION_TOOL_VALUES)
 
@@ -42,9 +45,9 @@ export function validateTodosForResponse<T extends TodoWithRelations[]>(
 
 export function validateTodoBoardForResponse<
   T extends {
-    active: TodoWithRelations[]
-    completed: TodoWithRelations[]
-    deleted: TodoWithRelations[]
+    active: TodoBoardWithRelations[]
+    completed: TodoBoardWithRelations[]
+    deleted: TodoBoardWithRelations[]
   },
 >(board: T) {
   validateTodosForResponse(board.active)

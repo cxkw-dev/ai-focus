@@ -16,6 +16,7 @@ import {
   linkifyHtml,
   mentionifyHtml,
   normalizeSubtaskTitle,
+  sanitizeHtml,
 } from '@/lib/rich-text'
 import type { CreateTodoInput, Priority } from '@/types/todo'
 import type { Person } from '@/types/person'
@@ -312,8 +313,8 @@ export function InlineTodoForm({
                           <div
                             className="[&_.mention]:font-medium [&_.mention:hover]:underline [&_a]:text-[var(--primary)] [&_a:hover]:underline [&_p]:my-0 [&_p]:leading-snug"
                             dangerouslySetInnerHTML={{
-                              __html: linkifyHtml(
-                                mentionifyHtml(subtask.title),
+                              __html: sanitizeHtml(
+                                linkifyHtml(mentionifyHtml(subtask.title)),
                               ),
                             }}
                           />

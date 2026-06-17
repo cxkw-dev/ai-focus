@@ -1,51 +1,46 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { parseJsonBody } from '@/lib/server/api-responses'
-import { z } from 'zod'
+import { emit } from '@/lib/events'
+import {
+  created,
+  internalError,
+  ok,
+  parseJsonBody,
+  validationError,
+} from '@/lib/server/api-responses'
+import {
+  createAccomplishmentSchema,
+  parseListAccomplishmentsQuery,
+} from '@/lib/validation/accomplishment'
+import { ZodError } from 'zod'
 
-const CATEGORIES = [
-  'DELIVERY',
-  'HIRING',
-  'MENTORING',
-  'COLLABORATION',
-  'GROWTH',
-  'OTHER',
-] as const
-
-const createSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(200),
-  description: z.string().max(1000).optional(),
-  category: z.enum(CATEGORIES),
-  date: z.string().refine((s) => !isNaN(Date.parse(s)), 'Invalid date'),
-})
-
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
   try {
-    const yearParam = request.nextUrl.searchParams.get('year')
-    const year = yearParam ? parseInt(yearParam, 10) : new Date().getFullYear()
-
-    if (isNaN(year) || year < 2000 || year > 2100) {
-      return NextResponse.json({ error: 'Invalid year' }, { status: 400 })
-    }
+    const { year } = parseListAccomplishmentsQuery(
+      new URL(request.url).searchParams,
+    )
 
     const accomplishments = await db.accomplishment.findMany({
       where: { year },
       orderBy: { date: 'desc' },
     })
 
-    return NextResponse.json(accomplishments)
+    return ok(accomplishments)
   } catch (error) {
-    console.error('Error fetching accomplishments:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch accomplishments' },
-      { status: 500 },
+    if (error instanceof ZodError) {
+      return validationError(error)
+    }
+
+    return internalError(
+      'Failed to fetch accomplishments',
+      error,
+      'Error fetching accomplishments',
     )
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const data = await parseJsonBody(request, createSchema)
+    const data = await parseJsonBody(request, createAccomplishmentSchema)
     const date = new Date(data.date)
 
     const accomplishment = await db.accomplishment.create({
@@ -58,19 +53,17 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json(accomplishment, { status: 201 })
+    emit('accomplishments', { year: date.getFullYear() })
+    return created(accomplishment)
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.issues },
-        { status: 400 },
-      )
+    if (error instanceof ZodError) {
+      return validationError(error)
     }
 
-    console.error('Error creating accomplishment:', error)
-    return NextResponse.json(
-      { error: 'Failed to create accomplishment' },
-      { status: 500 },
+    return internalError(
+      'Failed to create accomplishment',
+      error,
+      'Error creating accomplishment',
     )
   }
 }

@@ -54,7 +54,7 @@ export async function POST(
 
     const update = await db.statusUpdate.create({
       data: {
-        todoId: id,
+        todoId: todo.id,
         content: data.content,
         status: data.status ?? null,
       },

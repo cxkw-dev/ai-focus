@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -20,10 +21,7 @@ import { cn, formatRelativeDate } from '@/lib/utils'
 import { getBillingCodeEntries } from '@/lib/labels'
 import { PrDependencyTree } from './pr-dependency-tree'
 import { TodoDescriptionPreview } from './todo-description-preview'
-import { ContactsDrawer } from './contacts-drawer'
-import { StatusUpdatesDrawer } from './status-updates-drawer'
 import { SessionList } from './session-list'
-import { BillingCodesDrawer } from './billing-codes-drawer'
 import { CollapsedTodoRow } from './collapsed-todo-row'
 import { renderTextWithLinks } from './linkified-text'
 import {
@@ -38,6 +36,22 @@ import {
 import { TodoInlineSubtasks } from './todo-inline-subtasks'
 import type { Todo, Status, Priority, SubtaskInput } from '@/types/todo'
 import type { Person } from '@/types/person'
+
+const BillingCodesDrawer = dynamic(
+  () => import('./billing-codes-drawer').then((mod) => mod.BillingCodesDrawer),
+  { ssr: false },
+)
+
+const ContactsDrawer = dynamic(
+  () => import('./contacts-drawer').then((mod) => mod.ContactsDrawer),
+  { ssr: false },
+)
+
+const StatusUpdatesDrawer = dynamic(
+  () =>
+    import('./status-updates-drawer').then((mod) => mod.StatusUpdatesDrawer),
+  { ssr: false },
+)
 
 const BlockedExpandedContext = React.createContext(false)
 
@@ -362,6 +376,8 @@ export function TodoItem({
       }
       className={cn(
         'min-w-0 transition-opacity duration-150',
+        !dragging &&
+          '[contain-intrinsic-size:0_220px] [content-visibility:auto]',
         dragging && 'opacity-50',
       )}
     >
@@ -438,22 +454,28 @@ export function TodoItem({
                 manuallyExpanded ? () => setManuallyExpanded(false) : undefined
               }
             />
-            <BillingCodesDrawer
-              entries={billingEntries}
-              open={billingOpen}
-              onClose={() => setBillingOpen(false)}
-            />
-            <ContactsDrawer
-              todoId={todo.id}
-              open={contactsOpen}
-              onClose={() => setContactsOpen(false)}
-              people={people}
-            />
-            <StatusUpdatesDrawer
-              todoId={todo.id}
-              open={timelineOpen}
-              onClose={() => setTimelineOpen(false)}
-            />
+            {billingOpen && (
+              <BillingCodesDrawer
+                entries={billingEntries}
+                open={billingOpen}
+                onClose={() => setBillingOpen(false)}
+              />
+            )}
+            {contactsOpen && (
+              <ContactsDrawer
+                todoId={todo.id}
+                open={contactsOpen}
+                onClose={() => setContactsOpen(false)}
+                people={people}
+              />
+            )}
+            {timelineOpen && (
+              <StatusUpdatesDrawer
+                todoId={todo.id}
+                open={timelineOpen}
+                onClose={() => setTimelineOpen(false)}
+              />
+            )}
           </div>
 
           {/* Side tabs — stacked vertically */}
