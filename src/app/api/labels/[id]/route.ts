@@ -25,6 +25,12 @@ export async function PATCH(
         data: {
           ...(data.name !== undefined ? { name: data.name } : {}),
           ...(data.color !== undefined ? { color: data.color } : {}),
+          ...(data.archived !== undefined
+            ? {
+                archived: data.archived,
+                archivedAt: data.archived ? new Date() : null,
+              }
+            : {}),
         },
       })
 
@@ -70,14 +76,28 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params
-    await db.label.delete({ where: { id } })
+    // Deleting a finished project's label archives it by default so every
+    // historical todo association stays intact. ?purge=true removes it for
+    // good (and cascades its billing codes) — used from the archive view.
+    const purge = new URL(request.url).searchParams.get('purge') === 'true'
+
+    if (purge) {
+      await db.label.delete({ where: { id } })
+      emit('labels')
+      return ok({ success: true, purged: true })
+    }
+
+    await db.label.update({
+      where: { id },
+      data: { archived: true, archivedAt: new Date() },
+    })
     emit('labels')
-    return ok({ success: true })
+    return ok({ success: true, archived: true })
   } catch (error) {
     if (isPrismaErrorCode(error, 'P2025')) {
       return notFound('Label not found')

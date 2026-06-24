@@ -41,6 +41,8 @@ export interface Label {
   name: string
   color: string
   billingCodes: BillingCode[]
+  archived: boolean
+  archivedAt: string | null
   createdAt: string
   updatedAt: string
 }
@@ -55,7 +57,10 @@ export interface UpdateLabelInput {
   name?: string
   color?: string
   billingCodes?: BillingCodeInput[]
+  archived?: boolean
 }
+
+export type LabelListStatus = 'active' | 'archived' | 'all'
 
 export interface Subtask {
   id: string

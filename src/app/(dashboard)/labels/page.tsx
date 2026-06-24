@@ -18,11 +18,14 @@ function LoadingSpinner() {
 export default function LabelsPage() {
   const {
     labels,
+    archivedLabels,
     isLoading,
     isMutating,
     handleCreate,
     handleUpdate,
     handleDelete,
+    handleRestore,
+    handlePurge,
   } = useLabels()
 
   const labelsWithBillingCodes = labels.filter(
@@ -158,9 +161,12 @@ export default function LabelsPage() {
           ) : (
             <LabelManager
               labels={labels}
+              archivedLabels={archivedLabels}
               onCreateLabel={handleCreate}
               onUpdateLabel={handleUpdate}
               onDeleteLabel={handleDelete}
+              onRestoreLabel={handleRestore}
+              onPurgeLabel={handlePurge}
               disabled={isMutating}
             />
           )}

@@ -14,13 +14,33 @@ beforeEach(() => {
 })
 
 describe('GET /api/labels', () => {
-  it('returns labels ordered by name', async () => {
+  it('returns active labels ordered by name', async () => {
     const { GET } = await import('./route')
     dbMock.label.findMany.mockResolvedValue([])
-    const res = await GET()
+    const res = await GET(
+      makeRequest({ method: 'GET', url: 'http://localhost/api/labels' }),
+    )
     expect(res.status).toBe(200)
     expect(dbMock.label.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ orderBy: { name: 'asc' } }),
+      expect.objectContaining({
+        orderBy: { name: 'asc' },
+        where: { archived: false },
+      }),
+    )
+  })
+
+  it('returns archived labels when status=archived', async () => {
+    const { GET } = await import('./route')
+    dbMock.label.findMany.mockResolvedValue([])
+    const res = await GET(
+      makeRequest({
+        method: 'GET',
+        url: 'http://localhost/api/labels?status=archived',
+      }),
+    )
+    expect(res.status).toBe(200)
+    expect(dbMock.label.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { archived: true } }),
     )
   })
 })

@@ -28,6 +28,8 @@ function createLabel(overrides: Partial<Label> = {}): Label {
     name: overrides.name ?? 'Amex',
     color: overrides.color ?? '#22c55e',
     billingCodes: overrides.billingCodes ?? [createBillingCode()],
+    archived: overrides.archived ?? false,
+    archivedAt: overrides.archivedAt ?? null,
     createdAt: overrides.createdAt ?? '2026-04-03T12:00:00.000Z',
     updatedAt: overrides.updatedAt ?? '2026-04-03T12:00:00.000Z',
   }

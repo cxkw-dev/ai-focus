@@ -68,10 +68,17 @@ model Label {
   billingType        String?
   billingCode        String?
   billingDescription String?
+  // Archiving keeps a finished project's label (and all its historical
+  // todo/accomplishment associations) intact while hiding it from active
+  // pickers. Deleting a label archives it; purging removes it for good.
+  archived           Boolean   @default(false)
+  archivedAt         DateTime?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
   todos              Todo[]   @relation("LabelToTodo")
   billingCodes       BillingCode[]
+
+  @@index([archived])
 }
 
 model BillingCode {

@@ -82,6 +82,9 @@ export const updateLabelSchema = z
     name: labelNameSchema.optional(),
     color: hexColorSchema.optional(),
     billingCodes: z.array(billingCodeEntrySchema).optional(),
+    // Archive (true) or restore (false) the label. Archiving preserves all
+    // historical todo associations; it just hides the label from active lists.
+    archived: z.boolean().optional(),
   })
   .superRefine((value, ctx) => {
     if (!value.billingCodes) return

@@ -12,7 +12,12 @@ export function useLabels() {
 
   const labelsQuery = useQuery({
     queryKey: queryKeys.labels,
-    queryFn: labelsApi.list,
+    queryFn: () => labelsApi.list('active'),
+  })
+
+  const archivedLabelsQuery = useQuery({
+    queryKey: queryKeys.archivedLabels,
+    queryFn: () => labelsApi.list('archived'),
   })
 
   const create = useMutation({
@@ -60,8 +65,51 @@ export function useLabels() {
       queryClient.setQueryData<Label[]>(queryKeys.labels, (prev = []) =>
         prev.filter((l) => l.id !== id),
       )
+      queryClient.invalidateQueries({ queryKey: queryKeys.archivedLabels })
       queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
-      toast({ title: 'Label deleted' })
+      toast({
+        title: 'Label archived',
+        description: 'Its history stays intact. Restore it anytime.',
+      })
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to archive label.',
+        variant: 'destructive',
+      })
+    },
+  })
+
+  const restore = useMutation({
+    mutationFn: labelsApi.restore,
+    onSuccess: (restored) => {
+      queryClient.setQueryData<Label[]>(queryKeys.archivedLabels, (prev = []) =>
+        prev.filter((l) => l.id !== restored.id),
+      )
+      queryClient.setQueryData<Label[]>(queryKeys.labels, (prev = []) =>
+        [...prev, restored].sort((a, b) => a.name.localeCompare(b.name)),
+      )
+      queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
+      toast({ title: 'Label restored', description: restored.name })
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to restore label.',
+        variant: 'destructive',
+      })
+    },
+  })
+
+  const purge = useMutation({
+    mutationFn: labelsApi.purge,
+    onSuccess: (_data, id) => {
+      queryClient.setQueryData<Label[]>(queryKeys.archivedLabels, (prev = []) =>
+        prev.filter((l) => l.id !== id),
+      )
+      queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
+      toast({ title: 'Label permanently deleted' })
     },
     onError: () => {
       toast({
@@ -72,7 +120,12 @@ export function useLabels() {
     },
   })
 
-  const isMutating = create.isPending || update.isPending || remove.isPending
+  const isMutating =
+    create.isPending ||
+    update.isPending ||
+    remove.isPending ||
+    restore.isPending ||
+    purge.isPending
 
   // Adapter callbacks matching the LabelManager props interface
   const handleCreate = async (data: CreateLabelInput) => {
@@ -102,12 +155,34 @@ export function useLabels() {
     }
   }
 
+  const handleRestore = async (id: string) => {
+    try {
+      await restore.mutateAsync(id)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  const handlePurge = async (id: string) => {
+    try {
+      await purge.mutateAsync(id)
+      return true
+    } catch {
+      return false
+    }
+  }
+
   return {
     labels: labelsQuery.data ?? [],
+    archivedLabels: archivedLabelsQuery.data ?? [],
     isLoading: labelsQuery.isLoading,
+    isLoadingArchived: archivedLabelsQuery.isLoading,
     isMutating,
     handleCreate,
     handleUpdate,
     handleDelete,
+    handleRestore,
+    handlePurge,
   }
 }

@@ -3,6 +3,7 @@ export const queryKeys = {
   todoContacts: (todoId: string) => ['todo-contacts', todoId] as const,
   todoUpdates: (todoId: string) => ['todo-updates', todoId] as const,
   labels: ['labels'] as const,
+  archivedLabels: ['labels', 'archived'] as const,
   people: ['people'] as const,
   notebook: ['notebook'] as const,
   notebookNote: (id: string) => ['notebook', id] as const,

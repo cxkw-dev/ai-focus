@@ -1,8 +1,14 @@
 import { z } from 'zod';
 import { apiFetch, textResult } from '../helpers.js';
 export function registerLabelTools(server) {
-    server.tool('list_labels', 'List all labels. Labels can be attached to todos for categorization and filtering.', {}, async () => {
-        const data = await apiFetch('/api/labels');
+    server.tool('list_labels', 'List labels. Labels can be attached to todos for categorization and filtering. By default only active labels are returned; pass status to include archived ones.', {
+        status: z
+            .enum(['active', 'archived', 'all'])
+            .optional()
+            .describe('Which labels to list (default: active)'),
+    }, async ({ status }) => {
+        const query = status ? `?status=${status}` : '';
+        const data = await apiFetch(`/api/labels${query}`);
         return textResult(data);
     });
     server.tool('create_label', 'Create a new label for tagging todos.', {
@@ -26,10 +32,26 @@ export function registerLabelTools(server) {
         });
         return textResult(data);
     });
-    server.tool('delete_label', 'Delete a label. Removes it from all todos that use it.', {
-        id: z.string().describe('The label ID to delete'),
+    server.tool('delete_label', 'Archive a label (e.g. when a project is done). It keeps every historical todo association intact and is hidden from active lists. Use restore_label to bring it back, or set purge to remove it permanently.', {
+        id: z.string().describe('The label ID to archive'),
+        purge: z
+            .boolean()
+            .optional()
+            .describe('Permanently delete instead of archiving (removes it from all todos). Default: false'),
+    }, async ({ id, purge }) => {
+        const query = purge ? '?purge=true' : '';
+        const data = await apiFetch(`/api/labels/${id}${query}`, {
+            method: 'DELETE',
+        });
+        return textResult(data);
+    });
+    server.tool('restore_label', 'Restore an archived label back to the active list.', {
+        id: z.string().describe('The label ID to restore'),
     }, async ({ id }) => {
-        const data = await apiFetch(`/api/labels/${id}`, { method: 'DELETE' });
+        const data = await apiFetch(`/api/labels/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ archived: false }),
+        });
         return textResult(data);
     });
 }

@@ -5,6 +5,7 @@ import type {
   GitHubIssueStatus,
   GitHubPrStatus,
   Label,
+  LabelListStatus,
   PaginatedTodosResponse,
   Priority,
   Session,
@@ -107,7 +108,8 @@ export const todosApi = {
 }
 
 export const labelsApi = {
-  list: (): Promise<Label[]> => requestJson('/api/labels'),
+  list: (status: LabelListStatus = 'active'): Promise<Label[]> =>
+    requestJson(`/api/labels?status=${status}`),
 
   create: (data: CreateLabelInput): Promise<Label> =>
     requestJson('/api/labels', withJsonBody(data, { method: 'POST' })),
@@ -115,8 +117,18 @@ export const labelsApi = {
   update: (id: string, data: UpdateLabelInput): Promise<Label> =>
     requestJson(`/api/labels/${id}`, withJsonBody(data, { method: 'PATCH' })),
 
-  delete: (id: string): Promise<{ success: boolean }> =>
+  // Archives the label (preserves history); use purge to remove it for good.
+  delete: (id: string): Promise<{ success: boolean; archived?: boolean }> =>
     requestJson(`/api/labels/${id}`, { method: 'DELETE' }),
+
+  restore: (id: string): Promise<Label> =>
+    requestJson(
+      `/api/labels/${id}`,
+      withJsonBody({ archived: false }, { method: 'PATCH' }),
+    ),
+
+  purge: (id: string): Promise<{ success: boolean; purged?: boolean }> =>
+    requestJson(`/api/labels/${id}?purge=true`, { method: 'DELETE' }),
 }
 
 export const notebookApi = {

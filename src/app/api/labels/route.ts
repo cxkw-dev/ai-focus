@@ -2,18 +2,31 @@ import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
 import { labelInclude } from '@/lib/label-queries'
 import {
+  conflict,
   created,
   internalError,
   ok,
   parseJsonBody,
   validationError,
 } from '@/lib/server/api-responses'
+import { isPrismaErrorCode } from '@/lib/server/prisma-errors'
 import { createLabelSchema } from '@/lib/validation/label'
 import { ZodError } from 'zod'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    // status=active (default) hides archived labels from pickers and the
+    // active list; status=archived returns only the archive; status=all both.
+    const status = new URL(request.url).searchParams.get('status')
+    const where =
+      status === 'all'
+        ? {}
+        : status === 'archived'
+          ? { archived: true }
+          : { archived: false }
+
     const labels = await db.label.findMany({
+      where,
       include: labelInclude,
       orderBy: { name: 'asc' },
     })
@@ -55,6 +68,14 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof ZodError) {
       return validationError(error)
+    }
+
+    // A unique-name clash usually means an archived label still holds the
+    // name — surface that instead of a generic 500 so the user can restore it.
+    if (isPrismaErrorCode(error, 'P2002')) {
+      return conflict(
+        'A label with this name already exists (it may be archived).',
+      )
     }
 
     return internalError(

@@ -60,9 +60,11 @@ describe('PATCH /api/labels/[id]', () => {
 })
 
 describe('DELETE /api/labels/[id]', () => {
-  it('deletes and returns success', async () => {
+  it('archives the label by default (keeps history)', async () => {
     const { DELETE } = await import('./route')
-    dbMock.label.delete.mockResolvedValue(makeLabelRow({ id: 'l-1' }))
+    dbMock.label.update.mockResolvedValue(
+      makeLabelRow({ id: 'l-1', archived: true }),
+    )
     const res = await DELETE(
       makeRequest({
         method: 'DELETE',
@@ -71,12 +73,34 @@ describe('DELETE /api/labels/[id]', () => {
       makeParams({ id: 'l-1' }),
     )
     expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({ success: true })
+    expect(await res.json()).toEqual({ success: true, archived: true })
+    expect(dbMock.label.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'l-1' },
+        data: expect.objectContaining({ archived: true }),
+      }),
+    )
+    expect(dbMock.label.delete).not.toHaveBeenCalled()
+  })
+
+  it('hard-deletes when purge=true', async () => {
+    const { DELETE } = await import('./route')
+    dbMock.label.delete.mockResolvedValue(makeLabelRow({ id: 'l-1' }))
+    const res = await DELETE(
+      makeRequest({
+        method: 'DELETE',
+        url: 'http://localhost/api/labels/l-1?purge=true',
+      }),
+      makeParams({ id: 'l-1' }),
+    )
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ success: true, purged: true })
+    expect(dbMock.label.delete).toHaveBeenCalledWith({ where: { id: 'l-1' } })
   })
 
   it('returns 404 when label does not exist (P2025)', async () => {
     const { DELETE } = await import('./route')
-    dbMock.label.delete.mockRejectedValue(prismaError('P2025', 'not found'))
+    dbMock.label.update.mockRejectedValue(prismaError('P2025', 'not found'))
     const res = await DELETE(
       makeRequest({
         method: 'DELETE',
