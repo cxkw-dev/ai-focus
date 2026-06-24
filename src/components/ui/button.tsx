@@ -8,12 +8,12 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: '',
-        destructive: '',
-        outline: 'border',
-        secondary: '',
-        ghost: '',
-        link: 'underline-offset-4 hover:underline',
+        default: 'btn-vercel-primary',
+        destructive: 'btn-vercel-destructive',
+        outline: 'border btn-vercel-outline',
+        secondary: 'btn-vercel-secondary',
+        ghost: 'btn-vercel-ghost',
+        link: 'btn-vercel-link underline-offset-4 hover:underline',
       },
       size: {
         default: 'h-10 px-4 py-2',

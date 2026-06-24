@@ -208,7 +208,7 @@ export function NoteDrawer({
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={onUnlink}
-                  className="rounded-md p-1.5 transition-colors hover:bg-white/5"
+                  className="rounded-md p-1.5 transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]"
                   title="Unlink note"
                 >
                   <Unlink
@@ -218,7 +218,7 @@ export function NoteDrawer({
                 </button>
                 <button
                   onClick={onClose}
-                  className="rounded-md p-1.5 transition-colors hover:bg-white/5"
+                  className="rounded-md p-1.5 transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]"
                 >
                   <X
                     className="h-3.5 w-3.5"

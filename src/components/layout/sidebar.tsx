@@ -361,10 +361,9 @@ export function Sidebar({
                   animate={{ opacity: 1, width: 'auto' }}
                   exit={{ opacity: 0, width: 0 }}
                   transition={{ duration: 0.15 }}
-                  className="overflow-hidden text-xl font-bold whitespace-nowrap uppercase"
+                  className="gradient-text overflow-hidden text-xl font-bold whitespace-nowrap uppercase"
                   style={{
                     fontFamily: 'var(--font-pixelify), sans-serif',
-                    color: 'var(--text-primary)',
                   }}
                 >
                   Focus

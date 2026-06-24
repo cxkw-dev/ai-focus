@@ -277,7 +277,7 @@ export function TodoInlineSubtasks({
       <button
         type="button"
         onClick={() => setIsAddingSubtask(true)}
-        className="mt-1 inline-flex items-center gap-1 rounded px-1 py-0.5 text-[10px] transition-colors hover:bg-white/5"
+        className="mt-1 inline-flex items-center gap-1 rounded px-1 py-0.5 text-[10px] transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]"
         style={{ color: 'var(--text-muted)', opacity: 0.6 }}
       >
         <Plus className="h-2.5 w-2.5" />
@@ -332,7 +332,7 @@ export function TodoInlineSubtasks({
           <button
             type="button"
             onClick={() => setIsAddingSubtask(true)}
-            className="ml-auto inline-flex items-center gap-1 rounded px-1 py-0.5 text-[10px] transition-colors hover:bg-white/5"
+            className="ml-auto inline-flex items-center gap-1 rounded px-1 py-0.5 text-[10px] transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]"
             style={{ color: 'var(--text-muted)' }}
           >
             <Plus className="h-2.5 w-2.5" />

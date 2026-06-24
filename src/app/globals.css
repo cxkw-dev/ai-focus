@@ -1,10 +1,12 @@
 @import 'tailwindcss';
 
 /*
- * Midnight Peach Theme
+ * Vercel / Geist Theme (default: vercel-dark)
  *
+ * The :root block below holds the no-flash defaults for the active theme.
  * To change colors, update the CSS variables below.
- * See src/lib/themes.ts for theme configuration reference.
+ * See src/lib/themes.ts for the full theme configuration (light `vercel`,
+ * `vercel-dark`, and the legacy themes selectable in Settings).
  */
 
 @theme {
@@ -66,12 +68,15 @@
    */
   --text-2xs: 10px; /* section eyebrows (SUBTASKS, LABELS) */
 
-  /* ---- Shadows ---- */
-  --shadow-sm: 0 1px 2px color-mix(in srgb, var(--background) 50%, transparent);
-  --shadow-md: 0 2px 8px color-mix(in srgb, var(--background) 50%, transparent);
-  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.3);
-  --shadow-primary-glow: 0 1px 3px
-    color-mix(in srgb, var(--primary) 20%, transparent);
+  /* ---- Shadows ----
+   * Geist depth is a crisp hairline plus, at most, a finely-layered
+   * very-low-alpha black shadow stack. Never a single heavy drop. */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md:
+    0 2px 4px rgba(0, 0, 0, 0.04), 0 8px 16px -4px rgba(0, 0, 0, 0.06);
+  --shadow-lg:
+    0 2px 4px rgba(0, 0, 0, 0.04), 0 12px 32px -8px rgba(0, 0, 0, 0.12);
+  --shadow-primary-glow: 0 1px 2px rgba(0, 0, 0, 0.05);
 
   /* Animations */
   --animate-accordion-down: accordion-down 0.2s ease-out;
@@ -115,70 +120,71 @@
 
 :root {
   /* ========================================
-   * MIDNIGHT PEACH THEME
+   * VERCEL / GEIST DARK THEME (default)
    * ======================================== */
 
-  /* Backgrounds — kept in sync with themes.ts midnight-peach so there's no
-   * flash before applyTheme() runs on mount. */
-  --background: #0d0908;
-  --surface: #1a1412;
-  --surface-2: #261e1b;
+  /* Backgrounds — kept in sync with themes.ts `vercel-dark` so there's no
+   * flash before applyTheme() runs on mount. True-black canvas, near-black
+   * elevated surfaces. (The light `vercel` theme lives in Settings.) */
+  --background: #000000;
+  --surface: #0a0a0a;
+  --surface-2: #1a1a1a;
 
-  /* Text */
-  --text-primary: #f6e9e3;
-  --text-muted: #c9b6ae;
+  /* Text — light on black */
+  --text-primary: #ededed;
+  --text-muted: #a1a1a1;
 
-  /* Borders */
-  --border-color: #2f2320;
+  /* Borders — the 1px hairline workhorse */
+  --border-color: #2e2e2e;
 
-  /* Primary (peach) */
-  --primary: #ffb199;
-  --primary-hover: #ff9a7a;
-  --primary-pressed: #ff8660;
-  --primary-foreground: #0f0b0a;
+  /* Primary — white fill (Vercel's dark-mode CTA) */
+  --primary: #ffffff;
+  --primary-hover: #e5e5e5;
+  --primary-pressed: #cccccc;
+  --primary-foreground: #000000;
 
-  /* Accent (coral pink) */
-  --accent: #ff7d8c;
-  --accent-foreground: #0f0b0a;
+  /* Accent — the one Vercel blue */
+  --accent: #0070f3;
+  --accent-foreground: #ffffff;
 
   /* Link */
-  --link: #ffc3ad;
+  --link: #3b9eff;
 
   /* Destructive */
-  --destructive: #ff6b6b;
-  --destructive-foreground: #0f0b0a;
+  --destructive: #e5484d;
+  --destructive-foreground: #ffffff;
 
   /* Status colors */
-  --status-todo: #c9b6ae;
-  --status-in-progress: #ffb199;
-  --status-waiting: #ffcb8e;
-  --status-under-review: #d4a5ff;
-  --status-on-hold: #ff7d8c;
-  --status-blocked: #e04848;
-  --status-done: #7dd3a8;
+  --status-todo: #a1a1a1;
+  --status-in-progress: #3b9eff;
+  --status-waiting: #f5a623;
+  --status-under-review: #bf7af0;
+  --status-on-hold: #eb367f;
+  --status-blocked: #ff5c5c;
+  --status-done: #62c073;
 
   /* Priority colors */
-  --priority-low: #c9b6ae;
-  --priority-medium: #ffcb8e;
-  --priority-high: #ffb199;
-  --priority-urgent: #ff6b6b;
+  --priority-low: #a1a1a1;
+  --priority-medium: #f5a623;
+  --priority-high: #ff6b6b;
+  --priority-urgent: #ff5c5c;
 
   /* Category colors */
-  --category-delivery: #ffb199;
-  --category-hiring: #ff7d8c;
-  --category-mentoring: #ffcb8e;
-  --category-collaboration: #7dd3a8;
-  --category-growth: #c9b6ae;
-  --category-other: #e8b4b8;
+  --category-delivery: #3b9eff;
+  --category-hiring: #eb367f;
+  --category-mentoring: #f5a623;
+  --category-collaboration: #62c073;
+  --category-growth: #a1a1a1;
+  --category-other: #bf7af0;
 }
 
-/* Force dark mode since Midnight Peach is a dark theme */
 .dark {
-  /* Same as root - this is a dark-only theme */
+  /* Theme switching is driven by applyTheme() inline styles on <html>,
+   * so the OS-level dark class doesn't override the active app theme. */
 }
 
 * {
-  border-color: var(--color-border);
+  border-color: var(--border-color);
 }
 
 body {
@@ -196,12 +202,14 @@ h4,
 h5,
 h6 {
   font-family: var(--font-heading, inherit);
+  /* Geist display type carries tight negative tracking by design. */
+  letter-spacing: -0.02em;
 }
 
-/* Selection */
+/* Selection — a soft wash of the accent blue */
 ::selection {
-  background-color: var(--primary);
-  color: var(--primary-foreground);
+  background-color: color-mix(in srgb, var(--link) 22%, transparent);
+  color: var(--text-primary);
 }
 
 /* Custom scrollbar */
@@ -242,10 +250,60 @@ h6 {
   backdrop-filter: blur(16px);
 }
 
+/* The signature Vercel mesh — cyan → blue → violet → magenta → amber.
+ * The one decorative flourish the system allows itself. */
 @utility gradient-text {
-  background-image: linear-gradient(to right, var(--primary), var(--accent));
+  background-image: linear-gradient(
+    110deg,
+    #007cf0,
+    #00dfd8 25%,
+    #7928ca 50%,
+    #ff0080 75%,
+    #f9cb28
+  );
   background-clip: text;
   color: transparent;
+}
+
+@utility mesh-gradient {
+  background-color: #fafafa;
+  background-image:
+    radial-gradient(
+      at 18% 22%,
+      color-mix(in srgb, #007cf0 26%, transparent) 0px,
+      transparent 55%
+    ),
+    radial-gradient(
+      at 78% 12%,
+      color-mix(in srgb, #00dfd8 24%, transparent) 0px,
+      transparent 50%
+    ),
+    radial-gradient(
+      at 64% 64%,
+      color-mix(in srgb, #7928ca 22%, transparent) 0px,
+      transparent 55%
+    ),
+    radial-gradient(
+      at 28% 82%,
+      color-mix(in srgb, #ff0080 20%, transparent) 0px,
+      transparent 50%
+    ),
+    radial-gradient(
+      at 92% 78%,
+      color-mix(in srgb, #f9cb28 22%, transparent) 0px,
+      transparent 50%
+    );
+}
+
+/* Uppercase Geist Mono section eyebrows — spec-sheet labels */
+@utility mono-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
 /* Focus ring */
@@ -254,17 +312,42 @@ h6 {
   outline-offset: 2px;
 }
 
-/* Todo card hover */
+/* Todo card hover — flat hairline by default, whisper-lift on hover */
 .todo-card {
   box-shadow:
     inset 0 0 0 1px transparent,
-    0 2px 8px color-mix(in srgb, var(--background) 50%, transparent);
+    0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .todo-card-shell:hover .todo-card {
   box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--border-color) 60%, transparent),
-    0 2px 8px color-mix(in srgb, var(--background) 50%, transparent);
+    inset 0 0 0 1px color-mix(in srgb, var(--border-color) 80%, transparent),
+    0 2px 4px rgba(0, 0, 0, 0.04),
+    0 8px 16px -4px rgba(0, 0, 0, 0.06);
+}
+
+/* ---- Button hover states (markers applied by ui/button.tsx) ----
+ * Geist buttons give crisp, low-motion feedback: the ink fill lightens,
+ * ghost/outline/secondary pick up a faint ink wash. */
+.btn-vercel-primary:hover {
+  background-color: var(--primary-hover);
+}
+.btn-vercel-destructive:hover {
+  background-color: color-mix(in srgb, var(--destructive) 88%, black);
+}
+.btn-vercel-outline:hover,
+.btn-vercel-ghost:hover {
+  background-color: color-mix(in srgb, var(--text-primary) 6%, transparent);
+}
+.btn-vercel-secondary:hover {
+  background-color: color-mix(
+    in srgb,
+    var(--text-primary) 8%,
+    var(--surface-2)
+  );
+}
+.btn-vercel-link:hover {
+  color: var(--primary-hover);
 }
 
 /* Flame animations for urgent priority */
@@ -472,8 +555,8 @@ h6 {
 
 /* TipTap mention nodes — inside editor */
 .tiptap .mention {
-  background-color: color-mix(in srgb, var(--primary) 18%, transparent);
-  color: var(--primary);
+  background-color: color-mix(in srgb, var(--link) 14%, transparent);
+  color: var(--link);
   border-radius: 0.25rem;
   padding: 0.1em 0.3em;
   font-weight: 500;
@@ -505,8 +588,8 @@ h6 {
 }
 
 .subtask-mention-editor .mention {
-  background-color: color-mix(in srgb, var(--primary) 18%, transparent);
-  color: var(--primary);
+  background-color: color-mix(in srgb, var(--link) 14%, transparent);
+  color: var(--link);
   border-radius: 0.25rem;
   padding: 0.08em 0.24em;
   font-weight: 500;
@@ -592,7 +675,7 @@ h6 {
 }
 
 .rich-text-display .mention {
-  color: var(--primary);
+  color: var(--link);
   font-weight: 500;
   cursor: pointer;
 }
@@ -790,7 +873,7 @@ h6 {
 
 /* TipTap code block syntax highlighting */
 .tiptap pre {
-  background-color: color-mix(in srgb, var(--background) 80%, black);
+  background-color: var(--surface-2);
   border: 1px solid var(--border-color);
   border-radius: 0.5rem;
   padding: 0.875rem 1rem;

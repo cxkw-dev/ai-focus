@@ -229,7 +229,9 @@ export function StatusDropdown({
               onClick={() => onStatusChange(todo.id, status)}
               className={cn(
                 'flex cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-xs transition-colors',
-                isActive ? 'font-medium' : 'hover:bg-white/5',
+                isActive
+                  ? 'font-medium'
+                  : 'hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]',
               )}
               style={
                 isActive
@@ -302,7 +304,9 @@ export function PriorityDropdown({
               onClick={() => onPriorityChange(todo.id, priority)}
               className={cn(
                 'flex cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-xs transition-colors',
-                isActive ? 'font-medium' : 'hover:bg-white/5',
+                isActive
+                  ? 'font-medium'
+                  : 'hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]',
               )}
               style={
                 isActive

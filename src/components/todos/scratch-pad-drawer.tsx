@@ -57,7 +57,7 @@ export function ScratchPadDrawer({ open, onClose }: ScratchPadDrawerProps) {
             {/* Close button */}
             <button
               onClick={onClose}
-              className="absolute top-3 right-3 z-10 rounded-md p-1.5 transition-colors hover:bg-white/5"
+              className="absolute top-3 right-3 z-10 rounded-md p-1.5 transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]"
               aria-label="Close scratch pad"
             >
               <X

@@ -74,6 +74,122 @@ export interface Theme {
 
 export const themes: Theme[] = [
   {
+    id: 'vercel',
+    name: 'Vercel',
+    description: 'Geist — ink on near-white',
+    colors: {
+      // Backgrounds — near-white canvas, white elevated surfaces
+      background: '#FAFAFA',
+      surface: '#FFFFFF',
+      surface2: '#F2F2F2',
+
+      // Text — the deliberate grey ladder (ink → body → mute)
+      textPrimary: '#171717',
+      textMuted: '#666666',
+
+      // Borders — the 1px hairline workhorse
+      border: '#EBEBEB',
+
+      // Primary — near-black ink, the marketing/app CTA fill
+      primary: '#171717',
+      primaryHover: '#383838',
+      primaryPressed: '#000000',
+      primaryForeground: '#FFFFFF',
+
+      // Accent — the one Vercel blue
+      accent: '#0070F3',
+      accentForeground: '#FFFFFF',
+
+      // Links
+      link: '#0070F3',
+
+      // Semantic colors
+      destructive: '#E5484D',
+      destructiveForeground: '#FFFFFF',
+
+      // Status colors — drawn from the Geist accent family
+      statusTodo: '#8F8F8F',
+      statusInProgress: '#0070F3',
+      statusWaiting: '#F5A623',
+      statusUnderReview: '#7928CA',
+      statusOnHold: '#EB367F',
+      statusBlocked: '#E5484D',
+      statusDone: '#45A557',
+
+      // Priority colors
+      priorityLow: '#8F8F8F',
+      priorityMedium: '#F5A623',
+      priorityHigh: '#FF4D4D',
+      priorityUrgent: '#E5484D',
+
+      // Category colors (accomplishments)
+      categoryDelivery: '#0070F3',
+      categoryHiring: '#EB367F',
+      categoryMentoring: '#F5A623',
+      categoryCollaboration: '#45A557',
+      categoryGrowth: '#8F8F8F',
+      categoryOther: '#7928CA',
+    },
+  },
+  {
+    id: 'vercel-dark',
+    name: 'Vercel Dark',
+    description: 'Geist — light on true black',
+    colors: {
+      // Backgrounds — true-black canvas
+      background: '#000000',
+      surface: '#0A0A0A',
+      surface2: '#1A1A1A',
+
+      // Text
+      textPrimary: '#EDEDED',
+      textMuted: '#A1A1A1',
+
+      // Borders
+      border: '#2E2E2E',
+
+      // Primary — white fill (Vercel's dark-mode CTA)
+      primary: '#FFFFFF',
+      primaryHover: '#E5E5E5',
+      primaryPressed: '#CCCCCC',
+      primaryForeground: '#000000',
+
+      // Accent
+      accent: '#0070F3',
+      accentForeground: '#FFFFFF',
+
+      // Links
+      link: '#3B9EFF',
+
+      // Semantic colors
+      destructive: '#E5484D',
+      destructiveForeground: '#FFFFFF',
+
+      // Status colors
+      statusTodo: '#A1A1A1',
+      statusInProgress: '#3B9EFF',
+      statusWaiting: '#F5A623',
+      statusUnderReview: '#BF7AF0',
+      statusOnHold: '#EB367F',
+      statusBlocked: '#FF5C5C',
+      statusDone: '#62C073',
+
+      // Priority colors
+      priorityLow: '#A1A1A1',
+      priorityMedium: '#F5A623',
+      priorityHigh: '#FF6B6B',
+      priorityUrgent: '#FF5C5C',
+
+      // Category colors
+      categoryDelivery: '#3B9EFF',
+      categoryHiring: '#EB367F',
+      categoryMentoring: '#F5A623',
+      categoryCollaboration: '#62C073',
+      categoryGrowth: '#A1A1A1',
+      categoryOther: '#BF7AF0',
+    },
+  },
+  {
     id: 'midnight-peach',
     name: 'Midnight Peach',
     description: 'Warm peach tones on dark',
@@ -369,7 +485,8 @@ export const themes: Theme[] = [
   },
 ]
 
-export const defaultTheme = themes[0]
+export const defaultTheme =
+  themes.find((t) => t.id === 'vercel-dark') ?? themes[0]
 
 export function getThemeById(id: string): Theme {
   return themes.find((t) => t.id === id) || defaultTheme

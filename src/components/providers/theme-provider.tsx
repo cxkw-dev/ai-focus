@@ -14,7 +14,7 @@ import {
 } from '@/lib/themes'
 import { useIsClient } from '@/hooks/use-is-client'
 
-const THEME_STORAGE_KEY = 'ai-focus-theme'
+const THEME_STORAGE_KEY = 'ai-focus-theme-v2'
 const THEME_EVENT = 'ai-focus-theme-change'
 
 interface AppThemeContextType {

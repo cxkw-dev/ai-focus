@@ -181,7 +181,7 @@ export function InlineTodoForm({
                         className={cn(
                           'flex items-center justify-center rounded-md p-1.5 transition-all',
                           !isSelected &&
-                            'opacity-40 hover:bg-white/5 hover:opacity-100',
+                            'opacity-40 hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)] hover:opacity-100',
                         )}
                         style={
                           isSelected
@@ -413,7 +413,7 @@ export function InlineTodoForm({
                     setNewPrUrl('')
                     setNewAzureDepUrl('')
                   }}
-                  className="rounded-md px-3 py-1.5 text-xs font-medium transition-colors hover:bg-white/5"
+                  className="rounded-md px-3 py-1.5 text-xs font-medium transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]"
                   style={{ color: 'var(--text-muted)' }}
                 >
                   Cancel

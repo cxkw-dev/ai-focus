@@ -216,7 +216,7 @@ export function PeopleManager({
               {filtered.map((person, i) => (
                 <div
                   key={person.id}
-                  className="group flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-white/5"
+                  className="group flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]"
                   style={
                     i < filtered.length - 1
                       ? {
@@ -274,7 +274,7 @@ export function PeopleManager({
                             !editDraft.name.trim() ||
                             !editDraft.email.trim()
                           }
-                          className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-white/10"
+                          className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_10%,transparent)]"
                           style={{ color: 'var(--status-done)' }}
                           title="Save"
                         >
@@ -283,7 +283,7 @@ export function PeopleManager({
                         <button
                           type="button"
                           onClick={cancelEdit}
-                          className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-white/10"
+                          className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_10%,transparent)]"
                           style={{ color: 'var(--text-muted)' }}
                           title="Cancel"
                         >
@@ -322,7 +322,7 @@ export function PeopleManager({
                           type="button"
                           onClick={() => startEdit(person)}
                           disabled={disabled || isSaving}
-                          className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-white/10"
+                          className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_10%,transparent)]"
                           style={{ color: 'var(--text-muted)' }}
                           title="Edit"
                         >
@@ -332,7 +332,7 @@ export function PeopleManager({
                           type="button"
                           onClick={() => handleDelete(person.id)}
                           disabled={disabled || isSaving}
-                          className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-white/10"
+                          className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_10%,transparent)]"
                           style={{ color: 'var(--destructive)' }}
                           title="Delete"
                         >

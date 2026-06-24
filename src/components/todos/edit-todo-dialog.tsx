@@ -452,7 +452,7 @@ export function EditTodoDialog({
                       <button
                         type="button"
                         onClick={handleCreateAndLinkNote}
-                        className="w-full rounded border px-2 py-1.5 text-left text-[11px] transition-colors hover:bg-white/5"
+                        className="w-full rounded border px-2 py-1.5 text-left text-[11px] transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]"
                         style={{
                           borderColor: 'var(--border-color)',
                           color: 'var(--text-primary)',
@@ -509,7 +509,7 @@ export function EditTodoDialog({
                     {contacts.map((contact) => (
                       <div
                         key={contact.id}
-                        className="group/contact flex items-center gap-1 rounded px-1.5 py-1 transition-colors hover:bg-white/5"
+                        className="group/contact flex items-center gap-1 rounded px-1.5 py-1 transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]"
                         title={contact.person.email}
                       >
                         {editingContactId === contact.id ? (

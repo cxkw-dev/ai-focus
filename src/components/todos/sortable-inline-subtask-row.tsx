@@ -73,7 +73,7 @@ export function SortableInlineSubtaskRow({
         style={{ backgroundColor: 'var(--primary)' }}
       />
       <motion.div
-        className="group/subtask flex w-full items-center rounded pr-0.5 pl-1 transition-colors hover:bg-white/5"
+        className="group/subtask flex w-full items-center rounded pr-0.5 pl-1 transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]"
         animate={{
           backgroundColor: isEditing
             ? 'color-mix(in srgb, var(--primary) 10%, transparent)'

@@ -346,7 +346,7 @@ export function TodoColumn({
           {completedSearch && (
             <button
               onClick={() => setCompletedSearch('')}
-              className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded p-0.5 transition-colors hover:bg-white/10"
+              className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded p-0.5 transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_10%,transparent)]"
             >
               <X className="h-3 w-3" style={{ color: 'var(--text-muted)' }} />
             </button>
