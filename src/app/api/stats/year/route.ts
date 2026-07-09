@@ -1,16 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { ZodError } from 'zod'
 import { db } from '@/lib/db'
+import { internalError, ok, validationError } from '@/lib/server/api-responses'
+import { parseYearStatsQuery } from '@/lib/validation/stats'
 import type { YearStats, MonthlyData } from '@/types/stats'
 import { MONTH_LABELS, buildReviewFocusFlow } from '@/lib/review-focus-flow'
 
 export async function GET(request: NextRequest) {
   try {
-    const yearParam = request.nextUrl.searchParams.get('year')
-    const year = yearParam ? parseInt(yearParam, 10) : new Date().getFullYear()
-
-    if (isNaN(year) || year < 2000 || year > 2100) {
-      return NextResponse.json({ error: 'Invalid year' }, { status: 400 })
-    }
+    const { year } = parseYearStatsQuery(request.nextUrl.searchParams)
 
     const startDate = new Date(year, 0, 1)
     const endDate = new Date(year + 1, 0, 1)
@@ -224,12 +222,16 @@ export async function GET(request: NextRequest) {
       },
     }
 
-    return NextResponse.json(stats)
+    return ok(stats)
   } catch (error) {
-    console.error('Error fetching year stats:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch stats' },
-      { status: 500 },
+    if (error instanceof ZodError) {
+      return validationError(error)
+    }
+
+    return internalError(
+      'Failed to fetch stats',
+      error,
+      'Error fetching year stats',
     )
   }
 }
