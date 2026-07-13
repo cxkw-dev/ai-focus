@@ -93,7 +93,7 @@ export const PRIORITY_CONFIG: Record<
     colorVar: string
     bgVar: string
     icon: React.ElementType
-    pulse?: boolean
+    emphasized?: boolean
   }
 > = Object.fromEntries(
   Object.entries(PRIORITY_MAP).map(([key, p]) => [
@@ -103,7 +103,7 @@ export const PRIORITY_CONFIG: Record<
       colorVar: p.colorVar,
       bgVar: p.colorVar,
       icon: p.icon,
-      ...(key === 'URGENT' || key === 'HIGH' ? { pulse: true } : {}),
+      ...(key === 'URGENT' ? { emphasized: true } : {}),
     },
   ]),
 ) as Record<
@@ -113,7 +113,7 @@ export const PRIORITY_CONFIG: Record<
     colorVar: string
     bgVar: string
     icon: React.ElementType
-    pulse?: boolean
+    emphasized?: boolean
   }
 >
 
@@ -152,13 +152,17 @@ export function PriorityChip({
 
   return (
     <span
-      className={cn(CHIP_BASE, className)}
+      className={cn(
+        CHIP_BASE,
+        config.emphasized && 'priority-chip-urgent',
+        className,
+      )}
       style={{
-        backgroundColor: config.pulse
+        backgroundColor: config.emphasized
           ? config.colorVar
           : `color-mix(in srgb, ${config.bgVar} 15%, transparent)`,
-        color: config.pulse ? 'var(--background)' : config.colorVar,
-        fontWeight: config.pulse ? 700 : undefined,
+        color: config.emphasized ? 'var(--background)' : config.colorVar,
+        fontWeight: config.emphasized ? 700 : undefined,
       }}
     >
       {config.label}
@@ -275,13 +279,14 @@ export function PriorityDropdown({
           className={cn(
             CHIP_BASE,
             'min-w-0 cursor-pointer hover:brightness-110',
+            config.emphasized && 'priority-chip-urgent',
           )}
           style={{
-            backgroundColor: config.pulse
+            backgroundColor: config.emphasized
               ? config.colorVar
               : `color-mix(in srgb, ${config.bgVar} 15%, transparent)`,
-            color: config.pulse ? 'var(--background)' : config.colorVar,
-            fontWeight: config.pulse ? 700 : undefined,
+            color: config.emphasized ? 'var(--background)' : config.colorVar,
+            fontWeight: config.emphasized ? 700 : undefined,
           }}
         >
           <Icon className="h-3 w-3 flex-shrink-0" />

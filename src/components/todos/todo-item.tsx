@@ -54,6 +54,9 @@ const StatusUpdatesDrawer = dynamic(
 )
 
 const BlockedExpandedContext = React.createContext(false)
+const TODO_CARD_BACKGROUND = 'var(--surface-2)'
+const URGENT_TODO_CARD_BACKGROUND =
+  'linear-gradient(135deg, color-mix(in srgb, var(--priority-urgent) 13%, var(--surface-2)) 0%, var(--surface-2) 72%)'
 
 export function BlockedExpandedProvider({
   expanded,
@@ -110,6 +113,7 @@ function TodoItemContent({
   onCollapse,
 }: TodoItemProps) {
   const isCompleted = todo.status === 'COMPLETED'
+  const isUrgent = todo.priority === 'URGENT' && viewMode === 'active'
   const canInlineEditSubtasks = viewMode === 'active' && !isDragging
   const hasIntegrations =
     (todo.myPrUrls ?? []).length > 0 ||
@@ -218,14 +222,16 @@ function TodoItemContent({
           <div
             className="relative rounded-md px-2.5 py-2"
             style={{
-              backgroundColor:
-                'color-mix(in srgb, var(--background) 50%, transparent)',
+              backgroundColor: isUrgent
+                ? 'color-mix(in srgb, var(--priority-urgent) 7%, var(--background))'
+                : 'color-mix(in srgb, var(--background) 50%, transparent)',
             }}
           >
             <div className="flex items-center gap-2">
               <h3
                 className={cn(
                   'text-[13px] leading-snug font-medium break-words',
+                  isUrgent && 'font-semibold',
                   isCompleted && 'line-through',
                 )}
                 style={{
@@ -323,6 +329,7 @@ export function TodoItem({
 
   const dragging = isOverlay || isDragging
   const isCompleted = todo.status === 'COMPLETED'
+  const isUrgent = todo.priority === 'URGENT' && viewMode === 'active'
   const blockedExpanded = React.useContext(BlockedExpandedContext)
   const isCollapsible =
     viewMode === 'active' && COLLAPSED_STATUSES.has(todo.status)
@@ -425,12 +432,15 @@ export function TodoItem({
           <div
             className={cn(
               'group todo-card relative min-w-0 flex-1 overflow-visible px-3 py-2.5 transition-all duration-150',
+              isUrgent && 'todo-card-urgent',
               dragging ? 'rounded-lg' : 'rounded-l-lg',
               dragging && 'z-50 shadow-lg',
               (isCompleted || viewMode !== 'active') && 'opacity-50',
             )}
             style={{
-              backgroundColor: 'var(--surface-2)',
+              background: isUrgent
+                ? URGENT_TODO_CARD_BACKGROUND
+                : TODO_CARD_BACKGROUND,
               boxShadow: dragging
                 ? '0 0 0 2px color-mix(in srgb, var(--primary) 30%, transparent)'
                 : undefined,
@@ -548,6 +558,7 @@ export function TodoItemOverlay({
   subtaskMentions,
 }: Omit<TodoItemProps, 'isDragging' | 'viewMode' | 'dropIndicator'>) {
   const isCompleted = todo.status === 'COMPLETED'
+  const isUrgent = todo.priority === 'URGENT'
 
   return (
     <div className="flex items-center gap-0.5">
@@ -557,11 +568,14 @@ export function TodoItemOverlay({
 
       <div
         className={cn(
-          'group relative flex-1 overflow-visible rounded-lg px-3 py-2.5 shadow-2xl',
+          'group todo-card relative flex-1 overflow-visible rounded-lg px-3 py-2.5 shadow-2xl',
+          isUrgent && 'todo-card-urgent',
           isCompleted && 'opacity-50',
         )}
         style={{
-          backgroundColor: 'var(--surface-2)',
+          background: isUrgent
+            ? URGENT_TODO_CARD_BACKGROUND
+            : TODO_CARD_BACKGROUND,
           boxShadow:
             '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 2px color-mix(in srgb, var(--primary) 30%, transparent)',
         }}
