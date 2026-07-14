@@ -2,6 +2,13 @@ import { createTodoSchema, updateTodoSchema } from '@/lib/validation/todo'
 import { describe, expect, it } from 'vitest'
 
 describe('todo validation', () => {
+  it('normalizes created and updated todo titles to uppercase', () => {
+    expect(createTodoSchema.parse({ title: '  Ship it  ' }).title).toBe(
+      'SHIP IT',
+    )
+    expect(updateTodoSchema.parse({ title: 'Fix bug' }).title).toBe('FIX BUG')
+  })
+
   it('accepts unique subtask ids', () => {
     expect(
       updateTodoSchema.parse({

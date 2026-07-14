@@ -21,6 +21,7 @@
     "db:migrate:prod": "prisma migrate deploy --config prisma/prisma.config.ts",
     "db:studio": "prisma studio --config prisma/prisma.config.ts",
     "db:ensure-indexes": "node --env-file=.env scripts/ensure-search-index.js",
+    "db:ensure-uppercase-titles": "node --env-file=.env scripts/ensure-uppercase-todo-titles.js",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:build": "docker-compose build",

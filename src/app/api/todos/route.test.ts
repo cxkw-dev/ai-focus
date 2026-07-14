@@ -55,7 +55,11 @@ describe('POST /api/todos', () => {
       }),
     )
     expect(res.status).toBe(201)
-    expect(dbMock.todo.create).toHaveBeenCalled()
+    expect(dbMock.todo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ title: 'HI' }),
+      }),
+    )
   })
 
   it('returns 400 for invalid input', async () => {

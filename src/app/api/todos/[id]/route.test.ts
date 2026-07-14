@@ -64,6 +64,11 @@ describe('PATCH /api/todos/[id]', () => {
       makeParams({ id: 't-1' }),
     )
     expect(res.status).toBe(200)
+    expect(dbMock.todo.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ title: 'NEW' }),
+      }),
+    )
   })
 
   it('returns 400 for invalid body', async () => {

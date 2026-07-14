@@ -52,7 +52,7 @@ describe('useTodoForm', () => {
   it('populates from a passed todo', () => {
     const todo = makeTodo()
     const { result } = renderHook(() => useTodoForm(todo))
-    expect(result.current.title).toBe('existing')
+    expect(result.current.title).toBe('EXISTING')
     expect(result.current.priority).toBe('HIGH')
     expect(result.current.dueDate).toBe('2026-05-01')
     expect(result.current.subtasks).toHaveLength(1)
@@ -109,7 +109,7 @@ describe('useTodoForm', () => {
     expect(result.current.subtasks).toEqual([])
   })
 
-  it('toPayload trims title/description, converts dueDate to ISO or null, and renumbers subtask orders', () => {
+  it('uppercases the title and builds a normalized payload', () => {
     const { result } = renderHook(() => useTodoForm())
     act(() => {
       result.current.setTitle('  hello  ')
@@ -118,7 +118,8 @@ describe('useTodoForm', () => {
       result.current.addSubtask('a')
     })
     const payload = result.current.toPayload()
-    expect(payload.title).toBe('hello')
+    expect(result.current.title).toBe('  HELLO  ')
+    expect(payload.title).toBe('HELLO')
     expect(payload.description).toBeUndefined()
     expect(payload.dueDate).toBe(new Date('2026-04-25').toISOString())
     expect(payload.subtasks[0]).toMatchObject({

@@ -5,6 +5,7 @@ import {
   TODO_SORT_VALUES,
   TODO_STATUS_VALUES,
 } from '@/types/todo'
+import { normalizeTodoTitle } from '@/lib/todo-title'
 
 const optionalSearchParam = (value: string | null) => {
   const trimmedValue = value?.trim()
@@ -14,6 +15,14 @@ const optionalSearchParam = (value: string | null) => {
 export const todoStatusSchema = z.enum(TODO_STATUS_VALUES)
 export const todoPrioritySchema = z.enum(TODO_PRIORITY_VALUES)
 export const sessionToolSchema = z.enum(SESSION_TOOL_VALUES)
+
+const todoTitleSchema = z
+  .string()
+  .trim()
+  .min(1, 'Title is required')
+  .max(200)
+  .transform(normalizeTodoTitle)
+  .pipe(z.string().max(200))
 
 export const subtaskInputSchema = z.object({
   id: z.string().optional(),
@@ -34,7 +43,7 @@ const subtaskArraySchema = z.array(subtaskInputSchema).refine(
 )
 
 export const createTodoSchema = z.object({
-  title: z.string().trim().min(1, 'Title is required').max(200),
+  title: todoTitleSchema,
   description: z.string().max(10000).optional(),
   priority: todoPrioritySchema.optional(),
   status: todoStatusSchema.optional(),
@@ -51,7 +60,7 @@ export const createTodoSchema = z.object({
 })
 
 export const updateTodoSchema = z.object({
-  title: z.string().trim().min(1).max(200).optional(),
+  title: todoTitleSchema.optional(),
   description: z.string().max(10000).optional().nullable(),
   status: todoStatusSchema.optional(),
   archived: z.boolean().optional(),

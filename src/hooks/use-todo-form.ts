@@ -4,6 +4,7 @@ import * as React from 'react'
 import type { Todo, Priority, Status, SubtaskInput } from '@/types/todo'
 import { hasMeaningfulText, normalizeSubtaskTitle } from '@/lib/rich-text'
 import { createClientSubtaskId } from '@/lib/subtask-ids'
+import { normalizeTodoTitle } from '@/lib/todo-title'
 
 export interface TodoFormState {
   title: string
@@ -68,7 +69,7 @@ export function useTodoForm(
   todo?: Todo | null,
   options?: { initialLabelIds?: string[] },
 ): TodoFormState {
-  const [title, setTitle] = React.useState('')
+  const [title, setTitleState] = React.useState('')
   const [description, setDescription] = React.useState('')
   const [priority, setPriority] = React.useState<Priority>('MEDIUM')
   const [status, setStatus] = React.useState<Status>('TODO')
@@ -84,8 +85,12 @@ export function useTodoForm(
   const [myIssueUrls, setMyIssueUrls] = React.useState<string[]>([])
   const [githubIssueUrls, setGithubIssueUrls] = React.useState<string[]>([])
 
+  function setTitle(value: string) {
+    setTitleState(normalizeTodoTitle(value))
+  }
+
   const reset = React.useCallback(() => {
-    setTitle('')
+    setTitleState('')
     setDescription('')
     setPriority('MEDIUM')
     setStatus('TODO')
@@ -101,7 +106,7 @@ export function useTodoForm(
   }, [options?.initialLabelIds])
 
   const populateFromTodo = React.useCallback((t: Todo) => {
-    setTitle(t.title)
+    setTitleState(normalizeTodoTitle(t.title))
     setDescription(t.description || '')
     setPriority(t.priority)
     setStatus(t.status)
