@@ -1,10 +1,5 @@
 export type AccomplishmentCategory =
-  | 'DELIVERY'
-  | 'HIRING'
-  | 'MENTORING'
-  | 'COLLABORATION'
-  | 'GROWTH'
-  | 'OTHER'
+  'DELIVERY' | 'HIRING' | 'MENTORING' | 'COLLABORATION' | 'GROWTH' | 'OTHER'
 
 export interface Accomplishment {
   id: string

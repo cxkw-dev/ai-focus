@@ -337,8 +337,7 @@ export function RichTextEditor({
         <ToolbarButton
           onClick={() => {
             const previousUrl = editor.getAttributes('link').href as
-              | string
-              | undefined
+              string | undefined
             const url = window.prompt('Enter link URL', previousUrl || '')
             if (url === null) return
             if (url.trim() === '') {

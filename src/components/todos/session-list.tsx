@@ -4,7 +4,8 @@ import * as React from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Check, ChevronDown, ChevronRight, Terminal, X } from 'lucide-react'
 import type { IconType } from 'react-icons'
-import { SiAnthropic, SiOpenai } from 'react-icons/si'
+import { SiAnthropic } from 'react-icons/si'
+import { TbBrandOpenai } from 'react-icons/tb'
 import { cn, formatRelativeTime } from '@/lib/utils'
 import {
   SESSION_TOOL_VALUES,
@@ -22,7 +23,7 @@ const TOOL_CONFIG = {
     buttonBorder: 'rgba(212,165,116,0.15)',
   },
   codex: {
-    icon: SiOpenai,
+    icon: TbBrandOpenai,
     colorVar: '#4ade80',
     bgTint: 'rgba(74,222,128,0.04)',
     borderTint: 'rgba(74,222,128,0.10)',

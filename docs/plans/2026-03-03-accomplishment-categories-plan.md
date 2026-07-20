@@ -103,12 +103,7 @@ Change the type to:
 
 ```ts
 export type AccomplishmentCategory =
-  | 'DELIVERY'
-  | 'HIRING'
-  | 'MENTORING'
-  | 'COLLABORATION'
-  | 'GROWTH'
-  | 'OTHER'
+  'DELIVERY' | 'HIRING' | 'MENTORING' | 'COLLABORATION' | 'GROWTH' | 'OTHER'
 ```
 
 **Step 2: Commit**
