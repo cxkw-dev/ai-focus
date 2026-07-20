@@ -1,19 +1,10 @@
 'use client'
 
 import * as React from 'react'
-import {
-  Ban,
-  CheckCircle2,
-  ChevronDown,
-  Circle,
-  Clock,
-  Eye,
-  Pause,
-  Play,
-  XCircle,
-} from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PRIORITY_MAP } from '@/lib/priority'
+import { COLLAPSED_STATUSES, STATUS_CONFIG } from '@/lib/status'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,66 +16,7 @@ import type { Label, Priority, Status, Todo } from '@/types/todo'
 export const CHIP_BASE =
   'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors whitespace-nowrap'
 
-export const STATUS_CONFIG: Record<
-  Status,
-  { label: string; icon: React.ElementType; colorVar: string; bgVar: string }
-> = {
-  TODO: {
-    label: 'To Do',
-    icon: Circle,
-    colorVar: 'var(--status-todo)',
-    bgVar: 'var(--status-todo)',
-  },
-  IN_PROGRESS: {
-    label: 'In Progress',
-    icon: Play,
-    colorVar: 'var(--status-in-progress)',
-    bgVar: 'var(--status-in-progress)',
-  },
-  WAITING: {
-    label: 'Waiting',
-    icon: Clock,
-    colorVar: 'var(--status-waiting)',
-    bgVar: 'var(--status-waiting)',
-  },
-  UNDER_REVIEW: {
-    label: 'Under Review',
-    icon: Eye,
-    colorVar: 'var(--status-under-review)',
-    bgVar: 'var(--status-under-review)',
-  },
-  ON_HOLD: {
-    label: 'On Hold',
-    icon: Pause,
-    colorVar: 'var(--status-on-hold)',
-    bgVar: 'var(--status-on-hold)',
-  },
-  BLOCKED: {
-    label: 'Blocked',
-    icon: Ban,
-    colorVar: 'var(--status-blocked)',
-    bgVar: 'var(--status-blocked)',
-  },
-  COMPLETED: {
-    label: 'Done',
-    icon: CheckCircle2,
-    colorVar: 'var(--status-done)',
-    bgVar: 'var(--status-done)',
-  },
-  CANCELLED: {
-    label: 'Cancelled',
-    icon: XCircle,
-    colorVar: 'var(--status-on-hold)',
-    bgVar: 'var(--status-on-hold)',
-  },
-}
-
-export const COLLAPSED_STATUSES = new Set<Status>([
-  'WAITING',
-  'UNDER_REVIEW',
-  'ON_HOLD',
-  'BLOCKED',
-])
+export { COLLAPSED_STATUSES, STATUS_CONFIG }
 
 export const PRIORITY_CONFIG: Record<
   Priority,

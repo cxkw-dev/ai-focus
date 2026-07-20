@@ -11,21 +11,9 @@ import {
   Cell,
 } from 'recharts'
 import { ChartTooltip } from './chart-tooltip'
+import { PRIORITY_COLOR_KEYS, PRIORITY_LABELS } from '@/lib/priority'
 import type { PriorityData } from '@/types/stats'
-
-const PRIORITY_LABELS: Record<string, string> = {
-  LOW: 'Low',
-  MEDIUM: 'Medium',
-  HIGH: 'High',
-  URGENT: 'Urgent',
-}
-
-const PRIORITY_COLOR_KEYS: Record<string, string> = {
-  LOW: 'priorityLow',
-  MEDIUM: 'priorityMedium',
-  HIGH: 'priorityHigh',
-  URGENT: 'priorityUrgent',
-}
+import type { Priority } from '@/types/todo'
 
 interface PriorityChartProps {
   data: PriorityData[]
@@ -36,9 +24,10 @@ export function PriorityChart({ data, colors }: PriorityChartProps) {
   if (!colors.primary) return null
 
   const chartData = data.map((d) => ({
-    name: PRIORITY_LABELS[d.priority] || d.priority,
+    name: PRIORITY_LABELS[d.priority as Priority] || d.priority,
     count: d.count,
-    fill: colors[PRIORITY_COLOR_KEYS[d.priority]] || colors.textMuted,
+    fill:
+      colors[PRIORITY_COLOR_KEYS[d.priority as Priority]] || colors.textMuted,
   }))
 
   return (

@@ -4,7 +4,11 @@ import * as React from 'react'
 import * as Popover from '@radix-ui/react-popover'
 import { Plus, Search, Trash2, Calendar, Tag } from 'lucide-react'
 import type { NotebookNote } from '@/types/notebook'
-import type { Status, Priority } from '@/types/todo'
+import { STATUS_LABELS, STATUS_COLOR_VARS as STATUS_COLORS } from '@/lib/status'
+import {
+  PRIORITY_LABELS,
+  PRIORITY_COLOR_VARS as PRIORITY_COLORS,
+} from '@/lib/priority'
 
 interface NotesSidebarProps {
   notes: NotebookNote[]
@@ -35,42 +39,6 @@ function formatRelativeTime(dateStr: string): string {
   if (diffHours < 24) return `${diffHours}h ago`
   if (diffDays < 7) return `${diffDays}d ago`
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-}
-
-const STATUS_LABELS: Record<Status, string> = {
-  TODO: 'To Do',
-  IN_PROGRESS: 'In Progress',
-  WAITING: 'Waiting',
-  UNDER_REVIEW: 'Under Review',
-  ON_HOLD: 'On Hold',
-  BLOCKED: 'Blocked',
-  COMPLETED: 'Completed',
-  CANCELLED: 'Cancelled',
-}
-
-const STATUS_COLORS: Record<Status, string> = {
-  TODO: 'var(--status-todo)',
-  IN_PROGRESS: 'var(--status-in-progress)',
-  WAITING: 'var(--status-waiting)',
-  UNDER_REVIEW: 'var(--status-in-progress)',
-  ON_HOLD: 'var(--status-on-hold)',
-  BLOCKED: 'var(--status-blocked)',
-  COMPLETED: 'var(--status-done)',
-  CANCELLED: 'var(--status-on-hold)',
-}
-
-const PRIORITY_LABELS: Record<Priority, string> = {
-  LOW: 'Low',
-  MEDIUM: 'Medium',
-  HIGH: 'High',
-  URGENT: 'Urgent',
-}
-
-const PRIORITY_COLORS: Record<Priority, string> = {
-  LOW: 'var(--priority-low)',
-  MEDIUM: 'var(--priority-medium)',
-  HIGH: 'var(--priority-high)',
-  URGENT: 'var(--priority-urgent)',
 }
 
 function TodoPreviewCard({

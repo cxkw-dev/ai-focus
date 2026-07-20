@@ -50,3 +50,19 @@ export const PRIORITIES: {
 export const PRIORITY_MAP = Object.fromEntries(
   PRIORITIES.map((p) => [p.value, p]),
 ) as Record<Priority, (typeof PRIORITIES)[number]>
+
+export const PRIORITY_LABELS = Object.fromEntries(
+  PRIORITIES.map((p) => [p.value, p.label]),
+) as Record<Priority, string>
+
+export const PRIORITY_COLOR_VARS = Object.fromEntries(
+  PRIORITIES.map((p) => [p.value, p.colorVar]),
+) as Record<Priority, string>
+
+// Keys into the ChartColors palette (see lib/themes.ts).
+export const PRIORITY_COLOR_KEYS: Record<Priority, string> = {
+  LOW: 'priorityLow',
+  MEDIUM: 'priorityMedium',
+  HIGH: 'priorityHigh',
+  URGENT: 'priorityUrgent',
+}

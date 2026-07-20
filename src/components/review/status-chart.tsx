@@ -9,27 +9,9 @@ import {
   Legend,
 } from 'recharts'
 import { ChartTooltip } from './chart-tooltip'
+import { STATUS_COLOR_KEYS, STATUS_LABELS } from '@/lib/status'
 import type { StatusData } from '@/types/stats'
-
-const STATUS_LABELS: Record<string, string> = {
-  TODO: 'Todo',
-  IN_PROGRESS: 'In Progress',
-  WAITING: 'Waiting',
-  UNDER_REVIEW: 'Under Review',
-  ON_HOLD: 'On Hold',
-  BLOCKED: 'Blocked',
-  COMPLETED: 'Completed',
-}
-
-const STATUS_COLOR_KEYS: Record<string, string> = {
-  TODO: 'statusTodo',
-  IN_PROGRESS: 'statusInProgress',
-  WAITING: 'statusWaiting',
-  UNDER_REVIEW: 'statusUnderReview',
-  ON_HOLD: 'statusOnHold',
-  BLOCKED: 'statusBlocked',
-  COMPLETED: 'statusDone',
-}
+import type { Status } from '@/types/todo'
 
 interface StatusChartProps {
   data: StatusData[]
@@ -42,9 +24,9 @@ export function StatusChart({ data, colors }: StatusChartProps) {
   const chartData = data
     .filter((d) => d.count > 0)
     .map((d) => ({
-      name: STATUS_LABELS[d.status] || d.status,
+      name: STATUS_LABELS[d.status as Status] || d.status,
       value: d.count,
-      fill: colors[STATUS_COLOR_KEYS[d.status]] || colors.textMuted,
+      fill: colors[STATUS_COLOR_KEYS[d.status as Status]] || colors.textMuted,
     }))
 
   if (chartData.length === 0) {
