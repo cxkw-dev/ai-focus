@@ -41,6 +41,40 @@ export function registerContactTools(server) {
         });
         return textResult(data);
     });
+    server.tool('update_todo_contact', 'Update a contact on a todo — change their role and/or display order. Use list_todo_contacts first to find the contact ID.', {
+        taskNumber: z
+            .number()
+            .int()
+            .positive()
+            .optional()
+            .describe('Task number (e.g. 7)'),
+        id: z.string().optional().describe('Todo cuid'),
+        contactId: z.string().describe('The TodoContact ID to update'),
+        role: z
+            .string()
+            .min(1)
+            .optional()
+            .describe("New role for this contact (e.g. 'reviewer', 'stakeholder')"),
+        order: z
+            .number()
+            .int()
+            .optional()
+            .describe('New display order for this contact'),
+    }, async ({ taskNumber, id, contactId, role, order }) => {
+        const result = await resolveTodoId({ taskNumber, id });
+        if ('error' in result)
+            return result.error;
+        const updates = {};
+        if (role !== undefined)
+            updates.role = role;
+        if (order !== undefined)
+            updates.order = order;
+        const data = await apiFetch(`/api/todos/${result.resolvedId}/contacts/${contactId}`, {
+            method: 'PATCH',
+            body: JSON.stringify(updates),
+        });
+        return textResult(data);
+    });
     server.tool('remove_todo_contact', 'Remove a contact from a todo. Use list_todo_contacts first to find the contact ID.', {
         taskNumber: z
             .number()

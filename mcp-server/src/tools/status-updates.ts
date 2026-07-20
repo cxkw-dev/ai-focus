@@ -117,6 +117,36 @@ Examples:
     },
   )
 
+  server.tool(
+    'delete_status_update',
+    "Delete a single status update from a todo's timeline. Use list_status_updates first to find the update ID.",
+    {
+      taskNumber: z
+        .number()
+        .int()
+        .positive()
+        .optional()
+        .describe('The task number (e.g. 7)'),
+      id: z
+        .string()
+        .optional()
+        .describe('The todo cuid (use taskNumber instead when possible)'),
+      updateId: z.string().describe('The status update ID to delete'),
+    },
+    async ({ taskNumber, id, updateId }) => {
+      const resolved = await resolveTodoId({ taskNumber, id })
+      if ('error' in resolved) return resolved.error
+
+      const data = await apiFetch(
+        `/api/todos/${resolved.resolvedId}/updates/${updateId}`,
+        {
+          method: 'DELETE',
+        },
+      )
+      return textResult(data)
+    },
+  )
+
   // Resource: todo timeline (so LLMs can read timeline data via resource URI)
   server.resource(
     'todo-updates',

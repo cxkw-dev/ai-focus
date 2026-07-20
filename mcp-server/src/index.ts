@@ -12,6 +12,7 @@ import { registerAccomplishmentTools } from './tools/accomplishments.js'
 import { registerStatsTools } from './tools/stats.js'
 import { registerStatusUpdateTools } from './tools/status-updates.js'
 import { registerSessionTools } from './tools/sessions.js'
+import { registerGitHubTools } from './tools/github.js'
 
 const server = new McpServer({
   name: 'ai-focus',
@@ -28,6 +29,7 @@ registerAccomplishmentTools(server)
 registerStatsTools(server)
 registerStatusUpdateTools(server)
 registerSessionTools(server)
+registerGitHubTools(server)
 
 async function main() {
   const transport = new StdioServerTransport()

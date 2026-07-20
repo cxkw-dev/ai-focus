@@ -1,5 +1,25 @@
 import { z } from 'zod';
 import { apiFetch, textResult } from '../helpers.js';
+// Mirrors billingCodeEntrySchema in src/lib/validation/label.ts
+const billingCodesParam = z.array(z.object({
+    type: z
+        .string()
+        .min(1)
+        .max(40)
+        .describe('Billing code type/category (e.g. "Project", "Cost Center")'),
+    code: z.string().min(1).max(120).describe('The billing code value'),
+    description: z
+        .string()
+        .max(200)
+        .nullable()
+        .optional()
+        .describe('Optional description of the billing code'),
+    order: z
+        .number()
+        .int()
+        .min(0)
+        .describe('Display order (0-based) for this billing code'),
+}));
 export function registerLabelTools(server) {
     server.tool('list_labels', 'List labels. Labels can be attached to todos for categorization and filtering. By default only active labels are returned; pass status to include archived ones.', {
         status: z
@@ -14,6 +34,9 @@ export function registerLabelTools(server) {
     server.tool('create_label', 'Create a new label for tagging todos.', {
         name: z.string().min(1).max(40).describe('Label name'),
         color: z.string().optional().describe('Hex color like #FF5733'),
+        billingCodes: billingCodesParam
+            .optional()
+            .describe('Billing codes for this label. Codes must be unique within a label.'),
     }, async (params) => {
         const data = await apiFetch('/api/labels', {
             method: 'POST',
@@ -25,6 +48,9 @@ export function registerLabelTools(server) {
         id: z.string().describe('The label ID to update'),
         name: z.string().min(1).max(40).optional().describe('New label name'),
         color: z.string().optional().describe('New hex color like #FF5733'),
+        billingCodes: billingCodesParam
+            .optional()
+            .describe('Replace all billing codes for this label. Codes must be unique within a label.'),
     }, async ({ id, ...updates }) => {
         const data = await apiFetch(`/api/labels/${id}`, {
             method: 'PATCH',

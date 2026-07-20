@@ -1,5 +1,13 @@
 import { z } from 'zod';
-import { apiFetch, textResult, isApiError, toHtml } from '../helpers.js';
+import { apiFetch, textResult, isApiError } from '../helpers.js';
+const CATEGORY_ENUM = [
+    'DELIVERY',
+    'HIRING',
+    'MENTORING',
+    'COLLABORATION',
+    'GROWTH',
+    'OTHER',
+];
 export function registerAccomplishmentTools(server) {
     server.tool('list_accomplishments', 'List accomplishments for a given year. Used for performance review tracking. Shows date, category, title, and description.', {
         year: z
@@ -38,24 +46,18 @@ export function registerAccomplishmentTools(server) {
             .string()
             .max(1000)
             .optional()
-            .describe('Details (supports markdown)'),
+            .describe('Details (plain text)'),
         category: z
-            .enum([
-            'DELIVERY',
-            'HIRING',
-            'MENTORING',
-            'COLLABORATION',
-            'GROWTH',
-            'OTHER',
-        ])
+            .enum(CATEGORY_ENUM)
             .describe('Category: DELIVERY (features/PRs), HIRING (interviews), MENTORING (coaching), COLLABORATION (cross-team), GROWTH (learning), OTHER'),
         date: z
             .string()
             .describe('Date of accomplishment (ISO string, e.g. 2026-01-15)'),
     }, async (params) => {
+        // Accomplishment descriptions render as plain text (the review list and
+        // the edit textarea), so store the raw string. Converting to HTML here
+        // would surface literal <p> tags in the UI.
         const body = { ...params };
-        if (body.description)
-            body.description = toHtml(body.description);
         const data = await apiFetch('/api/accomplishments', {
             method: 'POST',
             body: JSON.stringify(body),
@@ -70,22 +72,10 @@ export function registerAccomplishmentTools(server) {
             .max(1000)
             .nullable()
             .optional()
-            .describe('New description (supports markdown)'),
-        category: z
-            .enum([
-            'DELIVERY',
-            'HIRING',
-            'MENTORING',
-            'COLLABORATION',
-            'GROWTH',
-            'OTHER',
-        ])
-            .optional()
-            .describe('New category'),
+            .describe('New description (plain text)'),
+        category: z.enum(CATEGORY_ENUM).optional().describe('New category'),
         date: z.string().optional().describe('New date (ISO string)'),
     }, async ({ id, ...updates }) => {
-        if (updates.description)
-            updates.description = toHtml(updates.description);
         const data = await apiFetch(`/api/accomplishments/${id}`, {
             method: 'PATCH',
             body: JSON.stringify(updates),

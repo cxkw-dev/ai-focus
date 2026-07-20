@@ -19,10 +19,44 @@ export function registerTodoTools(server) {
             .enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT'])
             .optional()
             .describe('Filter by priority'),
+        completed: z
+            .enum(['true', 'false'])
+            .optional()
+            .describe("Filter by completion: 'true' for completed todos, 'false' for not completed"),
+        excludeStatus: z
+            .enum([
+            'TODO',
+            'IN_PROGRESS',
+            'WAITING',
+            'UNDER_REVIEW',
+            'ON_HOLD',
+            'BLOCKED',
+            'COMPLETED',
+            'CANCELLED',
+        ])
+            .optional()
+            .describe('Exclude todos with this status'),
         archived: z
             .boolean()
             .optional()
             .describe('Include archived todos (default false)'),
+        limit: z
+            .number()
+            .int()
+            .min(1)
+            .max(100)
+            .optional()
+            .describe('Max number of todos to return (1-100). When set, the total count is also reported.'),
+        offset: z
+            .number()
+            .int()
+            .min(0)
+            .optional()
+            .describe('Number of todos to skip (for pagination, use with limit)'),
+        sortBy: z
+            .enum(['order', 'completedAt', 'updatedAt'])
+            .optional()
+            .describe('Sort order (default: order)'),
         verbose: z
             .boolean()
             .optional()
@@ -33,22 +67,49 @@ export function registerTodoTools(server) {
             query.set('status', params.status);
         if (params.priority)
             query.set('priority', params.priority);
+        if (params.completed)
+            query.set('completed', params.completed);
+        if (params.excludeStatus)
+            query.set('excludeStatus', params.excludeStatus);
         if (params.archived)
             query.set('archived', 'true');
+        if (params.limit !== undefined)
+            query.set('limit', String(params.limit));
+        if (params.offset !== undefined)
+            query.set('offset', String(params.offset));
+        if (params.sortBy)
+            query.set('sortBy', params.sortBy);
         const qs = query.toString();
         const data = await apiFetch(`/api/todos${qs ? `?${qs}` : ''}`);
         if (isApiError(data))
             return textResult(data);
         if (params.verbose)
             return textResult(data);
+        // When limit is set the API returns { todos, total }; otherwise a bare array.
+        const isPaginated = data &&
+            typeof data === 'object' &&
+            !Array.isArray(data) &&
+            'todos' in data;
+        const todos = (isPaginated ? data.todos : data);
+        const summary = formatTodoSummary(todos);
+        const text = isPaginated
+            ? `${summary}\n\n(showing ${todos.length} of ${data.total} total)`
+            : summary;
         return {
-            content: [
-                {
-                    type: 'text',
-                    text: formatTodoSummary(data),
-                },
-            ],
+            content: [{ type: 'text', text }],
         };
+    });
+    server.tool('get_todo_board', 'Get the todo board grouped into three buckets: active (not completed/cancelled), completed (completed or cancelled), and deleted (archived but not completed/cancelled). Returns a readable summary of each bucket.', {}, async () => {
+        const data = await apiFetch('/api/todos/board');
+        if (isApiError(data))
+            return textResult(data);
+        const board = data;
+        const text = [
+            `=== ACTIVE (${board.active.length}) ===\n${formatTodoSummary(board.active)}`,
+            `=== COMPLETED (${board.completed.length}) ===\n${formatTodoSummary(board.completed)}`,
+            `=== DELETED (${board.deleted.length}) ===\n${formatTodoSummary(board.deleted)}`,
+        ].join('\n\n');
+        return { content: [{ type: 'text', text }] };
     });
     server.tool('get_todo', 'Get a single todo by task number (e.g. 7) or ID. Returns full details including description, subtasks, labels, and linked PRs.', {
         taskNumber: z
@@ -90,6 +151,7 @@ PATTERN — description brevity:
             'ON_HOLD',
             'BLOCKED',
             'COMPLETED',
+            'CANCELLED',
         ])
             .optional()
             .describe('Initial status (default TODO)'),
@@ -189,6 +251,7 @@ Description handling:
             'ON_HOLD',
             'BLOCKED',
             'COMPLETED',
+            'CANCELLED',
         ])
             .optional()
             .describe('New status'),
