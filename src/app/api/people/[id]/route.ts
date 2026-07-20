@@ -2,15 +2,14 @@ import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
 import {
   conflict,
+  handleApiError,
   internalError,
   notFound,
   ok,
   parseJsonBody,
-  validationError,
 } from '@/lib/server/api-responses'
 import { isPrismaErrorCode } from '@/lib/server/prisma-errors'
 import { updatePersonSchema } from '@/lib/validation/person'
-import { ZodError } from 'zod'
 
 export async function PATCH(
   request: Request,
@@ -24,10 +23,6 @@ export async function PATCH(
     emit('people')
     return ok(person)
   } catch (error) {
-    if (error instanceof ZodError) {
-      return validationError(error)
-    }
-
     if (isPrismaErrorCode(error, 'P2002')) {
       return conflict('A contact with this email already exists')
     }
@@ -36,9 +31,9 @@ export async function PATCH(
       return notFound('Person not found')
     }
 
-    return internalError(
-      'Failed to update person',
+    return handleApiError(
       error,
+      'Failed to update person',
       'Error updating person',
     )
   }

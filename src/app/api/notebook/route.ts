@@ -1,7 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
-import { parseJsonBody } from '@/lib/server/api-responses'
+import {
+  created,
+  handleApiError,
+  ok,
+  parseJsonBody,
+} from '@/lib/server/api-responses'
 import { z } from 'zod'
 
 const createNoteSchema = z.object({
@@ -36,12 +41,12 @@ export async function GET(request: NextRequest) {
       orderBy: [{ pinned: 'desc' }, { updatedAt: 'desc' }],
     })
 
-    return NextResponse.json(notes)
+    return ok(notes)
   } catch (error) {
-    console.error('Error fetching notebook notes:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch notes' },
-      { status: 500 },
+    return handleApiError(
+      error,
+      'Failed to fetch notes',
+      'Error fetching notebook notes',
     )
   }
 }
@@ -58,19 +63,12 @@ export async function POST(request: NextRequest) {
     })
 
     emit('notebook')
-    return NextResponse.json(note, { status: 201 })
+    return created(note)
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.issues },
-        { status: 400 },
-      )
-    }
-
-    console.error('Error creating notebook note:', error)
-    return NextResponse.json(
-      { error: 'Failed to create note' },
-      { status: 500 },
+    return handleApiError(
+      error,
+      'Failed to create note',
+      'Error creating notebook note',
     )
   }
 }

@@ -2,16 +2,14 @@ import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
 import {
   created,
-  internalError,
+  handleApiError,
   ok,
   parseJsonBody,
-  validationError,
 } from '@/lib/server/api-responses'
 import {
   createAccomplishmentSchema,
   parseListAccomplishmentsQuery,
 } from '@/lib/validation/accomplishment'
-import { ZodError } from 'zod'
 
 export async function GET(request: Request) {
   try {
@@ -26,13 +24,9 @@ export async function GET(request: Request) {
 
     return ok(accomplishments)
   } catch (error) {
-    if (error instanceof ZodError) {
-      return validationError(error)
-    }
-
-    return internalError(
-      'Failed to fetch accomplishments',
+    return handleApiError(
       error,
+      'Failed to fetch accomplishments',
       'Error fetching accomplishments',
     )
   }
@@ -56,13 +50,9 @@ export async function POST(request: Request) {
     emit('accomplishments', { year: date.getFullYear() })
     return created(accomplishment)
   } catch (error) {
-    if (error instanceof ZodError) {
-      return validationError(error)
-    }
-
-    return internalError(
-      'Failed to create accomplishment',
+    return handleApiError(
       error,
+      'Failed to create accomplishment',
       'Error creating accomplishment',
     )
   }

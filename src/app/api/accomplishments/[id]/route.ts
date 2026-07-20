@@ -2,14 +2,13 @@ import type { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
 import {
+  handleApiError,
   internalError,
   notFound,
   ok,
   parseJsonBody,
-  validationError,
 } from '@/lib/server/api-responses'
 import { updateAccomplishmentSchema } from '@/lib/validation/accomplishment'
-import { ZodError } from 'zod'
 
 export async function PATCH(
   request: Request,
@@ -60,13 +59,9 @@ export async function PATCH(
 
     return ok(result.accomplishment)
   } catch (error) {
-    if (error instanceof ZodError) {
-      return validationError(error)
-    }
-
-    return internalError(
-      'Failed to update accomplishment',
+    return handleApiError(
       error,
+      'Failed to update accomplishment',
       'Error updating accomplishment',
     )
   }

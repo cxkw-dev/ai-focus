@@ -41,6 +41,18 @@ export function internalError(
   return jsonError(userMessage, 500)
 }
 
+export function handleApiError(
+  error: unknown,
+  userMessage: string,
+  context?: string,
+) {
+  if (error instanceof ZodError) {
+    return validationError(error)
+  }
+
+  return internalError(userMessage, error, context ?? userMessage)
+}
+
 export async function parseJsonBody<T>(
   request: Request,
   schema: { parse(data: unknown): T },

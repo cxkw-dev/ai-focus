@@ -2,14 +2,12 @@ import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
 import {
   created,
-  internalError,
+  handleApiError,
   notFound,
   parseJsonBody,
-  validationError,
 } from '@/lib/server/api-responses'
 import { findResolvedTodo } from '@/lib/server/todo-lookup'
 import { createSessionSchema } from '@/lib/validation/todo'
-import { ZodError } from 'zod'
 
 export async function POST(
   request: Request,
@@ -36,13 +34,9 @@ export async function POST(
     emit('todos')
     return created(session)
   } catch (error) {
-    if (error instanceof ZodError) {
-      return validationError(error)
-    }
-
-    return internalError(
-      'Failed to create session',
+    return handleApiError(
       error,
+      'Failed to create session',
       'Error creating todo session',
     )
   }

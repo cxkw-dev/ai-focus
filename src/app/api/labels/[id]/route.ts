@@ -2,15 +2,14 @@ import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
 import { labelInclude } from '@/lib/label-queries'
 import {
+  handleApiError,
   internalError,
   notFound,
   ok,
   parseJsonBody,
-  validationError,
 } from '@/lib/server/api-responses'
 import { isPrismaErrorCode } from '@/lib/server/prisma-errors'
 import { updateLabelSchema } from '@/lib/validation/label'
-import { ZodError } from 'zod'
 
 export async function PATCH(
   request: Request,
@@ -59,17 +58,13 @@ export async function PATCH(
     emit('labels')
     return ok(label)
   } catch (error) {
-    if (error instanceof ZodError) {
-      return validationError(error)
-    }
-
     if (isPrismaErrorCode(error, 'P2025')) {
       return notFound('Label not found')
     }
 
-    return internalError(
-      'Failed to update label',
+    return handleApiError(
       error,
+      'Failed to update label',
       'Error updating label',
     )
   }

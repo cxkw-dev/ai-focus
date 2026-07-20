@@ -1,44 +1,33 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import {
+  githubApiFetch,
+  parseGithubUrlParam,
+  requireGithubToken,
+} from '@/lib/github'
 
 const PR_URL_REGEX = /^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/
 
 export async function GET(request: NextRequest) {
-  const url = request.nextUrl.searchParams.get('url')
-  if (!url) {
-    return NextResponse.json(
-      { error: 'Missing url parameter' },
-      { status: 400 },
-    )
+  const parsed = parseGithubUrlParam(
+    request.nextUrl.searchParams.get('url'),
+    PR_URL_REGEX,
+    'Invalid GitHub PR URL',
+  )
+  if (parsed instanceof NextResponse) {
+    return parsed
   }
+  const { owner, repo, number } = parsed
 
-  const match = url.match(PR_URL_REGEX)
-  if (!match) {
-    return NextResponse.json(
-      { error: 'Invalid GitHub PR URL' },
-      { status: 400 },
-    )
-  }
-
-  const [, owner, repo, number] = match
-  const token = process.env.GITHUB_TOKEN
-
-  if (!token) {
-    return NextResponse.json(
-      { error: 'GITHUB_TOKEN not configured' },
-      { status: 500 },
-    )
+  const token = requireGithubToken()
+  if (token instanceof NextResponse) {
+    return token
   }
 
   try {
-    const res = await fetch(
-      `https://api.github.com/repos/${owner}/${repo}/pulls/${number}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/vnd.github.v3+json',
-        },
-        cache: 'no-store',
-      },
+    const res = await githubApiFetch(
+      `/repos/${owner}/${repo}/pulls/${number}`,
+      token,
     )
 
     if (!res.ok) {
@@ -51,24 +40,15 @@ export async function GET(request: NextRequest) {
     const pr = await res.json()
 
     let reviewStatus:
-      | 'review_requested'
-      | 'approved'
-      | 'changes_requested'
-      | null = null
+      'review_requested' | 'approved' | 'changes_requested' | null = null
     let approvedCount: number | undefined
     let reviewerCount: number | undefined
 
     if (pr.state === 'open' && !pr.draft) {
       try {
-        const reviewsRes = await fetch(
-          `https://api.github.com/repos/${owner}/${repo}/pulls/${number}/reviews`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              Accept: 'application/vnd.github.v3+json',
-            },
-            cache: 'no-store',
-          },
+        const reviewsRes = await githubApiFetch(
+          `/repos/${owner}/${repo}/pulls/${number}/reviews`,
+          token,
         )
 
         if (reviewsRes.ok) {
@@ -111,15 +91,9 @@ export async function GET(request: NextRequest) {
     let behindBy: number | undefined
     if (pr.state === 'open' && !pr.merged) {
       try {
-        const compareRes = await fetch(
-          `https://api.github.com/repos/${owner}/${repo}/compare/${pr.head.sha}...${pr.base.label}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              Accept: 'application/vnd.github.v3+json',
-            },
-            cache: 'no-store',
-          },
+        const compareRes = await githubApiFetch(
+          `/repos/${owner}/${repo}/compare/${pr.head.sha}...${pr.base.label}`,
+          token,
         )
         if (compareRes.ok) {
           const compare = await compareRes.json()

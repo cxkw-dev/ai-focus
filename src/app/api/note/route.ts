@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/lib/db'
-import { parseJsonBody } from '@/lib/server/api-responses'
+import { handleApiError, ok, parseJsonBody } from '@/lib/server/api-responses'
 
 const NOTE_ID = 'default'
 
@@ -15,14 +15,13 @@ export async function GET() {
       where: { id: NOTE_ID },
     })
 
-    return NextResponse.json({
+    return ok({
       id: NOTE_ID,
       content: note?.content ?? '',
       updatedAt: note?.updatedAt ?? null,
     })
   } catch (error) {
-    console.error('Error fetching note:', error)
-    return NextResponse.json({ error: 'Failed to fetch note' }, { status: 500 })
+    return handleApiError(error, 'Failed to fetch note', 'Error fetching note')
   }
 }
 
@@ -36,16 +35,8 @@ export async function PUT(request: NextRequest) {
       create: { id: NOTE_ID, content },
     })
 
-    return NextResponse.json(note)
+    return ok(note)
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.issues },
-        { status: 400 },
-      )
-    }
-
-    console.error('Error saving note:', error)
-    return NextResponse.json({ error: 'Failed to save note' }, { status: 500 })
+    return handleApiError(error, 'Failed to save note', 'Error saving note')
   }
 }

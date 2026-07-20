@@ -9,6 +9,7 @@ import {
   getAzureDevOpsConfig,
   getCommentsApiVersion,
   getWorkItemTeamProject,
+  handleAzureError,
   parseCommitRef,
   parsePullRequestRef,
   parseWorkItemId,
@@ -217,18 +218,7 @@ export async function GET(
       },
     })
   } catch (error) {
-    if (error instanceof AzureDevOpsError) {
-      return NextResponse.json(
-        { error: error.message, details: error.details },
-        { status: error.status },
-      )
-    }
-
-    console.error('Error fetching Azure work item context:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch Azure work item context' },
-      { status: 502 },
-    )
+    return handleAzureError(error, 'Azure work item context')
   }
 }
 

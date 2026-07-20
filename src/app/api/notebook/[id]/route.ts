@@ -1,7 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
-import { parseJsonBody } from '@/lib/server/api-responses'
+import {
+  handleApiError,
+  notFound,
+  ok,
+  parseJsonBody,
+} from '@/lib/server/api-responses'
 import { z } from 'zod'
 
 const updateNoteSchema = z.object({
@@ -34,13 +39,16 @@ export async function GET(
     })
 
     if (!note) {
-      return NextResponse.json({ error: 'Note not found' }, { status: 404 })
+      return notFound('Note not found')
     }
 
-    return NextResponse.json(note)
+    return ok(note)
   } catch (error) {
-    console.error('Error fetching notebook note:', error)
-    return NextResponse.json({ error: 'Failed to fetch note' }, { status: 500 })
+    return handleApiError(
+      error,
+      'Failed to fetch note',
+      'Error fetching notebook note',
+    )
   }
 }
 
@@ -71,19 +79,12 @@ export async function PATCH(
     })
 
     emit('notebook')
-    return NextResponse.json(note)
+    return ok(note)
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.issues },
-        { status: 400 },
-      )
-    }
-
-    console.error('Error updating notebook note:', error)
-    return NextResponse.json(
-      { error: 'Failed to update note' },
-      { status: 500 },
+    return handleApiError(
+      error,
+      'Failed to update note',
+      'Error updating notebook note',
     )
   }
 }
@@ -99,12 +100,12 @@ export async function DELETE(
     })
 
     emit('notebook')
-    return NextResponse.json({ success: true })
+    return ok({ success: true })
   } catch (error) {
-    console.error('Error deleting notebook note:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete note' },
-      { status: 500 },
+    return handleApiError(
+      error,
+      'Failed to delete note',
+      'Error deleting notebook note',
     )
   }
 }

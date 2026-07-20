@@ -13,13 +13,11 @@ import {
 } from '@/lib/server/todo-response'
 import {
   created,
-  internalError,
+  handleApiError,
   ok,
   parseJsonBody,
-  validationError,
 } from '@/lib/server/api-responses'
 import { createTodoSchema, parseListTodosQuery } from '@/lib/validation/todo'
-import { ZodError } from 'zod'
 import type { NextRequest } from 'next/server'
 
 type ListTodosQuery = ReturnType<typeof parseListTodosQuery>
@@ -129,11 +127,11 @@ export async function GET(request: NextRequest) {
 
     return ok(validateTodosForResponse(todos))
   } catch (error) {
-    if (error instanceof ZodError) {
-      return validationError(error)
-    }
-
-    return internalError('Failed to fetch todos', error, 'Error fetching todos')
+    return handleApiError(
+      error,
+      'Failed to fetch todos',
+      'Error fetching todos',
+    )
   }
 }
 
@@ -190,10 +188,6 @@ export async function POST(request: Request) {
 
     return created(validateTodoForResponse(todo))
   } catch (error) {
-    if (error instanceof ZodError) {
-      return validationError(error)
-    }
-
-    return internalError('Failed to create todo', error, 'Error creating todo')
+    return handleApiError(error, 'Failed to create todo', 'Error creating todo')
   }
 }

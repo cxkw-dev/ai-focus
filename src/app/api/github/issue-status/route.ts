@@ -1,45 +1,34 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import {
+  githubApiFetch,
+  parseGithubUrlParam,
+  requireGithubToken,
+} from '@/lib/github'
 
 const ISSUE_URL_REGEX =
   /^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/issues\/(\d+)/
 
 export async function GET(request: NextRequest) {
-  const url = request.nextUrl.searchParams.get('url')
-  if (!url) {
-    return NextResponse.json(
-      { error: 'Missing url parameter' },
-      { status: 400 },
-    )
+  const parsed = parseGithubUrlParam(
+    request.nextUrl.searchParams.get('url'),
+    ISSUE_URL_REGEX,
+    'Invalid GitHub Issue URL',
+  )
+  if (parsed instanceof NextResponse) {
+    return parsed
   }
+  const { owner, repo, number } = parsed
 
-  const match = url.match(ISSUE_URL_REGEX)
-  if (!match) {
-    return NextResponse.json(
-      { error: 'Invalid GitHub Issue URL' },
-      { status: 400 },
-    )
-  }
-
-  const [, owner, repo, number] = match
-  const token = process.env.GITHUB_TOKEN
-
-  if (!token) {
-    return NextResponse.json(
-      { error: 'GITHUB_TOKEN not configured' },
-      { status: 500 },
-    )
+  const token = requireGithubToken()
+  if (token instanceof NextResponse) {
+    return token
   }
 
   try {
-    const res = await fetch(
-      `https://api.github.com/repos/${owner}/${repo}/issues/${number}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/vnd.github.v3+json',
-        },
-        cache: 'no-store',
-      },
+    const res = await githubApiFetch(
+      `/repos/${owner}/${repo}/issues/${number}`,
+      token,
     )
 
     if (!res.ok) {

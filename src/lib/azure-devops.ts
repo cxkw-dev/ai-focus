@@ -1,5 +1,7 @@
 import 'server-only'
 
+import { NextResponse } from 'next/server'
+
 const DEFAULT_AZURE_API_VERSION = '7.1'
 const COMMENTS_AZURE_API_VERSION = '7.1-preview.4'
 
@@ -64,6 +66,32 @@ export class AzureDevOpsError extends Error {
     this.status = status
     this.details = details
   }
+}
+
+/**
+ * Shared catch handler for the Azure work-item route GETs. Reproduces the
+ * previously-duplicated behavior exactly: an AzureDevOpsError is surfaced with
+ * its own status and { error, details } payload; anything else is logged and
+ * returned as a generic 502. `context` fills both the log prefix
+ * ("Error fetching {context}:") and the fallback message
+ * ("Failed to fetch {context}").
+ */
+export function handleAzureError(
+  error: unknown,
+  context: string,
+): NextResponse {
+  if (error instanceof AzureDevOpsError) {
+    return NextResponse.json(
+      { error: error.message, details: error.details },
+      { status: error.status },
+    )
+  }
+
+  console.error(`Error fetching ${context}:`, error)
+  return NextResponse.json(
+    { error: `Failed to fetch ${context}` },
+    { status: 502 },
+  )
 }
 
 export function getAzureDevOpsConfig(orgOverride?: string): AzureDevOpsConfig {

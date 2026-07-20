@@ -4,14 +4,13 @@ import { labelInclude } from '@/lib/label-queries'
 import {
   conflict,
   created,
+  handleApiError,
   internalError,
   ok,
   parseJsonBody,
-  validationError,
 } from '@/lib/server/api-responses'
 import { isPrismaErrorCode } from '@/lib/server/prisma-errors'
 import { createLabelSchema } from '@/lib/validation/label'
-import { ZodError } from 'zod'
 
 export async function GET(request: Request) {
   try {
@@ -66,10 +65,6 @@ export async function POST(request: Request) {
     emit('labels')
     return created(label)
   } catch (error) {
-    if (error instanceof ZodError) {
-      return validationError(error)
-    }
-
     // A unique-name clash usually means an archived label still holds the
     // name — surface that instead of a generic 500 so the user can restore it.
     if (isPrismaErrorCode(error, 'P2002')) {
@@ -78,9 +73,9 @@ export async function POST(request: Request) {
       )
     }
 
-    return internalError(
-      'Failed to create label',
+    return handleApiError(
       error,
+      'Failed to create label',
       'Error creating label',
     )
   }

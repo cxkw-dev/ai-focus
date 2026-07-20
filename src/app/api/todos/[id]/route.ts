@@ -9,17 +9,17 @@ import { evaluateAccomplishment } from '@/lib/accomplishment-agent'
 import { todoInclude, todoWhere } from '@/lib/todo-queries'
 import {
   badRequest,
+  handleApiError,
   internalError,
   notFound,
   ok,
   parseJsonBody,
-  validationError,
 } from '@/lib/server/api-responses'
 import { isPrismaErrorCode } from '@/lib/server/prisma-errors'
 import { validateTodoForResponse } from '@/lib/server/todo-response'
 import { updateTodoSchema } from '@/lib/validation/todo'
 import { isClientSubtaskId } from '@/lib/subtask-ids'
-import { ZodError, z } from 'zod'
+import { z } from 'zod'
 
 const TODO_ROUTE_ERRORS = {
   invalidSubtaskId: 'INVALID_SUBTASK_ID',
@@ -350,10 +350,6 @@ export async function PATCH(
 
     return ok(validateTodoForResponse(todo))
   } catch (error) {
-    if (error instanceof ZodError) {
-      return validationError(error)
-    }
-
     if (isRouteError(error, 'invalidSubtaskId')) {
       return badRequest('One or more subtasks do not belong to this todo')
     }
@@ -365,7 +361,7 @@ export async function PATCH(
       return notFound('Todo not found')
     }
 
-    return internalError('Failed to update todo', error, 'Error updating todo')
+    return handleApiError(error, 'Failed to update todo', 'Error updating todo')
   }
 }
 

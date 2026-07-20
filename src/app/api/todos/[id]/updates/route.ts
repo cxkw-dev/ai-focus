@@ -2,15 +2,14 @@ import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
 import {
   created,
+  handleApiError,
   internalError,
   notFound,
   ok,
   parseJsonBody,
-  validationError,
 } from '@/lib/server/api-responses'
 import { findResolvedTodo } from '@/lib/server/todo-lookup'
 import { createStatusUpdateSchema } from '@/lib/validation/todo'
-import { ZodError } from 'zod'
 
 export async function GET(
   _request: Request,
@@ -63,13 +62,9 @@ export async function POST(
     emit('todoUpdates', { todoId: todo.id })
     return created(update)
   } catch (error) {
-    if (error instanceof ZodError) {
-      return validationError(error)
-    }
-
-    return internalError(
-      'Failed to add update',
+    return handleApiError(
       error,
+      'Failed to add update',
       'Error creating todo update',
     )
   }

@@ -6,6 +6,7 @@ import {
   getAzureDevOpsConfig,
   getCommentsApiVersion,
   getWorkItemTeamProject,
+  handleAzureError,
   parseWorkItemId,
   toIdentity,
   toText,
@@ -68,17 +69,6 @@ export async function GET(
       comments,
     })
   } catch (error) {
-    if (error instanceof AzureDevOpsError) {
-      return NextResponse.json(
-        { error: error.message, details: error.details },
-        { status: error.status },
-      )
-    }
-
-    console.error('Error fetching Azure work item comments:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch Azure work item comments' },
-      { status: 502 },
-    )
+    return handleAzureError(error, 'Azure work item comments')
   }
 }

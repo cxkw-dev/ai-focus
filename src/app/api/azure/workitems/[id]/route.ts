@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import {
-  AzureDevOpsError,
   fetchWorkItem,
   getAzureDevOpsConfig,
+  handleAzureError,
   parseWorkItemId,
   splitTags,
   toIdentity,
@@ -68,17 +68,6 @@ export async function GET(
       },
     })
   } catch (error) {
-    if (error instanceof AzureDevOpsError) {
-      return NextResponse.json(
-        { error: error.message, details: error.details },
-        { status: error.status },
-      )
-    }
-
-    console.error('Error fetching Azure work item:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch Azure work item' },
-      { status: 502 },
-    )
+    return handleAzureError(error, 'Azure work item')
   }
 }

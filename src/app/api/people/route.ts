@@ -3,14 +3,13 @@ import { emit } from '@/lib/events'
 import {
   conflict,
   created,
+  handleApiError,
   internalError,
   ok,
   parseJsonBody,
-  validationError,
 } from '@/lib/server/api-responses'
 import { isPrismaErrorCode } from '@/lib/server/prisma-errors'
 import { createPersonSchema } from '@/lib/validation/person'
-import { ZodError } from 'zod'
 
 export async function GET() {
   try {
@@ -35,17 +34,13 @@ export async function POST(request: Request) {
     emit('people')
     return created(person)
   } catch (error) {
-    if (error instanceof ZodError) {
-      return validationError(error)
-    }
-
     if (isPrismaErrorCode(error, 'P2002')) {
       return conflict('A contact with this email already exists')
     }
 
-    return internalError(
-      'Failed to create person',
+    return handleApiError(
       error,
+      'Failed to create person',
       'Error creating person',
     )
   }

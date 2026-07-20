@@ -1,12 +1,12 @@
-import { ZodError, z } from 'zod'
+import { z } from 'zod'
 import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
 import {
+  handleApiError,
   internalError,
   notFound,
   ok,
   parseJsonBody,
-  validationError,
 } from '@/lib/server/api-responses'
 import { findResolvedTodo } from '@/lib/server/todo-lookup'
 
@@ -44,12 +44,9 @@ export async function PATCH(
     emit('todoContacts', { todoId: todo.id })
     return ok(contact)
   } catch (error) {
-    if (error instanceof ZodError) {
-      return validationError(error)
-    }
-    return internalError(
-      'Failed to update contact',
+    return handleApiError(
       error,
+      'Failed to update contact',
       'Error updating contact',
     )
   }

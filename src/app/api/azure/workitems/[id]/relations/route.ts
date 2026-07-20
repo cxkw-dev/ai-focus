@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import {
-  AzureDevOpsError,
   extractWorkItemIdFromRelationUrl,
   fetchWorkItem,
   fetchWorkItemSummaries,
   getAzureDevOpsConfig,
+  handleAzureError,
   parseWorkItemId,
   toText,
 } from '@/lib/azure-devops'
@@ -100,17 +100,6 @@ export async function GET(
       related: relatedEntries,
     })
   } catch (error) {
-    if (error instanceof AzureDevOpsError) {
-      return NextResponse.json(
-        { error: error.message, details: error.details },
-        { status: error.status },
-      )
-    }
-
-    console.error('Error fetching Azure work item relations:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch Azure work item relations' },
-      { status: 502 },
-    )
+    return handleAzureError(error, 'Azure work item relations')
   }
 }

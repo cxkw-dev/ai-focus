@@ -3,6 +3,7 @@ import 'server-only'
 import { db } from '@/lib/db'
 import { emit, type EventPayload } from '@/lib/events'
 import { generateLocalAiText, getLocalAiConfig } from '@/lib/local-ai'
+import { ACCOMPLISHMENT_CATEGORY_VALUES } from '@/lib/validation/accomplishment'
 
 const PROMPT = `You are a performance review assistant. A developer just completed a task. Decide if it belongs in their performance review and categorize it.
 
@@ -162,18 +163,10 @@ async function doEvaluate(task: CompletedTaskInfo): Promise<void> {
     return
   }
 
-  const validCategories = [
-    'DELIVERY',
-    'HIRING',
-    'MENTORING',
-    'COLLABORATION',
-    'GROWTH',
-    'OTHER',
-  ] as const
-  const category = validCategories.includes(
-    parsed.category as (typeof validCategories)[number],
+  const category = ACCOMPLISHMENT_CATEGORY_VALUES.includes(
+    parsed.category as (typeof ACCOMPLISHMENT_CATEGORY_VALUES)[number],
   )
-    ? (parsed.category as (typeof validCategories)[number])
+    ? (parsed.category as (typeof ACCOMPLISHMENT_CATEGORY_VALUES)[number])
     : 'OTHER'
 
   const date = task.completedAt

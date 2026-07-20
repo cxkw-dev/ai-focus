@@ -1,7 +1,6 @@
 import type { NextRequest } from 'next/server'
-import { ZodError } from 'zod'
 import { db } from '@/lib/db'
-import { internalError, ok, validationError } from '@/lib/server/api-responses'
+import { handleApiError, ok } from '@/lib/server/api-responses'
 import { parseYearStatsQuery } from '@/lib/validation/stats'
 import type { YearStats, MonthlyData } from '@/types/stats'
 import { MONTH_LABELS, buildReviewFocusFlow } from '@/lib/review-focus-flow'
@@ -224,13 +223,9 @@ export async function GET(request: NextRequest) {
 
     return ok(stats)
   } catch (error) {
-    if (error instanceof ZodError) {
-      return validationError(error)
-    }
-
-    return internalError(
-      'Failed to fetch stats',
+    return handleApiError(
       error,
+      'Failed to fetch stats',
       'Error fetching year stats',
     )
   }

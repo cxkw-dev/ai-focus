@@ -3,16 +3,15 @@ import { emit } from '@/lib/events'
 import {
   conflict,
   created,
+  handleApiError,
   internalError,
   notFound,
   ok,
   parseJsonBody,
-  validationError,
 } from '@/lib/server/api-responses'
 import { isPrismaErrorCode } from '@/lib/server/prisma-errors'
 import { findResolvedTodo } from '@/lib/server/todo-lookup'
 import { addTodoContactSchema } from '@/lib/validation/todo'
-import { ZodError } from 'zod'
 
 export async function GET(
   _request: Request,
@@ -75,17 +74,13 @@ export async function POST(
     emit('todoContacts', { todoId: todo.id })
     return created(contact)
   } catch (error) {
-    if (error instanceof ZodError) {
-      return validationError(error)
-    }
-
     if (isPrismaErrorCode(error, 'P2002')) {
       return conflict('Contact already assigned to this task')
     }
 
-    return internalError(
-      'Failed to add contact',
+    return handleApiError(
       error,
+      'Failed to add contact',
       'Error creating todo contact',
     )
   }

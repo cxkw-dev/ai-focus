@@ -2,13 +2,11 @@ import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
 import {
   badRequest,
-  internalError,
+  handleApiError,
   ok,
   parseJsonBody,
-  validationError,
 } from '@/lib/server/api-responses'
 import { reorderTodosSchema } from '@/lib/validation/todo'
-import { ZodError } from 'zod'
 
 export async function POST(request: Request) {
   try {
@@ -45,13 +43,9 @@ export async function POST(request: Request) {
     emit('todos')
     return ok({ success: true })
   } catch (error) {
-    if (error instanceof ZodError) {
-      return validationError(error)
-    }
-
-    return internalError(
-      'Failed to reorder todos',
+    return handleApiError(
       error,
+      'Failed to reorder todos',
       'Error reordering todos',
     )
   }

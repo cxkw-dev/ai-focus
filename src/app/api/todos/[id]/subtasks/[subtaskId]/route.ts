@@ -2,16 +2,14 @@ import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
 import { todoInclude, todoWhere } from '@/lib/todo-queries'
 import {
-  internalError,
+  handleApiError,
   notFound,
   ok,
   parseJsonBody,
-  validationError,
 } from '@/lib/server/api-responses'
 import { isPrismaErrorCode } from '@/lib/server/prisma-errors'
 import { validateTodoForResponse } from '@/lib/server/todo-response'
 import { toggleSubtaskSchema } from '@/lib/validation/todo'
-import { ZodError } from 'zod'
 
 export async function PATCH(
   request: Request,
@@ -50,17 +48,13 @@ export async function PATCH(
     emit('todos')
     return ok(validateTodoForResponse(updatedTodo))
   } catch (error) {
-    if (error instanceof ZodError) {
-      return validationError(error)
-    }
-
     if (isPrismaErrorCode(error, 'P2025')) {
       return notFound('Todo not found')
     }
 
-    return internalError(
-      'Failed to toggle subtask',
+    return handleApiError(
       error,
+      'Failed to toggle subtask',
       'Error toggling subtask',
     )
   }
