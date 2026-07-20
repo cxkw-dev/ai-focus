@@ -6,16 +6,13 @@ import { Plus, Eye, EyeOff, Circle, CheckCircle2, Trash2 } from 'lucide-react'
 import { HeaderActions } from '@/components/layout/header-actions-context'
 import { BlockedExpandedProvider } from '@/components/todos/todo-item'
 import { TodoColumn } from '@/components/todos/todo-column'
-import {
-  LabelStatusBoard,
-  type LabelStatusBoardFilter,
-} from '@/components/todos/label-status-board'
+import { LabelStatusBoard } from '@/components/todos/label-status-board'
 import { useToast } from '@/components/ui/use-toast'
 import { useTodos } from '@/hooks/use-todos'
 import { useLabels } from '@/hooks/use-labels'
 import { usePeople } from '@/hooks/use-people'
-import { buildColumns, categorizeTodosByLabel } from '@/lib/categorize-todos'
-import { todosApi } from '@/lib/api'
+import { useTodosBoard } from '@/hooks/use-todos-board'
+import { useTodoNoteDrawer } from '@/hooks/use-todo-note-drawer'
 import type {
   Todo,
   UpdateTodoInput,
@@ -68,76 +65,26 @@ export default function TodosPage() {
   const [editingTodo, setEditingTodo] = React.useState<Todo | null>(null)
   const [isFormOpen, setIsFormOpen] = React.useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false)
-  const [openNote, setOpenNote] = React.useState<{
-    todoId: string
-    noteId: string
-    todoTitle: string
-  } | null>(null)
   const [blockedExpanded, setBlockedExpanded] = React.useState(false)
-  const [responsiveFilter, setResponsiveFilter] =
-    React.useState<LabelStatusBoardFilter>('active')
 
-  // Build dynamic columns from labels
-  const columns = React.useMemo(() => buildColumns(labels), [labels])
+  const {
+    columns,
+    categorizedActive,
+    categorizedCompleted,
+    categorizedDeleted,
+    responsiveFilter,
+    setResponsiveFilter,
+    categorizedForFilter,
+    responsiveColumns,
+    mobileCategory,
+    setMobileCategory,
+    mobileCol,
+    handleMobileCategoryKeyDown,
+  } = useTodosBoard({ todos, completedTodos, deletedTodos, labels })
 
-  // Categorize all todo lists by label
-  const categorizedActive = React.useMemo(
-    () => categorizeTodosByLabel(todos, columns),
-    [todos, columns],
-  )
-  const categorizedCompleted = React.useMemo(
-    () => categorizeTodosByLabel(completedTodos, columns),
-    [completedTodos, columns],
-  )
-  const categorizedDeleted = React.useMemo(
-    () => categorizeTodosByLabel(deletedTodos, columns),
-    [deletedTodos, columns],
-  )
+  const { openNote, handleOpenNote, handleUnlinkNote, closeNote } =
+    useTodoNoteDrawer({ todos, completedTodos, deletedTodos })
 
-  // Responsive view: hide labels that have nothing for the active filter
-  const categorizedForFilter =
-    responsiveFilter === 'completed'
-      ? categorizedCompleted
-      : responsiveFilter === 'deleted'
-        ? categorizedDeleted
-        : categorizedActive
-
-  const responsiveColumns = React.useMemo(
-    () =>
-      columns.filter((col) => (categorizedForFilter[col.key]?.length ?? 0) > 0),
-    [columns, categorizedForFilter],
-  )
-
-  // Mobile category defaults to first non-empty column. Stored as an override that
-  // may or may not exist in the current column set; we fall back to the first column
-  // during render so the derived value is always valid.
-  const [mobileCategoryOverride, setMobileCategoryOverride] = React.useState<
-    string | null
-  >(null)
-  const mobileCategory =
-    mobileCategoryOverride &&
-    responsiveColumns.some((c) => c.key === mobileCategoryOverride)
-      ? mobileCategoryOverride
-      : (responsiveColumns[0]?.key ?? '')
-  const setMobileCategory = setMobileCategoryOverride
-
-  const handleMobileCategoryKeyDown = React.useCallback(
-    (event: React.KeyboardEvent<HTMLButtonElement>, currentKey: string) => {
-      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
-      event.preventDefault()
-
-      const currentIndex = responsiveColumns.findIndex(
-        (col) => col.key === currentKey,
-      )
-      if (currentIndex === -1) return
-      const offset = event.key === 'ArrowRight' ? 1 : -1
-      const nextIndex =
-        (currentIndex + offset + responsiveColumns.length) %
-        responsiveColumns.length
-      setMobileCategory(responsiveColumns[nextIndex].key)
-    },
-    [responsiveColumns, setMobileCategory],
-  )
   const subtaskMentions = React.useMemo(
     () =>
       people.map((person) => ({
@@ -146,16 +93,6 @@ export default function TodosPage() {
         email: person.email,
       })),
     [people],
-  )
-  const todoTitleById = React.useMemo(
-    () =>
-      new Map(
-        [...todos, ...completedTodos, ...deletedTodos].map((todo) => [
-          todo.id,
-          todo.title,
-        ]),
-      ),
-    [todos, completedTodos, deletedTodos],
   )
 
   const handleCreate = React.useCallback(
@@ -245,23 +182,6 @@ export default function TodosPage() {
     [reorder],
   )
 
-  const handleOpenNote = React.useCallback(
-    (todoId: string, noteId: string) => {
-      setOpenNote({
-        todoId,
-        noteId,
-        todoTitle: todoTitleById.get(todoId) ?? 'Note',
-      })
-    },
-    [todoTitleById],
-  )
-
-  const handleUnlinkNote = React.useCallback(async () => {
-    if (!openNote) return
-    await todosApi.update(openNote.todoId, { notebookNoteId: null })
-    setOpenNote(null)
-  }, [openNote])
-
   if (isLoading) {
     return (
       <div className="flex h-[calc(100vh-120px)] items-center justify-center">
@@ -277,10 +197,6 @@ export default function TodosPage() {
       </div>
     )
   }
-
-  const mobileCol =
-    responsiveColumns.find((c) => c.key === mobileCategory) ??
-    responsiveColumns[0]
 
   return (
     <BlockedExpandedProvider expanded={blockedExpanded}>
@@ -576,7 +492,7 @@ export default function TodosPage() {
             noteId={openNote.noteId}
             todoTitle={openNote.todoTitle}
             open={true}
-            onClose={() => setOpenNote(null)}
+            onClose={closeNote}
             onUnlink={handleUnlinkNote}
           />
         )}

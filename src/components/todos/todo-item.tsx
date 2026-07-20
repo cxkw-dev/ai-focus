@@ -5,18 +5,7 @@ import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import {
-  Trash2,
-  Calendar,
-  Edit2,
-  GripVertical,
-  RotateCcw,
-  Clock,
-  Users,
-  FileText,
-  DollarSign,
-  Minimize2,
-} from 'lucide-react'
+import { Calendar, GripVertical } from 'lucide-react'
 import { cn, formatRelativeDate } from '@/lib/utils'
 import { getBillingCodeEntries } from '@/lib/labels'
 import { PrDependencyTree } from './pr-dependency-tree'
@@ -24,15 +13,10 @@ import { TodoDescriptionPreview } from './todo-description-preview'
 import { SessionList } from './session-list'
 import { CollapsedTodoRow } from './collapsed-todo-row'
 import { renderTextWithLinks } from './linkified-text'
-import {
-  CHIP_BASE,
-  COLLAPSED_STATUSES,
-  PriorityChip,
-  PriorityDropdown,
-  StatusChip,
-  StatusDropdown,
-  TodoLabelChip,
-} from './todo-display'
+import { COLLAPSED_STATUSES } from './todo-display'
+import { TodoItemActions } from './todo-item-actions'
+import { TodoItemMetaRow } from './todo-item-meta-row'
+import { TodoItemSideTabs } from './todo-item-side-tabs'
 import { TodoInlineSubtasks } from './todo-inline-subtasks'
 import type { Todo, Status, Priority, SubtaskInput } from '@/types/todo'
 import type { Person } from '@/types/person'
@@ -72,7 +56,7 @@ export function BlockedExpandedProvider({
   )
 }
 
-type ViewMode = 'active' | 'completed' | 'deleted'
+export type ViewMode = 'active' | 'completed' | 'deleted'
 
 interface TodoItemProps {
   todo: Todo
@@ -129,94 +113,22 @@ function TodoItemContent({
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-1">
             <div className="min-w-0 flex-1">
-              <div className="mb-2 flex flex-wrap items-center gap-1">
-                {viewMode === 'active' && (
-                  <StatusDropdown todo={todo} onStatusChange={onStatusChange} />
-                )}
-                {viewMode === 'completed' && (
-                  <StatusChip status={todo.status} />
-                )}
-                {viewMode === 'active' ? (
-                  <PriorityDropdown
-                    todo={todo}
-                    onPriorityChange={onPriorityChange}
-                  />
-                ) : (
-                  <PriorityChip priority={todo.priority} />
-                )}
-                {todo.labels?.map((label) => (
-                  <TodoLabelChip
-                    key={label.id}
-                    label={label}
-                    className="max-w-[8rem] truncate"
-                  />
-                ))}
-              </div>
+              <TodoItemMetaRow
+                todo={todo}
+                viewMode={viewMode}
+                onStatusChange={onStatusChange}
+                onPriorityChange={onPriorityChange}
+              />
             </div>
-            <div className="flex flex-shrink-0 items-center gap-1">
-              {onCollapse && (
-                <button
-                  onClick={onCollapse}
-                  className={cn(CHIP_BASE, 'todo-action-edit')}
-                  title="Collapse"
-                >
-                  <Minimize2 className="h-3 w-3" />
-                </button>
-              )}
-              {(viewMode === 'active' || viewMode === 'completed') && (
-                <>
-                  {todo.notebookNoteId && (
-                    <button
-                      onClick={() =>
-                        onOpenNote?.(todo.id, todo.notebookNoteId!)
-                      }
-                      className={cn(CHIP_BASE, 'todo-action-edit')}
-                      title="Open note"
-                    >
-                      <FileText className="h-3 w-3" />
-                    </button>
-                  )}
-                  <button
-                    onClick={() => onEdit(todo)}
-                    className={cn(CHIP_BASE, 'todo-action-edit')}
-                    title="Edit"
-                  >
-                    <Edit2 className="h-3 w-3" />
-                  </button>
-                  <button
-                    onClick={() => onDelete(todo.id)}
-                    className={cn(CHIP_BASE, 'todo-action-delete')}
-                    title="Delete"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                </>
-              )}
-              {viewMode === 'deleted' && (
-                <>
-                  <button
-                    onClick={() => onRestore?.(todo.id)}
-                    className={cn(CHIP_BASE, 'todo-action-restore')}
-                    title="Restore"
-                  >
-                    <RotateCcw className="h-3 w-3" />
-                  </button>
-                  <button
-                    onClick={() => onDelete(todo.id)}
-                    className={cn(CHIP_BASE, 'todo-action-destroy')}
-                    title="Delete permanently"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                </>
-              )}
-              <span
-                className="font-mono text-[11px] font-semibold"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                #{todo.taskNumber}
-              </span>
-            </div>
+            <TodoItemActions
+              todo={todo}
+              viewMode={viewMode}
+              onDelete={onDelete}
+              onEdit={onEdit}
+              onRestore={onRestore}
+              onOpenNote={onOpenNote}
+              onCollapse={onCollapse}
+            />
           </div>
 
           <div
@@ -490,56 +402,15 @@ export function TodoItem({
 
           {/* Side tabs — stacked vertically */}
           {!dragging && (
-            <div className="flex flex-shrink-0 flex-col gap-px self-stretch">
-              {hasBillingEntries && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setBillingOpen((prev) => !prev)
-                    setContactsOpen(false)
-                    setTimelineOpen(false)
-                  }}
-                  className={cn(
-                    'todo-billing-tab flex w-5 flex-1 items-center justify-center rounded-tr-lg transition-all duration-150',
-                    billingOpen && 'todo-billing-tab-active',
-                  )}
-                  title="Billing codes"
-                >
-                  <DollarSign className="h-3 w-3" />
-                </button>
-              )}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setContactsOpen((prev) => !prev)
-                  setBillingOpen(false)
-                  setTimelineOpen(false)
-                }}
-                className={cn(
-                  'todo-contacts-tab flex w-5 flex-1 items-center justify-center transition-all duration-150',
-                  !hasBillingEntries && 'rounded-tr-lg',
-                  contactsOpen && 'todo-contacts-tab-active',
-                )}
-                title="Contacts"
-              >
-                <Users className="h-3 w-3" />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setTimelineOpen((prev) => !prev)
-                  setBillingOpen(false)
-                  setContactsOpen(false)
-                }}
-                className={cn(
-                  'todo-timeline-tab flex w-5 flex-1 items-center justify-center rounded-br-lg transition-all duration-150',
-                  timelineOpen && 'todo-timeline-tab-active',
-                )}
-                title="Timeline"
-              >
-                <Clock className="h-3 w-3" />
-              </button>
-            </div>
+            <TodoItemSideTabs
+              hasBillingEntries={hasBillingEntries}
+              billingOpen={billingOpen}
+              contactsOpen={contactsOpen}
+              timelineOpen={timelineOpen}
+              setBillingOpen={setBillingOpen}
+              setContactsOpen={setContactsOpen}
+              setTimelineOpen={setTimelineOpen}
+            />
           )}
         </div>
       )}

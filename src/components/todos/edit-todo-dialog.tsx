@@ -1,27 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import {
-  CalendarDays,
-  Flame,
-  Plus,
-  Tags,
-  TrendingUp,
-  Users,
-  Trash2,
-  FileText,
-} from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { RichTextEditor } from '@/components/ui/rich-text-editor'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -31,18 +11,21 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { openLabelsRoute } from '@/lib/labels'
-import { LabelMultiSelect } from './label-multi-select'
-import { SessionList } from './session-list'
-import { PrioritySelector } from './priority-selector'
 import { EditTodoLinks } from './edit-todo-links'
 import { EditTodoSubtasks } from './edit-todo-subtasks'
+import { EditTodoDialogPrimaryFields } from './edit-todo-dialog-primary-fields'
+import { EditTodoDialogMetaFields } from './edit-todo-dialog-meta-fields'
+import { EditTodoDialogLabelsSection } from './edit-todo-dialog-labels-section'
+import { EditTodoDialogLinkedNoteSection } from './edit-todo-dialog-linked-note-section'
+import { EditTodoDialogSessionsSection } from './edit-todo-dialog-sessions-section'
+import { EditTodoDialogContactsSection } from './edit-todo-dialog-contacts-section'
 import { useLabels } from '@/hooks/use-labels'
 import { useTodoContacts } from '@/hooks/use-todo-contacts'
 import { useTodoForm } from '@/hooks/use-todo-form'
 import { todosApi, notebookApi } from '@/lib/api'
 import { queryKeys } from '@/lib/query-keys'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import type { Todo, UpdateTodoInput, Status } from '@/types/todo'
+import type { Todo, UpdateTodoInput } from '@/types/todo'
 import type { Person } from '@/types/person'
 
 interface EditTodoDialogProps {
@@ -258,43 +241,11 @@ export function EditTodoDialog({
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-0">
               {/* Left column - Content */}
               <div className="min-w-0 space-y-4 lg:pr-6">
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="title"
-                    className="text-xs font-semibold tracking-wide uppercase"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    Task Title
-                  </Label>
-                  <Input
-                    id="title"
-                    value={form.title}
-                    onChange={(e) => form.setTitle(e.target.value)}
-                    placeholder="What needs to be done?"
-                    autoFocus
-                    className="h-12 text-base font-medium"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label
-                    className="text-xs font-semibold tracking-wide uppercase"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    Description
-                  </Label>
-                  <RichTextEditor
-                    value={form.description}
-                    onChange={form.setDescription}
-                    placeholder="Add more details, links, or notes..."
-                    disabled={isLoading}
-                    mentions={people.map((p) => ({
-                      id: p.id,
-                      name: p.name,
-                      email: p.email,
-                    }))}
-                  />
-                </div>
+                <EditTodoDialogPrimaryFields
+                  form={form}
+                  people={people}
+                  isLoading={isLoading}
+                />
 
                 <EditTodoSubtasks
                   subtasks={form.subtasks}
@@ -327,367 +278,43 @@ export function EditTodoDialog({
                 className="min-w-0 space-y-4 border-t pt-4 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6"
                 style={{ borderColor: 'var(--border-color)' }}
               >
-                {/* Status */}
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="status"
-                    className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    <TrendingUp className="h-3.5 w-3.5" />
-                    Status
-                  </Label>
-                  <Select
-                    value={form.status}
-                    onValueChange={(v) => form.setStatus(v as Status)}
-                  >
-                    <SelectTrigger className="h-10">
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="TODO">To Do</SelectItem>
-                      <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                      <SelectItem value="WAITING">Waiting</SelectItem>
-                      <SelectItem value="UNDER_REVIEW">Under Review</SelectItem>
-                      <SelectItem value="ON_HOLD">On Hold</SelectItem>
-                      <SelectItem value="BLOCKED">Blocked</SelectItem>
-                      <SelectItem value="COMPLETED">Completed</SelectItem>
-                      <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <EditTodoDialogMetaFields form={form} isLoading={isLoading} />
 
-                {/* Priority */}
-                <div className="space-y-2">
-                  <Label
-                    className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    <Flame className="h-3.5 w-3.5" />
-                    Priority
-                  </Label>
-                  <PrioritySelector
-                    value={form.priority}
-                    onChange={(next) => form.setPriority(next)}
-                    disabled={isLoading}
-                  />
-                </div>
+                <EditTodoDialogLabelsSection
+                  labels={labels}
+                  form={form}
+                  onManageLabels={handleManageLabels}
+                  disabled={isLoading}
+                />
 
-                {/* Due Date */}
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="dueDate"
-                    className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    <CalendarDays className="h-3.5 w-3.5" />
-                    Due Date
-                  </Label>
-                  <Input
-                    id="dueDate"
-                    type="date"
-                    value={form.dueDate}
-                    onChange={(e) => form.setDueDate(e.target.value)}
-                    className="h-10 text-sm"
-                  />
-                </div>
+                <EditTodoDialogLinkedNoteSection
+                  todo={todo}
+                  unlinkedNotes={unlinkedNotes}
+                  onCreateAndLinkNote={handleCreateAndLinkNote}
+                  onLinkExistingNote={handleLinkExistingNote}
+                  onUnlinkNote={handleUnlinkNote}
+                />
 
-                {/* Labels */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label
-                      className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
-                      style={{ color: 'var(--text-muted)' }}
-                    >
-                      <Tags className="h-3.5 w-3.5" />
-                      Labels
-                    </Label>
-                    <button
-                      type="button"
-                      onClick={handleManageLabels}
-                      className="text-[11px] font-medium underline transition-all hover:no-underline"
-                      style={{ color: 'var(--primary)' }}
-                    >
-                      Manage
-                    </button>
-                  </div>
-                  <LabelMultiSelect
-                    labels={labels}
-                    value={form.labelIds}
-                    onChange={form.setLabelIds}
-                    onManage={handleManageLabels}
-                    disabled={isLoading}
-                    showQuickPick
-                  />
-                </div>
+                <EditTodoDialogSessionsSection
+                  sessions={todo?.sessions}
+                  onDeleteSession={handleDeleteSession}
+                />
 
-                {/* Connected Note */}
-                <div className="space-y-2">
-                  <Label
-                    className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    <FileText className="h-3.5 w-3.5" />
-                    Connected Note
-                  </Label>
-                  {todo?.notebookNoteId ? (
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="flex-1 truncate text-[11px]"
-                        style={{ color: 'var(--text-primary)' }}
-                      >
-                        {todo.notebookNote?.title || 'Untitled'}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={handleUnlinkNote}
-                        className="text-[11px] font-medium underline hover:no-underline"
-                        style={{ color: 'var(--destructive)' }}
-                      >
-                        Unlink
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-1">
-                      <button
-                        type="button"
-                        onClick={handleCreateAndLinkNote}
-                        className="w-full rounded border px-2 py-1.5 text-left text-[11px] transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]"
-                        style={{
-                          borderColor: 'var(--border-color)',
-                          color: 'var(--text-primary)',
-                        }}
-                      >
-                        + Create new note
-                      </button>
-                      {unlinkedNotes.length > 0 && (
-                        <select
-                          value=""
-                          onChange={(e) =>
-                            handleLinkExistingNote(e.target.value)
-                          }
-                          className="w-full rounded border px-1.5 py-1 text-[11px] outline-none"
-                          style={{
-                            borderColor: 'var(--border-color)',
-                            color: 'var(--text-primary)',
-                            backgroundColor: 'var(--surface)',
-                          }}
-                        >
-                          <option value="">Link existing note...</option>
-                          {unlinkedNotes.map((note) => (
-                            <option key={note.id} value={note.id}>
-                              {note.title}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Sessions */}
-                {todo?.sessions && todo.sessions.length > 0 && (
-                  <div className="space-y-2">
-                    <SessionList
-                      sessions={todo.sessions}
-                      onDelete={handleDeleteSession}
-                      compact
-                    />
-                  </div>
-                )}
-
-                {/* Contacts */}
-                <div className="space-y-2">
-                  <Label
-                    className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    <Users className="h-3.5 w-3.5" />
-                    Contacts
-                  </Label>
-                  <div className="space-y-0.5">
-                    {contacts.map((contact) => (
-                      <div
-                        key={contact.id}
-                        className="group/contact flex items-center gap-1 rounded px-1.5 py-1 transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]"
-                        title={contact.person.email}
-                      >
-                        {editingContactId === contact.id ? (
-                          <div className="flex min-w-0 flex-1 items-center gap-1">
-                            <span
-                              className="shrink-0 text-[11px] font-medium"
-                              style={{ color: 'var(--text-primary)' }}
-                            >
-                              {contact.person.name.split(' ')[0]}
-                            </span>
-                            <span
-                              className="text-[11px]"
-                              style={{ color: 'var(--text-muted)' }}
-                            >
-                              &middot;
-                            </span>
-                            <input
-                              autoFocus
-                              value={editingContactRole}
-                              onChange={(e) =>
-                                setEditingContactRole(e.target.value)
-                              }
-                              onBlur={() => {
-                                if (editingContactRole.trim()) {
-                                  updateContact({
-                                    contactId: contact.id,
-                                    data: { role: editingContactRole.trim() },
-                                  })
-                                }
-                                setEditingContactId(null)
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  if (editingContactRole.trim()) {
-                                    updateContact({
-                                      contactId: contact.id,
-                                      data: { role: editingContactRole.trim() },
-                                    })
-                                  }
-                                  setEditingContactId(null)
-                                }
-                                if (e.key === 'Escape')
-                                  setEditingContactId(null)
-                              }}
-                              className="min-w-0 flex-1 border-b bg-transparent text-[11px] outline-none"
-                              style={{
-                                color: 'var(--primary)',
-                                borderColor: 'var(--primary)',
-                              }}
-                            />
-                          </div>
-                        ) : (
-                          <div className="flex min-w-0 flex-1 items-center gap-1">
-                            <a
-                              href={`https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(contact.person.email)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="truncate text-[11px] font-medium hover:underline"
-                              style={{ color: 'var(--text-primary)' }}
-                              title={`Chat with ${contact.person.name} in Teams`}
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {contact.person.name}
-                            </a>
-                            <span
-                              className="shrink-0 text-[11px]"
-                              style={{ color: 'var(--text-muted)' }}
-                            >
-                              &middot;
-                            </span>
-                            <button
-                              type="button"
-                              className="truncate text-[11px] italic hover:underline"
-                              style={{ color: 'var(--primary)' }}
-                              onClick={() => {
-                                setEditingContactId(contact.id)
-                                setEditingContactRole(contact.role)
-                              }}
-                              title="Click to edit role"
-                            >
-                              {contact.role}
-                            </button>
-                          </div>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => removeContact(contact.id)}
-                          className="shrink-0 rounded p-0.5 opacity-0 transition-opacity group-hover/contact:opacity-100"
-                          style={{ color: 'var(--destructive)' }}
-                        >
-                          <Trash2 className="h-2.5 w-2.5" />
-                        </button>
-                      </div>
-                    ))}
-
-                    {/* Always-visible add */}
-                    {people.filter(
-                      (p: { id: string }) =>
-                        !contacts.some((c) => c.personId === p.id),
-                    ).length > 0 && (
-                      <div className="space-y-1 pt-1">
-                        <select
-                          value={newContactPersonId}
-                          onChange={(e) =>
-                            setNewContactPersonId(e.target.value)
-                          }
-                          className="w-full rounded border px-1.5 py-1 text-[11px] outline-none"
-                          style={{
-                            borderColor: 'var(--border-color)',
-                            color: 'var(--text-primary)',
-                            backgroundColor: 'var(--surface)',
-                          }}
-                        >
-                          <option value="">Add contact...</option>
-                          {people
-                            .filter(
-                              (p: { id: string }) =>
-                                !contacts.some((c) => c.personId === p.id),
-                            )
-                            .map((p: { id: string; name: string }) => (
-                              <option key={p.id} value={p.id}>
-                                {p.name}
-                              </option>
-                            ))}
-                        </select>
-                        {newContactPersonId && (
-                          <div className="flex gap-1">
-                            <input
-                              autoFocus
-                              value={newContactRole}
-                              onChange={(e) =>
-                                setNewContactRole(e.target.value)
-                              }
-                              placeholder="Role"
-                              onKeyDown={(e) => {
-                                if (
-                                  e.key === 'Enter' &&
-                                  newContactRole.trim()
-                                ) {
-                                  addContact({
-                                    personId: newContactPersonId,
-                                    role: newContactRole.trim(),
-                                  })
-                                  setNewContactPersonId('')
-                                  setNewContactRole('')
-                                }
-                              }}
-                              className="min-w-0 flex-1 rounded border bg-transparent px-1.5 py-1 text-[11px] outline-none"
-                              style={{
-                                borderColor: 'var(--border-color)',
-                                color: 'var(--text-primary)',
-                              }}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (newContactRole.trim()) {
-                                  addContact({
-                                    personId: newContactPersonId,
-                                    role: newContactRole.trim(),
-                                  })
-                                  setNewContactPersonId('')
-                                  setNewContactRole('')
-                                }
-                              }}
-                              disabled={!newContactRole.trim()}
-                              className="rounded p-1 transition-colors disabled:opacity-40"
-                              style={{ color: 'var(--primary)' }}
-                              title="Add contact"
-                            >
-                              <Plus className="h-3 w-3" />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <EditTodoDialogContactsSection
+                  contacts={contacts}
+                  people={people}
+                  addContact={addContact}
+                  updateContact={updateContact}
+                  removeContact={removeContact}
+                  newContactPersonId={newContactPersonId}
+                  setNewContactPersonId={setNewContactPersonId}
+                  newContactRole={newContactRole}
+                  setNewContactRole={setNewContactRole}
+                  editingContactId={editingContactId}
+                  setEditingContactId={setEditingContactId}
+                  editingContactRole={editingContactRole}
+                  setEditingContactRole={setEditingContactRole}
+                />
               </div>
             </div>
           </div>
