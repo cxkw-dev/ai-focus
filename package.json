@@ -87,6 +87,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitest/coverage-v8": "^4.1.5",
     "autoprefixer": "^10.5.4",
+    "babel-plugin-react-compiler": "^1.0.0",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.3.0-canary.7",
     "eslint-config-prettier": "^10.1.8",
