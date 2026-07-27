@@ -54,8 +54,10 @@ describe('todo-board', () => {
     const withDeleted = placeTodoInBoard(withCompleted, deletedTodo)
 
     expect(withDeleted.active).toEqual([activeTodo])
-    expect(withDeleted.completed).toEqual([completedTodo])
     expect(withDeleted.deleted).toEqual([deletedTodo])
+    // Finished work leaves the board entirely — it belongs to the lazily
+    // fetched completed list now, so it is only evicted here.
+    expect(findTodoInBoard(withDeleted, 'completed')).toBeUndefined()
   })
 
   it('keeps active todos sorted by order and recency when a todo is updated', () => {
@@ -72,8 +74,8 @@ describe('todo-board', () => {
           createdAt: '2026-04-01T08:00:00.000Z',
         }),
       ],
-      completed: [],
       deleted: [],
+      completedCounts: { total: 0, byProject: {} },
     }
 
     const updatedTodo = createTodo({
@@ -95,22 +97,22 @@ describe('todo-board', () => {
   it('applies reordered active todos without disturbing other columns', () => {
     const todoA = createTodo({ id: 'a', order: 0 })
     const todoB = createTodo({ id: 'b', order: 1 })
-    const completedTodo = createTodo({
-      id: 'completed',
-      status: 'COMPLETED',
-      archived: true,
-    })
+    const deletedTodo = createTodo({ id: 'deleted', archived: true })
 
     const nextBoard = applyReorderedActiveTodos(
       {
         active: [todoA, todoB],
-        completed: [completedTodo],
-        deleted: [],
+        deleted: [deletedTodo],
+        completedCounts: { total: 4, byProject: { 'project-1': 4 } },
       },
       [todoB, todoA],
     )
 
     expect(nextBoard.active.map((todo) => todo.id)).toEqual(['b', 'a'])
-    expect(findTodoInBoard(nextBoard, 'completed')).toEqual(completedTodo)
+    expect(findTodoInBoard(nextBoard, 'deleted')).toEqual(deletedTodo)
+    expect(nextBoard.completedCounts).toEqual({
+      total: 4,
+      byProject: { 'project-1': 4 },
+    })
   })
 })

@@ -1,7 +1,16 @@
 import type { Todo, TodoBoardResponse } from '@/types/todo'
 
 export function createEmptyTodoBoard(): TodoBoardResponse {
-  return { active: [], completed: [], deleted: [] }
+  return {
+    active: [],
+    deleted: [],
+    completedCounts: { total: 0, byProject: {} },
+  }
+}
+
+/** Terminal statuses live outside the board, in the lazy completed list. */
+export function isCompletedTodo(todo: Todo) {
+  return todo.status === 'COMPLETED' || todo.status === 'CANCELLED'
 }
 
 export function removeTodoFromList(todos: Todo[], todoId: string) {
@@ -16,9 +25,7 @@ export function findTodoInBoard(
     return undefined
   }
 
-  return [...board.active, ...board.completed, ...board.deleted].find(
-    (todo) => todo.id === todoId,
-  )
+  return [...board.active, ...board.deleted].find((todo) => todo.id === todoId)
 }
 
 export function updateTodoInBoard(
@@ -27,10 +34,8 @@ export function updateTodoInBoard(
   updater: (todo: Todo) => Todo,
 ): TodoBoardResponse {
   return {
+    ...board,
     active: board.active.map((todo) =>
-      todo.id === todoId ? updater(todo) : todo,
-    ),
-    completed: board.completed.map((todo) =>
       todo.id === todoId ? updater(todo) : todo,
     ),
     deleted: board.deleted.map((todo) =>
@@ -51,38 +56,26 @@ export function sortTodosByBoardPosition(todos: Todo[]) {
   })
 }
 
-function getBoardSection(todo: Todo) {
-  if (todo.status === 'COMPLETED' || todo.status === 'CANCELLED') {
-    return 'completed' as const
-  }
-
-  if (todo.archived) {
-    return 'deleted' as const
-  }
-
-  return 'active' as const
-}
-
+/**
+ * Routes a todo to the one list it belongs in. A finished todo belongs to
+ * neither — it leaves the board entirely and reappears in the lazily-fetched
+ * completed list, so here it is only evicted.
+ */
 export function placeTodoInBoard(
   board: TodoBoardResponse,
   todo: Todo,
 ): TodoBoardResponse {
   const nextBoard = {
+    ...board,
     active: removeTodoFromList(board.active, todo.id),
-    completed: removeTodoFromList(board.completed, todo.id),
     deleted: removeTodoFromList(board.deleted, todo.id),
   }
 
-  const section = getBoardSection(todo)
-
-  if (section === 'completed') {
-    return {
-      ...nextBoard,
-      completed: sortTodosByBoardPosition([...nextBoard.completed, todo]),
-    }
+  if (isCompletedTodo(todo)) {
+    return nextBoard
   }
 
-  if (section === 'deleted') {
+  if (todo.archived) {
     return {
       ...nextBoard,
       deleted: sortTodosByBoardPosition([...nextBoard.deleted, todo]),

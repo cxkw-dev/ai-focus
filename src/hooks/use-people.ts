@@ -4,16 +4,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/components/ui/use-toast'
 import { peopleApi } from '@/lib/api'
 import { queryKeys } from '@/lib/query-keys'
+import { peopleQueryOptions } from '@/lib/query-options'
 import type { Person } from '@/types/person'
 
 export function usePeople() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
-  const peopleQuery = useQuery({
-    queryKey: queryKeys.people,
-    queryFn: peopleApi.list,
-  })
+  const peopleQuery = useQuery(peopleQueryOptions())
 
   const create = useMutation({
     mutationFn: peopleApi.create,

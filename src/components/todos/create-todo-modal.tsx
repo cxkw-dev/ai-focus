@@ -1,12 +1,11 @@
 'use client'
 
 import * as React from 'react'
-import { CalendarDays, Flame, Tags } from 'lucide-react'
+import { CalendarDays, Flame } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RichTextEditor } from '@/components/ui/rich-text-editor'
-import { openLabelsRoute } from '@/lib/labels'
 import {
   Dialog,
   DialogContent,
@@ -15,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { LabelMultiSelect } from './label-multi-select'
+import { ProjectScopeField } from './project-scope-field'
 import { PrioritySelector } from './priority-selector'
 import { EditTodoSubtasks } from './edit-todo-subtasks'
 import {
@@ -24,8 +23,8 @@ import {
   AzureIcon,
   GitHubIcon,
 } from './url-fields'
-import { useLabels } from '@/hooks/use-labels'
 import { useTodoForm } from '@/hooks/use-todo-form'
+import type { Project } from '@/lib/projects'
 import type { CreateTodoInput } from '@/types/todo'
 import type { Person } from '@/types/person'
 
@@ -34,7 +33,8 @@ interface CreateTodoModalProps {
   onOpenChange: (open: boolean) => void
   onSubmit: (data: CreateTodoInput) => Promise<boolean>
   isLoading?: boolean
-  defaultLabelIds?: string[]
+  /** The board you opened this from — the task files here, and only here. */
+  project: Project
   people: Person[]
 }
 
@@ -43,11 +43,11 @@ export function CreateTodoModal({
   onOpenChange,
   onSubmit,
   isLoading,
-  defaultLabelIds,
+  project,
   people,
 }: CreateTodoModalProps) {
-  const { labels } = useLabels()
-  const form = useTodoForm(null, { initialLabelIds: defaultLabelIds })
+  const initialLabelIds = React.useMemo(() => [project.id], [project.id])
+  const form = useTodoForm(null, { initialLabelIds })
   const [newMyPrUrl, setNewMyPrUrl] = React.useState('')
   const [newPrUrl, setNewPrUrl] = React.useState('')
   const [newAzureDepUrl, setNewAzureDepUrl] = React.useState('')
@@ -63,10 +63,6 @@ export function CreateTodoModal({
       })),
     [people],
   )
-  const handleManageLabels = React.useCallback(() => {
-    openLabelsRoute()
-  }, [])
-
   React.useEffect(() => {
     if (!open) resetForm()
   }, [open, resetForm])
@@ -76,6 +72,8 @@ export function CreateTodoModal({
     if (!form.title.trim()) return
 
     const payload = form.toPayload()
+    // The board you opened this from is the only filing destination.
+    payload.labelIds = [project.id]
     // Include pending URLs that weren't explicitly added
     const pendingMyPr = newMyPrUrl.trim()
     if (pendingMyPr && !payload.myPrUrls.includes(pendingMyPr)) {
@@ -116,10 +114,10 @@ export function CreateTodoModal({
           >
             <DialogHeader className="space-y-1.5">
               <DialogTitle className="text-lg sm:text-xl">
-                Create New Task
+                New task in {project.name}
               </DialogTitle>
               <DialogDescription className="text-sm">
-                Add a new task to your list
+                It files into this project — switch boards to add it elsewhere.
               </DialogDescription>
             </DialogHeader>
           </div>
@@ -356,34 +354,7 @@ export function CreateTodoModal({
                   </div>
                 </div>
 
-                {/* Labels */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label
-                      className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
-                      style={{ color: 'var(--text-muted)' }}
-                    >
-                      <Tags className="h-3.5 w-3.5" />
-                      Labels
-                    </Label>
-                    <button
-                      type="button"
-                      onClick={handleManageLabels}
-                      className="text-[11px] font-medium underline transition-all hover:no-underline"
-                      style={{ color: 'var(--primary)' }}
-                    >
-                      Manage
-                    </button>
-                  </div>
-                  <LabelMultiSelect
-                    labels={labels}
-                    value={form.labelIds}
-                    onChange={form.setLabelIds}
-                    onManage={handleManageLabels}
-                    disabled={isLoading}
-                    showQuickPick
-                  />
-                </div>
+                <ProjectScopeField project={project} />
               </div>
             </div>
           </div>

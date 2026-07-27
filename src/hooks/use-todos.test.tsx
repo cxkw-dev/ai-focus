@@ -10,6 +10,7 @@ import type { TodoBoardResponse } from '@/types/todo'
 vi.mock('@/lib/api', () => ({
   todosApi: {
     board: vi.fn(),
+    completed: vi.fn(),
     update: vi.fn(),
     create: vi.fn(),
     delete: vi.fn(),
@@ -37,8 +38,8 @@ function seedBoard(): TodoBoardResponse {
         status: 'TODO',
       }) as unknown as TodoBoardResponse['active'][number],
     ],
-    completed: [],
     deleted: [],
+    completedCounts: { total: 0, byProject: {} },
   }
 }
 
@@ -71,8 +72,11 @@ describe('useTodos.updateStatus', () => {
     })
 
     const board = client.getQueryData<TodoBoardResponse>(queryKeys.todoBoard)
-    expect(board?.active.some((t) => t.id === 't-1')).toBe(false)
-    expect(board?.completed.some((t) => t.id === 't-1')).toBe(true)
+    expect(board?.active.some((todo) => todo.id === 't-1')).toBe(false)
+
+    // Finished todos live in their own cache entry, and only when it has been
+    // loaded — here it has not, so there is nothing to keep in sync.
+    expect(client.getQueryData(queryKeys.completedTodos)).toBeUndefined()
   })
 
   it('rolls back the board when the mutation fails', async () => {

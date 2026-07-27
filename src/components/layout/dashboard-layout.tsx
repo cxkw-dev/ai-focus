@@ -37,10 +37,16 @@ function getSidebarCollapsedServerSnapshot(): boolean {
 
 const pageTitles: Record<string, string> = {
   '/todos': 'Todos',
+  '/projects': 'Projects',
   '/labels': 'Labels',
   '/notes': 'Notes',
   '/review': 'Year in Review',
   '/settings': 'Settings',
+}
+
+function resolvePageTitle(pathname: string) {
+  if (pathname.startsWith('/projects/')) return 'Project'
+  return pageTitles[pathname] || 'Focus'
 }
 
 interface DashboardLayoutProps {
@@ -57,7 +63,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
 function DashboardLayoutInner({ children }: DashboardLayoutProps) {
   const pathname = usePathname()
-  const title = pageTitles[pathname] || 'Focus'
+  const title = resolvePageTitle(pathname)
   const { actions } = useHeaderActions()
 
   const collapsed = React.useSyncExternalStore(

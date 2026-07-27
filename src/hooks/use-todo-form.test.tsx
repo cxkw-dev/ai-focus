@@ -52,7 +52,7 @@ describe('useTodoForm', () => {
   it('populates from a passed todo', () => {
     const todo = makeTodo()
     const { result } = renderHook(() => useTodoForm(todo))
-    expect(result.current.title).toBe('EXISTING')
+    expect(result.current.title).toBe('existing')
     expect(result.current.priority).toBe('HIGH')
     expect(result.current.dueDate).toBe('2026-05-01')
     expect(result.current.subtasks).toHaveLength(1)
@@ -109,17 +109,18 @@ describe('useTodoForm', () => {
     expect(result.current.subtasks).toEqual([])
   })
 
-  it('uppercases the title and builds a normalized payload', () => {
+  it('keeps typed title casing and builds a normalized payload', () => {
     const { result } = renderHook(() => useTodoForm())
     act(() => {
-      result.current.setTitle('  hello  ')
+      result.current.setTitle('  Hello  ')
       result.current.setDescription('   ')
       result.current.setDueDate('2026-04-25')
       result.current.addSubtask('a')
     })
     const payload = result.current.toPayload()
-    expect(result.current.title).toBe('  HELLO  ')
-    expect(payload.title).toBe('HELLO')
+    // Raw while typing; casing survives all the way into the payload.
+    expect(result.current.title).toBe('  Hello  ')
+    expect(payload.title).toBe('Hello')
     expect(payload.description).toBeUndefined()
     expect(payload.dueDate).toBe(new Date('2026-04-25').toISOString())
     expect(payload.subtasks[0]).toMatchObject({

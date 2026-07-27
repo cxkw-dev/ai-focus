@@ -52,3 +52,6 @@ design_handoff_focus_design_system/
 # Graphify local-only outputs
 graphify-out/
 certs/
+
+# Local data backups from one-off migration scripts
+.backups/

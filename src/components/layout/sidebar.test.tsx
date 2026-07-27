@@ -20,6 +20,7 @@ vi.mock('next/link', () => ({
       {children}
     </a>
   ),
+  useLinkStatus: () => ({ pending: false }),
 }))
 
 vi.mock('next/image', () => ({
@@ -67,6 +68,26 @@ vi.mock('@/hooks/use-vpn-status', () => ({
   useVpnStatus: () => mockUseVpnStatus(),
 }))
 
+vi.mock('@/hooks/use-project-nav', () => ({
+  useProjectNav: () => ({
+    projects: [
+      {
+        id: 'project-1',
+        name: 'KAF',
+        color: '#22c55e',
+        billingCodes: [],
+        archived: false,
+        archivedAt: null,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+        openCount: 3,
+      },
+    ],
+    unassignedCount: 1,
+    isLoading: false,
+  }),
+}))
+
 vi.mock('@/hooks/use-local-ai-status', () => ({
   useLocalAiStatus: () => ({
     data: null,
@@ -75,6 +96,33 @@ vi.mock('@/hooks/use-local-ai-status', () => ({
     isFetching: false,
   }),
 }))
+
+describe('Sidebar projects', () => {
+  beforeEach(() => {
+    mockUseVpnStatus.mockReturnValue({
+      data: true,
+      isLoading: false,
+      refetch: mockRefetchVpn,
+    })
+  })
+
+  it('lists each project as a board link with its open count', () => {
+    render(<Sidebar collapsed={false} onCollapse={() => {}} />)
+
+    const projectLink = screen.getByRole('link', { name: /KAF/ })
+    expect(projectLink).toHaveAttribute('href', '/projects/project-1')
+    expect(projectLink).toHaveTextContent('3')
+  })
+
+  it('links the section header to the projects index', () => {
+    render(<Sidebar collapsed={false} onCollapse={() => {}} />)
+
+    expect(screen.getByRole('link', { name: 'Projects' })).toHaveAttribute(
+      'href',
+      '/projects',
+    )
+  })
+})
 
 describe('Sidebar timesheet link', () => {
   const openSpy = vi.spyOn(window, 'open')

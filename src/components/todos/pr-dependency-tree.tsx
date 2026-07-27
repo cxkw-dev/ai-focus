@@ -47,6 +47,13 @@ interface PrDependencyTreeProps {
   myIssueUrls?: string[]
   githubIssueUrls?: string[]
   noBorder?: boolean
+  /**
+   * Whether to poll GitHub/Azure for live state. A finished task's PRs are not
+   * going to change, and a Done lane full of them fired dozens of proxied
+   * lookups on every visit — enough to saturate the browser's six connections
+   * to the app and stall the navigation behind them. Links still render.
+   */
+  liveStatus?: boolean
 }
 
 function SectionHeader({
@@ -92,15 +99,17 @@ function GitHubSection({
   githubPrUrls,
   showHeader,
   noBorder,
+  liveStatus,
 }: {
   myPrUrls?: string[]
   githubPrUrls: string[]
   showHeader: boolean
   noBorder?: boolean
+  liveStatus: boolean
 }) {
   const hasMyPrs = myPrUrls.length > 0
   const hasDeps = githubPrUrls.length > 0
-  const allPrUrls = [...myPrUrls, ...githubPrUrls]
+  const allPrUrls = liveStatus ? [...myPrUrls, ...githubPrUrls] : []
   const { statuses: prStatuses, isLoading: isLoadingPrStatuses } =
     useGithubPrStatuses(allPrUrls)
   const prStatusByUrl = buildStatusLookup<GitHubPrStatus>(allPrUrls, prStatuses)
@@ -249,16 +258,20 @@ function AzureSection({
   azureDepUrls,
   showHeader,
   noBorder,
+  liveStatus,
 }: {
   azureWorkItemUrl?: string | null
   azureDepUrls: string[]
   showHeader: boolean
   noBorder?: boolean
+  liveStatus: boolean
 }) {
   const hasAzureDeps = azureDepUrls.length > 0
-  const allAzureUrls = azureWorkItemUrl
-    ? [azureWorkItemUrl, ...azureDepUrls]
-    : azureDepUrls
+  const allAzureUrls = liveStatus
+    ? azureWorkItemUrl
+      ? [azureWorkItemUrl, ...azureDepUrls]
+      : azureDepUrls
+    : []
   const { statuses: azureStatuses, isLoading: isLoadingAzureStatuses } =
     useAzureWorkItemStatuses(allAzureUrls)
   const azureStatusByUrl = buildStatusLookup<AzureWorkItemStatus>(
@@ -391,15 +404,17 @@ function GitHubIssuesSection({
   githubIssueUrls,
   showHeader,
   noBorder,
+  liveStatus,
 }: {
   myIssueUrls?: string[]
   githubIssueUrls: string[]
   showHeader: boolean
   noBorder?: boolean
+  liveStatus: boolean
 }) {
   const hasMyIssues = myIssueUrls.length > 0
   const hasDeps = githubIssueUrls.length > 0
-  const allIssueUrls = [...myIssueUrls, ...githubIssueUrls]
+  const allIssueUrls = liveStatus ? [...myIssueUrls, ...githubIssueUrls] : []
   const { statuses: issueStatuses, isLoading: isLoadingIssueStatuses } =
     useGithubIssueStatuses(allIssueUrls)
   const issueStatusByUrl = buildStatusLookup<GitHubIssueStatus>(
@@ -538,6 +553,7 @@ export function PrDependencyTree({
   myIssueUrls = [],
   githubIssueUrls = [],
   noBorder,
+  liveStatus = true,
 }: PrDependencyTreeProps) {
   const hasGithub = myPrUrls.length > 0 || githubPrUrls.length > 0
   const hasAzure = !!azureWorkItemUrl || azureDepUrls.length > 0
@@ -557,6 +573,7 @@ export function PrDependencyTree({
           azureDepUrls={azureDepUrls}
           showHeader={showHeaders}
           noBorder={noBorder}
+          liveStatus={liveStatus}
         />
       )}
       {hasGithub && (
@@ -565,6 +582,7 @@ export function PrDependencyTree({
           githubPrUrls={githubPrUrls}
           showHeader={showHeaders}
           noBorder={!hasAzure && noBorder}
+          liveStatus={liveStatus}
         />
       )}
       {hasIssues && (
@@ -573,6 +591,7 @@ export function PrDependencyTree({
           githubIssueUrls={githubIssueUrls}
           showHeader={showHeaders}
           noBorder={!hasAzure && !hasGithub && noBorder}
+          liveStatus={liveStatus}
         />
       )}
     </>

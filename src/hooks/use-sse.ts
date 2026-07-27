@@ -58,11 +58,13 @@ function handleSseEvent(
 
   if (entity === 'todos') {
     queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
+    queryClient.invalidateQueries({ queryKey: queryKeys.completedTodos })
   } else if (entity === 'people') {
     queryClient.invalidateQueries({ queryKey: queryKeys.people })
   } else if (entity === 'labels') {
     queryClient.invalidateQueries({ queryKey: queryKeys.labels })
     queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
+    queryClient.invalidateQueries({ queryKey: queryKeys.completedTodos })
   } else if (entity === 'todoContacts') {
     const todoId = getPayloadTodoId(payload)
     if (todoId) {
@@ -98,6 +100,7 @@ export function useSSE() {
     let es: EventSource | null = null
     let retryTimeout: ReturnType<typeof setTimeout> | null = null
     let backoffMs = INITIAL_BACKOFF_MS
+    let hasConnected = false
 
     function connect() {
       if (isDisposed) return
@@ -127,6 +130,15 @@ export function useSSE() {
           clearTimeout(retryTimeout)
           retryTimeout = null
         }
+
+        // Queries are cached until an event says otherwise, so a gap in the
+        // stream is a gap in freshness — anything written while we were
+        // disconnected produced an event nobody heard. Resync on reconnect,
+        // but not on the first open: that data is already fresh.
+        if (hasConnected) {
+          queryClient.invalidateQueries()
+        }
+        hasConnected = true
       }
 
       es.onerror = () => {

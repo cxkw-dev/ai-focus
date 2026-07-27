@@ -4,7 +4,6 @@ import * as React from 'react'
 import type { Todo, Priority, Status, SubtaskInput } from '@/types/todo'
 import { hasMeaningfulText, normalizeSubtaskTitle } from '@/lib/rich-text'
 import { createClientSubtaskId } from '@/lib/subtask-ids'
-import { normalizeTodoTitle } from '@/lib/todo-title'
 
 export interface TodoFormState {
   title: string
@@ -85,8 +84,10 @@ export function useTodoForm(
   const [myIssueUrls, setMyIssueUrls] = React.useState<string[]>([])
   const [githubIssueUrls, setGithubIssueUrls] = React.useState<string[]>([])
 
+  // Hold the raw keystrokes — trimming here would swallow spaces mid-word.
+  // Normalization happens once at the validation boundary.
   function setTitle(value: string) {
-    setTitleState(normalizeTodoTitle(value))
+    setTitleState(value)
   }
 
   const reset = React.useCallback(() => {
@@ -106,7 +107,7 @@ export function useTodoForm(
   }, [options?.initialLabelIds])
 
   const populateFromTodo = React.useCallback((t: Todo) => {
-    setTitleState(normalizeTodoTitle(t.title))
+    setTitleState(t.title)
     setDescription(t.description || '')
     setPriority(t.priority)
     setStatus(t.status)

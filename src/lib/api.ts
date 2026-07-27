@@ -61,6 +61,8 @@ export interface CreateStatusUpdateInput {
 export const todosApi = {
   board: (): Promise<TodoBoardResponse> => requestJson('/api/todos/board'),
 
+  completed: (): Promise<Todo[]> => requestJson('/api/todos/completed'),
+
   list: (params?: ListTodosParams): Promise<Todo[]> =>
     requestJson(buildUrl('/api/todos', params)),
 

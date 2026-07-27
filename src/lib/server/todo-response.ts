@@ -46,12 +46,10 @@ export function validateTodosForResponse<T extends TodoWithRelations[]>(
 export function validateTodoBoardForResponse<
   T extends {
     active: TodoBoardWithRelations[]
-    completed: TodoBoardWithRelations[]
     deleted: TodoBoardWithRelations[]
   },
 >(board: T) {
   validateTodosForResponse(board.active)
-  validateTodosForResponse(board.completed)
   validateTodosForResponse(board.deleted)
 
   return board

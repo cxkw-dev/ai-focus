@@ -5,6 +5,10 @@ import { NextResponse } from 'next/server'
 const GITHUB_API_BASE = 'https://api.github.com'
 const GITHUB_ACCEPT = 'application/vnd.github.v3+json'
 
+/** Same reasoning as the Azure client: a hung badge lookup must not hold a
+ * browser connection slot hostage. See AZURE_REQUEST_TIMEOUT_MS. */
+const GITHUB_REQUEST_TIMEOUT_MS = 8_000
+
 export interface GithubUrlParts {
   owner: string
   repo: string
@@ -60,5 +64,6 @@ export function githubApiFetch(path: string, token: string): Promise<Response> {
       Accept: GITHUB_ACCEPT,
     },
     cache: 'no-store',
+    signal: AbortSignal.timeout(GITHUB_REQUEST_TIMEOUT_MS),
   })
 }

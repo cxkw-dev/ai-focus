@@ -312,6 +312,16 @@ h6 {
   outline-offset: 2px;
 }
 
+/* Overview list rows — dense and quiet until hovered */
+.todo-summary-row:hover {
+  background-color: color-mix(in srgb, var(--text-primary) 5%, transparent);
+}
+
+.todo-summary-row:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--primary) 60%, transparent);
+  outline-offset: -2px;
+}
+
 /* Todo card hover — flat hairline by default, whisper-lift on hover */
 .todo-card {
   box-shadow:

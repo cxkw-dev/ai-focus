@@ -79,6 +79,11 @@ interface TodoItemProps {
   dropIndicator?: 'above' | 'below' | null
   animateTransitions?: boolean
   onCollapse?: () => void
+  /**
+   * Overrides the default "only active cards drag" rule. The project board
+   * needs completed cards draggable so they can be pulled back out of Done.
+   */
+  dragDisabled?: boolean
 }
 
 function TodoItemContent({
@@ -142,8 +147,8 @@ function TodoItemContent({
             <div className="flex items-center gap-2">
               <h3
                 className={cn(
-                  'text-[13px] leading-snug font-medium break-words',
-                  isUrgent && 'font-semibold',
+                  'text-[13px] leading-snug font-semibold break-words',
+                  isUrgent && 'font-bold',
                   isCompleted && 'line-through',
                 )}
                 style={{
@@ -180,6 +185,7 @@ function TodoItemContent({
           azureDepUrls={todo.azureDepUrls ?? []}
           myIssueUrls={todo.myIssueUrls ?? []}
           githubIssueUrls={todo.githubIssueUrls ?? []}
+          liveStatus={viewMode === 'active'}
         />
       )}
 
@@ -199,7 +205,7 @@ function TodoItemContent({
   )
 }
 
-export function TodoItem({
+function TodoItemComponent({
   todo,
   onStatusChange,
   onPriorityChange,
@@ -215,7 +221,9 @@ export function TodoItem({
   viewMode = 'active',
   dropIndicator,
   animateTransitions = true,
+  dragDisabled,
 }: TodoItemProps) {
+  const isDragDisabled = dragDisabled ?? viewMode !== 'active'
   const {
     attributes,
     listeners,
@@ -223,7 +231,7 @@ export function TodoItem({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: todo.id, disabled: viewMode !== 'active' })
+  } = useSortable({ id: todo.id, disabled: isDragDisabled })
 
   const billingEntries = React.useMemo(
     () => getBillingCodeEntries(todo.labels ?? []),
@@ -276,30 +284,14 @@ export function TodoItem({
   const showCollapsed =
     isCollapsible && !manuallyExpanded && !blockedExpanded && !dragging
 
-  return (
-    <motion.div
-      ref={setNodeRef}
-      style={style}
-      layout={animateTransitions && !dragging}
-      initial={animateTransitions ? { opacity: 0, y: 8 } : false}
-      animate={animateTransitions ? { opacity: 1, y: 0 } : { opacity: 1 }}
-      exit={
-        animateTransitions
-          ? { opacity: 0, x: -12, transition: { duration: 0.16 } }
-          : { opacity: 0 }
-      }
-      transition={
-        animateTransitions
-          ? { duration: 0.16, ease: 'easeOut' }
-          : { duration: 0.01 }
-      }
-      className={cn(
-        'min-w-0 transition-opacity duration-150',
-        !dragging &&
-          '[contain-intrinsic-size:0_220px] [content-visibility:auto]',
-        dragging && 'opacity-50',
-      )}
-    >
+  const shellClassName = cn(
+    'min-w-0 transition-opacity duration-150',
+    !dragging && '[contain-intrinsic-size:0_220px] [content-visibility:auto]',
+    dragging && 'opacity-50',
+  )
+
+  const cardBody = (
+    <>
       {dropIndicator === 'above' && dropLine}
       {showCollapsed ? (
         <div className="flex items-center gap-0.5">
@@ -326,7 +318,7 @@ export function TodoItem({
         <div className="todo-card-shell flex items-center gap-0.5">
           {/* Reserve a consistent gutter so the card body stays aligned across filters */}
           <div className="flex w-[18px] flex-shrink-0 justify-center">
-            {viewMode === 'active' && (
+            {!isDragDisabled && (
               <button
                 {...attributes}
                 {...listeners}
@@ -415,9 +407,42 @@ export function TodoItem({
         </div>
       )}
       {dropIndicator === 'below' && dropLine}
+    </>
+  )
+
+  // A motion.div costs a VisualElement and a projection node per card even when
+  // every animation prop is inert. Boards mount their cards with transitions
+  // off, so give those a plain div and skip the framer machinery entirely.
+  if (!animateTransitions) {
+    return (
+      <div ref={setNodeRef} style={style} className={shellClassName}>
+        {cardBody}
+      </div>
+    )
+  }
+
+  return (
+    <motion.div
+      ref={setNodeRef}
+      style={style}
+      layout={!dragging}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, x: -12, transition: { duration: 0.16 } }}
+      transition={{ duration: 0.16, ease: 'easeOut' }}
+      className={shellClassName}
+    >
+      {cardBody}
     </motion.div>
   )
 }
+
+/**
+ * Cards re-render whenever their board does — a drag hover, a mutation
+ * settling, an SSE refresh. Every handler upstream is a stable useCallback and
+ * the arrays are memoised, so a props check keeps untouched cards untouched.
+ */
+export const TodoItem = React.memo(TodoItemComponent)
 
 export function TodoItemOverlay({
   todo,

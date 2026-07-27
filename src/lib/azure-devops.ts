@@ -5,6 +5,16 @@ import { NextResponse } from 'next/server'
 const DEFAULT_AZURE_API_VERSION = '7.1'
 const COMMENTS_AZURE_API_VERSION = '7.1-preview.4'
 
+/**
+ * Azure DevOps sits behind the corporate VPN. Undici's default header timeout
+ * is five minutes, so with the VPN down a board full of linked work items left
+ * that many requests hanging — and the browser only allows six connections to
+ * one origin, one of which the SSE stream holds forever. The whole app would
+ * stall behind badge lookups nobody was waiting on. Fail fast instead: the
+ * badge degrades to "unknown" and every other request keeps its lane.
+ */
+const AZURE_REQUEST_TIMEOUT_MS = 8_000
+
 export interface AzureDevOpsConfig {
   org: string
   pat: string
@@ -153,11 +163,15 @@ export async function fetchAzureJson<T>(
         Accept: 'application/json',
       },
       cache: 'no-store',
+      signal: AbortSignal.timeout(AZURE_REQUEST_TIMEOUT_MS),
     })
   } catch (error) {
+    const timedOut = error instanceof Error && error.name === 'TimeoutError'
     throw new AzureDevOpsError(
-      'Failed to connect to Azure DevOps API',
-      502,
+      timedOut
+        ? 'Azure DevOps API timed out'
+        : 'Failed to connect to Azure DevOps API',
+      timedOut ? 504 : 502,
       String(error),
     )
   }

@@ -177,10 +177,21 @@ export interface PaginatedTodosResponse {
   total: number
 }
 
+/**
+ * Finished work only grows, and on a busy project it was 80% of this payload
+ * for cards nobody had asked to see. The board carries the shape of it — a
+ * total plus a per-project tally for the badges — and the bodies come from
+ * /api/todos/completed only when a Done lane is actually opened.
+ */
+export interface CompletedTodoCounts {
+  total: number
+  byProject: Record<string, number>
+}
+
 export interface TodoBoardResponse {
   active: Todo[]
-  completed: Todo[]
   deleted: Todo[]
+  completedCounts: CompletedTodoCounts
 }
 
 export interface SubtaskInput {

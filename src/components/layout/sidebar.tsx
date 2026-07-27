@@ -15,6 +15,7 @@ import {
   RiTaskLine,
   RiTimeLine,
 } from 'react-icons/ri'
+import { SidebarProjects } from './sidebar-projects'
 import { useVpnStatus } from '@/hooks/use-vpn-status'
 import { useLocalAiStatus } from '@/hooks/use-local-ai-status'
 import { useIsClient } from '@/hooks/use-is-client'
@@ -373,7 +374,7 @@ export function Sidebar({
           </Link>
         </div>
 
-        <div className="flex flex-1 flex-col">
+        <div className="flex min-h-0 flex-1 flex-col">
           {/* Top Navigation */}
           <nav
             className={`flex flex-col gap-1 ${collapsed ? 'px-2 py-3' : 'p-3'}`}
@@ -382,6 +383,9 @@ export function Sidebar({
               renderNavItem(item, pathname, collapsed),
             )}
           </nav>
+
+          {/* Projects — the primary way to filter the app */}
+          <SidebarProjects collapsed={collapsed} pathname={pathname} />
 
           {/* Timesheet Section */}
           <nav

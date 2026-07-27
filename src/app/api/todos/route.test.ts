@@ -57,7 +57,7 @@ describe('POST /api/todos', () => {
     expect(res.status).toBe(201)
     expect(dbMock.todo.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ title: 'HI' }),
+        data: expect.objectContaining({ title: 'hi' }),
       }),
     )
   })

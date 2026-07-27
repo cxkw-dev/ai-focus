@@ -3,12 +3,10 @@
 import * as React from 'react'
 import { CalendarDays, Loader2, Plus, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { openLabelsRoute } from '@/lib/labels'
 import { PRIORITIES } from '@/lib/priority'
-import { LabelMultiSelect } from './label-multi-select'
+import { ProjectScopeChip } from './project-scope-field'
 import { SubtaskMentionInput } from '@/components/ui/subtask-mention-input'
 import { UrlListField } from './url-fields'
-import { useLabels } from '@/hooks/use-labels'
 import { useTodoForm } from '@/hooks/use-todo-form'
 import {
   hasMeaningfulText,
@@ -18,37 +16,37 @@ import {
   normalizeSubtaskTitle,
   sanitizeHtml,
 } from '@/lib/rich-text'
+import type { Project } from '@/lib/projects'
 import type { CreateTodoInput, Priority } from '@/types/todo'
 import type { Person } from '@/types/person'
 
 interface InlineTodoFormProps {
   onSubmit: (data: CreateTodoInput) => Promise<boolean>
   isLoading?: boolean
-  defaultLabelIds?: string[]
+  /** The board this lane belongs to — every task typed here files into it. */
+  project: Project
   subtaskMentions: Array<Pick<Person, 'id' | 'name' | 'email'>>
 }
 
 export function InlineTodoForm({
   onSubmit,
   isLoading,
-  defaultLabelIds,
+  project,
   subtaskMentions,
 }: InlineTodoFormProps) {
-  const { labels } = useLabels()
-  const form = useTodoForm(null, { initialLabelIds: defaultLabelIds })
+  const initialLabelIds = React.useMemo(() => [project.id], [project.id])
+  const form = useTodoForm(null, { initialLabelIds })
   const [isExpanded, setIsExpanded] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
   const [newPrUrl, setNewPrUrl] = React.useState('')
   const [newAzureDepUrl, setNewAzureDepUrl] = React.useState('')
   const resetForm = form.reset
-  const handleManageLabels = React.useCallback(() => {
-    openLabelsRoute()
-  }, [])
 
   const submitCurrentTodo = React.useCallback(async () => {
     if (!form.title.trim()) return false
 
     const payload = form.toPayload()
+    payload.labelIds = [project.id]
     // Include pending URLs that weren't explicitly added
     const pendingPr = newPrUrl.trim()
     if (pendingPr && !payload.githubPrUrls.includes(pendingPr)) {
@@ -68,7 +66,7 @@ export function InlineTodoForm({
     }
 
     return success
-  }, [form, onSubmit, resetForm, newPrUrl, newAzureDepUrl])
+  }, [form, onSubmit, resetForm, newPrUrl, newAzureDepUrl, project.id])
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -245,45 +243,22 @@ export function InlineTodoForm({
                 </div>
               </div>
 
-              {/* Labels Row */}
+              {/* Filing destination — fixed by the board you are on */}
               <div
-                className="flex items-center gap-3 px-4 py-3"
+                className="flex items-center gap-2 px-4 py-3"
                 style={{
                   borderTop:
                     '1px solid color-mix(in srgb, var(--border-color) 30%, transparent)',
                 }}
               >
-                <div className="flex items-center gap-1.5">
-                  <LabelMultiSelect
-                    labels={labels}
-                    value={form.labelIds}
-                    onChange={form.setLabelIds}
-                    onManage={handleManageLabels}
-                    disabled={isLoading}
-                    showChips={false}
-                  />
-                </div>
+                <span
+                  className="text-[10px] tracking-wide uppercase"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  Files into
+                </span>
+                <ProjectScopeChip project={project} />
               </div>
-
-              {/* Selected labels display */}
-              {form.labelIds.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 px-4 pb-3">
-                  {labels
-                    .filter((label) => form.labelIds.includes(label.id))
-                    .map((label) => (
-                      <span
-                        key={label.id}
-                        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
-                        style={{
-                          backgroundColor: `${label.color}22`,
-                          color: label.color,
-                        }}
-                      >
-                        {label.name}
-                      </span>
-                    ))}
-                </div>
-              )}
 
               {/* Subtasks Row */}
               <div

@@ -17,6 +17,12 @@ export const todoBoardInclude = Prisma.validator<Prisma.TodoInclude>()({
   sessions: { orderBy: { createdAt: 'desc' }, take: 3 },
 })
 
+/** Completed work: terminal status, archived by the completion flow. */
+export const COMPLETED_TODO_WHERE = Prisma.validator<Prisma.TodoWhereInput>()({
+  archived: true,
+  status: { in: ['COMPLETED', 'CANCELLED'] },
+})
+
 export const activeTodoOrderBy = Prisma.validator<
   Prisma.TodoOrderByWithRelationInput[]
 >()([{ order: 'asc' }, { createdAt: 'desc' }])

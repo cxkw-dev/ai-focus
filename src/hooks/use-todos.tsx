@@ -7,20 +7,29 @@ import { useToast } from '@/components/ui/use-toast'
 import { todosApi } from '@/lib/api'
 import { queryKeys } from '@/lib/query-keys'
 import {
+  completedTodosQueryOptions,
+  todoBoardQueryOptions,
+} from '@/lib/query-options'
+import {
   applyReorderedActiveTodos,
   createEmptyTodoBoard,
   findTodoInBoard,
+  isCompletedTodo,
   placeTodoInBoard,
   removeTodoFromList,
   updateTodoInBoard,
 } from '@/lib/todo-board'
 import type {
+  CompletedTodoCounts,
   Priority,
   Status,
   Todo,
   TodoBoardResponse,
   UpdateTodoInput,
 } from '@/types/todo'
+
+const EMPTY_TODOS: Todo[] = []
+const EMPTY_COMPLETED_COUNTS: CompletedTodoCounts = { total: 0, byProject: {} }
 
 function UndoToastAction({ onUndo }: { onUndo: () => void }) {
   return (
@@ -39,14 +48,16 @@ function UndoToastAction({ onUndo }: { onUndo: () => void }) {
   )
 }
 
-export function useTodos() {
+/**
+ * @param withCompleted fetch the finished pile too. Off by default: a board's
+ * Done lane is collapsed until you open it, and nothing else needs the bodies.
+ */
+export function useTodos({ withCompleted = false } = {}) {
   const queryClient = useQueryClient()
   const { toast, dismiss } = useToast()
 
-  const boardQuery = useQuery({
-    queryKey: queryKeys.todoBoard,
-    queryFn: todosApi.board,
-  })
+  const boardQuery = useQuery(todoBoardQueryOptions())
+  const completedQuery = useQuery(completedTodosQueryOptions(withCompleted))
 
   const setBoardData = React.useCallback(
     (updater: (board: TodoBoardResponse) => TodoBoardResponse) => {
@@ -56,6 +67,30 @@ export function useTodos() {
       )
     },
     [queryClient],
+  )
+
+  /**
+   * Completing a todo moves it off the board and into the completed list;
+   * reopening one moves it back. Both caches have to hear about it or the card
+   * shows up twice, or not at all.
+   */
+  const syncCompletedList = React.useCallback(
+    (todo: Todo) => {
+      queryClient.setQueryData<Todo[]>(queryKeys.completedTodos, (current) => {
+        if (!current) return current
+        const without = removeTodoFromList(current, todo.id)
+        return isCompletedTodo(todo) ? [todo, ...without] : without
+      })
+    },
+    [queryClient],
+  )
+
+  const applyTodo = React.useCallback(
+    (todo: Todo) => {
+      setBoardData((board) => placeTodoInBoard(board, todo))
+      syncCompletedList(todo)
+    },
+    [setBoardData, syncCompletedList],
   )
 
   const restoreBoardSnapshot = React.useCallback(
@@ -70,7 +105,7 @@ export function useTodos() {
   const create = useMutation({
     mutationFn: todosApi.create,
     onSuccess: (newTodo) => {
-      setBoardData((board) => placeTodoInBoard(board, newTodo))
+      applyTodo(newTodo)
       toast({ title: 'Added', description: newTodo.title })
     },
     onError: () => {
@@ -86,7 +121,7 @@ export function useTodos() {
     mutationFn: ({ id, data }: { id: string; data: UpdateTodoInput }) =>
       todosApi.update(id, data),
     onSuccess: (updatedTodo) => {
-      setBoardData((board) => placeTodoInBoard(board, updatedTodo))
+      applyTodo(updatedTodo)
     },
     onError: () => {
       toast({
@@ -106,7 +141,7 @@ export function useTodos() {
       previousStatus: Status
     }) => todosApi.update(id, { status: previousStatus }),
     onSuccess: (restoredTodo) => {
-      setBoardData((board) => placeTodoInBoard(board, restoredTodo))
+      applyTodo(restoredTodo)
       toast({ title: 'Restored' })
     },
     onError: () => {
@@ -127,7 +162,12 @@ export function useTodos() {
       const previousBoard = queryClient.getQueryData<TodoBoardResponse>(
         queryKeys.todoBoard,
       )
-      const todo = findTodoInBoard(previousBoard, id)
+      const previousCompleted = queryClient.getQueryData<Todo[]>(
+        queryKeys.completedTodos,
+      )
+      const todo =
+        findTodoInBoard(previousBoard, id) ??
+        previousCompleted?.find((candidate) => candidate.id === id)
       const previousStatus = todo?.status
       const nextStatusChangedAt = new Date().toISOString()
 
@@ -136,23 +176,21 @@ export function useTodos() {
           ...board,
           active: removeTodoFromList(board.active, id),
         }))
-      } else {
-        setBoardData((board) =>
-          updateTodoInBoard(board, id, (currentTodo) => ({
-            ...currentTodo,
-            status,
-            statusChangedAt:
-              currentTodo.status === status
-                ? currentTodo.statusChangedAt
-                : nextStatusChangedAt,
-          })),
-        )
+      } else if (todo) {
+        // Dragged back out of Done: put it on the board and take it off the
+        // finished list in the same beat, so neither view flickers.
+        applyTodo({ ...todo, status, statusChangedAt: nextStatusChangedAt })
       }
 
-      return { previousBoard, previousStatus, title: todo?.title }
+      return {
+        previousBoard,
+        previousCompleted,
+        previousStatus,
+        title: todo?.title,
+      }
     },
     onSuccess: (updatedTodo, { id, status }, context) => {
-      setBoardData((board) => placeTodoInBoard(board, updatedTodo))
+      applyTodo(updatedTodo)
 
       if (status === 'COMPLETED' && context?.previousStatus) {
         const previousStatus = context.previousStatus
@@ -174,6 +212,12 @@ export function useTodos() {
     },
     onError: (_error, _variables, context) => {
       restoreBoardSnapshot(context?.previousBoard)
+      if (context?.previousCompleted) {
+        queryClient.setQueryData(
+          queryKeys.completedTodos,
+          context.previousCompleted,
+        )
+      }
       toast({
         title: 'Error',
         description: 'Failed to update todo.',
@@ -199,7 +243,7 @@ export function useTodos() {
       return { previousBoard }
     },
     onSuccess: (updatedTodo) => {
-      setBoardData((board) => placeTodoInBoard(board, updatedTodo))
+      applyTodo(updatedTodo)
     },
     onError: (_error, _variables, context) => {
       restoreBoardSnapshot(context?.previousBoard)
@@ -232,7 +276,7 @@ export function useTodos() {
       return { previousBoard }
     },
     onSuccess: (restoredTodo) => {
-      setBoardData((board) => placeTodoInBoard(board, restoredTodo))
+      applyTodo(restoredTodo)
       toast({ title: 'Restored' })
     },
     onError: (_error, _variables, context) => {
@@ -278,7 +322,7 @@ export function useTodos() {
       return { previousBoard }
     },
     onSuccess: (updatedTodo) => {
-      setBoardData((board) => placeTodoInBoard(board, updatedTodo))
+      applyTodo(updatedTodo)
     },
     onError: (_error, _variables, context) => {
       restoreBoardSnapshot(context?.previousBoard)
@@ -301,9 +345,11 @@ export function useTodos() {
 
       setBoardData((board) => ({
         ...board,
-        completed: removeTodoFromList(board.completed, id),
         deleted: removeTodoFromList(board.deleted, id),
       }))
+      queryClient.setQueryData<Todo[]>(queryKeys.completedTodos, (current) =>
+        current ? removeTodoFromList(current, id) : current,
+      )
 
       return { previousBoard }
     },
@@ -349,7 +395,7 @@ export function useTodos() {
       return { previousBoard }
     },
     onSuccess: (updatedTodo) => {
-      setBoardData((board) => placeTodoInBoard(board, updatedTodo))
+      applyTodo(updatedTodo)
     },
     onError: (_error, _variables, context) => {
       restoreBoardSnapshot(context?.previousBoard)
@@ -387,7 +433,9 @@ export function useTodos() {
 
   return {
     todos: boardQuery.data?.active ?? [],
-    completedTodos: boardQuery.data?.completed ?? [],
+    completedTodos: completedQuery.data ?? EMPTY_TODOS,
+    completedCounts: boardQuery.data?.completedCounts ?? EMPTY_COMPLETED_COUNTS,
+    isLoadingCompleted: completedQuery.isLoading,
     deletedTodos: boardQuery.data?.deleted ?? [],
     isLoading: boardQuery.isLoading,
     isSaving: create.isPending || update.isPending,

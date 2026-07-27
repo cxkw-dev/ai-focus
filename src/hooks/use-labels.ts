@@ -4,21 +4,18 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/components/ui/use-toast'
 import { labelsApi } from '@/lib/api'
 import { queryKeys } from '@/lib/query-keys'
+import {
+  activeLabelsQueryOptions,
+  archivedLabelsQueryOptions,
+} from '@/lib/query-options'
 import type { CreateLabelInput, Label, UpdateLabelInput } from '@/types/todo'
 
 export function useLabels() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
-  const labelsQuery = useQuery({
-    queryKey: queryKeys.labels,
-    queryFn: () => labelsApi.list('active'),
-  })
-
-  const archivedLabelsQuery = useQuery({
-    queryKey: queryKeys.archivedLabels,
-    queryFn: () => labelsApi.list('archived'),
-  })
+  const labelsQuery = useQuery(activeLabelsQueryOptions())
+  const archivedLabelsQuery = useQuery(archivedLabelsQueryOptions())
 
   const create = useMutation({
     mutationFn: labelsApi.create,
@@ -27,12 +24,12 @@ export function useLabels() {
         [...prev, newLabel].sort((a, b) => a.name.localeCompare(b.name)),
       )
       queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
-      toast({ title: 'Label created', description: newLabel.name })
+      toast({ title: 'Created', description: newLabel.name })
     },
     onError: () => {
       toast({
         title: 'Error',
-        description: 'Failed to create label.',
+        description: 'Failed to create it.',
         variant: 'destructive',
       })
     },
@@ -48,12 +45,12 @@ export function useLabels() {
           .sort((a, b) => a.name.localeCompare(b.name)),
       )
       queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
-      toast({ title: 'Label updated', description: updatedLabel.name })
+      toast({ title: 'Updated', description: updatedLabel.name })
     },
     onError: () => {
       toast({
         title: 'Error',
-        description: 'Failed to update label.',
+        description: 'Failed to update it.',
         variant: 'destructive',
       })
     },
@@ -68,14 +65,14 @@ export function useLabels() {
       queryClient.invalidateQueries({ queryKey: queryKeys.archivedLabels })
       queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
       toast({
-        title: 'Label archived',
+        title: 'Archived',
         description: 'Its history stays intact. Restore it anytime.',
       })
     },
     onError: () => {
       toast({
         title: 'Error',
-        description: 'Failed to archive label.',
+        description: 'Failed to archive it.',
         variant: 'destructive',
       })
     },
@@ -91,12 +88,12 @@ export function useLabels() {
         [...prev, restored].sort((a, b) => a.name.localeCompare(b.name)),
       )
       queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
-      toast({ title: 'Label restored', description: restored.name })
+      toast({ title: 'Restored', description: restored.name })
     },
     onError: () => {
       toast({
         title: 'Error',
-        description: 'Failed to restore label.',
+        description: 'Failed to restore it.',
         variant: 'destructive',
       })
     },
@@ -109,12 +106,12 @@ export function useLabels() {
         prev.filter((l) => l.id !== id),
       )
       queryClient.invalidateQueries({ queryKey: queryKeys.todoBoard })
-      toast({ title: 'Label permanently deleted' })
+      toast({ title: 'Permanently deleted' })
     },
     onError: () => {
       toast({
         title: 'Error',
-        description: 'Failed to delete label.',
+        description: 'Failed to delete it permanently.',
         variant: 'destructive',
       })
     },
