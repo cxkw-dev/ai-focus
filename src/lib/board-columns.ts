@@ -6,13 +6,14 @@ import { TERMINAL_STATUS_VALUES, type Status, type Todo } from '@/types/todo'
  * dropping a card into a lane maps back to a canonical status. Backlog is
  * strictly "not started yet" — anything stalled on someone or something gets
  * its own lane rather than hiding among the work you could actually pick up,
- * and Blocked is the generic label for that: waiting and on-hold both live
- * there without losing their own status.
+ * and Blocked is the generic label for that: waiting, on-hold and under-review
+ * all live there without losing their own status. They share a lane because
+ * they share a question — who am I waiting on? — and splitting them just made
+ * the board wider without making it clearer.
  */
 export const BOARD_COLUMN_KEYS = [
   'BACKLOG',
   'IN_PROGRESS',
-  'UNDER_REVIEW',
   'BLOCKED',
   'DONE',
   'CANCELLED',
@@ -53,17 +54,10 @@ export const BOARD_COLUMNS: readonly BoardColumnConfig[] = [
     dropStatus: 'IN_PROGRESS',
   },
   {
-    key: 'UNDER_REVIEW',
-    title: 'Under Review',
-    color: 'var(--status-under-review)',
-    statuses: ['UNDER_REVIEW'],
-    dropStatus: 'UNDER_REVIEW',
-  },
-  {
     key: 'BLOCKED',
     title: 'Blocked',
     color: 'var(--status-blocked)',
-    statuses: ['BLOCKED', 'WAITING', 'ON_HOLD'],
+    statuses: ['BLOCKED', 'WAITING', 'ON_HOLD', 'UNDER_REVIEW'],
     dropStatus: 'BLOCKED',
   },
   {

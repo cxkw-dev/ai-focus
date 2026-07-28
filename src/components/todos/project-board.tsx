@@ -188,7 +188,7 @@ export function ProjectBoard({
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row lg:gap-3">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
         {columns.map((column) => (
           <BoardLane
             // Keyed by project so a lane's local state (an expanded finished

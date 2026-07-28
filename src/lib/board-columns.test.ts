@@ -49,9 +49,7 @@ describe('board columns', () => {
   it('maps statuses to their lane', () => {
     expect(boardColumnForStatus('TODO')).toBe('BACKLOG')
     expect(boardColumnForStatus('IN_PROGRESS')).toBe('IN_PROGRESS')
-    // Review and cancellation are stages of their own, not footnotes on
-    // In Progress and Done.
-    expect(boardColumnForStatus('UNDER_REVIEW')).toBe('UNDER_REVIEW')
+    // Cancellation is a stage of its own, not a footnote on Done.
     expect(boardColumnForStatus('CANCELLED')).toBe('CANCELLED')
   })
 
@@ -59,6 +57,8 @@ describe('board columns', () => {
     expect(boardColumnForStatus('BLOCKED')).toBe('BLOCKED')
     expect(boardColumnForStatus('WAITING')).toBe('BLOCKED')
     expect(boardColumnForStatus('ON_HOLD')).toBe('BLOCKED')
+    // Review is waiting on a reviewer, so it shares the stalled lane.
+    expect(boardColumnForStatus('UNDER_REVIEW')).toBe('BLOCKED')
     expect(boardColumnConfig('BACKLOG').statuses).toEqual(['TODO'])
   })
 
@@ -87,15 +87,13 @@ describe('board columns', () => {
   it('keeps nuanced statuses when the card stays in its lane', () => {
     expect(statusForBoardColumn('BLOCKED', 'WAITING')).toBe('WAITING')
     expect(statusForBoardColumn('BLOCKED', 'ON_HOLD')).toBe('ON_HOLD')
-    expect(statusForBoardColumn('UNDER_REVIEW', 'UNDER_REVIEW')).toBe(
-      'UNDER_REVIEW',
-    )
+    expect(statusForBoardColumn('BLOCKED', 'UNDER_REVIEW')).toBe('UNDER_REVIEW')
   })
 
   it('applies the lane drop status when the card moves lanes', () => {
     expect(statusForBoardColumn('IN_PROGRESS', 'BLOCKED')).toBe('IN_PROGRESS')
-    expect(statusForBoardColumn('UNDER_REVIEW', 'IN_PROGRESS')).toBe(
-      'UNDER_REVIEW',
+    expect(statusForBoardColumn('IN_PROGRESS', 'UNDER_REVIEW')).toBe(
+      'IN_PROGRESS',
     )
     expect(statusForBoardColumn('DONE', 'TODO')).toBe('COMPLETED')
     expect(statusForBoardColumn('DONE', 'CANCELLED')).toBe('COMPLETED')
@@ -123,8 +121,7 @@ describe('board columns', () => {
 
     expect(groups.BACKLOG.map((t) => t.id)).toEqual(['a'])
     expect(groups.IN_PROGRESS.map((t) => t.id)).toEqual(['c'])
-    expect(groups.UNDER_REVIEW.map((t) => t.id)).toEqual(['f'])
-    expect(groups.BLOCKED.map((t) => t.id)).toEqual(['b', 'e'])
+    expect(groups.BLOCKED.map((t) => t.id)).toEqual(['b', 'e', 'f'])
     expect(groups.DONE.map((t) => t.id)).toEqual(['d'])
     expect(groups.CANCELLED.map((t) => t.id)).toEqual(['g'])
   })

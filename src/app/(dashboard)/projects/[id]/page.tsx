@@ -22,6 +22,7 @@ import { useTodoActions } from '@/hooks/use-todo-actions'
 import { useTodoNoteDrawer } from '@/hooks/use-todo-note-drawer'
 import {
   BOARD_COLUMN_KEYS,
+  BOARD_COLUMNS,
   statusForBoardColumn,
   type BoardColumnKey,
 } from '@/lib/board-columns'
@@ -300,11 +301,14 @@ export default function ProjectPage() {
 }
 
 function ProjectBoardSkeleton() {
+  // Only the open lanes — the finished ones load as narrow rails.
+  const lanes = BOARD_COLUMNS.filter((column) => !column.terminal)
+
   return (
     <div className="flex h-[calc(100vh-120px)] flex-col gap-4 lg:flex-row">
-      {[0, 1, 2, 3].map((index) => (
+      {lanes.map((column) => (
         <div
-          key={index}
+          key={column.key}
           className="flex-1 animate-pulse rounded-xl"
           style={{ backgroundColor: 'var(--surface-2)' }}
         />

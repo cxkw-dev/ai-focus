@@ -21,6 +21,9 @@ const SUMMARY_COLUMNS = BOARD_COLUMNS.filter(
   (column) => column.key !== 'CANCELLED',
 )
 
+/** Everything still on the board, however stalled, counts as open. */
+const OPEN_COLUMNS = BOARD_COLUMNS.filter((column) => !column.terminal)
+
 function emptyStats(): ProjectStats {
   return Object.fromEntries(
     Object.keys(createEmptyBoardGroups()).map((key) => [key, 0]),
@@ -127,11 +130,10 @@ export default function ProjectsPage() {
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {projects.map((project) => {
             const stats = statsByProject.get(project.id) ?? emptyStats()
-            const open =
-              stats.BACKLOG +
-              stats.IN_PROGRESS +
-              stats.UNDER_REVIEW +
-              stats.BLOCKED
+            const open = OPEN_COLUMNS.reduce(
+              (total, column) => total + stats[column.key],
+              0,
+            )
 
             return (
               <Link
