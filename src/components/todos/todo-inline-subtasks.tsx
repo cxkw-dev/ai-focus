@@ -16,13 +16,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
-import {
-  CheckSquare,
-  ChevronDown,
-  ChevronRight,
-  Plus,
-  Square,
-} from 'lucide-react'
+import { CheckSquare, Plus, Square } from 'lucide-react'
 import { SubtaskMentionInput } from '@/components/ui/subtask-mention-input'
 import {
   hasMeaningfulText,
@@ -90,7 +84,6 @@ export function TodoInlineSubtasks({
   )
   const [isAddingSubtask, setIsAddingSubtask] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
-  const [subtasksExpanded, setSubtasksExpanded] = React.useState(false)
   const lastAddedSubtaskRef = React.useRef<RecentSubtaskCommit | null>(null)
   const sensors = useSensors(
     useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
@@ -295,29 +288,12 @@ export function TodoInlineSubtasks({
       }}
     >
       <div className="mb-1 flex items-center gap-1.5">
-        <button
-          type="button"
-          onClick={() => setSubtasksExpanded((prev) => !prev)}
-          className="flex cursor-pointer items-center gap-1.5 transition-opacity hover:opacity-80"
+        <span
+          className="text-[10px] font-semibold tracking-wide uppercase"
+          style={{ color: 'var(--text-muted)', opacity: 0.6 }}
         >
-          {subtasksExpanded ? (
-            <ChevronDown
-              className="h-3 w-3"
-              style={{ color: 'var(--text-muted)', opacity: 0.6 }}
-            />
-          ) : (
-            <ChevronRight
-              className="h-3 w-3"
-              style={{ color: 'var(--text-muted)', opacity: 0.6 }}
-            />
-          )}
-          <span
-            className="text-[10px] font-semibold tracking-wide uppercase"
-            style={{ color: 'var(--text-muted)', opacity: 0.6 }}
-          >
-            Subtasks
-          </span>
-        </button>
+          Subtasks
+        </span>
         {hasSubtasks && (
           <span
             className="text-[10px] font-medium"
@@ -328,7 +304,7 @@ export function TodoInlineSubtasks({
             {completedCount}/{subtasks.length}
           </span>
         )}
-        {canAddSubtasks && !isAddingSubtask && subtasksExpanded && (
+        {canAddSubtasks && !isAddingSubtask && (
           <button
             type="button"
             onClick={() => setIsAddingSubtask(true)}
@@ -340,74 +316,68 @@ export function TodoInlineSubtasks({
           </button>
         )}
       </div>
-      {(subtasksExpanded || (!hasSubtasks && isAddingSubtask)) && (
-        <>
-          {hasSubtasks &&
-            (canInlineEdit ? (
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext
-                  items={subtasks.map((subtask) =>
-                    inlineSubtaskDndId(subtask.id),
-                  )}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="space-y-0.5">
-                    {subtasks.map((subtask) => (
-                      <SortableInlineSubtaskRow
-                        key={subtask.id}
-                        subtask={subtask}
-                        onToggle={() =>
-                          handleToggle(subtask.id, !subtask.completed)
-                        }
-                        onTitleChange={(title) =>
-                          handleTitleChange(subtask.id, title)
-                        }
-                        onTitleCommit={() => handleTitleCommit(subtask.id)}
-                        onDelete={() => handleDelete(subtask.id)}
-                        mentions={mentions}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
-            ) : (
+      {hasSubtasks &&
+        (canInlineEdit ? (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={subtasks.map((subtask) => inlineSubtaskDndId(subtask.id))}
+              strategy={verticalListSortingStrategy}
+            >
               <div className="space-y-0.5">
                 {subtasks.map((subtask) => (
-                  <ReadOnlyInlineSubtask key={subtask.id} subtask={subtask} />
+                  <SortableInlineSubtaskRow
+                    key={subtask.id}
+                    subtask={subtask}
+                    onToggle={() =>
+                      handleToggle(subtask.id, !subtask.completed)
+                    }
+                    onTitleChange={(title) =>
+                      handleTitleChange(subtask.id, title)
+                    }
+                    onTitleCommit={() => handleTitleCommit(subtask.id)}
+                    onDelete={() => handleDelete(subtask.id)}
+                    mentions={mentions}
+                  />
                 ))}
               </div>
+            </SortableContext>
+          </DndContext>
+        ) : (
+          <div className="space-y-0.5">
+            {subtasks.map((subtask) => (
+              <ReadOnlyInlineSubtask key={subtask.id} subtask={subtask} />
             ))}
-          {canAddSubtasks && isAddingSubtask && (
-            <div
-              className="mt-1 rounded px-1 py-0.5"
-              style={{
-                backgroundColor:
-                  'color-mix(in srgb, var(--surface) 45%, transparent)',
-              }}
-            >
-              <div className="flex items-center gap-1.5">
-                <Plus
-                  className="h-3 w-3 flex-shrink-0"
-                  style={{ color: 'var(--text-muted)' }}
-                />
-                <SubtaskMentionInput
-                  value={newSubtaskTitle}
-                  onChange={setNewSubtaskTitle}
-                  onCommit={handleAddCommit}
-                  commitOnBlur={false}
-                  mentions={mentions}
-                  placeholder="Add a subtask..."
-                  className="!text-[11px] !leading-snug text-[var(--text-primary)]"
-                  ariaLabel="New subtask title"
-                />
-              </div>
-            </div>
-          )}
-        </>
+          </div>
+        ))}
+      {canAddSubtasks && isAddingSubtask && (
+        <div
+          className="mt-1 rounded px-1 py-0.5"
+          style={{
+            backgroundColor:
+              'color-mix(in srgb, var(--surface) 45%, transparent)',
+          }}
+        >
+          <div className="flex items-center gap-1.5">
+            <Plus
+              className="h-3 w-3 flex-shrink-0"
+              style={{ color: 'var(--text-muted)' }}
+            />
+            <SubtaskMentionInput
+              value={newSubtaskTitle}
+              onChange={setNewSubtaskTitle}
+              onCommit={handleAddCommit}
+              commitOnBlur={false}
+              mentions={mentions}
+              placeholder="Add a subtask..."
+              className="!text-[11px] !leading-snug text-[var(--text-primary)]"
+              ariaLabel="New subtask title"
+            />
+          </div>
+        </div>
       )}
     </div>
   )

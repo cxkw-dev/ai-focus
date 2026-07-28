@@ -1,11 +1,13 @@
 import { db } from '@/lib/db'
 import { validateTodoBoardForResponse } from '@/lib/server/todo-response'
+import { createEmptyCompletedCounts, isTerminalStatus } from '@/lib/todo-board'
 import {
   COMPLETED_TODO_WHERE,
   activeTodoOrderBy,
   todoBoardInclude,
 } from '@/lib/todo-queries'
 import { internalError, ok } from '@/lib/server/api-responses'
+import { TERMINAL_STATUS_VALUES } from '@/types/todo'
 
 export async function GET() {
   try {
@@ -13,7 +15,7 @@ export async function GET() {
       db.todo.findMany({
         where: {
           archived: false,
-          status: { notIn: ['COMPLETED', 'CANCELLED'] },
+          status: { notIn: [...TERMINAL_STATUS_VALUES] },
         },
         include: todoBoardInclude,
         orderBy: activeTodoOrderBy,
@@ -21,7 +23,7 @@ export async function GET() {
       db.todo.findMany({
         where: {
           archived: true,
-          status: { notIn: ['COMPLETED', 'CANCELLED'] },
+          status: { notIn: [...TERMINAL_STATUS_VALUES] },
         },
         include: todoBoardInclude,
         orderBy: activeTodoOrderBy,
@@ -29,26 +31,23 @@ export async function GET() {
       // Counts only — the badges need a number, not 180KB of finished cards.
       db.todo.findMany({
         where: COMPLETED_TODO_WHERE,
-        select: { labels: { select: { id: true } } },
+        select: { status: true, labels: { select: { id: true } } },
       }),
     ])
 
-    const byProject: Record<string, number> = {}
+    // Done and Cancelled are separate rails, so each needs its own tally.
+    const completedCounts = createEmptyCompletedCounts()
     for (const todo of completedProjectRows) {
+      if (!isTerminalStatus(todo.status)) continue
+      const counts = completedCounts[todo.status]
+      counts.total += 1
       for (const label of todo.labels) {
-        byProject[label.id] = (byProject[label.id] ?? 0) + 1
+        counts.byProject[label.id] = (counts.byProject[label.id] ?? 0) + 1
       }
     }
 
     return ok(
-      validateTodoBoardForResponse({
-        active,
-        deleted,
-        completedCounts: {
-          total: completedProjectRows.length,
-          byProject,
-        },
-      }),
+      validateTodoBoardForResponse({ active, deleted, completedCounts }),
     )
   } catch (error) {
     return internalError(

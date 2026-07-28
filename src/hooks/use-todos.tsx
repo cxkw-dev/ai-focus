@@ -12,24 +12,32 @@ import {
 } from '@/lib/query-options'
 import {
   applyReorderedActiveTodos,
+  createEmptyCompletedCounts,
   createEmptyTodoBoard,
   findTodoInBoard,
-  isCompletedTodo,
+  isTerminalStatus,
+  isTerminalTodo,
   placeTodoInBoard,
   removeTodoFromList,
   updateTodoInBoard,
 } from '@/lib/todo-board'
 import type {
-  CompletedTodoCounts,
   Priority,
   Status,
+  TerminalStatus,
   Todo,
   TodoBoardResponse,
   UpdateTodoInput,
 } from '@/types/todo'
 
 const EMPTY_TODOS: Todo[] = []
-const EMPTY_COMPLETED_COUNTS: CompletedTodoCounts = { total: 0, byProject: {} }
+const EMPTY_COMPLETED_COUNTS = createEmptyCompletedCounts()
+
+/** Finishing a todo is worth an undo; which lane it landed in is the wording. */
+const TERMINAL_TOAST_TITLES: Record<TerminalStatus, string> = {
+  COMPLETED: 'Completed',
+  CANCELLED: 'Cancelled',
+}
 
 function UndoToastAction({ onUndo }: { onUndo: () => void }) {
   return (
@@ -50,7 +58,8 @@ function UndoToastAction({ onUndo }: { onUndo: () => void }) {
 
 /**
  * @param withCompleted fetch the finished pile too. Off by default: a board's
- * Done lane is collapsed until you open it, and nothing else needs the bodies.
+ * Done and Cancelled lanes are collapsed until you open one, and nothing else
+ * needs the bodies.
  */
 export function useTodos({ withCompleted = false } = {}) {
   const queryClient = useQueryClient()
@@ -79,7 +88,7 @@ export function useTodos({ withCompleted = false } = {}) {
       queryClient.setQueryData<Todo[]>(queryKeys.completedTodos, (current) => {
         if (!current) return current
         const without = removeTodoFromList(current, todo.id)
-        return isCompletedTodo(todo) ? [todo, ...without] : without
+        return isTerminalTodo(todo) ? [todo, ...without] : without
       })
     },
     [queryClient],
@@ -171,15 +180,36 @@ export function useTodos({ withCompleted = false } = {}) {
       const previousStatus = todo?.status
       const nextStatusChangedAt = new Date().toISOString()
 
-      if (status === 'COMPLETED' || status === 'CANCELLED') {
+      const wasTerminal = previousStatus
+        ? isTerminalStatus(previousStatus)
+        : false
+
+      if (isTerminalStatus(status)) {
         setBoardData((board) => ({
           ...board,
           active: removeTodoFromList(board.active, id),
         }))
+
+        if (todo && wasTerminal) {
+          // Already finished, moving between Done and Cancelled: the board has
+          // nothing to drop, so the finished list is what has to change.
+          syncCompletedList({
+            ...todo,
+            status,
+            statusChangedAt: nextStatusChangedAt,
+          })
+        }
       } else if (todo) {
-        // Dragged back out of Done: put it on the board and take it off the
-        // finished list in the same beat, so neither view flickers.
-        applyTodo({ ...todo, status, statusChangedAt: nextStatusChangedAt })
+        // Dragged back out of a finished lane: put it on the board and take it
+        // off the finished list in the same beat, so neither view flickers.
+        // The server un-archives on the way out, so mirror that here or the
+        // card lands in the trash list until the response arrives.
+        applyTodo({
+          ...todo,
+          status,
+          statusChangedAt: nextStatusChangedAt,
+          ...(wasTerminal ? { archived: false } : {}),
+        })
       }
 
       return {
@@ -192,11 +222,15 @@ export function useTodos({ withCompleted = false } = {}) {
     onSuccess: (updatedTodo, { id, status }, context) => {
       applyTodo(updatedTodo)
 
-      if (status === 'COMPLETED' && context?.previousStatus) {
+      if (
+        isTerminalStatus(status) &&
+        context?.previousStatus &&
+        !isTerminalStatus(context.previousStatus)
+      ) {
         const previousStatus = context.previousStatus
 
         toast({
-          title: 'Completed',
+          title: TERMINAL_TOAST_TITLES[status],
           description: context.title,
           action: (
             <UndoToastAction

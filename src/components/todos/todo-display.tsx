@@ -4,7 +4,7 @@ import * as React from 'react'
 import { ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PRIORITY_MAP } from '@/lib/priority'
-import { COLLAPSED_STATUSES, STATUS_CONFIG } from '@/lib/status'
+import { STATUS_CONFIG } from '@/lib/status'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +16,7 @@ import type { Label, Priority, Status, Todo } from '@/types/todo'
 export const CHIP_BASE =
   'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors whitespace-nowrap'
 
-export { COLLAPSED_STATUSES, STATUS_CONFIG }
+export { STATUS_CONFIG }
 
 export const PRIORITY_CONFIG: Record<
   Priority,

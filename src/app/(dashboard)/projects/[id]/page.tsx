@@ -13,10 +13,10 @@ import {
 import { HeaderActions } from '@/components/layout/header-actions-context'
 import { ProjectBoard } from '@/components/todos/project-board'
 import { TodoItem } from '@/components/todos/todo-item'
-import { AddTaskButton, TodoDialogs } from '@/components/todos/todo-dialogs'
+import { TodoDialogs } from '@/components/todos/todo-dialogs'
 import { useLabels } from '@/hooks/use-labels'
 import { usePeople } from '@/hooks/use-people'
-import { useDoneLaneExpanded } from '@/hooks/use-done-lane'
+import { useTerminalLaneExpansion } from '@/hooks/use-board-lanes'
 import { useProjectBoard } from '@/hooks/use-project-board'
 import { useTodoActions } from '@/hooks/use-todo-actions'
 import { useTodoNoteDrawer } from '@/hooks/use-todo-note-drawer'
@@ -42,9 +42,9 @@ export default function ProjectPage() {
     isMutating: isProjectMutating,
   } = useLabels()
   const { people } = usePeople()
-  const [doneExpanded, setDoneExpanded] = useDoneLaneExpanded()
-  const actions = useTodoActions({ withCompleted: doneExpanded })
-  const [isCreateOpen, setIsCreateOpen] = React.useState(false)
+  const { expandedLanes, setLaneExpanded, anyExpanded } =
+    useTerminalLaneExpansion()
+  const actions = useTodoActions({ withCompleted: anyExpanded })
   const [view, setView] = React.useState<ProjectView>('board')
 
   const noteDrawer = useTodoNoteDrawer({
@@ -58,7 +58,7 @@ export default function ProjectPage() {
       projectId,
       todos: actions.todos,
       completedTodos: actions.completedTodos,
-      completedCount: actions.completedCounts.byProject[projectId] ?? 0,
+      completedCounts: actions.completedCounts,
       deletedTodos: actions.deletedTodos,
     })
 
@@ -238,10 +238,9 @@ export default function ProjectPage() {
           onReorder={actions.handleReorder}
           onCreateTodo={actions.handleCreate}
           isSaving={actions.isSaving}
-          doneExpanded={doneExpanded}
-          onDoneExpandedChange={setDoneExpanded}
-          doneCount={doneCount}
-          isLoadingDone={doneExpanded && actions.isLoadingCompleted}
+          expandedLanes={expandedLanes}
+          onLaneExpandedChange={setLaneExpanded}
+          isLoadingFinished={anyExpanded && actions.isLoadingCompleted}
           onEdit={actions.handleEdit}
           onStatusChange={actions.handleStatusChange}
           onPriorityChange={actions.handlePriorityChange}
@@ -286,26 +285,16 @@ export default function ProjectPage() {
         </div>
       )}
 
+      {/* Creating happens inline at the top of Backlog — no floating button. */}
       <TodoDialogs
         editingTodo={actions.editingTodo}
         isEditOpen={actions.isEditOpen}
         onEditOpenChange={actions.handleEditOpenChange}
         onUpdate={actions.handleUpdate}
-        isCreateOpen={isCreateOpen}
-        onCreateOpenChange={setIsCreateOpen}
-        onCreate={actions.handleCreate}
-        createProject={project}
         isSaving={actions.isSaving}
         people={people}
         noteDrawer={noteDrawer}
       />
-
-      {!project.archived && (
-        <AddTaskButton
-          onClick={() => setIsCreateOpen(true)}
-          label={`Add to ${project.name}`}
-        />
-      )}
     </div>
   )
 }
@@ -313,7 +302,7 @@ export default function ProjectPage() {
 function ProjectBoardSkeleton() {
   return (
     <div className="flex h-[calc(100vh-120px)] flex-col gap-4 lg:flex-row">
-      {[0, 1, 2].map((index) => (
+      {[0, 1, 2, 3].map((index) => (
         <div
           key={index}
           className="flex-1 animate-pulse rounded-xl"

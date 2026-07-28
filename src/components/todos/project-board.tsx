@@ -6,10 +6,12 @@ import {
   DragOverlay,
   KeyboardSensor,
   PointerSensor,
-  closestCorners,
+  pointerWithin,
+  rectIntersection,
   useDroppable,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
@@ -21,9 +23,10 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { ChevronLeft, ChevronRight, Inbox } from 'lucide-react'
-import { TodoItem, TodoItemOverlay, BlockedExpandedProvider } from './todo-item'
+import { TodoItem, TodoItemOverlay } from './todo-item'
 import { InlineTodoForm } from './inline-todo-form'
 import { isBoardColumnKey, type BoardColumnKey } from '@/lib/board-columns'
+import type { ExpandedLanes } from '@/hooks/use-board-lanes'
 import type { Project } from '@/lib/projects'
 import type { ProjectBoardColumn } from '@/hooks/use-project-board'
 import type {
@@ -40,12 +43,25 @@ const POINTER_SENSOR_OPTIONS = {
 } as const
 
 /**
- * Even opened, Done is a reference view, not a working one. Show the most
- * recent slice and let the rest be asked for.
+ * Even opened, a finished lane is a reference view, not a working one. Show the
+ * most recent slice and let the rest be asked for.
  */
-const DONE_PREVIEW_COUNT = 10
+const FINISHED_PREVIEW_COUNT = 10
 const KEYBOARD_SENSOR_OPTIONS = {
   coordinateGetter: sortableKeyboardCoordinates,
+}
+
+/**
+ * A card is as wide as its lane, so corner-based collision resolves a drop by
+ * where the *card* overlaps rather than where the cursor is — across six narrow
+ * lanes that reliably lands it a column off. Follow the pointer instead, and
+ * fall back to rectangle overlap for the keyboard sensor, which has no pointer.
+ */
+const collisionDetection: CollisionDetection = (args) => {
+  const pointerCollisions = pointerWithin(args)
+  return pointerCollisions.length > 0
+    ? pointerCollisions
+    : rectIntersection(args)
 }
 
 interface TodoCardHandlers {
@@ -73,11 +89,10 @@ interface ProjectBoardProps extends TodoCardHandlers {
   onReorder: (todos: Todo[]) => void
   onCreateTodo: (data: CreateTodoInput) => Promise<boolean>
   isSaving?: boolean
-  /** Done is a collapsed rail until asked for; see useDoneLaneExpanded. */
-  doneExpanded: boolean
-  onDoneExpandedChange: (expanded: boolean) => void
-  doneCount: number
-  isLoadingDone?: boolean
+  /** Finished lanes are collapsed rails until asked for; see ExpandedLanes. */
+  expandedLanes: ExpandedLanes
+  onLaneExpandedChange: (key: BoardColumnKey, expanded: boolean) => void
+  isLoadingFinished?: boolean
 }
 
 export function ProjectBoard({
@@ -87,10 +102,9 @@ export function ProjectBoard({
   onReorder,
   onCreateTodo,
   isSaving,
-  doneExpanded,
-  onDoneExpandedChange,
-  doneCount,
-  isLoadingDone,
+  expandedLanes,
+  onLaneExpandedChange,
+  isLoadingFinished,
   ...cardHandlers
 }: ProjectBoardProps) {
   const [activeId, setActiveId] = React.useState<string | null>(null)
@@ -150,16 +164,15 @@ export function ProjectBoard({
       return
     }
 
-    // Done is ordered by completion time, so in-lane reordering is meaningless.
-    if (toColumn === 'DONE' || todoId === overId) return
+    const lane = columns.find((column) => column.key === toColumn)
+    // Finished lanes are ordered by completion time, so reordering is meaningless.
+    if (!lane || lane.terminal || todoId === overId) return
 
-    const laneTodos =
-      columns.find((column) => column.key === toColumn)?.todos ?? []
-    const oldIndex = laneTodos.findIndex((todo) => todo.id === todoId)
-    const newIndex = laneTodos.findIndex((todo) => todo.id === overId)
+    const oldIndex = lane.todos.findIndex((todo) => todo.id === todoId)
+    const newIndex = lane.todos.findIndex((todo) => todo.id === overId)
     if (oldIndex === -1 || newIndex === -1) return
 
-    onReorder(arrayMove(laneTodos, oldIndex, newIndex))
+    onReorder(arrayMove(lane.todos, oldIndex, newIndex))
   }
 
   const activeTodo = activeId
@@ -167,68 +180,65 @@ export function ProjectBoard({
     : null
 
   return (
-    <BlockedExpandedProvider expanded={true}>
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCorners}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
-        onDragCancel={handleDragCancel}
-      >
-        <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row lg:gap-5">
-          {columns.map((column) => (
-            <BoardLane
-              // Keyed by project so a lane's local state (an expanded Done
-              // preview) doesn't carry over to the next board.
-              key={`${project.id}:${column.key}`}
-              column={column}
-              isOver={overColumnKey === column.key}
-              isDragging={activeId !== null}
-              count={column.key === 'DONE' ? doneCount : column.todos.length}
-              collapsed={column.key === 'DONE' && !doneExpanded}
-              onExpand={
-                column.key === 'DONE'
-                  ? () => onDoneExpandedChange(true)
-                  : undefined
-              }
-              onCollapse={
-                column.key === 'DONE'
-                  ? () => onDoneExpandedChange(false)
-                  : undefined
-              }
-              isLoading={column.key === 'DONE' && isLoadingDone}
-              {...cardHandlers}
-            >
-              {column.key === 'BACKLOG' && (
-                <div className="mb-2 flex-shrink-0">
-                  <InlineTodoForm
-                    onSubmit={onCreateTodo}
-                    isLoading={isSaving}
-                    project={project}
-                    subtaskMentions={cardHandlers.subtaskMentions}
-                  />
-                </div>
-              )}
-            </BoardLane>
-          ))}
-        </div>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={collisionDetection}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+    >
+      <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row lg:gap-3">
+        {columns.map((column) => (
+          <BoardLane
+            // Keyed by project so a lane's local state (an expanded finished
+            // preview) doesn't carry over to the next board.
+            key={`${project.id}:${column.key}`}
+            column={column}
+            isOver={overColumnKey === column.key}
+            isDragging={activeId !== null}
+            collapsed={column.terminal && !expandedLanes[column.key]}
+            onExpand={
+              column.terminal
+                ? () => onLaneExpandedChange(column.key, true)
+                : undefined
+            }
+            onCollapse={
+              column.terminal
+                ? () => onLaneExpandedChange(column.key, false)
+                : undefined
+            }
+            isLoading={column.terminal && isLoadingFinished}
+            {...cardHandlers}
+          >
+            {column.key === 'BACKLOG' && (
+              <div className="mb-2 flex-shrink-0">
+                <InlineTodoForm
+                  onSubmit={onCreateTodo}
+                  isLoading={isSaving}
+                  project={project}
+                  subtaskMentions={cardHandlers.subtaskMentions}
+                />
+              </div>
+            )}
+          </BoardLane>
+        ))}
+      </div>
 
-        <DragOverlay>
-          {activeTodo ? (
-            <TodoItemOverlay
-              todo={activeTodo}
-              onStatusChange={() => {}}
-              onPriorityChange={() => {}}
-              onDelete={() => {}}
-              onEdit={() => {}}
-              people={cardHandlers.people}
-              subtaskMentions={cardHandlers.subtaskMentions}
-            />
-          ) : null}
-        </DragOverlay>
-      </DndContext>
-    </BlockedExpandedProvider>
+      <DragOverlay>
+        {activeTodo ? (
+          <TodoItemOverlay
+            todo={activeTodo}
+            onStatusChange={() => {}}
+            onPriorityChange={() => {}}
+            onDelete={() => {}}
+            onEdit={() => {}}
+            people={cardHandlers.people}
+            subtaskMentions={cardHandlers.subtaskMentions}
+          />
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   )
 }
 
@@ -236,8 +246,6 @@ interface BoardLaneProps extends TodoCardHandlers {
   column: ProjectBoardColumn
   isOver: boolean
   isDragging: boolean
-  /** Authoritative tally — Done's cards may not be fetched yet. */
-  count: number
   collapsed?: boolean
   isLoading?: boolean
   onExpand?: () => void
@@ -249,7 +257,6 @@ function BoardLane({
   column,
   isOver,
   isDragging,
-  count,
   collapsed,
   isLoading,
   onExpand,
@@ -268,17 +275,17 @@ function BoardLane({
   subtaskMentions,
 }: BoardLaneProps) {
   const { setNodeRef } = useDroppable({ id: column.key })
-  const isDone = column.key === 'DONE'
-  const viewMode = isDone ? ('completed' as const) : ('active' as const)
+  const isFinished = Boolean(column.terminal)
+  const viewMode = isFinished ? ('completed' as const) : ('active' as const)
 
-  const [showAllDone, setShowAllDone] = React.useState(false)
-  const hiddenDoneCount =
-    isDone && !showAllDone
-      ? Math.max(0, column.todos.length - DONE_PREVIEW_COUNT)
+  const [showAll, setShowAll] = React.useState(false)
+  const hiddenCount =
+    isFinished && !showAll
+      ? Math.max(0, column.todos.length - FINISHED_PREVIEW_COUNT)
       : 0
   const visibleTodos =
-    hiddenDoneCount > 0
-      ? column.todos.slice(0, DONE_PREVIEW_COUNT)
+    hiddenCount > 0
+      ? column.todos.slice(0, FINISHED_PREVIEW_COUNT)
       : column.todos
 
   if (collapsed) {
@@ -286,7 +293,6 @@ function BoardLane({
       <CollapsedLane
         ref={setNodeRef}
         column={column}
-        count={count}
         isOver={isOver}
         isDragging={isDragging}
         onExpand={onExpand}
@@ -326,7 +332,7 @@ function BoardLane({
             backgroundColor: `color-mix(in srgb, ${column.color} 12%, transparent)`,
           }}
         >
-          {count}
+          {column.count}
         </span>
         {onCollapse && (
           <button
@@ -371,7 +377,7 @@ function BoardLane({
                   todo={todo}
                   onStatusChange={onStatusChange}
                   onPriorityChange={onPriorityChange}
-                  onDelete={isDone ? onPermanentDelete : onDelete}
+                  onDelete={isFinished ? onPermanentDelete : onDelete}
                   onEdit={onEdit}
                   onRestore={onRestore}
                   onToggleSubtask={onToggleSubtask}
@@ -388,18 +394,18 @@ function BoardLane({
           </div>
         </SortableContext>
 
-        {isDone && (hiddenDoneCount > 0 || showAllDone) && (
+        {isFinished && (hiddenCount > 0 || showAll) && (
           <button
             type="button"
-            onClick={() => setShowAllDone((prev) => !prev)}
+            onClick={() => setShowAll((prev) => !prev)}
             className="mt-1 w-full rounded-lg py-1.5 text-[11px] font-medium transition-colors"
             style={{
               color: column.color,
               backgroundColor: `color-mix(in srgb, ${column.color} 8%, transparent)`,
             }}
           >
-            {showAllDone
-              ? `Show recent ${DONE_PREVIEW_COUNT}`
+            {showAll
+              ? `Show recent ${FINISHED_PREVIEW_COUNT}`
               : `Show all ${column.todos.length}`}
           </button>
         )}
@@ -409,21 +415,19 @@ function BoardLane({
 }
 
 /**
- * Done as a vertical strip. It stays a droppable target so dragging a card here
- * still completes it, and clicking it opens the full lane — which is also what
- * triggers fetching the finished todos in the first place.
+ * A finished lane as a vertical strip. It stays a droppable target so dragging
+ * a card here still finishes it, and clicking it opens the full lane — which is
+ * also what triggers fetching the finished todos in the first place.
  */
 function CollapsedLane({
   ref,
   column,
-  count,
   isOver,
   isDragging,
   onExpand,
 }: {
   ref: (element: HTMLElement | null) => void
   column: ProjectBoardColumn
-  count: number
   isOver: boolean
   isDragging: boolean
   onExpand?: () => void
@@ -446,8 +450,8 @@ function CollapsedLane({
         type="button"
         onClick={onExpand}
         className="flex flex-1 flex-row items-center justify-center gap-2 lg:h-full lg:flex-col"
-        aria-label={`Expand ${column.title} (${count})`}
-        title={`Show ${count} finished`}
+        aria-label={`Expand ${column.title} (${column.count})`}
+        title={`Show ${column.count} ${column.title.toLowerCase()}`}
       >
         <ChevronLeft
           className="hidden h-3.5 w-3.5 lg:block"
@@ -466,14 +470,14 @@ function CollapsedLane({
             backgroundColor: `color-mix(in srgb, ${column.color} 12%, transparent)`,
           }}
         >
-          {count}
+          {column.count}
         </span>
-        {isDragging && (
+        {isDragging && column.dropHint && (
           <span
             className="text-[10px] lg:[writing-mode:vertical-rl]"
             style={{ color: 'var(--text-muted)' }}
           >
-            Drop to finish
+            {column.dropHint}
           </span>
         )}
       </button>

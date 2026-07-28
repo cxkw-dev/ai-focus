@@ -25,7 +25,7 @@ const STATUS_COLORS: Record<Status, string> = {
   ON_HOLD: 'var(--status-on-hold)',
   BLOCKED: 'var(--status-blocked)',
   COMPLETED: 'var(--status-done)',
-  CANCELLED: 'var(--status-on-hold)',
+  CANCELLED: 'var(--text-muted)',
 }
 
 function formatTimestamp(iso: string) {

@@ -5,7 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTestQueryClient } from '@/test/react-query'
 import { makeTodoRow } from '@/test/fixtures'
 import { queryKeys } from '@/lib/query-keys'
-import type { TodoBoardResponse } from '@/types/todo'
+import { createEmptyCompletedCounts } from '@/lib/todo-board'
+import type { Todo, TodoBoardResponse } from '@/types/todo'
 
 vi.mock('@/lib/api', () => ({
   todosApi: {
@@ -39,7 +40,7 @@ function seedBoard(): TodoBoardResponse {
       }) as unknown as TodoBoardResponse['active'][number],
     ],
     deleted: [],
-    completedCounts: { total: 0, byProject: {} },
+    completedCounts: createEmptyCompletedCounts(),
   }
 }
 
@@ -47,9 +48,12 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 
-function setup() {
+function setup(completedTodos?: Todo[]) {
   const client = createTestQueryClient()
   client.setQueryData(queryKeys.todoBoard, seedBoard())
+  if (completedTodos) {
+    client.setQueryData(queryKeys.completedTodos, completedTodos)
+  }
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
   )
@@ -77,6 +81,36 @@ describe('useTodos.updateStatus', () => {
     // Finished todos live in their own cache entry, and only when it has been
     // loaded — here it has not, so there is nothing to keep in sync.
     expect(client.getQueryData(queryKeys.completedTodos)).toBeUndefined()
+  })
+
+  it('drops a card straight into its new lane when dragged out of a finished one', async () => {
+    // Finished todos are archived, and the board routes archived todos to the
+    // trash list — so pulling one back has to clear the flag optimistically or
+    // the card visibly detours through Trash until the response lands.
+    const cancelled = makeTodoRow({
+      id: 't-2',
+      status: 'CANCELLED',
+      archived: true,
+    }) as unknown as Todo
+    ;(todosApi.update as ReturnType<typeof vi.fn>).mockImplementation(
+      () => new Promise(() => {}),
+    )
+    const { result, client } = setup([cancelled])
+
+    act(() => {
+      result.current.updateStatus.mutate({ id: 't-2', status: 'TODO' })
+    })
+
+    await waitFor(() => {
+      const board = client.getQueryData<TodoBoardResponse>(queryKeys.todoBoard)
+      expect(board?.active.some((todo) => todo.id === 't-2')).toBe(true)
+      expect(board?.deleted.some((todo) => todo.id === 't-2')).toBe(false)
+    })
+    expect(
+      client
+        .getQueryData<Todo[]>(queryKeys.completedTodos)
+        ?.some((todo) => todo.id === 't-2'),
+    ).toBe(false)
   })
 
   it('rolls back the board when the mutation fails', async () => {

@@ -13,6 +13,13 @@ export const TODO_STATUS_VALUES = [
 ] as const
 export type Status = (typeof TODO_STATUS_VALUES)[number]
 
+/**
+ * Where work ends up. A terminal todo is archived by the status transition and
+ * leaves the board for the lazily-fetched finished pile — see todo-queries.
+ */
+export const TERMINAL_STATUS_VALUES = ['COMPLETED', 'CANCELLED'] as const
+export type TerminalStatus = (typeof TERMINAL_STATUS_VALUES)[number]
+
 export const TODO_SORT_VALUES = ['order', 'completedAt', 'updatedAt'] as const
 export type TodoSortBy = (typeof TODO_SORT_VALUES)[number]
 
@@ -177,16 +184,20 @@ export interface PaginatedTodosResponse {
   total: number
 }
 
+export interface TerminalTodoCounts {
+  total: number
+  byProject: Record<string, number>
+}
+
 /**
  * Finished work only grows, and on a busy project it was 80% of this payload
  * for cards nobody had asked to see. The board carries the shape of it — a
  * total plus a per-project tally for the badges — and the bodies come from
- * /api/todos/completed only when a Done lane is actually opened.
+ * /api/todos/completed only when a finished lane is actually opened. The tally
+ * is split per terminal status because Done and Cancelled are separate lanes,
+ * each of which has to show a real count while still collapsed.
  */
-export interface CompletedTodoCounts {
-  total: number
-  byProject: Record<string, number>
-}
+export type CompletedTodoCounts = Record<TerminalStatus, TerminalTodoCounts>
 
 export interface TodoBoardResponse {
   active: Todo[]

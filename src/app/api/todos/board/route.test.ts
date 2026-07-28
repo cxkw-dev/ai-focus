@@ -20,7 +20,10 @@ describe('GET /api/todos/board', () => {
     expect(await res.json()).toEqual({
       active: [],
       deleted: [],
-      completedCounts: { total: 0, byProject: {} },
+      completedCounts: {
+        COMPLETED: { total: 0, byProject: {} },
+        CANCELLED: { total: 0, byProject: {} },
+      },
     })
     expect(dbMock.todo.findMany).toHaveBeenCalledTimes(3)
   })
@@ -31,16 +34,21 @@ describe('GET /api/todos/board', () => {
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([
-        { labels: [{ id: 'amex' }] },
-        { labels: [{ id: 'amex' }, { id: 'kaf' }] },
+        { status: 'COMPLETED', labels: [{ id: 'amex' }] },
+        { status: 'COMPLETED', labels: [{ id: 'amex' }, { id: 'kaf' }] },
+        { status: 'CANCELLED', labels: [{ id: 'kaf' }] },
       ])
 
     const res = await GET()
 
+    // Done and Cancelled are separate rails, so their tallies stay separate.
     expect(await res.json()).toEqual({
       active: [],
       deleted: [],
-      completedCounts: { total: 2, byProject: { amex: 2, kaf: 1 } },
+      completedCounts: {
+        COMPLETED: { total: 2, byProject: { amex: 2, kaf: 1 } },
+        CANCELLED: { total: 1, byProject: { kaf: 1 } },
+      },
     })
   })
 })

@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client'
 import { labelInclude } from '@/lib/label-queries'
+import { TERMINAL_STATUS_VALUES } from '@/types/todo'
 
 export const todoBaseInclude = Prisma.validator<Prisma.TodoInclude>()({
   labels: { orderBy: { name: 'asc' }, include: labelInclude },
@@ -20,7 +21,7 @@ export const todoBoardInclude = Prisma.validator<Prisma.TodoInclude>()({
 /** Completed work: terminal status, archived by the completion flow. */
 export const COMPLETED_TODO_WHERE = Prisma.validator<Prisma.TodoWhereInput>()({
   archived: true,
-  status: { in: ['COMPLETED', 'CANCELLED'] },
+  status: { in: [...TERMINAL_STATUS_VALUES] },
 })
 
 export const activeTodoOrderBy = Prisma.validator<

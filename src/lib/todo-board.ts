@@ -1,16 +1,38 @@
-import type { Todo, TodoBoardResponse } from '@/types/todo'
+import {
+  TERMINAL_STATUS_VALUES,
+  type CompletedTodoCounts,
+  type Status,
+  type TerminalStatus,
+  type Todo,
+  type TodoBoardResponse,
+} from '@/types/todo'
+
+const TERMINAL_STATUSES = new Set<Status>(TERMINAL_STATUS_VALUES)
+
+export function createEmptyCompletedCounts(): CompletedTodoCounts {
+  return Object.fromEntries(
+    TERMINAL_STATUS_VALUES.map((status) => [
+      status,
+      { total: 0, byProject: {} },
+    ]),
+  ) as CompletedTodoCounts
+}
 
 export function createEmptyTodoBoard(): TodoBoardResponse {
   return {
     active: [],
     deleted: [],
-    completedCounts: { total: 0, byProject: {} },
+    completedCounts: createEmptyCompletedCounts(),
   }
 }
 
 /** Terminal statuses live outside the board, in the lazy completed list. */
-export function isCompletedTodo(todo: Todo) {
-  return todo.status === 'COMPLETED' || todo.status === 'CANCELLED'
+export function isTerminalStatus(status: Status): status is TerminalStatus {
+  return TERMINAL_STATUSES.has(status)
+}
+
+export function isTerminalTodo(todo: Todo) {
+  return isTerminalStatus(todo.status)
 }
 
 export function removeTodoFromList(todos: Todo[], todoId: string) {
@@ -71,7 +93,7 @@ export function placeTodoInBoard(
     deleted: removeTodoFromList(board.deleted, todo.id),
   }
 
-  if (isCompletedTodo(todo)) {
+  if (isTerminalTodo(todo)) {
     return nextBoard
   }
 

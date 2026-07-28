@@ -63,21 +63,15 @@ export const STATUS_CONFIG: Record<Status, StatusConfigEntry> = {
     colorVar: 'var(--status-done)',
     bgVar: 'var(--status-done)',
   },
+  // Dropped work. On-hold pink now belongs to the Blocked lane, so cancelled
+  // takes the muted grey its own lane is drawn in.
   CANCELLED: {
     label: 'Cancelled',
     icon: XCircle,
-    colorVar: 'var(--status-on-hold)',
-    bgVar: 'var(--status-on-hold)',
+    colorVar: 'var(--text-muted)',
+    bgVar: 'var(--text-muted)',
   },
 }
-
-// Statuses that collapse to a compact row on the active board.
-export const COLLAPSED_STATUSES = new Set<Status>([
-  'WAITING',
-  'UNDER_REVIEW',
-  'ON_HOLD',
-  'BLOCKED',
-])
 
 export const STATUS_LABELS = Object.fromEntries(
   (Object.entries(STATUS_CONFIG) as [Status, StatusConfigEntry][]).map(
@@ -92,7 +86,7 @@ export const STATUS_COLOR_VARS = Object.fromEntries(
 ) as Record<Status, string>
 
 // Keys into the ChartColors palette (see lib/themes.ts). There is no dedicated
-// cancelled swatch, so cancelled reuses the on-hold color like STATUS_CONFIG.
+// cancelled swatch, so cancelled reuses the muted grey like STATUS_CONFIG.
 export const STATUS_COLOR_KEYS: Record<Status, string> = {
   TODO: 'statusTodo',
   IN_PROGRESS: 'statusInProgress',
@@ -101,5 +95,5 @@ export const STATUS_COLOR_KEYS: Record<Status, string> = {
   ON_HOLD: 'statusOnHold',
   BLOCKED: 'statusBlocked',
   COMPLETED: 'statusDone',
-  CANCELLED: 'statusOnHold',
+  CANCELLED: 'textMuted',
 }

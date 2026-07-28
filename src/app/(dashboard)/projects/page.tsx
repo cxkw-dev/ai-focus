@@ -5,15 +5,26 @@ import Link from 'next/link'
 import { ArrowRight, Search, Tags } from 'lucide-react'
 import { useLabels } from '@/hooks/use-labels'
 import { useTodos } from '@/hooks/use-todos'
-import { BOARD_COLUMNS, boardColumnForStatus } from '@/lib/board-columns'
+import {
+  BOARD_COLUMNS,
+  boardColumnForStatus,
+  createEmptyBoardGroups,
+} from '@/lib/board-columns'
 import type { BoardColumnKey } from '@/lib/board-columns'
 import { LABELS_ROUTE } from '@/lib/labels'
 import { projectHref, searchProjects, sortProjectsByName } from '@/lib/projects'
 
 type ProjectStats = Record<BoardColumnKey, number>
 
+/** Cancelled work is neither open nor progress — the cards never mention it. */
+const SUMMARY_COLUMNS = BOARD_COLUMNS.filter(
+  (column) => column.key !== 'CANCELLED',
+)
+
 function emptyStats(): ProjectStats {
-  return { BACKLOG: 0, IN_PROGRESS: 0, BLOCKED: 0, DONE: 0 }
+  return Object.fromEntries(
+    Object.keys(createEmptyBoardGroups()).map((key) => [key, 0]),
+  ) as ProjectStats
 }
 
 export default function ProjectsPage() {
@@ -31,7 +42,9 @@ export default function ProjectsPage() {
       }
     }
     // Finished cards aren't fetched here — the board ships their tally instead.
-    for (const [projectId, done] of Object.entries(completedCounts.byProject)) {
+    for (const [projectId, done] of Object.entries(
+      completedCounts.COMPLETED.byProject,
+    )) {
       const current = stats.get(projectId) ?? emptyStats()
       current.DONE = done
       stats.set(projectId, current)
@@ -114,7 +127,11 @@ export default function ProjectsPage() {
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {projects.map((project) => {
             const stats = statsByProject.get(project.id) ?? emptyStats()
-            const open = stats.BACKLOG + stats.IN_PROGRESS + stats.BLOCKED
+            const open =
+              stats.BACKLOG +
+              stats.IN_PROGRESS +
+              stats.UNDER_REVIEW +
+              stats.BLOCKED
 
             return (
               <Link
@@ -143,8 +160,8 @@ export default function ProjectsPage() {
                   />
                 </div>
 
-                <div className="flex items-center gap-3">
-                  {BOARD_COLUMNS.map((column) => (
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  {SUMMARY_COLUMNS.map((column) => (
                     <div key={column.key} className="flex items-center gap-1.5">
                       <span
                         className="h-1.5 w-1.5 rounded-full"

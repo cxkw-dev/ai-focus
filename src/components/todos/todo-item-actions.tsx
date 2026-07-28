@@ -1,6 +1,6 @@
 'use client'
 
-import { Edit2, FileText, Minimize2, RotateCcw, Trash2 } from 'lucide-react'
+import { Edit2, FileText, RotateCcw, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CHIP_BASE } from './todo-display'
 import type { ViewMode } from './todo-item'
@@ -13,7 +13,6 @@ interface TodoItemActionsProps {
   onEdit: (todo: Todo) => void
   onRestore?: (id: string) => void
   onOpenNote?: (todoId: string, noteId: string) => void
-  onCollapse?: () => void
 }
 
 export function TodoItemActions({
@@ -23,19 +22,9 @@ export function TodoItemActions({
   onEdit,
   onRestore,
   onOpenNote,
-  onCollapse,
 }: TodoItemActionsProps) {
   return (
     <div className="flex flex-shrink-0 items-center gap-1">
-      {onCollapse && (
-        <button
-          onClick={onCollapse}
-          className={cn(CHIP_BASE, 'todo-action-edit')}
-          title="Collapse"
-        >
-          <Minimize2 className="h-3 w-3" />
-        </button>
-      )}
       {(viewMode === 'active' || viewMode === 'completed') && (
         <>
           {todo.notebookNoteId && (

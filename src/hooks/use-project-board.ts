@@ -4,23 +4,26 @@ import * as React from 'react'
 import {
   BOARD_COLUMNS,
   groupTodosByBoardColumn,
+  terminalStatusForBoardColumn,
   type BoardColumnConfig,
   type BoardColumnKey,
 } from '@/lib/board-columns'
 import { filterTodosByProject } from '@/lib/projects'
-import type { Todo } from '@/types/todo'
+import type { CompletedTodoCounts, Todo } from '@/types/todo'
 
 interface UseProjectBoardParams {
   projectId: string
   todos: Todo[]
-  /** Empty until the Done lane is opened — see useTodos({ withCompleted }). */
+  /** Empty until a finished lane is opened — see useTodos({ withCompleted }). */
   completedTodos: Todo[]
-  completedCount: number
+  completedCounts: CompletedTodoCounts
   deletedTodos: Todo[]
 }
 
 export interface ProjectBoardColumn extends BoardColumnConfig {
   todos: Todo[]
+  /** Authoritative tally — a finished lane's cards may not be fetched yet. */
+  count: number
 }
 
 interface UseProjectBoardResult {
@@ -40,16 +43,17 @@ function byCompletedAtDesc(left: Todo, right: Todo) {
 }
 
 /**
- * Slices the global todo board down to one project and lays it out as the four
+ * Slices the global todo board down to one project and lays it out as the
  * Trello lanes. Finished work is archived server-side and fetched separately,
- * so `doneCount` comes from the board's tally rather than from the cards —
- * the badge has to be right even when the lane is collapsed and unfetched.
+ * so a finished lane's count comes from the board's tally rather than from its
+ * cards — the badge has to be right even when the lane is collapsed and
+ * unfetched.
  */
 export function useProjectBoard({
   projectId,
   todos,
   completedTodos,
-  completedCount,
+  completedCounts,
   deletedTodos,
 }: UseProjectBoardParams): UseProjectBoardResult {
   const groups = React.useMemo(() => {
@@ -60,13 +64,22 @@ export function useProjectBoard({
       ...projectCompleted,
     ])
     next.DONE.sort(byCompletedAtDesc)
+    next.CANCELLED.sort(byCompletedAtDesc)
     return next
   }, [todos, completedTodos, projectId])
 
   const columns = React.useMemo(
     () =>
-      BOARD_COLUMNS.map((column) => ({ ...column, todos: groups[column.key] })),
-    [groups],
+      BOARD_COLUMNS.map((column) => ({
+        ...column,
+        todos: groups[column.key],
+        count: column.terminal
+          ? (completedCounts[terminalStatusForBoardColumn(column)].byProject[
+              projectId
+            ] ?? 0)
+          : groups[column.key].length,
+      })),
+    [groups, completedCounts, projectId],
   )
 
   const projectDeletedTodos = React.useMemo(
@@ -78,8 +91,9 @@ export function useProjectBoard({
     columns,
     groups,
     projectDeletedTodos,
-    activeCount:
-      groups.BACKLOG.length + groups.IN_PROGRESS.length + groups.BLOCKED.length,
-    doneCount: completedCount,
+    activeCount: columns
+      .filter((column) => !column.terminal)
+      .reduce((total, column) => total + column.count, 0),
+    doneCount: completedCounts.COMPLETED.byProject[projectId] ?? 0,
   }
 }

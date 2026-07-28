@@ -1,5 +1,6 @@
 import {
   applyReorderedActiveTodos,
+  createEmptyCompletedCounts,
   createEmptyTodoBoard,
   findTodoInBoard,
   placeTodoInBoard,
@@ -75,7 +76,7 @@ describe('todo-board', () => {
         }),
       ],
       deleted: [],
-      completedCounts: { total: 0, byProject: {} },
+      completedCounts: createEmptyCompletedCounts(),
     }
 
     const updatedTodo = createTodo({
@@ -103,7 +104,10 @@ describe('todo-board', () => {
       {
         active: [todoA, todoB],
         deleted: [deletedTodo],
-        completedCounts: { total: 4, byProject: { 'project-1': 4 } },
+        completedCounts: {
+          COMPLETED: { total: 4, byProject: { 'project-1': 4 } },
+          CANCELLED: { total: 1, byProject: { 'project-1': 1 } },
+        },
       },
       [todoB, todoA],
     )
@@ -111,8 +115,8 @@ describe('todo-board', () => {
     expect(nextBoard.active.map((todo) => todo.id)).toEqual(['b', 'a'])
     expect(findTodoInBoard(nextBoard, 'deleted')).toEqual(deletedTodo)
     expect(nextBoard.completedCounts).toEqual({
-      total: 4,
-      byProject: { 'project-1': 4 },
+      COMPLETED: { total: 4, byProject: { 'project-1': 4 } },
+      CANCELLED: { total: 1, byProject: { 'project-1': 1 } },
     })
   })
 })

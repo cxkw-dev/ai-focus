@@ -1,17 +1,21 @@
-import type { Status, Todo } from '@/types/todo'
+import { TERMINAL_STATUS_VALUES, type Status, type Todo } from '@/types/todo'
 
 /**
- * The project board is a four-lane Trello board. Every todo status folds into
- * exactly one lane so a card is always somewhere, and dropping a card into a
- * lane maps back to a canonical status. Backlog is strictly "not started yet" —
- * anything stalled on someone or something gets its own lane rather than
- * hiding among the work you could actually pick up.
+ * The project board is a Trello board with one lane per stage of work. Every
+ * todo status folds into exactly one lane so a card is always somewhere, and
+ * dropping a card into a lane maps back to a canonical status. Backlog is
+ * strictly "not started yet" — anything stalled on someone or something gets
+ * its own lane rather than hiding among the work you could actually pick up,
+ * and Blocked is the generic label for that: waiting and on-hold both live
+ * there without losing their own status.
  */
 export const BOARD_COLUMN_KEYS = [
   'BACKLOG',
   'IN_PROGRESS',
+  'UNDER_REVIEW',
   'BLOCKED',
   'DONE',
+  'CANCELLED',
 ] as const
 export type BoardColumnKey = (typeof BOARD_COLUMN_KEYS)[number]
 
@@ -23,6 +27,14 @@ export interface BoardColumnConfig {
   statuses: readonly Status[]
   /** Status applied when a card is dropped in from another lane. */
   dropStatus: Status
+  /**
+   * A finished lane. Its cards are archived server-side and only fetched once
+   * the lane is opened, so it renders as a collapsed rail, takes its badge from
+   * the board's tally rather than from its cards, and never reorders in-lane.
+   */
+  terminal?: boolean
+  /** Shown on a collapsed rail mid-drag: what dropping here would do. */
+  dropHint?: string
 }
 
 export const BOARD_COLUMNS: readonly BoardColumnConfig[] = [
@@ -37,8 +49,15 @@ export const BOARD_COLUMNS: readonly BoardColumnConfig[] = [
     key: 'IN_PROGRESS',
     title: 'In Progress',
     color: 'var(--status-in-progress)',
-    statuses: ['IN_PROGRESS', 'UNDER_REVIEW'],
+    statuses: ['IN_PROGRESS'],
     dropStatus: 'IN_PROGRESS',
+  },
+  {
+    key: 'UNDER_REVIEW',
+    title: 'Under Review',
+    color: 'var(--status-under-review)',
+    statuses: ['UNDER_REVIEW'],
+    dropStatus: 'UNDER_REVIEW',
   },
   {
     key: 'BLOCKED',
@@ -51,10 +70,26 @@ export const BOARD_COLUMNS: readonly BoardColumnConfig[] = [
     key: 'DONE',
     title: 'Done',
     color: 'var(--status-done)',
-    statuses: ['COMPLETED', 'CANCELLED'],
+    statuses: ['COMPLETED'],
     dropStatus: 'COMPLETED',
+    terminal: true,
+    dropHint: 'Drop to finish',
+  },
+  {
+    key: 'CANCELLED',
+    // Dropped work, kept out of the way: a rail you have to open on purpose.
+    title: 'Cancelled',
+    color: 'var(--text-muted)',
+    statuses: ['CANCELLED'],
+    dropStatus: 'CANCELLED',
+    terminal: true,
+    dropHint: 'Drop to cancel',
   },
 ]
+
+export const TERMINAL_BOARD_COLUMNS = BOARD_COLUMNS.filter(
+  (column) => column.terminal,
+)
 
 const COLUMN_BY_KEY = new Map<BoardColumnKey, BoardColumnConfig>(
   BOARD_COLUMNS.map((column) => [column.key, column]),
@@ -98,7 +133,9 @@ export function statusForBoardColumn(
 }
 
 export function createEmptyBoardGroups(): Record<BoardColumnKey, Todo[]> {
-  return { BACKLOG: [], IN_PROGRESS: [], BLOCKED: [], DONE: [] }
+  return Object.fromEntries(
+    BOARD_COLUMN_KEYS.map((key) => [key, [] as Todo[]]),
+  ) as Record<BoardColumnKey, Todo[]>
 }
 
 export function groupTodosByBoardColumn(
@@ -109,4 +146,18 @@ export function groupTodosByBoardColumn(
     groups[boardColumnForStatus(todo.status)].push(todo)
   }
   return groups
+}
+
+/**
+ * Every terminal status gets a lane of its own, so a finished lane's badge can
+ * be read straight off the board's tally without re-deriving the mapping.
+ */
+export function terminalStatusForBoardColumn(column: BoardColumnConfig) {
+  const status = TERMINAL_STATUS_VALUES.find((candidate) =>
+    column.statuses.includes(candidate),
+  )
+  if (!status) {
+    throw new Error(`Board column is not terminal: ${column.key}`)
+  }
+  return status
 }

@@ -11,9 +11,7 @@ import { getBillingCodeEntries } from '@/lib/labels'
 import { PrDependencyTree } from './pr-dependency-tree'
 import { TodoDescriptionPreview } from './todo-description-preview'
 import { SessionList } from './session-list'
-import { CollapsedTodoRow } from './collapsed-todo-row'
 import { renderTextWithLinks } from './linkified-text'
-import { COLLAPSED_STATUSES } from './todo-display'
 import { TodoItemActions } from './todo-item-actions'
 import { TodoItemMetaRow } from './todo-item-meta-row'
 import { TodoItemSideTabs } from './todo-item-side-tabs'
@@ -37,24 +35,9 @@ const StatusUpdatesDrawer = dynamic(
   { ssr: false },
 )
 
-const BlockedExpandedContext = React.createContext(false)
 const TODO_CARD_BACKGROUND = 'var(--surface-2)'
 const URGENT_TODO_CARD_BACKGROUND =
   'linear-gradient(135deg, color-mix(in srgb, var(--priority-urgent) 13%, var(--surface-2)) 0%, var(--surface-2) 72%)'
-
-export function BlockedExpandedProvider({
-  expanded,
-  children,
-}: {
-  expanded: boolean
-  children: React.ReactNode
-}) {
-  return (
-    <BlockedExpandedContext.Provider value={expanded}>
-      {children}
-    </BlockedExpandedContext.Provider>
-  )
-}
 
 export type ViewMode = 'active' | 'completed' | 'deleted'
 
@@ -78,7 +61,6 @@ interface TodoItemProps {
   viewMode?: ViewMode
   dropIndicator?: 'above' | 'below' | null
   animateTransitions?: boolean
-  onCollapse?: () => void
   /**
    * Overrides the default "only active cards drag" rule. The project board
    * needs completed cards draggable so they can be pulled back out of Done.
@@ -99,7 +81,6 @@ function TodoItemContent({
   subtaskMentions,
   isDragging,
   viewMode = 'active',
-  onCollapse,
 }: TodoItemProps) {
   const isCompleted = todo.status === 'COMPLETED'
   const isUrgent = todo.priority === 'URGENT' && viewMode === 'active'
@@ -132,7 +113,6 @@ function TodoItemContent({
               onEdit={onEdit}
               onRestore={onRestore}
               onOpenNote={onOpenNote}
-              onCollapse={onCollapse}
             />
           </div>
 
@@ -250,19 +230,6 @@ function TodoItemComponent({
   const dragging = isOverlay || isDragging
   const isCompleted = todo.status === 'COMPLETED'
   const isUrgent = todo.priority === 'URGENT' && viewMode === 'active'
-  const blockedExpanded = React.useContext(BlockedExpandedContext)
-  const isCollapsible =
-    viewMode === 'active' && COLLAPSED_STATUSES.has(todo.status)
-  const [manuallyExpanded, setManuallyExpanded] = React.useState(false)
-
-  // Reset manually-expanded flag when the todo's status moves out of a collapsed state.
-  const [prevStatus, setPrevStatus] = React.useState(todo.status)
-  if (prevStatus !== todo.status) {
-    setPrevStatus(todo.status)
-    if (!COLLAPSED_STATUSES.has(todo.status)) {
-      setManuallyExpanded(false)
-    }
-  }
 
   // Collapse the billing drawer if the todo no longer has billing entries.
   const [prevHasBillingEntries, setPrevHasBillingEntries] =
@@ -281,9 +248,6 @@ function TodoItemComponent({
     />
   )
 
-  const showCollapsed =
-    isCollapsible && !manuallyExpanded && !blockedExpanded && !dragging
-
   const shellClassName = cn(
     'min-w-0 transition-opacity duration-150',
     !dragging && '[contain-intrinsic-size:0_220px] [content-visibility:auto]',
@@ -293,9 +257,10 @@ function TodoItemComponent({
   const cardBody = (
     <>
       {dropIndicator === 'above' && dropLine}
-      {showCollapsed ? (
-        <div className="flex items-center gap-0.5">
-          <div className="flex w-[18px] flex-shrink-0 justify-center">
+      <div className="todo-card-shell flex items-center gap-0.5">
+        {/* Reserve a consistent gutter so the card body stays aligned across filters */}
+        <div className="flex w-[18px] flex-shrink-0 justify-center">
+          {!isDragDisabled && (
             <button
               {...attributes}
               {...listeners}
@@ -306,106 +271,79 @@ function TodoItemComponent({
             >
               <GripVertical className="h-3.5 w-3.5" />
             </button>
-          </div>
-          <div className="min-w-0 flex-1">
-            <CollapsedTodoRow
-              todo={todo}
-              onClick={() => setManuallyExpanded(true)}
-            />
-          </div>
+          )}
         </div>
-      ) : (
-        <div className="todo-card-shell flex items-center gap-0.5">
-          {/* Reserve a consistent gutter so the card body stays aligned across filters */}
-          <div className="flex w-[18px] flex-shrink-0 justify-center">
-            {!isDragDisabled && (
-              <button
-                {...attributes}
-                {...listeners}
-                className={cn(
-                  'todo-drag-handle cursor-grab touch-none self-center rounded p-0.5 transition-colors',
-                  dragging && 'cursor-grabbing',
-                )}
-              >
-                <GripVertical className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
 
-          {/* Card */}
-          <div
-            className={cn(
-              'group todo-card relative min-w-0 flex-1 overflow-visible px-3 py-2.5 transition-all duration-150',
-              isUrgent && 'todo-card-urgent',
-              dragging ? 'rounded-lg' : 'rounded-l-lg',
-              dragging && 'z-50 shadow-lg',
-              (isCompleted || viewMode !== 'active') && 'opacity-50',
-            )}
-            style={{
-              background: isUrgent
-                ? URGENT_TODO_CARD_BACKGROUND
-                : TODO_CARD_BACKGROUND,
-              boxShadow: dragging
-                ? '0 0 0 2px color-mix(in srgb, var(--primary) 30%, transparent)'
-                : undefined,
-            }}
-          >
-            <TodoItemContent
-              todo={todo}
-              onStatusChange={onStatusChange}
-              onPriorityChange={onPriorityChange}
-              onDelete={onDelete}
-              onEdit={onEdit}
-              onRestore={onRestore}
-              onToggleSubtask={onToggleSubtask}
-              onUpdateSubtasks={onUpdateSubtasks}
-              onOpenNote={onOpenNote}
-              people={people}
-              subtaskMentions={subtaskMentions}
-              isDragging={dragging}
-              viewMode={viewMode}
-              onCollapse={
-                manuallyExpanded ? () => setManuallyExpanded(false) : undefined
-              }
+        {/* Card */}
+        <div
+          className={cn(
+            'group todo-card relative min-w-0 flex-1 overflow-visible px-3 py-2.5 transition-all duration-150',
+            isUrgent && 'todo-card-urgent',
+            dragging ? 'rounded-lg' : 'rounded-l-lg',
+            dragging && 'z-50 shadow-lg',
+            (isCompleted || viewMode !== 'active') && 'opacity-50',
+          )}
+          style={{
+            background: isUrgent
+              ? URGENT_TODO_CARD_BACKGROUND
+              : TODO_CARD_BACKGROUND,
+            boxShadow: dragging
+              ? '0 0 0 2px color-mix(in srgb, var(--primary) 30%, transparent)'
+              : undefined,
+          }}
+        >
+          <TodoItemContent
+            todo={todo}
+            onStatusChange={onStatusChange}
+            onPriorityChange={onPriorityChange}
+            onDelete={onDelete}
+            onEdit={onEdit}
+            onRestore={onRestore}
+            onToggleSubtask={onToggleSubtask}
+            onUpdateSubtasks={onUpdateSubtasks}
+            onOpenNote={onOpenNote}
+            people={people}
+            subtaskMentions={subtaskMentions}
+            isDragging={dragging}
+            viewMode={viewMode}
+          />
+          {billingOpen && (
+            <BillingCodesDrawer
+              entries={billingEntries}
+              open={billingOpen}
+              onClose={() => setBillingOpen(false)}
             />
-            {billingOpen && (
-              <BillingCodesDrawer
-                entries={billingEntries}
-                open={billingOpen}
-                onClose={() => setBillingOpen(false)}
-              />
-            )}
-            {contactsOpen && (
-              <ContactsDrawer
-                todoId={todo.id}
-                open={contactsOpen}
-                onClose={() => setContactsOpen(false)}
-                people={people}
-              />
-            )}
-            {timelineOpen && (
-              <StatusUpdatesDrawer
-                todoId={todo.id}
-                open={timelineOpen}
-                onClose={() => setTimelineOpen(false)}
-              />
-            )}
-          </div>
-
-          {/* Side tabs — stacked vertically */}
-          {!dragging && (
-            <TodoItemSideTabs
-              hasBillingEntries={hasBillingEntries}
-              billingOpen={billingOpen}
-              contactsOpen={contactsOpen}
-              timelineOpen={timelineOpen}
-              setBillingOpen={setBillingOpen}
-              setContactsOpen={setContactsOpen}
-              setTimelineOpen={setTimelineOpen}
+          )}
+          {contactsOpen && (
+            <ContactsDrawer
+              todoId={todo.id}
+              open={contactsOpen}
+              onClose={() => setContactsOpen(false)}
+              people={people}
+            />
+          )}
+          {timelineOpen && (
+            <StatusUpdatesDrawer
+              todoId={todo.id}
+              open={timelineOpen}
+              onClose={() => setTimelineOpen(false)}
             />
           )}
         </div>
-      )}
+
+        {/* Side tabs — stacked vertically */}
+        {!dragging && (
+          <TodoItemSideTabs
+            hasBillingEntries={hasBillingEntries}
+            billingOpen={billingOpen}
+            contactsOpen={contactsOpen}
+            timelineOpen={timelineOpen}
+            setBillingOpen={setBillingOpen}
+            setContactsOpen={setContactsOpen}
+            setTimelineOpen={setTimelineOpen}
+          />
+        )}
+      </div>
       {dropIndicator === 'below' && dropLine}
     </>
   )
