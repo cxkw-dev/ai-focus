@@ -608,6 +608,35 @@ h6 {
   box-decoration-break: clone;
 }
 
+/* Pasted links read as what they point at, not as a wall of URL. The full
+   address stays in the href and the tooltip. */
+.link-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.15em;
+  max-width: 100%;
+  padding: 0.08em 0.32em;
+  border-radius: 0.25rem;
+  background-color: color-mix(in srgb, var(--link) 12%, transparent);
+  color: var(--link);
+  font-weight: 500;
+  font-size: 0.95em;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  box-decoration-break: clone;
+}
+
+.link-chip::after {
+  content: '↗';
+  font-size: 0.85em;
+  opacity: 0.55;
+}
+
+.link-chip:hover {
+  background-color: color-mix(in srgb, var(--link) 20%, transparent);
+  text-decoration: none;
+}
+
 /* Compact mention editor for subtask rows */
 .subtask-mention-editor {
   display: block;

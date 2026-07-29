@@ -119,6 +119,52 @@ describe('linkifyHtml + sanitizeHtml', () => {
     const clean = sanitizeHtml(dirty)
     expect(clean).not.toContain('<script')
   })
+
+  it('labels a bare URL with its short form and keeps the full href', () => {
+    const out = linkifyHtml('https://example.com/docs/setup-guide.pdf')
+    expect(out).toContain('href="https://example.com/docs/setup-guide.pdf"')
+    expect(out).toContain('>example.com/setup-guide.pdf<')
+    expect(out).toContain('class="link-chip"')
+    expect(out).toContain('title="https://example.com/docs/setup-guide.pdf"')
+  })
+
+  it('shortens an anchor that shows its own URL', () => {
+    const html =
+      '<a href="https://example.com/docs/plan.docx">https://example.com/docs/plan.docx</a>'
+    const out = linkifyHtml(html)
+    expect((out.match(/<a\s/gi) ?? []).length).toBe(1)
+    expect(out).toContain('href="https://example.com/docs/plan.docx"')
+    expect(out).toContain('>example.com/plan.docx<')
+  })
+
+  it('leaves an anchor with real link text alone', () => {
+    const html = '<a href="https://example.com/docs/plan.docx">the plan</a>'
+    expect(linkifyHtml(html)).toBe(html)
+  })
+
+  it('keeps the destination when the visible URL disagrees with the href', () => {
+    const out = linkifyHtml(
+      '<a href="https://real.example.com/a">https://shown.example.com/b</a>',
+    )
+    expect(out).toContain('href="https://real.example.com/a"')
+    expect(out).toContain('>shown.example.com/b<')
+  })
+
+  it('escapes a URL that tries to break out of the href', () => {
+    const clean = sanitizeHtml(
+      linkifyHtml('https://example.com/"onmouseover="alert(1)'),
+    )
+    // The quote is escaped, so the payload stays data instead of becoming an
+    // attribute of its own.
+    expect(clean).not.toMatch(/\sonmouseover=/i)
+  })
+
+  it('keeps the full address in a tooltip through sanitizing', () => {
+    const clean = sanitizeHtml(
+      linkifyHtml('https://example.com/docs/setup-guide.pdf'),
+    )
+    expect(clean).toContain('title="https://example.com/docs/setup-guide.pdf"')
+  })
 })
 
 describe('mentionifyHtml', () => {

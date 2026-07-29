@@ -12,8 +12,19 @@ import {
   type RecentSubtaskCommit,
 } from '@/lib/subtask-commit'
 import { CustomMention } from '@/lib/tiptap-mention'
+import { handleLinkPaste } from '@/lib/tiptap-link-paste'
+import { linkifyHtml } from '@/lib/rich-text'
 import { createMentionSuggestion } from '@/lib/mention-suggestion'
 import type { MentionSuggestionItem } from '@/components/ui/mention-suggestion'
+
+/**
+ * A subtask row is its own editor, so a URL saved before link chips existed
+ * would stay a wall of text forever. Shorten on the way in — the href is
+ * untouched, and the shortened form only persists if the row is edited.
+ */
+function shortenLinks(value: string): string {
+  return value ? linkifyHtml(value) : ''
+}
 
 interface SubtaskMentionInputProps {
   value: string
@@ -125,7 +136,7 @@ export function SubtaskMentionInput({
           ]
         : []),
     ],
-    content: value || '',
+    content: shortenLinks(value),
     editable: !disabled,
     onUpdate: ({ editor: editorInstance }) => {
       const html = editorInstance.getHTML()
@@ -159,6 +170,7 @@ export function SubtaskMentionInput({
         ),
         ...(ariaLabel ? { 'aria-label': ariaLabel } : {}),
       },
+      handlePaste: handleLinkPaste,
       handleKeyDown: (_view, event) => {
         // Let the mention suggestion dropdown handle keys when it's active
         if (mentionActiveRef.current) {
@@ -188,7 +200,7 @@ export function SubtaskMentionInput({
       isInternalUpdate.current = false
       return
     }
-    editor.commands.setContent(value || '', { emitUpdate: false })
+    editor.commands.setContent(shortenLinks(value), { emitUpdate: false })
   }, [editor, value])
 
   React.useEffect(() => {

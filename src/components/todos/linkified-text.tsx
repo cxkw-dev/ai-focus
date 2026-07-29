@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { prettyLinkLabel } from '@/lib/link-label'
 import { cleanUrlEnd, ensureProtocol } from '@/lib/rich-text'
 
 const URL_SPLIT_REGEX = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi
@@ -12,14 +13,17 @@ export function renderTextWithLinks(text: string) {
       const [cleanUrl, trailing] = cleanUrlEnd(part)
       return (
         <React.Fragment key={index}>
+          {/* The full URL stays in the href and the tooltip — only the text
+              shortens, so nothing is lost by making it readable. */}
           <a
             href={ensureProtocol(cleanUrl)}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary break-all hover:underline"
+            title={cleanUrl}
+            className="link-chip"
             onClick={(e) => e.stopPropagation()}
           >
-            {cleanUrl}
+            {prettyLinkLabel(cleanUrl)}
           </a>
           {trailing}
         </React.Fragment>

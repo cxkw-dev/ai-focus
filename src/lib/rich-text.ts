@@ -1,6 +1,8 @@
 import DOMPurify from 'isomorphic-dompurify'
+import { prettyLinkLabel } from './link-label'
 
 const URL_SPLIT_REGEX = /(https?:\/\/[^\s<]+|www\.[^\s<]+)/gi
+const URL_MATCH_REGEX = /^(https?:\/\/[^\s<]+|www\.[^\s<]+)$/i
 
 // Protocols that are unsafe to expose via href (XSS vectors).
 const UNSAFE_PROTOCOL_REGEX = /^\s*(javascript|data|vbscript|file):/i
@@ -61,6 +63,8 @@ const SANITIZE_CONFIG = {
     'target',
     'rel',
     'class',
+    // A shortened link hides its address, so the tooltip has to survive.
+    'title',
     'style',
     'data-type',
     'data-id',
@@ -118,15 +122,56 @@ export function isHtmlContent(value: string): boolean {
   return value.trim().startsWith('<')
 }
 
+function decodeAmpersands(value: string): string {
+  return value.replace(/&amp;/gi, '&')
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+/**
+ * A link that reads as what it points at rather than how to get there. The
+ * label comes from `url` — the text the reader would have seen — while the
+ * destination stays whatever `href` already was.
+ */
+function linkChip(url: string, href: string = url): string {
+  // Both arrive as HTML source, so `&amp;` has to come back before either is
+  // read as a URL — then escapeHtml puts it back on the way out.
+  const address = decodeAmpersands(url)
+  const safeHref = escapeHtml(ensureProtocol(decodeAmpersands(href)))
+  return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer" class="link-chip" title="${escapeHtml(address)}">${escapeHtml(prettyLinkLabel(address))}</a>`
+}
+
+/**
+ * Existing anchors keep their destination but lose a raw-URL label — that's
+ * the whole point. Anchors with real link text (someone typed it, or a mention
+ * was converted) are left alone.
+ */
+function shortenAnchor(anchor: string): string {
+  const inner = anchor
+    .replace(/^<a\s[^>]*>/i, '')
+    .replace(/<\/a>$/i, '')
+    .trim()
+  if (!URL_MATCH_REGEX.test(inner)) return anchor
+
+  const [cleanUrl] = cleanUrlEnd(inner)
+  const href = anchor.match(/href="([^"]*)"/i)?.[1]
+  return linkChip(cleanUrl, href || cleanUrl)
+}
+
 export function linkifyHtml(html: string): string {
   const parts = html.split(/(<a\s[^>]*>[\s\S]*?<\/a>)/gi)
   return parts
     .map((part) => {
-      if (/^<a\s/i.test(part)) return part
-      return part.replace(/(https?:\/\/[^\s<]+|www\.[^\s<]+)/gi, (match) => {
+      if (/^<a\s/i.test(part)) return shortenAnchor(part)
+      return part.replace(URL_SPLIT_REGEX, (match) => {
         const [cleanUrl, trailing] = cleanUrlEnd(match)
-        const href = ensureProtocol(cleanUrl)
-        return `<a href="${href}" target="_blank" rel="noopener noreferrer">${cleanUrl}</a>${trailing}`
+        return `${linkChip(cleanUrl)}${trailing}`
       })
     })
     .join('')

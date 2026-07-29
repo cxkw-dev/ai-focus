@@ -13,6 +13,7 @@ import Link from '@tiptap/extension-link'
 import { TextStyle } from '@tiptap/extension-text-style'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import { common, createLowlight } from 'lowlight'
+import { handleLinkPaste } from '@/lib/tiptap-link-paste'
 import {
   Bold,
   Italic,
@@ -162,6 +163,7 @@ export function RichTextEditor({
           'overflow-y-auto px-3 py-2',
         ),
       },
+      handlePaste: handleLinkPaste,
     },
   })
 
