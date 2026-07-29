@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { PenLine } from 'lucide-react'
 import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import { useToast } from '@/components/ui/use-toast'
 import type { Note } from '@/types/note'
@@ -129,61 +130,64 @@ function ScratchPadEditor({ initialContent }: { initialContent: string }) {
   }
 
   return (
-    <>
-      <div className="mb-2 flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <div
-            className="h-4 w-1 rounded-full"
-            style={{ backgroundColor: 'var(--status-waiting)' }}
-          />
-          <h2
-            className="text-xs font-medium tracking-wide uppercase"
-            style={{ color: 'var(--status-waiting)' }}
-          >
-            Scratch Pad
-          </h2>
-        </div>
-        <span
-          className="text-[10px] tracking-wide italic transition-colors duration-300"
-          style={{ color: getStatusColor() }}
-        >
-          — {getStatusText().toLowerCase()}
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* Folder-tab affordance — a single, unmistakable "you are here" marker
+          instead of a flat status bar. The status dot lives inside it so
+          save-state never needs its own separate label. */}
+      <div
+        className="ml-3 flex w-fit items-center gap-1.5 rounded-t-md border border-b-0 px-2.5 py-1"
+        style={{
+          borderColor:
+            'color-mix(in srgb, var(--status-waiting) 50%, transparent)',
+          backgroundColor:
+            'color-mix(in srgb, var(--status-waiting) 18%, transparent)',
+          color: 'var(--status-waiting)',
+        }}
+      >
+        <PenLine className="h-3 w-3" />
+        <span className="text-[10px] font-bold tracking-widest uppercase">
+          Scratch Pad
         </span>
+        <span
+          className="h-1.5 w-1.5 rounded-full transition-colors duration-300"
+          style={{ backgroundColor: getStatusColor() }}
+          title={getStatusText()}
+        />
       </div>
-      <div className="relative min-h-0 flex-1">
+      <div
+        className="relative min-h-0 flex-1 overflow-hidden rounded-tr-lg rounded-b-lg border"
+        style={{
+          borderColor:
+            'color-mix(in srgb, var(--status-waiting) 50%, transparent)',
+          backgroundColor: 'var(--surface)',
+        }}
+      >
         <div
-          className="relative h-full overflow-hidden rounded-lg"
+          className="pointer-events-none absolute inset-0 opacity-[0.03]"
           style={{
-            backgroundColor: 'var(--surface)',
+            backgroundImage: `radial-gradient(circle, var(--text-primary) 1px, transparent 1px)`,
+            backgroundSize: '16px 16px',
+            backgroundPosition: '8px 8px',
           }}
-        >
-          <div
-            className="pointer-events-none absolute inset-0 opacity-[0.03]"
-            style={{
-              backgroundImage: `radial-gradient(circle, var(--text-primary) 1px, transparent 1px)`,
-              backgroundSize: '16px 16px',
-              backgroundPosition: '8px 8px',
-            }}
-          />
+        />
 
-          <div
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background: `linear-gradient(180deg, transparent 0%, transparent 85%, var(--surface) 100%)`,
-            }}
-          />
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background: `linear-gradient(180deg, transparent 0%, transparent 85%, var(--surface) 100%)`,
+          }}
+        />
 
-          <div className="relative h-full w-full px-4 py-3">
-            <RichTextEditor
-              value={content}
-              onChange={handleChange}
-              placeholder="Jot down quick notes..."
-              fullHeight
-            />
-          </div>
+        <div className="relative h-full w-full px-4 py-3">
+          <RichTextEditor
+            value={content}
+            onChange={handleChange}
+            placeholder="Jot down quick notes..."
+            fullHeight
+          />
         </div>
       </div>
-    </>
+    </div>
   )
 }
 
@@ -205,13 +209,8 @@ export function ScratchPad({ className = '' }: ScratchPadProps) {
   if (isLoading) {
     return (
       <div className={`flex min-h-0 flex-col ${className}`}>
-        <div className="mb-2 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="bg-muted h-4 w-1 animate-pulse rounded-full" />
-            <div className="bg-muted h-3 w-20 animate-pulse rounded" />
-          </div>
-        </div>
-        <div className="flex-1 animate-pulse rounded-lg bg-[var(--surface)]" />
+        <div className="bg-muted ml-3 h-6 w-28 animate-pulse rounded-t-md" />
+        <div className="bg-muted flex-1 animate-pulse rounded-tr-lg rounded-b-lg" />
       </div>
     )
   }
