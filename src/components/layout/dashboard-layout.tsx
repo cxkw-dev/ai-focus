@@ -36,7 +36,6 @@ function getSidebarCollapsedServerSnapshot(): boolean {
 }
 
 const pageTitles: Record<string, string> = {
-  '/todos': 'Todos',
   '/projects': 'Projects',
   '/labels': 'Labels',
   '/notes': 'Notes',

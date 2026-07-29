@@ -1,8 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import dynamic from 'next/dynamic'
-import { Menu, PenLine } from 'lucide-react'
+import { Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface HeaderProps {
@@ -10,39 +9,6 @@ interface HeaderProps {
   onMenuClick?: () => void
   showMenuButton?: boolean
   actions?: React.ReactNode
-}
-
-const ScratchPadDrawer = dynamic(
-  () =>
-    import('@/components/todos/scratch-pad-drawer').then(
-      (mod) => mod.ScratchPadDrawer,
-    ),
-  { ssr: false },
-)
-
-function ScratchPadButton() {
-  const [open, setOpen] = React.useState(false)
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="flex h-9 w-9 items-center justify-center rounded-md transition-colors"
-        style={{
-          color: open ? 'var(--primary)' : 'var(--text-muted)',
-          backgroundColor: open
-            ? 'color-mix(in srgb, var(--primary) 12%, transparent)'
-            : 'transparent',
-        }}
-        title="Scratch pad"
-        aria-label="Open scratch pad"
-      >
-        <PenLine className="h-4 w-4" />
-      </button>
-      {open && <ScratchPadDrawer open={open} onClose={() => setOpen(false)} />}
-    </>
-  )
 }
 
 export function Header({
@@ -79,10 +45,7 @@ export function Header({
         </h1>
       </div>
 
-      <div className="flex items-center gap-2">
-        {actions}
-        <ScratchPadButton />
-      </div>
+      <div className="flex items-center gap-2">{actions}</div>
     </header>
   )
 }

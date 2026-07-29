@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import * as Popover from '@radix-ui/react-popover'
-import { Plus, Search, Trash2, Calendar, Tag } from 'lucide-react'
+import { Plus, Search, Trash2, Calendar, Tag, PenLine } from 'lucide-react'
 import type { NotebookNote } from '@/types/notebook'
 import { STATUS_LABELS, STATUS_COLOR_VARS as STATUS_COLORS } from '@/lib/status'
 import {
@@ -13,9 +13,11 @@ import {
 interface NotesSidebarProps {
   notes: NotebookNote[]
   selectedId: string | null
+  isScratchPadActive: boolean
   onSelect: (id: string) => void
   onCreate: () => void
   onDelete: (id: string) => void
+  onOpenScratchPad: () => void
   isLoading: boolean
 }
 
@@ -174,9 +176,11 @@ function TodoBadge({ note }: { note: NotebookNote }) {
 export function NotesSidebar({
   notes,
   selectedId,
+  isScratchPadActive,
   onSelect,
   onCreate,
   onDelete,
+  onOpenScratchPad,
   isLoading,
 }: NotesSidebarProps) {
   const [search, setSearch] = React.useState('')
@@ -320,6 +324,31 @@ export function NotesSidebar({
             style={{ color: 'var(--text-primary)' }}
           />
         </div>
+      </div>
+
+      <div className="px-3 pb-2">
+        <button
+          type="button"
+          onClick={onOpenScratchPad}
+          className="flex w-full items-center gap-2 rounded-md border px-2.5 py-2 text-left text-xs transition-colors"
+          style={{
+            borderColor: isScratchPadActive
+              ? 'var(--status-waiting)'
+              : 'var(--border-color)',
+            backgroundColor: isScratchPadActive
+              ? 'color-mix(in srgb, var(--status-waiting) 18%, transparent)'
+              : 'color-mix(in srgb, var(--status-waiting) 8%, transparent)',
+            color: isScratchPadActive
+              ? 'var(--status-waiting)'
+              : 'var(--text-primary)',
+          }}
+        >
+          <PenLine
+            className="h-3.5 w-3.5 shrink-0"
+            style={{ color: 'var(--status-waiting)' }}
+          />
+          <span className="min-w-0 flex-1 truncate">Scratch</span>
+        </button>
       </div>
 
       {/* Notes list */}

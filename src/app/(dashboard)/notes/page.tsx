@@ -4,13 +4,15 @@ import * as React from 'react'
 import { ArrowLeft, FileText } from 'lucide-react'
 import { NotesSidebar } from '@/components/notes/notes-sidebar'
 import { NoteEditor } from '@/components/notes/note-editor'
+import { ScratchPad } from '@/components/todos/scratch-pad'
 import { useNotebook } from '@/hooks/use-notebook'
 
 export default function NotesPage() {
   const { notes, isLoading, create, update, saveContent, remove } =
     useNotebook()
   const [selectedId, setSelectedId] = React.useState<string | null>(null)
-  const [mobileShowEditor, setMobileShowEditor] = React.useState(false)
+  const [showScratchPad, setShowScratchPad] = React.useState(true)
+  const [mobileShowEditor, setMobileShowEditor] = React.useState(true)
 
   const selectedNote = React.useMemo(
     () => notes.find((n) => n.id === selectedId) ?? null,
@@ -20,6 +22,7 @@ export default function NotesPage() {
   const handleCreate = React.useCallback(async () => {
     try {
       const newNote = await create.mutateAsync()
+      setShowScratchPad(false)
       setSelectedId(newNote.id)
       setMobileShowEditor(true)
     } catch {
@@ -28,7 +31,14 @@ export default function NotesPage() {
   }, [create])
 
   const handleSelect = React.useCallback((id: string) => {
+    setShowScratchPad(false)
     setSelectedId(id)
+    setMobileShowEditor(true)
+  }, [])
+
+  const handleOpenScratchPad = React.useCallback(() => {
+    setShowScratchPad(true)
+    setSelectedId(null)
     setMobileShowEditor(true)
   }, [])
 
@@ -57,6 +67,12 @@ export default function NotesPage() {
     setMobileShowEditor(false)
   }, [])
 
+  const scratchPadPanel = (
+    <div className="flex h-full min-h-0 flex-col px-4 py-4">
+      <ScratchPad className="h-full" />
+    </div>
+  )
+
   return (
     <div className="flex h-[calc(100vh-120px)] flex-col">
       {/* Desktop layout */}
@@ -70,13 +86,17 @@ export default function NotesPage() {
         <NotesSidebar
           notes={notes}
           selectedId={selectedId}
+          isScratchPadActive={showScratchPad}
           onSelect={handleSelect}
           onCreate={handleCreate}
           onDelete={handleDelete}
+          onOpenScratchPad={handleOpenScratchPad}
           isLoading={isLoading}
         />
         <div className="h-full min-h-0">
-          {selectedNote ? (
+          {showScratchPad ? (
+            scratchPadPanel
+          ) : selectedNote ? (
             <NoteEditor
               key={selectedNote.id}
               note={selectedNote}
@@ -147,6 +167,28 @@ export default function NotesPage() {
               />
             </div>
           </div>
+        ) : mobileShowEditor && showScratchPad ? (
+          <div
+            className="flex h-full flex-col overflow-hidden rounded-lg border"
+            style={{
+              borderColor: 'var(--border-color)',
+              backgroundColor: 'var(--surface)',
+            }}
+          >
+            <button
+              type="button"
+              onClick={handleBack}
+              className="flex items-center gap-2 border-b px-4 py-2.5 text-xs font-medium"
+              style={{
+                color: 'var(--primary)',
+                borderColor: 'var(--border-color)',
+              }}
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Back to notes
+            </button>
+            <div className="min-h-0 flex-1">{scratchPadPanel}</div>
+          </div>
         ) : (
           <div
             className="h-full overflow-hidden rounded-lg border"
@@ -158,9 +200,11 @@ export default function NotesPage() {
             <NotesSidebar
               notes={notes}
               selectedId={selectedId}
+              isScratchPadActive={showScratchPad}
               onSelect={handleSelect}
               onCreate={handleCreate}
               onDelete={handleDelete}
+              onOpenScratchPad={handleOpenScratchPad}
               isLoading={isLoading}
             />
           </div>

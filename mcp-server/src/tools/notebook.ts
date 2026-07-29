@@ -93,7 +93,7 @@ export function registerNotebookTools(server: McpServer) {
 
   server.tool(
     'get_scratchpad',
-    'Get the scratch pad content. A single persistent note for quick thoughts, visible on the todos page.',
+    'Get the scratch pad content. A single persistent note for quick thoughts, visible in the dedicated scratch pad area on the notes page.',
     {},
     async () => {
       const data = await apiFetch('/api/note')

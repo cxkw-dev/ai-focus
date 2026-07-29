@@ -9,7 +9,7 @@ A personal productivity app with todos, notebook, and year-in-review stats. Buil
 - **Label-based columns** — todos are organized into columns by label
 - **GitHub PR tracking** — link PRs to todos and see merge status
 - **Notebook** — rich text editor (TipTap) with multiple notes and pinning
-- **Scratch pad** — quick persistent note on the todos page
+- **Scratch pad** — quick persistent note in a dedicated area on the notes page
 - **Year-in-review** — stats and charts for completed work
 - **5 themes** — Midnight Peach, Discord, Anthropic, Atom One Dark, Tron Legacy
 - **Real-time sync** — SSE-based updates across tabs
@@ -147,7 +147,7 @@ This project uses Prisma 7 with a TypeScript config file. npm scripts handle the
 ```
 src/
   app/              # Next.js App Router pages and API routes
-    (dashboard)/    # Main pages: todos, notes, review, settings
+    (dashboard)/    # Main pages: notes, projects, labels, review, settings
     api/            # REST API endpoints
   components/       # React components
     todos/          # Todo cards, forms, drawers

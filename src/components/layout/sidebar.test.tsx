@@ -7,7 +7,7 @@ const mockUseVpnStatus = vi.fn()
 const mockRefetchVpn = vi.fn()
 
 vi.mock('next/navigation', () => ({
-  usePathname: () => '/todos',
+  usePathname: () => '/notes',
 }))
 
 vi.mock('next/link', () => ({

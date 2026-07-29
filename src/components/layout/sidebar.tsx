@@ -12,7 +12,6 @@ import {
   RiPriceTag3Line,
   RiSettings4Line,
   RiStickyNoteLine,
-  RiTaskLine,
   RiTimeLine,
 } from 'react-icons/ri'
 import { SidebarProjects } from './sidebar-projects'
@@ -38,10 +37,7 @@ interface SidebarProps {
 const TIMESHEET_URL =
   'https://s4hprd.sap.kyndryl.net/sap/bc/gui/sap/its/webgui#'
 
-const topNavItems = [
-  { title: 'Todos', href: '/todos', icon: RiTaskLine },
-  { title: 'Notes', href: '/notes', icon: RiStickyNoteLine },
-]
+const topNavItems = [{ title: 'Notes', href: '/notes', icon: RiStickyNoteLine }]
 
 const bottomNavItems = [
   { title: 'Review', href: '/review', icon: RiDonutChartLine },
@@ -336,7 +332,7 @@ export function Sidebar({
           className={`flex h-16 items-center overflow-hidden border-b ${collapsed ? 'justify-center px-0' : 'px-4'}`}
           style={{ borderColor: 'var(--border-color)' }}
         >
-          <Link href="/" className="group flex items-center gap-3">
+          <Link href="/" className="group flex items-center">
             <div
               className="shrink-0 overflow-hidden rounded-lg"
               style={{
@@ -354,23 +350,6 @@ export function Sidebar({
                 style={{ imageRendering: 'pixelated' }}
               />
             </div>
-            <AnimatePresence mode="wait">
-              {!collapsed && (
-                <motion.span
-                  key="brand-text"
-                  initial={{ opacity: 0, width: 0 }}
-                  animate={{ opacity: 1, width: 'auto' }}
-                  exit={{ opacity: 0, width: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className="gradient-text overflow-hidden text-xl font-bold whitespace-nowrap uppercase"
-                  style={{
-                    fontFamily: 'var(--font-pixelify), sans-serif',
-                  }}
-                >
-                  Focus
-                </motion.span>
-              )}
-            </AnimatePresence>
           </Link>
         </div>
 
