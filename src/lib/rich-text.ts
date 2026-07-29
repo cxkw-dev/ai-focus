@@ -29,8 +29,9 @@ export function ensureProtocol(url: string): string {
 }
 
 // Allow list mirrors what TipTap (StarterKit + Link + TextStyle + FontSize +
-// CustomMention + CodeBlockLowlight) can produce. Everything else is stripped
-// by DOMPurify before we hand HTML to dangerouslySetInnerHTML.
+// CustomMention + CodeBlockLowlight + TaskList/TaskItem) can produce.
+// Everything else is stripped by DOMPurify before we hand HTML to
+// dangerouslySetInnerHTML.
 const SANITIZE_CONFIG = {
   ALLOWED_TAGS: [
     'p',
@@ -57,6 +58,9 @@ const SANITIZE_CONFIG = {
     'a',
     'span',
     'div',
+    // Task list checkboxes (TaskList/TaskItem render `<li><label><input>...`).
+    'label',
+    'input',
   ],
   ALLOWED_ATTR: [
     'href',
@@ -70,6 +74,10 @@ const SANITIZE_CONFIG = {
     'data-id',
     'data-email',
     'data-label',
+    // Task list checkbox state.
+    'data-checked',
+    'type',
+    'checked',
   ],
   ALLOWED_URI_REGEXP:
     /^(?:(?:https?|mailto|tel):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,

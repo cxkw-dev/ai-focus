@@ -83,6 +83,17 @@ describe('sanitizeHtml', () => {
     expect(clean).toContain('@Alice')
   })
 
+  it('preserves task list checkboxes produced by TipTap', () => {
+    const dirty =
+      '<ul data-type="taskList"><li data-type="taskItem" data-checked="true"><label><input type="checkbox" checked="checked"><span></span></label><div><p>Buy milk</p></div></li></ul>'
+    const clean = sanitizeHtml(dirty)
+    expect(clean).toContain('data-type="taskList"')
+    expect(clean).toContain('data-type="taskItem"')
+    expect(clean).toContain('data-checked="true"')
+    expect(clean).toContain('<input type="checkbox" checked')
+    expect(clean).toContain('Buy milk')
+  })
+
   it('preserves font-size inline styles but strips others', () => {
     const dirty =
       '<span style="font-size: 14px; background: url(javascript:alert(1))">x</span>'

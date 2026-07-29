@@ -12,6 +12,8 @@ import Placeholder from '@tiptap/extension-placeholder'
 import Link from '@tiptap/extension-link'
 import { TextStyle } from '@tiptap/extension-text-style'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
+import TaskList from '@tiptap/extension-task-list'
+import TaskItem from '@tiptap/extension-task-item'
 import { common, createLowlight } from 'lowlight'
 import { handleLinkPaste } from '@/lib/tiptap-link-paste'
 import {
@@ -20,6 +22,7 @@ import {
   Strikethrough,
   List,
   ListOrdered,
+  ListTodo,
   Heading2,
   Link as LinkIcon,
   Code,
@@ -120,6 +123,10 @@ export function RichTextEditor({
           return ReactNodeViewRenderer(CodeBlockView)
         },
       }),
+      TaskList,
+      TaskItem.configure({
+        nested: true,
+      }),
       TextStyle,
       FontSize,
       Link.configure({
@@ -178,6 +185,7 @@ export function RichTextEditor({
           isHeading2: false,
           isBulletList: false,
           isOrderedList: false,
+          isTaskList: false,
           isLink: false,
           isCodeBlock: false,
           canUndo: false,
@@ -194,6 +202,7 @@ export function RichTextEditor({
         isHeading2: editorInstance.isActive('heading', { level: 2 }),
         isBulletList: editorInstance.isActive('bulletList'),
         isOrderedList: editorInstance.isActive('orderedList'),
+        isTaskList: editorInstance.isActive('taskList'),
         isLink: editorInstance.isActive('link'),
         isCodeBlock: editorInstance.isActive('codeBlock'),
         canUndo: editorInstance.can().undo(),
@@ -334,6 +343,14 @@ export function RichTextEditor({
           title="Numbered List"
         >
           <ListOrdered className="h-3.5 w-3.5" />
+        </ToolbarButton>
+        <ToolbarButton
+          onClick={() => editor.chain().focus().toggleTaskList().run()}
+          isActive={editorState?.isTaskList}
+          disabled={disabled}
+          title="Checklist"
+        >
+          <ListTodo className="h-3.5 w-3.5" />
         </ToolbarButton>
 
         <ToolbarButton

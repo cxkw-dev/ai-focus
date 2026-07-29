@@ -560,6 +560,45 @@ h6 {
   margin: 0.1em 0;
 }
 
+/* Checklist (task list) items — checkbox + content sit side by side and lose
+ * the disc/decimal marker that regular lists get above. */
+.tiptap ul[data-type='taskList'] {
+  padding-left: 0;
+  list-style: none;
+}
+
+.tiptap ul[data-type='taskList'] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5em;
+  margin: 0.3em 0;
+}
+
+.tiptap ul[data-type='taskList'] li > label {
+  display: flex;
+  align-items: center;
+  margin-top: 0.25em;
+  user-select: none;
+}
+
+.tiptap ul[data-type='taskList'] li > label input[type='checkbox'] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.tiptap ul[data-type='taskList'] li > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.tiptap ul[data-type='taskList'] li[data-checked='true'] > div > p {
+  color: var(--text-muted);
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
 .tiptap blockquote {
   border-left: 3px solid var(--primary);
   padding-left: 1em;
@@ -709,6 +748,43 @@ h6 {
 
 .rich-text-display li {
   margin: 0;
+}
+
+/* Checklists are read-only here — there's nowhere for a toggle to save to,
+ * so the checkbox reflects state but doesn't respond to clicks. */
+.rich-text-display ul[data-type='taskList'] {
+  padding-left: 0;
+  list-style: none;
+}
+
+.rich-text-display ul[data-type='taskList'] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4em;
+}
+
+.rich-text-display ul[data-type='taskList'] li > label {
+  display: flex;
+  align-items: center;
+  margin-top: 0.15em;
+}
+
+.rich-text-display ul[data-type='taskList'] li > label input[type='checkbox'] {
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+  accent-color: var(--primary);
+}
+
+.rich-text-display ul[data-type='taskList'] li > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.rich-text-display ul[data-type='taskList'] li[data-checked='true'] > div {
+  color: var(--text-muted);
+  text-decoration: line-through;
+  opacity: 0.7;
 }
 
 .rich-text-display s {
