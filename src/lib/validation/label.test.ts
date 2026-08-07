@@ -136,4 +136,36 @@ describe('label validation', () => {
       billingCodes: [],
     })
   })
+
+  it('accepts a label with a repo URL', () => {
+    expect(
+      createLabelSchema.parse({
+        name: 'Amex',
+        repoUrl: 'https://github.com/kyndryl-emu-cio/insights-agent',
+      }),
+    ).toEqual({
+      name: 'Amex',
+      repoUrl: 'https://github.com/kyndryl-emu-cio/insights-agent',
+      billingCodes: undefined,
+    })
+  })
+
+  it('normalizes a blank repo URL to null', () => {
+    expect(
+      updateLabelSchema.parse({
+        repoUrl: '   ',
+      }),
+    ).toEqual({
+      repoUrl: null,
+    })
+  })
+
+  it('rejects a repo URL that is not a valid URL', () => {
+    expect(() =>
+      createLabelSchema.parse({
+        name: 'Amex',
+        repoUrl: 'not-a-url',
+      }),
+    ).toThrow('Repo URL must be a valid URL')
+  })
 })

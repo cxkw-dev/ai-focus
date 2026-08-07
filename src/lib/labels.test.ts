@@ -27,6 +27,7 @@ function createLabel(overrides: Partial<Label> = {}): Label {
     id: overrides.id ?? 'label-1',
     name: overrides.name ?? 'Amex',
     color: overrides.color ?? '#22c55e',
+    repoUrl: overrides.repoUrl ?? null,
     billingCodes: overrides.billingCodes ?? [createBillingCode()],
     archived: overrides.archived ?? false,
     archivedAt: overrides.archivedAt ?? null,

@@ -4,7 +4,7 @@ import * as React from 'react'
 import Link, { useLinkStatus } from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Loader2, Search, X } from 'lucide-react'
-import { RiFolder3Line } from 'react-icons/ri'
+import { RiFolder3Line, RiGithubFill } from 'react-icons/ri'
 import {
   Tooltip,
   TooltipContent,
@@ -178,10 +178,11 @@ export function SidebarProjects({ collapsed, pathname }: SidebarProjectsProps) {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.12 }}
+                  className="relative"
                 >
                   <Link
                     href={href}
-                    className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] transition-colors"
+                    className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 pr-7 text-[13px] transition-colors"
                     style={{
                       backgroundColor: isActive
                         ? `color-mix(in srgb, ${project.color} 14%, transparent)`
@@ -194,6 +195,26 @@ export function SidebarProjects({ collapsed, pathname }: SidebarProjectsProps) {
                   >
                     <ProjectRowContent project={project} isActive={isActive} />
                   </Link>
+                  {project.repoUrl && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <a
+                          href={project.repoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(event) => event.stopPropagation()}
+                          className="absolute top-1/2 right-1.5 flex -translate-y-1/2 items-center justify-center rounded p-1 transition-colors"
+                          style={{ color: 'var(--text-muted)' }}
+                          aria-label={`Open ${project.name} on GitHub`}
+                        >
+                          <RiGithubFill className="h-3.5 w-3.5" />
+                        </a>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="font-medium">
+                        Open on GitHub
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
                 </motion.div>
               )
             })}

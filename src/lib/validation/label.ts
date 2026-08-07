@@ -17,6 +17,7 @@ const billingCodeSchema = z
 const billingDescriptionSchema = z
   .string()
   .max(200, 'Description must be 200 characters or fewer')
+const repoUrlSchema = z.string().url('Repo URL must be a valid URL')
 
 const nullableTrimmedString = (schema: z.ZodString) =>
   z
@@ -70,6 +71,7 @@ export const createLabelSchema = z
   .object({
     name: labelNameSchema,
     color: hexColorSchema.optional(),
+    repoUrl: nullableTrimmedString(repoUrlSchema),
     billingCodes: z.array(billingCodeEntrySchema).optional(),
   })
   .superRefine((value, ctx) => {
@@ -81,6 +83,7 @@ export const updateLabelSchema = z
   .object({
     name: labelNameSchema.optional(),
     color: hexColorSchema.optional(),
+    repoUrl: nullableTrimmedString(repoUrlSchema),
     billingCodes: z.array(billingCodeEntrySchema).optional(),
     // Archive (true) or restore (false) the label. Archiving preserves all
     // historical todo associations; it just hides the label from active lists.

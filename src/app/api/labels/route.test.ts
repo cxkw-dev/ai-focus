@@ -59,6 +59,34 @@ describe('POST /api/labels', () => {
     expect(res.status).toBe(201)
   })
 
+  it('persists the repo URL when creating a label', async () => {
+    const { POST } = await import('./route')
+    dbMock.label.create.mockResolvedValue(
+      makeLabelRow({
+        name: 'Amex',
+        repoUrl: 'https://github.com/kyndryl-emu-cio/insights-agent',
+      }),
+    )
+    const res = await POST(
+      makeRequest({
+        method: 'POST',
+        url: 'http://localhost/api/labels',
+        body: {
+          name: 'Amex',
+          repoUrl: 'https://github.com/kyndryl-emu-cio/insights-agent',
+        },
+      }),
+    )
+    expect(res.status).toBe(201)
+    expect(dbMock.label.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          repoUrl: 'https://github.com/kyndryl-emu-cio/insights-agent',
+        }),
+      }),
+    )
+  })
+
   it('returns 400 for invalid input', async () => {
     const { POST } = await import('./route')
     const res = await POST(
@@ -66,6 +94,18 @@ describe('POST /api/labels', () => {
         method: 'POST',
         url: 'http://localhost/api/labels',
         body: { name: '' },
+      }),
+    )
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 400 for an invalid repo URL', async () => {
+    const { POST } = await import('./route')
+    const res = await POST(
+      makeRequest({
+        method: 'POST',
+        url: 'http://localhost/api/labels',
+        body: { name: 'Amex', repoUrl: 'not-a-url' },
       }),
     )
     expect(res.status).toBe(400)

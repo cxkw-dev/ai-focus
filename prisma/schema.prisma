@@ -65,6 +65,9 @@ model Label {
   id                 String   @id @default(cuid())
   name               String   @unique
   color              String   @default("#22c55e")
+  // Repo to jump to from the sidebar's GitHub button — optional since not
+  // every project (label) tracks work in a single GitHub repo.
+  repoUrl            String?
   billingType        String?
   billingCode        String?
   billingDescription String?

@@ -18,6 +18,7 @@ export type BillingCodeDraft = {
 export type LabelDraft = {
   name: string
   color: string
+  repoUrl: string
   billingCodes: BillingCodeDraft[]
 }
 
@@ -30,6 +31,7 @@ export const EMPTY_BILLING_CODE_DRAFT: BillingCodeDraft = {
 export const EMPTY_LABEL_DRAFT: LabelDraft = {
   name: '',
   color: '#22c55e',
+  repoUrl: '',
   billingCodes: [],
 }
 
@@ -41,6 +43,7 @@ export function createDraftFromLabel(label: TodoLabel): LabelDraft {
   return {
     name: label.name,
     color: label.color,
+    repoUrl: label.repoUrl ?? '',
     billingCodes: label.billingCodes.map((billingCode) => ({
       type: billingCode.type,
       code: billingCode.code,
@@ -112,10 +115,12 @@ export function getBillingDraftError(billingCodes: BillingCodeDraft[]) {
 
 export function buildCreatePayload(draft: LabelDraft): CreateLabelInput {
   const billingCodes = normalizeBillingCodes(draft.billingCodes)
+  const repoUrl = normalizeField(draft.repoUrl)
 
   return {
     name: draft.name.trim(),
     color: draft.color,
+    ...(repoUrl ? { repoUrl } : {}),
     ...(billingCodes.length > 0 ? { billingCodes } : {}),
   }
 }
@@ -133,6 +138,7 @@ export function buildUpdatePayload(
 ): UpdateLabelInput {
   const updates: UpdateLabelInput = {}
   const normalizedName = draft.name.trim()
+  const normalizedRepoUrl = normalizeField(draft.repoUrl)
   const normalizedBillingCodes = normalizeBillingCodes(draft.billingCodes)
   const currentBillingCodes = label.billingCodes.map((billingCode) => ({
     type: billingCode.type,
@@ -147,6 +153,10 @@ export function buildUpdatePayload(
 
   if (draft.color !== label.color) {
     updates.color = draft.color
+  }
+
+  if (normalizedRepoUrl !== label.repoUrl) {
+    updates.repoUrl = normalizedRepoUrl
   }
 
   if (!areBillingCodesEqual(normalizedBillingCodes, currentBillingCodes)) {

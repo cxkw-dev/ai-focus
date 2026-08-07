@@ -35,6 +35,7 @@ export function makeLabelRow(overrides: Record<string, unknown> = {}) {
     id: 'l-1',
     name: 'Focus',
     color: '#ff0000',
+    repoUrl: null,
     createdAt: now,
     updatedAt: now,
     billingCodes: [],

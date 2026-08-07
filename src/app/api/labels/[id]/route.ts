@@ -24,6 +24,7 @@ export async function PATCH(
         data: {
           ...(data.name !== undefined ? { name: data.name } : {}),
           ...(data.color !== undefined ? { color: data.color } : {}),
+          ...(data.repoUrl !== undefined ? { repoUrl: data.repoUrl } : {}),
           ...(data.archived !== undefined
             ? {
                 archived: data.archived,

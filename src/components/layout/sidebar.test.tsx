@@ -75,6 +75,7 @@ vi.mock('@/hooks/use-project-nav', () => ({
         id: 'project-1',
         name: 'KAF',
         color: '#22c55e',
+        repoUrl: 'https://github.com/kyndryl/kaf',
         billingCodes: [],
         archived: false,
         archivedAt: null,
@@ -109,9 +110,20 @@ describe('Sidebar projects', () => {
   it('lists each project as a board link with its open count', () => {
     render(<Sidebar collapsed={false} onCollapse={() => {}} />)
 
-    const projectLink = screen.getByRole('link', { name: /KAF/ })
+    const projectLink = screen.getByRole('link', { name: /^KAF/ })
     expect(projectLink).toHaveAttribute('href', '/projects/project-1')
     expect(projectLink).toHaveTextContent('3')
+  })
+
+  it('shows a GitHub button that links to the project repo', () => {
+    render(<Sidebar collapsed={false} onCollapse={() => {}} />)
+
+    const githubLink = screen.getByRole('link', {
+      name: 'Open KAF on GitHub',
+    })
+    expect(githubLink).toHaveAttribute('href', 'https://github.com/kyndryl/kaf')
+    expect(githubLink).toHaveAttribute('target', '_blank')
+    expect(githubLink).toHaveAttribute('rel', 'noopener noreferrer')
   })
 
   it('links the section header to the projects index', () => {

@@ -18,6 +18,7 @@ function makeProject(id: string, name: string): Label {
     id,
     name,
     color: '#22c55e',
+    repoUrl: null,
     billingCodes: [],
     archived: false,
     archivedAt: null,

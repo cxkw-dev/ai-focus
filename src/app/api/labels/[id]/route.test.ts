@@ -57,6 +57,60 @@ describe('PATCH /api/labels/[id]', () => {
     )
     expect(res.status).toBe(400)
   })
+
+  it('persists the repo URL when updating a label', async () => {
+    const { PATCH } = await import('./route')
+    dbMock.label.update.mockResolvedValue(makeLabelRow({ id: 'l-1' }))
+    dbMock.label.findUniqueOrThrow.mockResolvedValue(
+      makeLabelRow({
+        id: 'l-1',
+        repoUrl:
+          'https://github.com/kyndryl-agentic-ai/kyndryl-mf-data-modernization',
+      }),
+    )
+    const res = await PATCH(
+      makeRequest({
+        method: 'PATCH',
+        url: 'http://localhost/api/labels/l-1',
+        body: {
+          repoUrl:
+            'https://github.com/kyndryl-agentic-ai/kyndryl-mf-data-modernization',
+        },
+      }),
+      makeParams({ id: 'l-1' }),
+    )
+    expect(res.status).toBe(200)
+    expect(dbMock.label.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          repoUrl:
+            'https://github.com/kyndryl-agentic-ai/kyndryl-mf-data-modernization',
+        }),
+      }),
+    )
+  })
+
+  it('clears the repo URL when given a blank string', async () => {
+    const { PATCH } = await import('./route')
+    dbMock.label.update.mockResolvedValue(makeLabelRow({ id: 'l-1' }))
+    dbMock.label.findUniqueOrThrow.mockResolvedValue(
+      makeLabelRow({ id: 'l-1', repoUrl: null }),
+    )
+    const res = await PATCH(
+      makeRequest({
+        method: 'PATCH',
+        url: 'http://localhost/api/labels/l-1',
+        body: { repoUrl: '  ' },
+      }),
+      makeParams({ id: 'l-1' }),
+    )
+    expect(res.status).toBe(200)
+    expect(dbMock.label.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ repoUrl: null }),
+      }),
+    )
+  })
 })
 
 describe('DELETE /api/labels/[id]', () => {

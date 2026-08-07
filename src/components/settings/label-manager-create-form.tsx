@@ -121,6 +121,16 @@ export function LabelManagerCreateForm({
         </div>
       </div>
 
+      <Input
+        value={newDraft.repoUrl}
+        onChange={(e) =>
+          setNewDraft((prev) => ({ ...prev, repoUrl: e.target.value }))
+        }
+        placeholder="GitHub repo URL (optional), e.g. https://github.com/org/repo"
+        disabled={disabled || isSaving}
+        className="text-sm"
+      />
+
       <div className="flex flex-wrap items-center gap-2">
         {presetColors.map((preset) => (
           <button

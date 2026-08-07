@@ -46,6 +46,7 @@ export async function POST(request: Request) {
       data: {
         name: data.name,
         ...(data.color ? { color: data.color } : {}),
+        ...(data.repoUrl !== undefined ? { repoUrl: data.repoUrl } : {}),
         ...(data.billingCodes && data.billingCodes.length > 0
           ? {
               billingCodes: {

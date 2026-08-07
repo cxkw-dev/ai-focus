@@ -153,6 +153,14 @@ export function LabelManagerItem({
         </div>
       </div>
 
+      <Input
+        value={draft.repoUrl}
+        onChange={(e) => updateDraft(label.id, { repoUrl: e.target.value })}
+        disabled={disabled}
+        className="w-full text-sm"
+        placeholder="GitHub repo URL (optional), e.g. https://github.com/org/repo"
+      />
+
       <div className="flex flex-wrap items-center gap-2">
         {presetColors.map((preset) => (
           <button

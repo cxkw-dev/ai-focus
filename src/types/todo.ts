@@ -47,6 +47,8 @@ export interface Label {
   id: string
   name: string
   color: string
+  /** Repo to jump to via the sidebar's GitHub button; null when unset. */
+  repoUrl: string | null
   billingCodes: BillingCode[]
   archived: boolean
   archivedAt: string | null
@@ -57,12 +59,14 @@ export interface Label {
 export interface CreateLabelInput {
   name: string
   color?: string
+  repoUrl?: string | null
   billingCodes?: BillingCodeInput[]
 }
 
 export interface UpdateLabelInput {
   name?: string
   color?: string
+  repoUrl?: string | null
   billingCodes?: BillingCodeInput[]
   archived?: boolean
 }
