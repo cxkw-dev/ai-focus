@@ -23,10 +23,12 @@
     "db:ensure-indexes": "node --env-file=.env scripts/ensure-search-index.js",
     "db:downcase-titles": "node --env-file=.env scripts/downcase-todo-titles.js",
     "db:relax-title-case": "node --env-file=.env scripts/relax-todo-title-case.js",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down",
-    "docker:build": "docker-compose build",
-    "docker:logs": "docker-compose logs -f",
+    "deploy": "npm run docker:build && npm run docker:up",
+    "docker:up": "bash scripts/up.sh",
+    "docker:down": "docker compose down",
+    "docker:build": "docker compose build && npm run docker:clean",
+    "docker:clean": "bash scripts/docker-clean.sh",
+    "docker:logs": "docker compose logs -f",
     "prepare": "husky"
   },
   "dependencies": {

@@ -55,6 +55,8 @@ DATABASE_URL="postgresql://your_user@localhost:5432/aifocus"
 
 The `GITHUB_TOKEN` and `AZURE_DEVOPS` variables are optional — only needed if you want PR/work item status tracking.
 
+**Leave `GITHUB_TOKEN` empty and deploy with `./scripts/up.sh`** (or `npm run docker:up`) — the script sources a token from the logged-in `gh` CLI, which carries your account's full access across every org you belong to. A value in `.env` overrides the `gh` fallback, but beware: fine-grained personal access tokens are scoped to a **single resource owner**, so one PAT can never cover repos from two different orgs, and it returns **404 (not 403)** for anything outside its scope. If tracked repos span multiple orgs, the `gh` token is the only single-token option.
+
 Optional local AI powers the completed-task accomplishment classifier. Ollama is still supported, but on Apple Silicon you can use oMLX instead:
 
 ```env
@@ -87,17 +89,25 @@ Open [http://localhost:4444](http://localhost:4444). Hot reload is enabled — c
 For production-like deployments. PostgreSQL still runs on the host machine.
 
 ```bash
-# Build and start
-docker-compose up -d
-
-# Rebuild after code changes
-docker-compose down && docker-compose build --no-cache && docker-compose up -d
-
-# View logs
-docker-compose logs -f app
+npm run deploy       # rebuild the image + restart + verify (after code changes)
+npm run docker:up    # restart without rebuilding (after .env/token changes)
+npm run docker:down  # stop
+npm run docker:logs  # tail logs
 ```
 
 The container connects to your host PostgreSQL via `host.docker.internal:5432`. To customize, set `DOCKER_DATABASE_URL` in your `.env`.
+
+### GitHub token and deploy verification
+
+**Always deploy with `npm run deploy` or `npm run docker:up` — never plain `docker compose up -d`.** Both routes go through `scripts/up.sh`, which:
+
+1. Resolves the GitHub token (`.env` value if set, otherwise the logged-in `gh` CLI) and verifies it authenticates before touching the container.
+2. Runs `docker compose up -d`.
+3. Waits for the app, then smoke-tests the badge endpoint against `GITHUB_SMOKE_URL` from `.env` — so a deploy with a broken token fails loudly instead of silently shipping dead badges.
+
+Plain `docker compose up -d` skips the token injection and all verification; historically, mixing entry points is exactly why badges worked after some deploys and not others.
+
+All secrets (including `GITHUB_TOKEN`) are **runtime env vars, not baked into the image** — `npm run docker:up` picks up token/env changes without a rebuild; `npm run deploy` rebuilds first and is only needed for code changes.
 
 ## Install as Desktop App
 
