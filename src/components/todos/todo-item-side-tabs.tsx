@@ -1,9 +1,10 @@
 'use client'
 
 import * as React from 'react'
-import { Icon, type IconName } from '@/components/ui/icon'
-import { Tip } from '@/components/ui/tooltip'
+import { IconButton } from '@/components/ui/button'
+import type { IconName } from '@/components/ui/icon'
 import { cn } from '@/lib/utils'
+import { REVEAL_ON_CARD_HOVER } from './todo-display'
 
 interface TodoItemSideTabsProps {
   hasBillingEntries: boolean
@@ -16,8 +17,9 @@ interface TodoItemSideTabsProps {
 }
 
 /**
- * The card's quiet side strip: one tonal tab per drawer (billing codes, contacts, timeline). Opening one closes the
- * others; the open tab takes the deeper wash.
+ * A card's drawer toggles (billing codes, contacts, timeline), as ghost icon buttons in its footer. They wait for the
+ * card's hover or focus like the rest of its chrome; the open one stays visible on the deeper wash. Opening one
+ * closes the others.
  */
 export function TodoItemSideTabs({
   hasBillingEntries,
@@ -35,7 +37,7 @@ export function TodoItemSideTabs({
   }
 
   return (
-    <div className="rounded-r-box bg-wash flex w-6 flex-none flex-col overflow-hidden">
+    <>
       {hasBillingEntries && (
         <SideTab
           icon="tag"
@@ -56,7 +58,7 @@ export function TodoItemSideTabs({
         active={timelineOpen}
         onClick={() => open('timeline')}
       />
-    </div>
+    </>
   )
 }
 
@@ -72,24 +74,21 @@ function SideTab({
   onClick: () => void
 }) {
   return (
-    <Tip label={label} side="right">
-      <button
-        type="button"
-        aria-label={label}
-        aria-pressed={active}
-        onClick={(event) => {
-          event.stopPropagation()
-          onClick()
-        }}
-        className={cn(
-          'flex min-h-5 flex-1 items-center justify-center text-sm transition-colors',
-          active
-            ? 'bg-wash-strong text-text'
-            : 'text-quiet hover:bg-wash hover:text-text',
-        )}
-      >
-        <Icon name={icon} />
-      </button>
-    </Tip>
+    <IconButton
+      icon={icon}
+      label={label}
+      size="sm"
+      aria-pressed={active}
+      onClick={(event) => {
+        event.stopPropagation()
+        onClick()
+      }}
+      className={cn(
+        'p-1',
+        active
+          ? 'bg-wash-strong text-text'
+          : cn('text-quiet hover:text-text', REVEAL_ON_CARD_HOVER),
+      )}
+    />
   )
 }

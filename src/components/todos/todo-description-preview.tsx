@@ -34,7 +34,7 @@ export function TodoDescriptionPreview({
   const collapsed = overflows && !expanded
 
   return (
-    <div className="mt-1">
+    <div>
       <div
         // A collapsed preview fades out through a mask, so it works on any card tone (and its hover).
         className={cn(

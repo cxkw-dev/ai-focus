@@ -212,10 +212,11 @@ export function ProjectBoard({
                 : undefined
             }
             isLoading={column.terminal && isLoadingFinished}
+            projectId={project.id}
             {...cardHandlers}
           >
             {column.key === 'BACKLOG' && (
-              <div className="mb-1.5 flex-none">
+              <div className="flex-none">
                 <InlineTodoForm
                   onSubmit={onCreateTodo}
                   isLoading={isSaving}
@@ -238,6 +239,7 @@ export function ProjectBoard({
             onEdit={() => {}}
             people={cardHandlers.people}
             subtaskMentions={cardHandlers.subtaskMentions}
+            projectId={project.id}
           />
         ) : null}
       </DragOverlay>
@@ -247,6 +249,8 @@ export function ProjectBoard({
 
 interface BoardLaneProps extends TodoCardHandlers {
   column: ProjectBoardColumn
+  /** The board's project, so its cards can leave its label off. */
+  projectId: string
   isOver: boolean
   isDragging: boolean
   collapsed?: boolean
@@ -258,6 +262,7 @@ interface BoardLaneProps extends TodoCardHandlers {
 
 function BoardLane({
   column,
+  projectId,
   isOver,
   isDragging,
   collapsed,
@@ -306,16 +311,18 @@ function BoardLane({
   return (
     <section
       className={cn(
-        'flex min-w-0 flex-col rounded-lg p-2 transition-colors lg:min-h-0 lg:w-0 lg:flex-1',
-        isOver ? 'bg-[var(--dd-card-hover)]' : 'bg-surface-3',
+        'flex min-w-0 flex-col gap-2 rounded-lg p-2 transition-colors lg:min-h-0 lg:w-0 lg:flex-1',
+        'bg-well',
+        isOver &&
+          'bg-[image:linear-gradient(var(--dd-wash-strong),var(--dd-wash-strong))]',
       )}
-      aria-label={column.title}
+      aria-label={laneTitle(column)}
     >
       <LaneHeader column={column}>
         {onCollapse && (
           <IconButton
             icon="chevron-right"
-            label={`Collapse ${column.title}`}
+            label={`Collapse ${laneTitle(column)}`}
             size="sm"
             className="text-quiet hover:text-text ml-auto p-1"
             onClick={onCollapse}
@@ -333,17 +340,13 @@ function BoardLane({
           items={visibleTodos.map((todo) => todo.id)}
           strategy={verticalListSortingStrategy}
         >
-          <div className="flex min-h-20 flex-col gap-1.5">
+          <div className="flex min-h-20 flex-col gap-2">
             {isLoading ? (
               <LoadingLane />
             ) : column.todos.length === 0 ? (
               <EmptyLane
                 icon={laneStatus(column).icon}
-                message={
-                  isDragging
-                    ? 'Drop here'
-                    : `Nothing in ${column.title.toLowerCase()}`
-                }
+                message={isDragging ? 'Drop here' : 'Nothing here'}
               />
             ) : (
               visibleTodos.map((todo) => (
@@ -360,6 +363,7 @@ function BoardLane({
                   onOpenNote={onOpenNote}
                   people={people}
                   subtaskMentions={subtaskMentions}
+                  projectId={projectId}
                   viewMode={viewMode}
                   dragDisabled={false}
                   animateTransitions={false}
@@ -373,7 +377,7 @@ function BoardLane({
           <button
             type="button"
             onClick={() => setShowAll((prev) => !prev)}
-            className="dd-btn dd-btn--ghost dd-btn--sm text-muted mt-1.5 w-full"
+            className="dd-btn dd-btn--ghost dd-btn--sm text-muted mt-2 w-full"
           >
             {showAll ? (
               `Show recent ${FINISHED_PREVIEW_COUNT}`
@@ -397,6 +401,11 @@ function laneStatus(column: ProjectBoardColumn) {
   return STATUS_CONFIG[column.dropStatus]
 }
 
+/** Lane titles are panel titles, so sentence case ("In progress"). */
+function laneTitle(column: ProjectBoardColumn) {
+  return column.title.charAt(0) + column.title.slice(1).toLowerCase()
+}
+
 function LaneHeader({
   column,
   children,
@@ -406,13 +415,13 @@ function LaneHeader({
 }) {
   const status = laneStatus(column)
   return (
-    <div className="mb-1.5 flex min-h-7 flex-none items-center gap-1.5 pl-1">
+    <div className="flex min-h-7 flex-none items-center gap-2 pl-1">
       <Icon
         name={status.icon}
-        className="text-sm"
+        className="flex-none text-sm"
         style={{ color: status.colorVar }}
       />
-      <h2 className="text-text text-sm font-semibold">{column.title}</h2>
+      <h2 className="dd-h5 text-text">{laneTitle(column)}</h2>
       <span className="dd-badge dd-badge--count">{column.count}</span>
       {children}
     </div>
@@ -438,30 +447,36 @@ function CollapsedLane({
   onExpand?: () => void
 }) {
   const status = laneStatus(column)
+  const title = laneTitle(column)
   return (
     <section
       ref={ref}
       className={cn(
         'flex flex-none rounded-lg transition-colors lg:w-11',
-        isOver ? 'bg-[var(--dd-card-hover)]' : 'bg-surface-3',
+        // Quiet at rest: a rail is a way in, not a lane. Mid-drag it shows as a target, and fills under the card.
+        isOver
+          ? 'bg-[var(--dd-card-hover)]'
+          : isDragging
+            ? 'bg-wash'
+            : 'bg-transparent',
       )}
-      aria-label={column.title}
+      aria-label={title}
     >
       <button
         type="button"
         onClick={onExpand}
-        className="flex flex-1 items-center justify-center gap-2 rounded-lg px-2 py-2 text-xs transition-colors hover:bg-[var(--dd-card-hover)] lg:flex-col lg:py-3"
-        aria-label={`Expand ${column.title} (${column.count})`}
-        title={`Show ${column.count} ${column.title.toLowerCase()}`}
+        className="hover:bg-wash flex flex-1 items-center justify-center gap-2 rounded-lg px-2 py-2 text-xs transition-colors lg:flex-col lg:justify-start lg:pt-3"
+        aria-label={`Expand ${title} (${column.count})`}
+        title={`Show ${column.count} ${title.toLowerCase()}`}
       >
         <Icon name="chevron-left" className="text-quiet hidden lg:block" />
         <Icon name={status.icon} style={{ color: status.colorVar }} />
         <span className="text-text font-semibold lg:[writing-mode:vertical-rl]">
-          {column.title}
+          {title}
         </span>
         <span className="dd-badge dd-badge--count">{column.count}</span>
         {isDragging && column.dropHint && (
-          <span className="text-quiet lg:[writing-mode:vertical-rl]">
+          <span className="text-muted lg:[writing-mode:vertical-rl]">
             {column.dropHint}
           </span>
         )}
@@ -485,13 +500,12 @@ function LoadingLane() {
   )
 }
 
+/** An empty lane is just a quiet line; the lane itself is the drop target. */
 function EmptyLane({ icon, message }: { icon: IconName; message: string }) {
   return (
-    <div className="dd-empty-state dd-empty-state--compact rounded-box bg-wash w-full max-w-none">
-      <div className="dd-empty-state__icon">
-        <Icon name={icon} />
-      </div>
-      <p className="dd-empty-state__text text-xs">{message}</p>
-    </div>
+    <p className="text-muted flex items-center gap-1.5 px-1 py-1.5 text-xs">
+      <Icon name={icon} className="text-quiet flex-none" />
+      {message}
+    </p>
   )
 }

@@ -141,7 +141,8 @@ function ScratchPadEditor({ initialContent }: { initialContent: string }) {
           {saveState.text}
         </span>
       </div>
-      <div className="rounded-box bg-surface-2 min-h-0 flex-1 overflow-hidden px-4 py-3">
+      {/* Sits straight on its pane (the notes panel or a drawer): no inner box. */}
+      <div className="min-h-0 flex-1 overflow-hidden px-1">
         <RichTextEditor
           value={content}
           onChange={handleChange}

@@ -16,6 +16,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
+import { IconButton } from '@/components/ui/button'
 import { Icon } from '@/components/ui/icon'
 import { SubtaskMentionInput } from '@/components/ui/subtask-mention-input'
 import { cn } from '@/lib/utils'
@@ -37,6 +38,7 @@ import {
   inlineSubtaskDndId,
   SortableInlineSubtaskRow,
 } from './sortable-inline-subtask-row'
+import { REVEAL_ON_CARD_HOVER } from './todo-display'
 import type { Subtask, SubtaskInput } from '@/types/todo'
 import type { Person } from '@/types/person'
 
@@ -62,6 +64,12 @@ interface TodoInlineSubtasksProps {
   todoId: string
   sourceSubtasks?: Subtask[]
   canInlineEdit: boolean
+  /**
+   * Whether the new-subtask field is open. The card owns it, because the button that opens it lives in the card's
+   * footer (see AddSubtaskButton); committing or clearing the field closes it again.
+   */
+  adding: boolean
+  onAddingChange: (adding: boolean) => void
   mentions: Array<Pick<Person, 'id' | 'name' | 'email'>>
   onToggleSubtask?: (
     todoId: string,
@@ -75,6 +83,8 @@ export function TodoInlineSubtasks({
   todoId,
   sourceSubtasks,
   canInlineEdit,
+  adding: isAddingSubtask,
+  onAddingChange: setIsAddingSubtask,
   mentions,
   onToggleSubtask,
   onUpdateSubtasks,
@@ -83,7 +93,6 @@ export function TodoInlineSubtasks({
   const [subtasks, setSubtasks] = React.useState<Subtask[]>(
     normalizedSourceSubtasks,
   )
-  const [isAddingSubtask, setIsAddingSubtask] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
   const lastAddedSubtaskRef = React.useRef<RecentSubtaskCommit | null>(null)
   const sensors = useSensors(
@@ -254,54 +263,52 @@ export function TodoInlineSubtasks({
 
     setNewSubtaskTitle('')
     setIsAddingSubtask(false)
-  }, [newSubtaskTitle, persistSubtasks])
+  }, [newSubtaskTitle, persistSubtasks, setIsAddingSubtask])
 
   const completedCount = subtasks.filter((s) => s.completed).length
   const allDone = subtasks.length > 0 && completedCount === subtasks.length
   const hasSubtasks = subtasks.length > 0
   const canAddSubtasks = canInlineEdit && !!onUpdateSubtasks
-  const shouldShow = hasSubtasks || canAddSubtasks || isAddingSubtask
+  const showAddField = canAddSubtasks && isAddingSubtask
+  const addFieldRef = React.useRef<HTMLDivElement>(null)
 
-  if (!shouldShow) {
+  // The field opens from a button in the card's footer, so take focus to it. The mention editor mounts a beat after
+  // its wrapper (TipTap renders client-side), hence the observer.
+  React.useEffect(() => {
+    const field = addFieldRef.current
+    if (!showAddField || !field) return
+    const focusEditor = () => {
+      const editable = field.querySelector<HTMLElement>(
+        '[contenteditable="true"]',
+      )
+      editable?.focus()
+      return Boolean(editable)
+    }
+    if (focusEditor()) return
+    const observer = new MutationObserver(() => {
+      if (focusEditor()) observer.disconnect()
+    })
+    observer.observe(field, { childList: true, subtree: true })
+    return () => observer.disconnect()
+  }, [showAddField])
+
+  if (!hasSubtasks && !showAddField) {
     return null
-  }
-
-  if (!hasSubtasks && !isAddingSubtask) {
-    return canAddSubtasks ? (
-      <button
-        type="button"
-        onClick={() => setIsAddingSubtask(true)}
-        className={cn(ADD_BUTTON_CLASS, 'self-start')}
-      >
-        <Icon name="plus" />
-        <span>Add subtask</span>
-      </button>
-    ) : null
   }
 
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-1.5">
-        <span className="text-quiet text-xs font-medium">Subtasks</span>
+        <span className="text-muted text-xs font-medium">Subtasks</span>
         {hasSubtasks && (
           <span
             className={cn(
               'font-mono text-xs tabular-nums',
-              allDone ? 'text-ok' : 'text-quiet',
+              allDone ? 'text-ok' : 'text-muted',
             )}
           >
             {completedCount}/{subtasks.length}
           </span>
-        )}
-        {canAddSubtasks && !isAddingSubtask && (
-          <button
-            type="button"
-            onClick={() => setIsAddingSubtask(true)}
-            className={cn(ADD_BUTTON_CLASS, 'ml-auto')}
-          >
-            <Icon name="plus" />
-            <span>Add</span>
-          </button>
         )}
       </div>
       {hasSubtasks &&
@@ -341,8 +348,11 @@ export function TodoInlineSubtasks({
             ))}
           </div>
         ))}
-      {canAddSubtasks && isAddingSubtask && (
-        <div className="rounded-ctl bg-wash flex items-center gap-1.5 px-1.5 py-1 text-xs">
+      {showAddField && (
+        <div
+          ref={addFieldRef}
+          className="rounded-ctl bg-wash flex items-center gap-1.5 px-1.5 py-1 text-xs"
+        >
           <Icon name="plus" className="text-quiet" />
           <SubtaskMentionInput
             value={newSubtaskTitle}
@@ -360,9 +370,33 @@ export function TodoInlineSubtasks({
   )
 }
 
-/** A quiet inline text button for "Add subtask" (a ghost dd-btn, tightened for the card). */
-const ADD_BUTTON_CLASS =
-  'dd-btn dd-btn--ghost dd-btn--sm gap-1 px-1.5 py-0.5 font-medium text-quiet hover:text-text'
+/**
+ * The card footer's "Add subtask": a ghost icon toggle beside the drawer toggles. It waits for the card's hover or
+ * focus like the rest of the card's chrome, and stays lit while the new-subtask field it opens is showing.
+ */
+export function AddSubtaskButton({
+  active,
+  onClick,
+}: {
+  active: boolean
+  onClick: () => void
+}) {
+  return (
+    <IconButton
+      icon="plus"
+      label="Add subtask"
+      size="sm"
+      aria-pressed={active}
+      onClick={onClick}
+      className={cn(
+        'p-1',
+        active
+          ? 'bg-wash-strong text-text'
+          : cn('text-quiet hover:text-text', REVEAL_ON_CARD_HOVER),
+      )}
+    />
+  )
+}
 
 function ReadOnlyInlineSubtask({ subtask }: { subtask: Subtask }) {
   return (

@@ -15,7 +15,7 @@ import { renderTextWithLinks } from './linkified-text'
 import { TodoItemActions } from './todo-item-actions'
 import { TodoItemMetaRow } from './todo-item-meta-row'
 import { TodoItemSideTabs } from './todo-item-side-tabs'
-import { TodoInlineSubtasks } from './todo-inline-subtasks'
+import { AddSubtaskButton, TodoInlineSubtasks } from './todo-inline-subtasks'
 import type { Todo, Status, Priority, SubtaskInput } from '@/types/todo'
 import type { Person } from '@/types/person'
 
@@ -53,6 +53,11 @@ interface TodoItemProps {
   onOpenNote?: (todoId: string, noteId: string) => void
   people: Person[]
   subtaskMentions: Array<Pick<Person, 'id' | 'name' | 'email'>>
+  /**
+   * The project whose board the card is on. Its label goes without saying there, so the card leaves it off; without
+   * one every label shows.
+   */
+  projectId?: string
   isDragging?: boolean
   viewMode?: ViewMode
   dropIndicator?: 'above' | 'below' | null
@@ -64,6 +69,15 @@ interface TodoItemProps {
   dragDisabled?: boolean
 }
 
+interface TodoItemContentProps extends TodoItemProps {
+  /** The card's drawer toggles, shown with its actions in the footer (left out of the drag overlay). */
+  drawerToggles?: React.ReactNode
+}
+
+/**
+ * A card's body, title first: title and due date, description, integrations, subtasks and sessions, then a quiet
+ * footer with what's left to say (chips) and the card's chrome, which waits for hover or focus.
+ */
 function TodoItemContent({
   todo,
   onStatusChange,
@@ -75,11 +89,15 @@ function TodoItemContent({
   onUpdateSubtasks,
   onOpenNote,
   subtaskMentions,
+  projectId,
   isDragging,
   viewMode = 'active',
-}: TodoItemProps) {
+  drawerToggles,
+}: TodoItemContentProps) {
+  const [addingSubtask, setAddingSubtask] = React.useState(false)
   const isCompleted = todo.status === 'COMPLETED'
   const canInlineEditSubtasks = viewMode === 'active' && !isDragging
+  const canAddSubtask = canInlineEditSubtasks && !!onUpdateSubtasks
   const overdue =
     viewMode === 'active' && !!todo.dueDate && isPastDue(todo.dueDate)
   const hasIntegrations =
@@ -91,25 +109,8 @@ function TodoItemContent({
     (todo.githubIssueUrls ?? []).length > 0
 
   return (
-    <div className="flex w-full min-w-0 flex-col gap-2">
-      <TodoItemMetaRow
-        todo={todo}
-        viewMode={viewMode}
-        onStatusChange={onStatusChange}
-        onPriorityChange={onPriorityChange}
-        actions={
-          <TodoItemActions
-            todo={todo}
-            viewMode={viewMode}
-            onDelete={onDelete}
-            onEdit={onEdit}
-            onRestore={onRestore}
-            onOpenNote={onOpenNote}
-          />
-        }
-      />
-
-      <div className="min-w-0">
+    <div className="flex w-full min-w-0 flex-col gap-3">
+      <div className="flex min-w-0 flex-col gap-1">
         <div className="flex items-baseline gap-2">
           <h3
             className={cn(
@@ -153,6 +154,8 @@ function TodoItemContent({
         todoId={todo.id}
         sourceSubtasks={todo.subtasks}
         canInlineEdit={canInlineEditSubtasks}
+        adding={addingSubtask}
+        onAddingChange={setAddingSubtask}
         mentions={subtaskMentions}
         onToggleSubtask={onToggleSubtask}
         onUpdateSubtasks={onUpdateSubtasks}
@@ -161,6 +164,33 @@ function TodoItemContent({
       {todo.sessions && todo.sessions.length > 0 && (
         <SessionList sessions={todo.sessions} />
       )}
+
+      <TodoItemMetaRow
+        todo={todo}
+        viewMode={viewMode}
+        projectId={projectId}
+        actions={
+          <>
+            {canAddSubtask && (
+              <AddSubtaskButton
+                active={addingSubtask}
+                onClick={() => setAddingSubtask((adding) => !adding)}
+              />
+            )}
+            {drawerToggles}
+            <TodoItemActions
+              todo={todo}
+              viewMode={viewMode}
+              onStatusChange={onStatusChange}
+              onPriorityChange={onPriorityChange}
+              onDelete={onDelete}
+              onEdit={onEdit}
+              onRestore={onRestore}
+              onOpenNote={onOpenNote}
+            />
+          </>
+        }
+      />
     </div>
   )
 }
@@ -177,6 +207,7 @@ function TodoItemComponent({
   onOpenNote,
   people,
   subtaskMentions,
+  projectId,
   isDragging: isOverlay,
   viewMode = 'active',
   dropIndicator,
@@ -228,7 +259,7 @@ function TodoItemComponent({
       {dropIndicator === 'above' && dropLine}
       <article
         className={cn(
-          'group rounded-box bg-surface hover:bg-bg relative flex min-w-0 transition-colors',
+          'group rounded-box bg-well-card relative flex min-w-0 transition-colors hover:bg-[image:linear-gradient(var(--dd-wash),var(--dd-wash))]',
           isUrgent && 'app-urgent-rail',
           (isCompleted || viewMode !== 'active') && 'opacity-60',
         )}
@@ -249,7 +280,7 @@ function TodoItemComponent({
             <GripVertical className="size-[1.15em]" aria-hidden />
           </button>
         )}
-        <div className="min-w-0 flex-1 py-2 pr-2.5 pl-3.5">
+        <div className="min-w-0 flex-1 py-3 pr-3 pl-3.5">
           <TodoItemContent
             todo={todo}
             onStatusChange={onStatusChange}
@@ -262,22 +293,24 @@ function TodoItemComponent({
             onOpenNote={onOpenNote}
             people={people}
             subtaskMentions={subtaskMentions}
+            projectId={projectId}
             isDragging={dragging}
             viewMode={viewMode}
+            drawerToggles={
+              !dragging && (
+                <TodoItemSideTabs
+                  hasBillingEntries={hasBillingEntries}
+                  billingOpen={billingOpen}
+                  contactsOpen={contactsOpen}
+                  timelineOpen={timelineOpen}
+                  setBillingOpen={setBillingOpen}
+                  setContactsOpen={setContactsOpen}
+                  setTimelineOpen={setTimelineOpen}
+                />
+              )
+            }
           />
         </div>
-
-        {!dragging && (
-          <TodoItemSideTabs
-            hasBillingEntries={hasBillingEntries}
-            billingOpen={billingOpen}
-            contactsOpen={contactsOpen}
-            timelineOpen={timelineOpen}
-            setBillingOpen={setBillingOpen}
-            setContactsOpen={setContactsOpen}
-            setTimelineOpen={setTimelineOpen}
-          />
-        )}
 
         {billingOpen && (
           <BillingCodesDrawer
@@ -339,6 +372,7 @@ export function TodoItemOverlay({
   onEdit,
   people,
   subtaskMentions,
+  projectId,
 }: Omit<TodoItemProps, 'isDragging' | 'viewMode' | 'dropIndicator'>) {
   const isCompleted = todo.status === 'COMPLETED'
   const isUrgent = todo.priority === 'URGENT'
@@ -346,7 +380,7 @@ export function TodoItemOverlay({
   return (
     <article
       className={cn(
-        'rounded-box bg-surface shadow-float relative min-w-0 cursor-grabbing py-2 pr-2.5 pl-3.5',
+        'rounded-box bg-well-card shadow-float relative min-w-0 cursor-grabbing py-3 pr-3 pl-3.5',
         isUrgent && 'app-urgent-rail',
         isCompleted && 'opacity-60',
       )}
@@ -359,6 +393,7 @@ export function TodoItemOverlay({
         onEdit={onEdit}
         people={people}
         subtaskMentions={subtaskMentions}
+        projectId={projectId}
         isDragging={true}
       />
     </article>

@@ -12,9 +12,13 @@ export function inlineSubtaskDndId(subtaskId: string) {
   return `subtask-${subtaskId}`
 }
 
+/** A row's grip and delete wait for the row itself (not the whole card), so a long list stays calm. */
+const REVEAL_ON_ROW_HOVER =
+  'opacity-0 transition-opacity group-hover/subtask:opacity-100 group-focus-within/subtask:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100'
+
 /**
  * One editable subtask on a card: drag handle, checkbox, inline mention editor and delete. The row takes a wash on
- * hover and a deeper one while its editor has focus.
+ * hover and while its editor has focus (a deeper one while dragged); the handle and delete show with it.
  */
 export function SortableInlineSubtaskRow({
   subtask,
@@ -60,8 +64,9 @@ export function SortableInlineSubtaskRow({
         {...attributes}
         {...listeners}
         className={cn(
-          'text-quiet hover:text-text flex flex-none touch-none items-center self-stretch transition-colors',
-          isDragging ? 'cursor-grabbing' : 'cursor-grab',
+          'text-quiet hover:text-text flex flex-none touch-none items-center self-stretch',
+          REVEAL_ON_ROW_HOVER,
+          isDragging ? 'cursor-grabbing opacity-100' : 'cursor-grab',
         )}
         aria-label="Reorder subtask"
       >
@@ -93,7 +98,10 @@ export function SortableInlineSubtaskRow({
       <button
         type="button"
         onClick={onDelete}
-        className="rounded-ctl text-quiet hover:text-bad flex flex-none items-center self-stretch px-0.5 opacity-60 transition group-hover/subtask:opacity-100 focus-visible:opacity-100"
+        className={cn(
+          'rounded-ctl text-quiet hover:text-bad flex flex-none items-center self-stretch px-0.5',
+          REVEAL_ON_ROW_HOVER,
+        )}
         aria-label="Delete subtask"
         title="Delete subtask"
       >

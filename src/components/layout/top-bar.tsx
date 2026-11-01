@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { setTheme } from 'dawn-and-dusk/react'
 import { Icon } from '@/components/ui/icon'
 import { Tip } from '@/components/ui/tooltip'
+import { cn } from '@/lib/utils'
 
 export interface Crumb {
   label: string
@@ -68,7 +69,15 @@ export function TopBar({
             </span>
           </React.Fragment>
         ))}
-        <h1 className="font-display tracking-heading m-0 min-w-0 truncate text-lg leading-tight font-extrabold lowercase">
+        {/* A nested page (a project board) carries its own lockup title, so the bar keeps a quiet breadcrumb. */}
+        <h1
+          className={cn(
+            'm-0 min-w-0 truncate',
+            trail.length > 0
+              ? 'text-text text-sm font-semibold'
+              : 'font-display tracking-heading text-lg leading-tight font-extrabold lowercase',
+          )}
+        >
           {page.label}
         </h1>
       </div>
