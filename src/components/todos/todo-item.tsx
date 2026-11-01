@@ -228,7 +228,7 @@ function TodoItemComponent({
       {dropIndicator === 'above' && dropLine}
       <article
         className={cn(
-          'group rounded-box bg-surface-2 hover:bg-surface-3 relative flex min-w-0 transition-colors',
+          'group rounded-box bg-surface hover:bg-bg relative flex min-w-0 transition-colors',
           isUrgent && 'app-urgent-rail',
           (isCompleted || viewMode !== 'active') && 'opacity-60',
         )}
@@ -346,7 +346,7 @@ export function TodoItemOverlay({
   return (
     <article
       className={cn(
-        'rounded-box bg-surface-3 shadow-float relative min-w-0 cursor-grabbing py-2 pr-2.5 pl-3.5',
+        'rounded-box bg-surface shadow-float relative min-w-0 cursor-grabbing py-2 pr-2.5 pl-3.5',
         isUrgent && 'app-urgent-rail',
         isCompleted && 'opacity-60',
       )}

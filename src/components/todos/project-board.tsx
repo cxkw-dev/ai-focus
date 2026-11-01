@@ -307,7 +307,7 @@ function BoardLane({
     <section
       className={cn(
         'flex min-w-0 flex-col rounded-lg p-2 transition-colors lg:min-h-0 lg:w-0 lg:flex-1',
-        isOver ? 'bg-[var(--dd-card-hover)]' : 'bg-surface',
+        isOver ? 'bg-[var(--dd-card-hover)]' : 'bg-surface-3',
       )}
       aria-label={column.title}
     >
@@ -443,7 +443,7 @@ function CollapsedLane({
       ref={ref}
       className={cn(
         'flex flex-none rounded-lg transition-colors lg:w-11',
-        isOver ? 'bg-[var(--dd-card-hover)]' : 'bg-surface',
+        isOver ? 'bg-[var(--dd-card-hover)]' : 'bg-surface-3',
       )}
       aria-label={column.title}
     >

@@ -35,7 +35,7 @@ export function TodoItemSideTabs({
   }
 
   return (
-    <div className="rounded-r-box bg-surface-2 flex w-6 flex-none flex-col overflow-hidden">
+    <div className="rounded-r-box bg-wash flex w-6 flex-none flex-col overflow-hidden">
       {hasBillingEntries && (
         <SideTab
           icon="tag"

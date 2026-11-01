@@ -275,7 +275,7 @@ export default function ProjectPage() {
                 </p>
               </div>
             ) : (
-              <div className="bg-surface flex max-w-3xl flex-col gap-1.5 rounded-lg p-2">
+              <div className="bg-surface-3 flex max-w-3xl flex-col gap-1.5 rounded-lg p-2">
                 {projectDeletedTodos.map((todo) => (
                   <TodoItem
                     key={todo.id}
