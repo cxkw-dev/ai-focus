@@ -4,7 +4,6 @@ import * as React from 'react'
 import { IconButton } from '@/components/ui/button'
 import type { IconName } from '@/components/ui/icon'
 import { cn } from '@/lib/utils'
-import { REVEAL_ON_CARD_HOVER } from './todo-display'
 
 interface TodoItemSideTabsProps {
   hasBillingEntries: boolean
@@ -85,9 +84,7 @@ function SideTab({
       }}
       className={cn(
         'p-1',
-        active
-          ? 'bg-wash-strong text-text'
-          : cn('text-quiet hover:text-text', REVEAL_ON_CARD_HOVER),
+        active ? 'bg-wash-strong text-text' : 'text-quiet hover:text-text',
       )}
     />
   )

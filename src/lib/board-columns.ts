@@ -20,9 +20,17 @@ export const BOARD_COLUMN_KEYS = [
 ] as const
 export type BoardColumnKey = (typeof BOARD_COLUMN_KEYS)[number]
 
+/**
+ * A lane's state, drawn with dawn & dusk's status dot (`dd-status-dot--<tone>`): not started is hollow, moving is
+ * info, stuck is error, finished is online, dropped is offline.
+ */
+export type BoardLaneTone = 'unknown' | 'info' | 'error' | 'online' | 'offline'
+
 export interface BoardColumnConfig {
   key: BoardColumnKey
+  /** Sentence case; the lane header sets it in the lowercase lockup. */
   title: string
+  tone: BoardLaneTone
   /** Statuses that live in this lane. */
   statuses: readonly Status[]
   /** Status applied when a card is dropped in from another lane. */
@@ -41,24 +49,28 @@ export const BOARD_COLUMNS: readonly BoardColumnConfig[] = [
   {
     key: 'BACKLOG',
     title: 'Backlog',
+    tone: 'unknown',
     statuses: ['TODO'],
     dropStatus: 'TODO',
   },
   {
     key: 'IN_PROGRESS',
-    title: 'In Progress',
+    title: 'In progress',
+    tone: 'info',
     statuses: ['IN_PROGRESS'],
     dropStatus: 'IN_PROGRESS',
   },
   {
     key: 'BLOCKED',
     title: 'Blocked',
+    tone: 'error',
     statuses: ['BLOCKED', 'WAITING', 'ON_HOLD', 'UNDER_REVIEW'],
     dropStatus: 'BLOCKED',
   },
   {
     key: 'DONE',
     title: 'Done',
+    tone: 'online',
     statuses: ['COMPLETED'],
     dropStatus: 'COMPLETED',
     terminal: true,
@@ -68,6 +80,7 @@ export const BOARD_COLUMNS: readonly BoardColumnConfig[] = [
     key: 'CANCELLED',
     // Dropped work, kept out of the way: a rail you have to open on purpose.
     title: 'Cancelled',
+    tone: 'offline',
     statuses: ['CANCELLED'],
     dropStatus: 'CANCELLED',
     terminal: true,

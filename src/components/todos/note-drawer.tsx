@@ -119,7 +119,7 @@ function NoteDrawerEditor({ note }: { note: NotebookNote }) {
       <input
         value={title}
         onChange={(e) => handleTitleChange(e.target.value)}
-        className="text-text placeholder:text-quiet w-full flex-none bg-transparent text-lg leading-tight font-semibold outline-none"
+        className="dd-h3 text-text placeholder:text-quiet w-full flex-none bg-transparent text-lg leading-tight normal-case outline-none"
         placeholder="Note title"
         aria-label="Note title"
       />

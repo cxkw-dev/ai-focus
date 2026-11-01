@@ -223,8 +223,8 @@
 
 /* ---------- rendered rich text (todo cards, previews) ---------- */
 .rich-text-display {
-  font-size: var(--dd-fs-xs);
-  line-height: 1.45;
+  font-size: var(--dd-fs-sm);
+  line-height: var(--dd-lh);
   color: var(--dd-muted);
 }
 .rich-text-display p {
@@ -238,8 +238,8 @@
 }
 .rich-text-display h3 {
   margin: 0.2em 0 0.1em;
-  font-size: var(--dd-fs-xs);
-  font-weight: 650;
+  font-size: var(--dd-fs-sm);
+  font-weight: 600;
   color: var(--dd-text);
 }
 .rich-text-display ul,

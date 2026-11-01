@@ -75,7 +75,7 @@ export function TopBar({
             'm-0 min-w-0 truncate',
             trail.length > 0
               ? 'text-text text-sm font-semibold'
-              : 'font-display tracking-heading text-lg leading-tight font-extrabold lowercase',
+              : 'dd-h3 text-lg leading-tight',
           )}
         >
           {page.label}

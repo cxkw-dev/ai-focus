@@ -185,6 +185,7 @@ export function NoteEditor({
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center gap-3 px-5 pt-4 pb-2">
+        {/* The note's title is the page's lockup heading, but it's typed text, so it keeps the case you type. */}
         <input
           type="text"
           value={title}
@@ -193,7 +194,7 @@ export function NoteEditor({
           aria-label="Note title"
           spellCheck={false}
           autoComplete="off"
-          className="font-display text-text placeholder:text-quiet min-w-0 flex-1 bg-transparent text-lg leading-tight font-bold outline-none sm:text-xl"
+          className="dd-h3 text-text placeholder:text-quiet min-w-0 flex-1 bg-transparent text-lg leading-tight normal-case outline-none sm:text-xl"
         />
         <span
           aria-live="polite"

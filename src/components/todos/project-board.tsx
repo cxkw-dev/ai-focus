@@ -25,8 +25,7 @@ import {
 import { TodoItem, TodoItemOverlay } from './todo-item'
 import { InlineTodoForm } from './inline-todo-form'
 import { IconButton } from '@/components/ui/button'
-import { Icon, type IconName } from '@/components/ui/icon'
-import { STATUS_CONFIG } from '@/lib/status'
+import { Icon } from '@/components/ui/icon'
 import { cn } from '@/lib/utils'
 import { isBoardColumnKey, type BoardColumnKey } from '@/lib/board-columns'
 import type { ExpandedLanes } from '@/hooks/use-board-lanes'
@@ -316,13 +315,13 @@ function BoardLane({
         isOver &&
           'bg-[image:linear-gradient(var(--dd-wash-strong),var(--dd-wash-strong))]',
       )}
-      aria-label={laneTitle(column)}
+      aria-label={column.title}
     >
       <LaneHeader column={column}>
         {onCollapse && (
           <IconButton
             icon="chevron-right"
-            label={`Collapse ${laneTitle(column)}`}
+            label={`Collapse ${column.title}`}
             size="sm"
             className="text-quiet hover:text-text ml-auto p-1"
             onClick={onCollapse}
@@ -344,10 +343,7 @@ function BoardLane({
             {isLoading ? (
               <LoadingLane />
             ) : column.todos.length === 0 ? (
-              <EmptyLane
-                icon={laneStatus(column).icon}
-                message={isDragging ? 'Drop here' : 'Nothing here'}
-              />
+              <EmptyLane message={isDragging ? 'Drop here' : 'Nothing here'} />
             ) : (
               visibleTodos.map((todo) => (
                 <TodoItem
@@ -396,14 +392,14 @@ function BoardLane({
   )
 }
 
-/** A lane's status look: the canonical colour and icon of the status a card takes when dropped in. */
-function laneStatus(column: ProjectBoardColumn) {
-  return STATUS_CONFIG[column.dropStatus]
-}
-
-/** Lane titles are panel titles, so sentence case ("In progress"). */
-function laneTitle(column: ProjectBoardColumn) {
-  return column.title.charAt(0) + column.title.slice(1).toLowerCase()
+/** The lane's state as a dawn & dusk status dot; the title beside it is the word, so the dot is decoration. */
+function LaneDot({ column }: { column: ProjectBoardColumn }) {
+  return (
+    <span
+      className={`dd-status-dot dd-status-dot--lg dd-status-dot--${column.tone}`}
+      aria-hidden="true"
+    />
+  )
 }
 
 function LaneHeader({
@@ -413,15 +409,11 @@ function LaneHeader({
   column: ProjectBoardColumn
   children?: React.ReactNode
 }) {
-  const status = laneStatus(column)
   return (
     <div className="flex min-h-7 flex-none items-center gap-2 pl-1">
-      <Icon
-        name={status.icon}
-        className="flex-none text-sm"
-        style={{ color: status.colorVar }}
-      />
-      <h2 className="dd-h5 text-text">{laneTitle(column)}</h2>
+      <LaneDot column={column} />
+      {/* Lane titles are the board's section titles, so they take the logo lockup (Outfit 800, lowercase). */}
+      <h2 className="dd-h3 text-lg">{column.title}</h2>
       <span className="dd-badge dd-badge--count">{column.count}</span>
       {children}
     </div>
@@ -446,8 +438,7 @@ function CollapsedLane({
   isDragging: boolean
   onExpand?: () => void
 }) {
-  const status = laneStatus(column)
-  const title = laneTitle(column)
+  const title = column.title
   return (
     <section
       ref={ref}
@@ -465,18 +456,18 @@ function CollapsedLane({
       <button
         type="button"
         onClick={onExpand}
-        className="hover:bg-wash flex flex-1 items-center justify-center gap-2 rounded-lg px-2 py-2 text-xs transition-colors lg:flex-col lg:justify-start lg:pt-3"
+        className="hover:bg-wash flex flex-1 items-center justify-center gap-2 rounded-lg px-2 py-2 transition-colors lg:flex-col lg:justify-start lg:pt-3"
         aria-label={`Expand ${title} (${column.count})`}
         title={`Show ${column.count} ${title.toLowerCase()}`}
       >
         <Icon name="chevron-left" className="text-quiet hidden lg:block" />
-        <Icon name={status.icon} style={{ color: status.colorVar }} />
-        <span className="text-text font-semibold lg:[writing-mode:vertical-rl]">
+        <LaneDot column={column} />
+        <span className="dd-h3 text-lg lg:[writing-mode:vertical-rl]">
           {title}
         </span>
         <span className="dd-badge dd-badge--count">{column.count}</span>
         {isDragging && column.dropHint && (
-          <span className="text-muted lg:[writing-mode:vertical-rl]">
+          <span className="dd-caption lg:[writing-mode:vertical-rl]">
             {column.dropHint}
           </span>
         )}
@@ -501,11 +492,6 @@ function LoadingLane() {
 }
 
 /** An empty lane is just a quiet line; the lane itself is the drop target. */
-function EmptyLane({ icon, message }: { icon: IconName; message: string }) {
-  return (
-    <p className="text-muted flex items-center gap-1.5 px-1 py-1.5 text-xs">
-      <Icon name={icon} className="text-quiet flex-none" />
-      {message}
-    </p>
-  )
+function EmptyLane({ message }: { message: string }) {
+  return <p className="dd-caption m-0 px-1 py-1.5">{message}</p>
 }

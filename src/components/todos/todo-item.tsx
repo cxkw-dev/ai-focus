@@ -114,7 +114,7 @@ function TodoItemContent({
         <div className="flex items-baseline gap-2">
           <h3
             className={cn(
-              'min-w-0 flex-1 text-sm leading-snug font-semibold break-words',
+              'min-w-0 flex-1 text-sm leading-tight font-semibold break-words',
               isCompleted ? 'text-muted line-through' : 'text-text',
             )}
           >
@@ -265,7 +265,8 @@ function TodoItemComponent({
         )}
       >
         {/* The handle lives in the card's own left padding, so cards keep the
-            lane's edges (header, add-task box) instead of hanging off a gutter. */}
+            lane's edges (header, add-task box) instead of hanging off a gutter.
+            Its grip sits on the title line, clear of the subtask rows' own grips. */}
         {!isDragDisabled && (
           <button
             type="button"
@@ -273,7 +274,7 @@ function TodoItemComponent({
             {...attributes}
             {...listeners}
             className={cn(
-              'text-quiet hover:text-text absolute inset-y-0 left-0 z-[1] flex w-3.5 touch-none items-center justify-center text-xs opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100',
+              'text-quiet hover:text-text absolute inset-y-0 left-0 z-[1] flex w-3.5 touch-none items-start justify-center pt-3.5 text-xs',
               dragging ? 'cursor-grabbing' : 'cursor-grab',
             )}
           >

@@ -17,13 +17,6 @@ const STATUSES = Object.keys(STATUS_CONFIG) as Status[]
 /** Chips on a dense card: the dd chip, a step tighter so a couple share one row with the task number. */
 const CARD_CHIP = 'px-1.5 py-1'
 
-/**
- * Card chrome that waits for the card: hidden at rest, shown while the card is hovered or holds focus, and always on
- * touch screens (no hover to reveal it). The card's `<article>` is the `group`.
- */
-export const REVEAL_ON_CARD_HOVER =
-  'opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100'
-
 /** Status on a card: a neutral chip whose icon carries the colour, plus the word (never colour alone). */
 export function StatusChip({
   status,

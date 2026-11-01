@@ -9,11 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
-import {
-  PriorityMenuGroup,
-  REVEAL_ON_CARD_HOVER,
-  StatusMenuGroup,
-} from './todo-display'
+import { PriorityMenuGroup, StatusMenuGroup } from './todo-display'
 import type { ViewMode } from './todo-item'
 import type { Priority, Status, Todo } from '@/types/todo'
 
@@ -50,13 +46,7 @@ export function TodoItemActions({
   const noteId = todo.notebookNoteId
 
   return (
-    <div
-      className={cn(
-        'flex flex-none items-center',
-        REVEAL_ON_CARD_HOVER,
-        'has-[[data-state=open]]:opacity-100',
-      )}
-    >
+    <div className="flex flex-none items-center">
       {viewMode === 'deleted' ? (
         <>
           <IconButton

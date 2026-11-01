@@ -170,14 +170,14 @@ export function InlineTodoForm({
           aria-label="Notes"
           disabled={isLoading}
           rows={2}
-          className="resize-none text-xs"
+          className="resize-none text-sm"
         />
 
         {/* Priority and due date */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <div className="flex items-center gap-2">
             <span
-              className="text-quiet w-14 flex-none text-xs"
+              className="text-muted w-14 flex-none text-xs font-medium"
               id={`${priorityName}-label`}
             >
               Priority
@@ -208,7 +208,9 @@ export function InlineTodoForm({
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-quiet w-14 flex-none text-xs">Due</span>
+            <span className="text-muted w-14 flex-none text-xs font-medium">
+              Due
+            </span>
             <Button
               variant={form.dueDate ? 'secondary' : 'ghost'}
               size="sm"
@@ -237,7 +239,9 @@ export function InlineTodoForm({
 
         {/* Filing destination — fixed by the board you are on */}
         <div className="flex items-center gap-2">
-          <span className="text-quiet w-14 flex-none text-xs">Files into</span>
+          <span className="text-muted w-14 flex-none text-xs font-medium">
+            Files into
+          </span>
           <ProjectScopeChip project={project} />
         </div>
 
@@ -246,7 +250,7 @@ export function InlineTodoForm({
           {form.subtasks.map((subtask, index) => (
             <div
               key={subtask.id ?? `subtask-${index}`}
-              className="group/subtask flex items-start gap-2 text-xs"
+              className="flex items-start gap-2 text-sm"
             >
               <span className="text-quiet flex-none font-mono tabular-nums">
                 {index + 1}.
@@ -268,14 +272,14 @@ export function InlineTodoForm({
               <button
                 type="button"
                 onClick={() => form.removeSubtask(index)}
-                className="rounded-ctl text-quiet hover:text-text flex-none opacity-0 transition group-hover/subtask:opacity-100 focus-visible:opacity-100"
+                className="rounded-ctl text-quiet hover:text-text flex-none"
                 aria-label="Remove subtask"
               >
                 <Icon name="x" />
               </button>
             </div>
           ))}
-          <div className="rounded-ctl bg-wash flex items-center gap-2 px-2 py-1.5 text-xs">
+          <div className="rounded-ctl bg-wash flex items-center gap-2 px-2 py-1.5 text-sm">
             <Icon name="plus" className="text-quiet flex-none" />
             <SubtaskMentionInput
               value={newSubtaskTitle}
@@ -290,7 +294,7 @@ export function InlineTodoForm({
               mentions={subtaskMentions}
               placeholder="Add a subtask…"
               disabled={isLoading}
-              className="text-text flex-1 text-xs"
+              className="text-text flex-1 text-sm"
               ariaLabel="New subtask"
             />
           </div>

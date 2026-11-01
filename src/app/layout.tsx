@@ -6,22 +6,25 @@ import { Toaster } from '@/components/ui/toaster'
 import { EvalStatus } from '@/components/ui/eval-pill'
 import './globals.css'
 
-// dawn & dusk's three families, self-hosted by next/font. globals.css points the system's font tokens at them.
+// dawn & dusk's three families, self-hosted by next/font: the same weights and italics the system's fonts.css loads
+// (Outfit 600–900, Figtree 400–700 with italic, DM Mono 400/500 with italic). globals.css points the font tokens at them.
 const outfit = Outfit({
   subsets: ['latin'],
-  weight: ['400', '600', '700', '800'],
+  weight: ['600', '700', '800', '900'],
   variable: '--font-outfit',
 })
 
 const figtree = Figtree({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
+  style: ['normal', 'italic'],
   variable: '--font-figtree',
 })
 
 const dmMono = DM_Mono({
   subsets: ['latin'],
   weight: ['400', '500'],
+  style: ['normal', 'italic'],
   variable: '--font-dm-mono',
 })
 

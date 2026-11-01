@@ -38,7 +38,6 @@ import {
   inlineSubtaskDndId,
   SortableInlineSubtaskRow,
 } from './sortable-inline-subtask-row'
-import { REVEAL_ON_CARD_HOVER } from './todo-display'
 import type { Subtask, SubtaskInput } from '@/types/todo'
 import type { Person } from '@/types/person'
 
@@ -299,7 +298,7 @@ export function TodoInlineSubtasks({
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-1.5">
-        <span className="text-muted text-xs font-medium">Subtasks</span>
+        <span className="dd-caption">Subtasks</span>
         {hasSubtasks && (
           <span
             className={cn(
@@ -351,7 +350,7 @@ export function TodoInlineSubtasks({
       {showAddField && (
         <div
           ref={addFieldRef}
-          className="rounded-ctl bg-wash flex items-center gap-1.5 px-1.5 py-1 text-xs"
+          className="rounded-ctl bg-wash flex items-center gap-1.5 px-1.5 py-1 text-sm"
         >
           <Icon name="plus" className="text-quiet" />
           <SubtaskMentionInput
@@ -361,7 +360,7 @@ export function TodoInlineSubtasks({
             commitOnBlur={false}
             mentions={mentions}
             placeholder="Add a subtask…"
-            className="text-text text-xs leading-snug"
+            className="text-text text-sm"
             ariaLabel="New subtask title"
           />
         </div>
@@ -371,8 +370,8 @@ export function TodoInlineSubtasks({
 }
 
 /**
- * The card footer's "Add subtask": a ghost icon toggle beside the drawer toggles. It waits for the card's hover or
- * focus like the rest of the card's chrome, and stays lit while the new-subtask field it opens is showing.
+ * The card footer's "Add subtask": a ghost icon toggle beside the drawer toggles. It stays lit while the new-subtask
+ * field it opens is showing.
  */
 export function AddSubtaskButton({
   active,
@@ -390,9 +389,7 @@ export function AddSubtaskButton({
       onClick={onClick}
       className={cn(
         'p-1',
-        active
-          ? 'bg-wash-strong text-text'
-          : cn('text-quiet hover:text-text', REVEAL_ON_CARD_HOVER),
+        active ? 'bg-wash-strong text-text' : 'text-quiet hover:text-text',
       )}
     />
   )
@@ -413,7 +410,7 @@ function ReadOnlyInlineSubtask({ subtask }: { subtask: Subtask }) {
       </span>
       <div
         className={cn(
-          'min-w-0 text-xs leading-snug',
+          'min-w-0 text-sm',
           subtask.completed ? 'text-muted line-through' : 'text-text',
         )}
       >

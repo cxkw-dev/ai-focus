@@ -53,7 +53,7 @@ export function TodoDescriptionPreview({
               }}
             />
           ) : (
-            <p className="text-muted text-xs leading-snug break-words whitespace-pre-wrap">
+            <p className="dd-small text-muted m-0 break-words whitespace-pre-wrap">
               {renderTextWithLinks(description)}
             </p>
           )}
