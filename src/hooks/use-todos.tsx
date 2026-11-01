@@ -2,7 +2,6 @@
 
 import * as React from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Undo2 } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import { todosApi } from '@/lib/api'
 import { queryKeys } from '@/lib/query-keys'
@@ -48,9 +47,8 @@ function UndoToastAction({ onUndo }: { onUndo: () => void }) {
         event.stopPropagation()
         onUndo()
       }}
-      className="bg-primary text-primary-foreground ring-offset-background hover:bg-primary/90 focus:ring-ring inline-flex h-8 shrink-0 items-center justify-center rounded-lg px-3 text-sm font-medium transition-all focus:ring-2 focus:ring-offset-2 focus:outline-none active:scale-95"
+      className="dd-toast__action"
     >
-      <Undo2 className="mr-1.5 h-4 w-4" strokeWidth={2} />
       Undo
     </button>
   )

@@ -14,6 +14,7 @@ const config = [
       'coverage/**',
       'mcp-server/dist/**',
       'design_handoff_focus_design_system/**',
+      '.claude/skills/**',
     ],
   },
 ]

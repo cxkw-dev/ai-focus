@@ -16,8 +16,9 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
-import { CheckSquare, Plus, Square } from 'lucide-react'
+import { Icon } from '@/components/ui/icon'
 import { SubtaskMentionInput } from '@/components/ui/subtask-mention-input'
+import { cn } from '@/lib/utils'
 import {
   hasMeaningfulText,
   isHtmlContent,
@@ -270,36 +271,24 @@ export function TodoInlineSubtasks({
       <button
         type="button"
         onClick={() => setIsAddingSubtask(true)}
-        className="mt-1 inline-flex items-center gap-1 rounded px-1 py-0.5 text-[10px] transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]"
-        style={{ color: 'var(--text-muted)', opacity: 0.6 }}
+        className={cn(ADD_BUTTON_CLASS, 'self-start')}
       >
-        <Plus className="h-2.5 w-2.5" />
-        Add subtask
+        <Icon name="plus" />
+        <span>Add subtask</span>
       </button>
     ) : null
   }
 
   return (
-    <div
-      className="pt-1.5"
-      style={{
-        borderTop:
-          '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)',
-      }}
-    >
-      <div className="mb-1 flex items-center gap-1.5">
-        <span
-          className="text-[10px] font-semibold tracking-wide uppercase"
-          style={{ color: 'var(--text-muted)', opacity: 0.6 }}
-        >
-          Subtasks
-        </span>
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-1.5">
+        <span className="text-quiet text-xs font-medium">Subtasks</span>
         {hasSubtasks && (
           <span
-            className="text-[10px] font-medium"
-            style={{
-              color: allDone ? 'var(--status-done)' : 'var(--text-muted)',
-            }}
+            className={cn(
+              'font-mono text-xs tabular-nums',
+              allDone ? 'text-ok' : 'text-quiet',
+            )}
           >
             {completedCount}/{subtasks.length}
           </span>
@@ -308,11 +297,10 @@ export function TodoInlineSubtasks({
           <button
             type="button"
             onClick={() => setIsAddingSubtask(true)}
-            className="ml-auto inline-flex items-center gap-1 rounded px-1 py-0.5 text-[10px] transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]"
-            style={{ color: 'var(--text-muted)' }}
+            className={cn(ADD_BUTTON_CLASS, 'ml-auto')}
           >
-            <Plus className="h-2.5 w-2.5" />
-            Add
+            <Icon name="plus" />
+            <span>Add</span>
           </button>
         )}
       </div>
@@ -327,7 +315,7 @@ export function TodoInlineSubtasks({
               items={subtasks.map((subtask) => inlineSubtaskDndId(subtask.id))}
               strategy={verticalListSortingStrategy}
             >
-              <div className="space-y-0.5">
+              <div className="flex flex-col">
                 {subtasks.map((subtask) => (
                   <SortableInlineSubtaskRow
                     key={subtask.id}
@@ -347,68 +335,57 @@ export function TodoInlineSubtasks({
             </SortableContext>
           </DndContext>
         ) : (
-          <div className="space-y-0.5">
+          <div className="flex flex-col">
             {subtasks.map((subtask) => (
               <ReadOnlyInlineSubtask key={subtask.id} subtask={subtask} />
             ))}
           </div>
         ))}
       {canAddSubtasks && isAddingSubtask && (
-        <div
-          className="mt-1 rounded px-1 py-0.5"
-          style={{
-            backgroundColor:
-              'color-mix(in srgb, var(--surface) 45%, transparent)',
-          }}
-        >
-          <div className="flex items-center gap-1.5">
-            <Plus
-              className="h-3 w-3 flex-shrink-0"
-              style={{ color: 'var(--text-muted)' }}
-            />
-            <SubtaskMentionInput
-              value={newSubtaskTitle}
-              onChange={setNewSubtaskTitle}
-              onCommit={handleAddCommit}
-              commitOnBlur={false}
-              mentions={mentions}
-              placeholder="Add a subtask..."
-              className="!text-[11px] !leading-snug text-[var(--text-primary)]"
-              ariaLabel="New subtask title"
-            />
-          </div>
+        <div className="rounded-ctl bg-wash flex items-center gap-1.5 px-1.5 py-1 text-xs">
+          <Icon name="plus" className="text-quiet" />
+          <SubtaskMentionInput
+            value={newSubtaskTitle}
+            onChange={setNewSubtaskTitle}
+            onCommit={handleAddCommit}
+            commitOnBlur={false}
+            mentions={mentions}
+            placeholder="Add a subtask…"
+            className="text-text text-xs leading-snug"
+            ariaLabel="New subtask title"
+          />
         </div>
       )}
     </div>
   )
 }
 
+/** A quiet inline text button for "Add subtask" (a ghost dd-btn, tightened for the card). */
+const ADD_BUTTON_CLASS =
+  'dd-btn dd-btn--ghost dd-btn--sm gap-1 px-1.5 py-0.5 font-medium text-quiet hover:text-text'
+
 function ReadOnlyInlineSubtask({ subtask }: { subtask: Subtask }) {
   return (
-    <div className="flex w-full items-center gap-2 rounded px-0.5 py-0.5 text-left">
-      {subtask.completed ? (
-        <CheckSquare
-          className="h-3.5 w-3.5 flex-shrink-0"
-          style={{ color: 'var(--status-done)' }}
+    <div className="flex w-full items-start gap-2 py-0.5 pl-1">
+      <span className="dd-checkbox dd-checkbox--sm">
+        <input
+          type="checkbox"
+          className="dd-checkbox__input pointer-events-none"
+          checked={subtask.completed}
+          readOnly
+          tabIndex={-1}
+          aria-label="Done"
         />
-      ) : (
-        <Square
-          className="h-3.5 w-3.5 flex-shrink-0"
-          style={{ color: 'var(--text-muted)' }}
-        />
-      )}
+      </span>
       <div
-        className="text-[11px] leading-snug"
-        style={{
-          color: subtask.completed
-            ? 'var(--text-muted)'
-            : 'var(--text-primary)',
-          textDecoration: subtask.completed ? 'line-through' : 'none',
-        }}
+        className={cn(
+          'min-w-0 text-xs leading-snug',
+          subtask.completed ? 'text-muted line-through' : 'text-text',
+        )}
       >
         {isHtmlContent(subtask.title) ? (
           <div
-            className="[&_.mention]:font-medium [&_.mention:hover]:underline [&_a]:text-[var(--primary)] [&_a:hover]:underline [&_p]:my-0 [&_p]:leading-snug"
+            className="subtask-mention-editor [&_a]:text-accent [&_a:hover]:underline"
             dangerouslySetInnerHTML={{
               __html: sanitizeHtml(linkifyHtml(mentionifyHtml(subtask.title))),
             }}

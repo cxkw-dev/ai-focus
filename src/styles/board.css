@@ -1,0 +1,66 @@
+/*
+ * Board glue — the few todo-board surfaces dawn & dusk has no component for (urgent rail, PR dependency tree
+ * connectors, round colour swatches). Tokens only; imported into the components layer by app/globals.css.
+ */
+
+/* Urgent: a quiet bad-tinted rail down the card's leading edge, so it reads at a glance without motion. */
+.app-urgent-rail {
+  position: relative;
+}
+.app-urgent-rail::before {
+  position: absolute;
+  inset: calc(var(--dd-u) * 2) auto calc(var(--dd-u) * 2) 0;
+  width: 3px;
+  border-radius: 0 var(--dd-r-pill) var(--dd-r-pill) 0;
+  background: var(--dd-bad);
+  content: '';
+}
+
+/* PR dependency tree connectors */
+.app-pr-tree-branch {
+  position: relative;
+  margin-left: calc(var(--dd-u) * 1.5);
+  padding: calc(var(--dd-u) * 1) 0 calc(var(--dd-u) * 1) calc(var(--dd-u) * 5);
+}
+.app-pr-tree-branch::before,
+.app-pr-tree-branch::after {
+  position: absolute;
+  left: calc(var(--dd-u) * 2.5);
+  background: var(--dd-border-strong);
+  content: '';
+}
+/* vertical: top to bottom for middle branches */
+.app-pr-tree-branch::before {
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+/* horizontal arm at the centre */
+.app-pr-tree-branch::after {
+  top: 50%;
+  width: calc(var(--dd-u) * 2);
+  height: 1px;
+}
+/* last branch: the vertical stops at the centre */
+.app-pr-tree-branch--last::before {
+  bottom: auto;
+  height: 50%;
+}
+
+/* Round colour input swatches (label colours) */
+.app-color-swatch {
+  -webkit-appearance: none;
+  appearance: none;
+}
+.app-color-swatch::-webkit-color-swatch-wrapper {
+  padding: 0;
+  border-radius: var(--dd-r-pill);
+}
+.app-color-swatch::-webkit-color-swatch {
+  border: none;
+  border-radius: var(--dd-r-pill);
+}
+.app-color-swatch::-moz-color-swatch {
+  border: none;
+  border-radius: var(--dd-r-pill);
+}

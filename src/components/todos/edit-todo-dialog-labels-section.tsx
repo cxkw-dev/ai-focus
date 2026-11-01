@@ -1,8 +1,6 @@
 'use client'
 
 import type { ComponentProps } from 'react'
-import { Tags } from 'lucide-react'
-import { Label } from '@/components/ui/label'
 import { LabelMultiSelect } from './label-multi-select'
 import type { TodoFormState } from '@/hooks/use-todo-form'
 
@@ -20,24 +18,17 @@ export function EditTodoDialogLabelsSection({
   disabled,
 }: EditTodoDialogLabelsSectionProps) {
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <Label
-          className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          <Tags className="h-3.5 w-3.5" />
-          Labels
-        </Label>
+    <div className="dd-field dd-field--above">
+      <span className="dd-field__label flex items-baseline justify-between gap-2">
+        Labels
         <button
           type="button"
           onClick={onManageLabels}
-          className="text-[11px] font-medium underline transition-all hover:no-underline"
-          style={{ color: 'var(--primary)' }}
+          className="dd-link text-muted text-xs font-medium"
         >
           Manage
         </button>
-      </div>
+      </span>
       <LabelMultiSelect
         labels={labels}
         value={form.labelIds}

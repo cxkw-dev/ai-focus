@@ -1,8 +1,6 @@
 'use client'
 
-import { Edit2, FileText, RotateCcw, Trash2 } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { CHIP_BASE } from './todo-display'
+import { IconButton } from '@/components/ui/button'
 import type { ViewMode } from './todo-item'
 import type { Todo } from '@/types/todo'
 
@@ -15,6 +13,10 @@ interface TodoItemActionsProps {
   onOpenNote?: (todoId: string, noteId: string) => void
 }
 
+/** Dense ghost icon buttons for a card: quiet until hovered. */
+const ACTION_CLASS = 'p-1 text-quiet hover:text-text'
+const DANGER_ACTION_CLASS = 'p-1 text-quiet hover:text-bad'
+
 export function TodoItemActions({
   todo,
   viewMode,
@@ -23,57 +25,56 @@ export function TodoItemActions({
   onRestore,
   onOpenNote,
 }: TodoItemActionsProps) {
+  const noteId = todo.notebookNoteId
+
   return (
-    <div className="flex flex-shrink-0 items-center gap-1">
+    <div className="flex flex-none items-center gap-0.5">
       {(viewMode === 'active' || viewMode === 'completed') && (
         <>
-          {todo.notebookNoteId && (
-            <button
-              onClick={() => onOpenNote?.(todo.id, todo.notebookNoteId!)}
-              className={cn(CHIP_BASE, 'todo-action-edit')}
-              title="Open note"
-            >
-              <FileText className="h-3 w-3" />
-            </button>
+          {noteId && (
+            <IconButton
+              icon="file"
+              label="Open note"
+              size="sm"
+              className={ACTION_CLASS}
+              onClick={() => onOpenNote?.(todo.id, noteId)}
+            />
           )}
-          <button
+          <IconButton
+            icon="edit"
+            label="Edit"
+            size="sm"
+            className={ACTION_CLASS}
             onClick={() => onEdit(todo)}
-            className={cn(CHIP_BASE, 'todo-action-edit')}
-            title="Edit"
-          >
-            <Edit2 className="h-3 w-3" />
-          </button>
-          <button
+          />
+          <IconButton
+            icon="trash"
+            label="Delete"
+            size="sm"
+            className={DANGER_ACTION_CLASS}
             onClick={() => onDelete(todo.id)}
-            className={cn(CHIP_BASE, 'todo-action-delete')}
-            title="Delete"
-          >
-            <Trash2 className="h-3 w-3" />
-          </button>
+          />
         </>
       )}
       {viewMode === 'deleted' && (
         <>
-          <button
+          <IconButton
+            icon="refresh"
+            label="Restore"
+            size="sm"
+            className={ACTION_CLASS}
             onClick={() => onRestore?.(todo.id)}
-            className={cn(CHIP_BASE, 'todo-action-restore')}
-            title="Restore"
-          >
-            <RotateCcw className="h-3 w-3" />
-          </button>
-          <button
+          />
+          <IconButton
+            icon="trash"
+            label="Delete permanently"
+            size="sm"
+            className={DANGER_ACTION_CLASS}
             onClick={() => onDelete(todo.id)}
-            className={cn(CHIP_BASE, 'todo-action-destroy')}
-            title="Delete permanently"
-          >
-            <Trash2 className="h-3 w-3" />
-          </button>
+          />
         </>
       )}
-      <span
-        className="font-mono text-[11px] font-semibold"
-        style={{ color: 'var(--text-muted)' }}
-      >
+      <span className="text-quiet ml-1 font-mono text-xs tabular-nums">
         #{todo.taskNumber}
       </span>
     </div>

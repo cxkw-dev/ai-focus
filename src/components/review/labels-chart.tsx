@@ -1,100 +1,97 @@
 'use client'
 
 import {
-  BarChart,
   Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
 } from 'recharts'
-import { ChartTooltip } from './chart-tooltip'
+import { Icon } from '@/components/ui/icon'
+import { seriesColor, type ChartColors } from '@/hooks/use-chart-colors'
 import type { LabelData } from '@/types/stats'
+import { ChartTooltip } from './chart-tooltip'
 
 interface LabelsChartProps {
   data: LabelData[]
-  colors: Record<string, string>
+  colors: ChartColors
 }
 
-export function LabelsChart({ data, colors }: LabelsChartProps) {
-  if (!colors.primary) return null
+const VALUE_TICK = { className: 'dd-chart__tick' }
+const NAME_TICK = { className: 'fill-muted text-xs' }
 
-  if (data.length === 0) {
-    return (
-      <div
-        className="flex items-center justify-center rounded-xl border p-5"
-        style={{
-          backgroundColor: 'var(--surface)',
-          borderColor: 'var(--border-color)',
-          minHeight: 200,
-        }}
-      >
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-          No label data
-        </p>
-      </div>
-    )
-  }
+/** Tasks per label, ranked; labels take the chart series colours in order. */
+export function LabelsChart({ data, colors }: LabelsChartProps) {
+  const chartData = data.map((entry, index) => ({
+    name: entry.name,
+    count: entry.count,
+    fill: seriesColor(colors, index),
+  }))
 
   return (
-    <div
-      className="rounded-xl border p-3 sm:p-5"
-      style={{
-        backgroundColor: 'var(--surface)',
-        borderColor: 'var(--border-color)',
-      }}
-    >
-      <div className="mb-4 flex items-center gap-2">
-        <div
-          className="h-2 w-2 rounded-full"
-          style={{ backgroundColor: 'var(--status-done)' }}
-        />
-        <h3
-          className="text-sm font-semibold"
-          style={{ color: 'var(--text-primary)' }}
+    <figure className="dd-chart [--dd-chart-height:200px]">
+      <figcaption className="dd-chart__head">
+        <div>
+          <p className="dd-chart__title">Top labels</p>
+          <p className="dd-chart__sub">Tasks per label</p>
+        </div>
+      </figcaption>
+      {chartData.length === 0 ? (
+        <div className="dd-chart__frame">
+          <div className="dd-chart__plot is-empty">
+            <div className="dd-chart__empty">
+              <Icon name="tag" />
+              <b>No label data</b>
+              <span>Label your tasks to see where the work went.</span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <ResponsiveContainer
+          width="100%"
+          height={Math.max(200, chartData.length * 40 + 40)}
         >
-          Top Labels
-        </h3>
-      </div>
-      <ResponsiveContainer
-        width="100%"
-        height={Math.max(200, data.length * 40 + 40)}
-      >
-        <BarChart
-          data={data}
-          layout="vertical"
-          margin={{ top: 0, right: 10, left: 10, bottom: 0 }}
-        >
-          <CartesianGrid
-            strokeDasharray="3 3"
-            stroke={colors.border}
-            horizontal={false}
-          />
-          <XAxis
-            type="number"
-            tick={{ fill: colors.textMuted, fontSize: 12 }}
-            axisLine={{ stroke: colors.border }}
-            tickLine={false}
-            allowDecimals={false}
-          />
-          <YAxis
-            dataKey="name"
-            type="category"
-            tick={{ fill: colors.textMuted, fontSize: 12 }}
-            axisLine={false}
-            tickLine={false}
-            width={100}
-          />
-          <Tooltip content={<ChartTooltip colors={colors} />} />
-          <Bar dataKey="count" name="Tasks" radius={[0, 4, 4, 0]} barSize={18}>
-            {data.map((entry, i) => (
-              <Cell key={i} fill={entry.color} />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+          <BarChart
+            data={chartData}
+            layout="vertical"
+            margin={{ top: 0, right: 8, left: 0, bottom: 0 }}
+          >
+            <CartesianGrid horizontal={false} stroke={colors.grid} />
+            <XAxis
+              type="number"
+              tick={VALUE_TICK}
+              axisLine={{ stroke: colors.baseline }}
+              tickLine={false}
+              allowDecimals={false}
+            />
+            <YAxis
+              dataKey="name"
+              type="category"
+              tick={NAME_TICK}
+              axisLine={false}
+              tickLine={false}
+              width={100}
+            />
+            <Tooltip
+              content={<ChartTooltip />}
+              cursor={{ fill: colors.wash, stroke: 'none' }}
+            />
+            <Bar
+              dataKey="count"
+              name="Tasks"
+              radius={[0, 4, 4, 0]}
+              maxBarSize={20}
+            >
+              {chartData.map((entry) => (
+                <Cell key={entry.name} fill={entry.fill} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      )}
+    </figure>
   )
 }

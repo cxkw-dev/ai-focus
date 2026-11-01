@@ -1,89 +1,86 @@
 'use client'
 
 import {
-  BarChart,
   Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
 } from 'recharts'
-import { ChartTooltip } from './chart-tooltip'
+import { isChartColorKey, type ChartColors } from '@/hooks/use-chart-colors'
 import { PRIORITY_COLOR_KEYS, PRIORITY_LABELS } from '@/lib/priority'
 import type { PriorityData } from '@/types/stats'
 import type { Priority } from '@/types/todo'
+import { ChartTooltip } from './chart-tooltip'
 
 interface PriorityChartProps {
   data: PriorityData[]
-  colors: Record<string, string>
+  colors: ChartColors
 }
 
-export function PriorityChart({ data, colors }: PriorityChartProps) {
-  if (!colors.primary) return null
+const VALUE_TICK = { className: 'dd-chart__tick' }
+const NAME_TICK = { className: 'fill-muted text-xs' }
 
-  const chartData = data.map((d) => ({
-    name: PRIORITY_LABELS[d.priority as Priority] || d.priority,
-    count: d.count,
-    fill:
-      colors[PRIORITY_COLOR_KEYS[d.priority as Priority]] || colors.textMuted,
-  }))
+/** Tasks per priority, each bar in its priority colour. */
+export function PriorityChart({ data, colors }: PriorityChartProps) {
+  const chartData = data.map((d) => {
+    const key = PRIORITY_COLOR_KEYS[d.priority as Priority]
+    return {
+      name: PRIORITY_LABELS[d.priority as Priority] || d.priority,
+      count: d.count,
+      fill: key && isChartColorKey(key) ? colors[key] : colors.textMuted,
+    }
+  })
 
   return (
-    <div
-      className="rounded-xl border p-5"
-      style={{
-        backgroundColor: 'var(--surface)',
-        borderColor: 'var(--border-color)',
-      }}
-    >
-      <div className="mb-4 flex items-center gap-2">
-        <div
-          className="h-2 w-2 rounded-full"
-          style={{ backgroundColor: 'var(--priority-high)' }}
-        />
-        <h3
-          className="text-sm font-semibold"
-          style={{ color: 'var(--text-primary)' }}
-        >
-          Priority Breakdown
-        </h3>
-      </div>
+    <figure className="dd-chart">
+      <figcaption className="dd-chart__head">
+        <div>
+          <p className="dd-chart__title">Priority breakdown</p>
+          <p className="dd-chart__sub">Tasks per priority</p>
+        </div>
+      </figcaption>
       <ResponsiveContainer width="100%" height={260}>
         <BarChart
           data={chartData}
           layout="vertical"
-          margin={{ top: 0, right: 10, left: 10, bottom: 0 }}
+          margin={{ top: 0, right: 8, left: 0, bottom: 0 }}
         >
-          <CartesianGrid
-            strokeDasharray="3 3"
-            stroke={colors.border}
-            horizontal={false}
-          />
+          <CartesianGrid horizontal={false} stroke={colors.grid} />
           <XAxis
             type="number"
-            tick={{ fill: colors.textMuted, fontSize: 12 }}
-            axisLine={{ stroke: colors.border }}
+            tick={VALUE_TICK}
+            axisLine={{ stroke: colors.baseline }}
             tickLine={false}
             allowDecimals={false}
           />
           <YAxis
             dataKey="name"
             type="category"
-            tick={{ fill: colors.textMuted, fontSize: 12 }}
+            tick={NAME_TICK}
             axisLine={false}
             tickLine={false}
             width={60}
           />
-          <Tooltip content={<ChartTooltip colors={colors} />} />
-          <Bar dataKey="count" name="Tasks" radius={[0, 4, 4, 0]} barSize={20}>
-            {chartData.map((entry, i) => (
-              <Cell key={i} fill={entry.fill} />
+          <Tooltip
+            content={<ChartTooltip />}
+            cursor={{ fill: colors.wash, stroke: 'none' }}
+          />
+          <Bar
+            dataKey="count"
+            name="Tasks"
+            radius={[0, 4, 4, 0]}
+            maxBarSize={20}
+          >
+            {chartData.map((entry) => (
+              <Cell key={entry.name} fill={entry.fill} />
             ))}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
-    </div>
+    </figure>
   )
 }

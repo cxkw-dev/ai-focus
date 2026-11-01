@@ -1,25 +1,22 @@
-'use client'
-
 import * as React from 'react'
-import * as LabelPrimitive from '@radix-ui/react-label'
-import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
-const labelVariants = cva(
-  'text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70',
-)
-
-const Label = React.forwardRef<
-  React.ElementRef<typeof LabelPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root> &
-    VariantProps<typeof labelVariants>
->(({ className, ...props }, ref) => (
-  <LabelPrimitive.Root
-    ref={ref}
-    className={cn(labelVariants(), className)}
-    {...props}
-  />
-))
-Label.displayName = LabelPrimitive.Root.displayName
-
-export { Label }
+/**
+ * A plain label above a control or group, in the system's "label above" style (`.dd-field--above` label): sentence
+ * case, 600 weight. For a single text control prefer TextField, whose label tucks inside the box.
+ */
+export const Label = React.forwardRef<
+  HTMLLabelElement,
+  React.LabelHTMLAttributes<HTMLLabelElement>
+>(function Label({ className, ...props }, ref) {
+  return (
+    <label
+      ref={ref}
+      className={cn(
+        'text-text peer-disabled:text-quiet text-sm leading-tight font-semibold peer-disabled:cursor-not-allowed',
+        className,
+      )}
+      {...props}
+    />
+  )
+})

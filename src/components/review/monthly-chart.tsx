@@ -1,6 +1,5 @@
 'use client'
 
-import * as React from 'react'
 import {
   Bar,
   CartesianGrid,
@@ -12,11 +11,18 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { Icon } from '@/components/ui/icon'
+import {
+  seriesClass,
+  seriesColor,
+  type ChartColors,
+} from '@/hooks/use-chart-colors'
 import type { MonthlyData } from '@/types/stats'
+import { ChartTip } from './chart-tooltip'
 
 interface MonthlyChartProps {
   data: MonthlyData[]
-  colors: Record<string, string>
+  colors: ChartColors
 }
 
 interface MonthlyStoryPoint extends MonthlyData {
@@ -27,9 +33,13 @@ interface MonthlyStoryPoint extends MonthlyData {
 interface MonthlyStoryTooltipProps {
   active?: boolean
   payload?: Array<{ payload?: MonthlyStoryPoint }>
-  label?: string
-  colors: Record<string, string>
+  label?: string | number
 }
+
+// Axis ticks take the system's tick style (mono, xs, muted); the plots share one y-axis width so they line up.
+const TICK = { className: 'dd-chart__tick' }
+const Y_AXIS_WIDTH = 32
+const SYNC_ID = 'review-pace-story'
 
 function formatSigned(value: number) {
   const rounded = Math.round(value * 10) / 10
@@ -37,7 +47,7 @@ function formatSigned(value: number) {
   return `${rounded}`
 }
 
-function buildStoryData(data: MonthlyData[]) {
+function buildStoryData(data: MonthlyData[]): MonthlyStoryPoint[] {
   let runningBalance = 0
 
   return data.map((month) => {
@@ -83,9 +93,9 @@ function getStorySummary(data: MonthlyStoryPoint[]) {
   if (monthsWithWork.length === 0) {
     return {
       insight: 'No task activity yet for this year.',
-      pressureLabel: 'No pressure months',
-      catchUpLabel: 'No catch-up months',
-      balanceLabel: 'Balance 0',
+      pressureMonth: null,
+      catchUpMonth: null,
+      finalBalance: 0,
     }
   }
 
@@ -110,298 +120,275 @@ function getStorySummary(data: MonthlyStoryPoint[]) {
     insight = `${peakCreated.label} brought the biggest intake spike, and throughput never fully caught up in a single month.`
   }
 
-  const pressureLabel = pressureMonth
-    ? `Pressure peak ${pressureMonth.label}`
-    : 'No pressure months'
-  const catchUpLabel = catchUpMonth
-    ? `Catch-up peak ${catchUpMonth.label}`
-    : 'No catch-up months'
-  const balanceLabel = `Balance ${formatSigned(finalBalance)}`
-
-  return {
-    insight,
-    pressureLabel,
-    catchUpLabel,
-    balanceLabel,
-  }
+  return { insight, pressureMonth, catchUpMonth, finalBalance }
 }
 
 function MonthlyStoryTooltip({
   active,
   payload,
   label,
-  colors,
 }: MonthlyStoryTooltipProps) {
   const point = payload?.[0]?.payload
 
   if (!active || !point) return null
 
   return (
-    <div
-      className="rounded-xl border px-3 py-2.5 text-xs shadow-lg"
-      style={{
-        backgroundColor: colors.surface,
-        borderColor: colors.border,
-        color: colors.textPrimary,
-      }}
-    >
-      {label && <p className="mb-2 font-semibold">{label}</p>}
-      <div className="space-y-1.5">
-        <p className="flex items-center gap-2">
-          <span
-            className="inline-block h-2.5 w-2.5 rounded-full"
-            style={{ backgroundColor: colors.primary }}
-          />
-          <span style={{ color: colors.textMuted }}>Created</span>
-          <span className="font-medium">{point.created}</span>
-        </p>
-        <p className="flex items-center gap-2">
-          <span
-            className="inline-block h-2.5 w-2.5 rounded-full"
-            style={{ backgroundColor: colors.statusDone }}
-          />
-          <span style={{ color: colors.textMuted }}>Completed</span>
-          <span className="font-medium">{point.completed}</span>
-        </p>
-        <p className="flex items-center gap-2">
-          <span
-            className="inline-block h-2.5 w-2.5 rounded-full"
-            style={{ backgroundColor: colors.accent }}
-          />
-          <span style={{ color: colors.textMuted }}>Month net</span>
-          <span className="font-medium">{formatSigned(point.delta)}</span>
-        </p>
-        <p className="flex items-center gap-2">
-          <span
-            className="inline-block h-2.5 w-2.5 rounded-full"
-            style={{ backgroundColor: colors.textMuted }}
-          />
-          <span style={{ color: colors.textMuted }}>Running balance</span>
-          <span className="font-medium">
-            {formatSigned(point.runningBalance)}
+    <ChartTip
+      title={label}
+      rows={[
+        { label: 'Created', value: point.created, series: seriesClass(0) },
+        { label: 'Completed', value: point.completed, series: seriesClass(1) },
+        {
+          label: 'Running balance',
+          value: formatSigned(point.runningBalance),
+          series: seriesClass(2),
+        },
+        { label: 'Month net', value: formatSigned(point.delta), total: true },
+      ]}
+    />
+  )
+}
+
+/** A peak month as an inline stat: the month, and its net change with a tone for what that change means. */
+function PeakStat({
+  label,
+  month,
+  tone,
+}: {
+  label: string
+  month: MonthlyStoryPoint | null
+  tone: 'ok' | 'bad'
+}) {
+  return (
+    <p className="dd-stat dd-stat--inline">
+      <span className="dd-stat__label">{label}</span>
+      <span className="dd-stat__value">{month ? month.label : 'none'}</span>
+      {month && (
+        <span className={`dd-stat__delta dd-stat__delta--${tone}`}>
+          <Icon name={month.delta > 0 ? 'arrow-up' : 'arrow-down'} />
+          <span className="dd-visually-hidden">
+            {month.delta > 0 ? 'Up' : 'Down'}
           </span>
-        </p>
-      </div>
-    </div>
+          {formatSigned(month.delta)}
+        </span>
+      )}
+    </p>
   )
 }
 
 export function MonthlyChart({ data, colors }: MonthlyChartProps) {
-  const storyData = React.useMemo(() => buildStoryData(data), [data])
-  const { insight, pressureLabel, catchUpLabel, balanceLabel } = React.useMemo(
-    () => getStorySummary(storyData),
-    [storyData],
-  )
+  const storyData = buildStoryData(data)
+  const { insight, pressureMonth, catchUpMonth, finalBalance } =
+    getStorySummary(storyData)
   const hasActivity = storyData.some(
     (month) => month.created > 0 || month.completed > 0,
   )
-
-  if (!colors.primary) return null
+  const totalCreated = storyData.reduce(
+    (total, month) => total + month.created,
+    0,
+  )
+  const totalCompleted = storyData.reduce(
+    (total, month) => total + month.completed,
+    0,
+  )
+  const balanceColor = seriesColor(colors, 2)
 
   return (
-    <div
-      className="h-full rounded-2xl border p-4 sm:p-5"
-      style={{
-        backgroundColor: 'var(--surface)',
-        borderColor: 'var(--border-color)',
-        backgroundImage:
-          'radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 9%, transparent), transparent 34%), radial-gradient(circle at 100% 12%, color-mix(in srgb, var(--status-done) 9%, transparent), transparent 28%)',
-      }}
+    <section
+      aria-labelledby="review-pace-title"
+      className="flex h-full min-w-0 flex-col"
     >
-      <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="max-w-2xl space-y-2">
-          <div
-            className="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-[0.18em] uppercase"
-            style={{
-              borderColor:
-                'color-mix(in srgb, var(--accent) 24%, var(--border-color))',
-              color: 'var(--accent)',
-              backgroundColor:
-                'color-mix(in srgb, var(--accent) 8%, var(--surface))',
-            }}
-          >
-            Pace Story
+      <header className="dd-table-header">
+        <h2 className="dd-table-header__title" id="review-pace-title">
+          pace story
+        </h2>
+      </header>
+
+      <figure className="dd-chart flex-1 [--dd-chart-height:300px]">
+        <figcaption className="dd-chart__head">
+          <div className="max-w-prose min-w-0">
+            <p className="dd-chart__title">How workload and throughput moved</p>
+            <p className="dd-chart__sub">{insight}</p>
           </div>
-          <div>
-            <h3
-              className="text-lg font-semibold"
-              style={{ color: 'var(--text-primary)' }}
+          <ul className="dd-chart__legend">
+            <li className={`dd-chart__key ${seriesClass(0)}`}>
+              Created
+              <span className="dd-chart__key-value pl-1.5">{totalCreated}</span>
+            </li>
+            <li className={`dd-chart__key ${seriesClass(1)}`}>
+              Completed
+              <span className="dd-chart__key-value pl-1.5">
+                {totalCompleted}
+              </span>
+            </li>
+            <li
+              className={`dd-chart__key dd-chart__key--line ${seriesClass(2)}`}
             >
-              How workload and throughput moved
-            </h3>
-            <p
-              className="mt-1 text-sm leading-relaxed"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              {insight}
-            </p>
-          </div>
+              Running balance
+            </li>
+          </ul>
+        </figcaption>
+
+        <div className="dd-stat-inline-group">
+          <PeakStat label="Pressure peak" month={pressureMonth} tone="bad" />
+          <PeakStat label="Catch-up peak" month={catchUpMonth} tone="ok" />
+          <p className="dd-stat dd-stat--inline">
+            <span className="dd-stat__label">Balance</span>
+            <span className="dd-stat__value">{formatSigned(finalBalance)}</span>
+          </p>
         </div>
 
-        <div className="flex flex-wrap gap-2 lg:max-w-[240px] lg:justify-end">
-          {[pressureLabel, catchUpLabel, balanceLabel].map((label) => (
-            <div
-              key={label}
-              className="rounded-full border px-3 py-1.5 text-sm"
-              style={{
-                borderColor: 'var(--border-color)',
-                backgroundColor: 'var(--surface-2)',
-                color: 'var(--text-primary)',
-              }}
-            >
-              {label}
+        {!hasActivity ? (
+          <div className="dd-chart__frame">
+            <div className="dd-chart__plot is-empty">
+              <div className="dd-chart__empty">
+                <Icon name="chart" />
+                <b>No monthly task flow yet</b>
+                <span>
+                  Create and complete a few tasks and this chart will start
+                  telling the story of your pace through the year.
+                </span>
+              </div>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {!hasActivity ? (
-        <div
-          className="flex h-[300px] items-center justify-center rounded-2xl border border-dashed px-6 text-center"
-          style={{
-            borderColor: 'var(--border-color)',
-            backgroundColor: 'var(--surface-2)',
-          }}
-        >
-          <div>
-            <p
-              className="text-base font-medium"
-              style={{ color: 'var(--text-primary)' }}
-            >
-              No monthly task flow yet
-            </p>
-            <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
-              Create and complete a few tasks and this chart will start telling
-              the story of your pace through the year.
-            </p>
           </div>
-        </div>
-      ) : (
-        <div className="h-[300px] sm:h-[340px] lg:h-[360px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart
-              data={storyData}
-              margin={{ top: 12, right: 8, left: -12, bottom: 4 }}
-            >
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke={colors.border}
-                vertical={false}
-              />
-              <XAxis
-                dataKey="label"
-                tick={{ fill: colors.textMuted, fontSize: 12 }}
-                axisLine={{ stroke: colors.border }}
-                tickLine={false}
-              />
-              <YAxis
-                yAxisId="volume"
-                tick={{ fill: colors.textMuted, fontSize: 12 }}
-                axisLine={false}
-                tickLine={false}
-                allowDecimals={false}
-              />
-              <YAxis
-                yAxisId="balance"
-                orientation="right"
-                tick={{ fill: colors.textMuted, fontSize: 12 }}
-                axisLine={false}
-                tickLine={false}
-                allowDecimals={false}
-                width={36}
-              />
-              <Tooltip
-                content={<MonthlyStoryTooltip colors={colors} />}
-                cursor={{
-                  fill: 'color-mix(in srgb, var(--primary) 8%, transparent)',
-                }}
-              />
-              <ReferenceLine
-                yAxisId="balance"
-                y={0}
-                stroke={colors.border}
-                strokeDasharray="4 4"
-              />
-              <Bar
-                yAxisId="volume"
-                dataKey="created"
-                name="Created"
-                fill={colors.primary}
-                radius={[4, 4, 0, 0]}
-                barSize={14}
-              />
-              <Bar
-                yAxisId="volume"
-                dataKey="completed"
-                name="Completed"
-                fill={colors.statusDone}
-                radius={[4, 4, 0, 0]}
-                barSize={14}
-              />
-              <Line
-                yAxisId="balance"
-                type="monotone"
-                dataKey="runningBalance"
-                name="Running balance"
-                stroke={colors.accent}
-                strokeWidth={2.5}
-                dot={{
-                  r: 2.5,
-                  fill: colors.accent,
-                  stroke: colors.surface,
-                  strokeWidth: 2,
-                }}
-                activeDot={{
-                  r: 4,
-                  fill: colors.accent,
-                  stroke: colors.surface,
-                  strokeWidth: 2,
-                }}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+        ) : (
+          <>
+            {/* Two measures, two plots: volume above, the running balance below, on one shared month axis. */}
+            <div className="flex flex-col gap-1.5">
+              <div
+                className="h-52"
+                role="img"
+                aria-label="Tasks created and completed per month"
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart
+                    data={storyData}
+                    syncId={SYNC_ID}
+                    barGap={2}
+                    margin={{ top: 6, right: 4, bottom: 0, left: 0 }}
+                  >
+                    <CartesianGrid vertical={false} stroke={colors.grid} />
+                    <XAxis
+                      dataKey="label"
+                      height={1}
+                      tick={false}
+                      tickLine={false}
+                      axisLine={{ stroke: colors.baseline }}
+                    />
+                    <YAxis
+                      width={Y_AXIS_WIDTH}
+                      tick={TICK}
+                      axisLine={false}
+                      tickLine={false}
+                      allowDecimals={false}
+                    />
+                    <Tooltip
+                      content={<MonthlyStoryTooltip />}
+                      cursor={{ fill: colors.wash, stroke: 'none' }}
+                    />
+                    <Bar
+                      dataKey="created"
+                      name="Created"
+                      fill={seriesColor(colors, 0)}
+                      radius={[4, 4, 0, 0]}
+                      maxBarSize={24}
+                    />
+                    <Bar
+                      dataKey="completed"
+                      name="Completed"
+                      fill={seriesColor(colors, 1)}
+                      radius={[4, 4, 0, 0]}
+                      maxBarSize={24}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+              <div
+                className="h-28"
+                role="img"
+                aria-label="Running balance of completed minus created tasks"
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart
+                    data={storyData}
+                    syncId={SYNC_ID}
+                    margin={{ top: 6, right: 4, bottom: 0, left: 0 }}
+                  >
+                    <CartesianGrid vertical={false} stroke={colors.grid} />
+                    <XAxis
+                      dataKey="label"
+                      scale="band"
+                      tick={TICK}
+                      tickLine={false}
+                      axisLine={false}
+                      interval={0}
+                    />
+                    <YAxis
+                      width={Y_AXIS_WIDTH}
+                      tick={TICK}
+                      tickCount={3}
+                      axisLine={false}
+                      tickLine={false}
+                      allowDecimals={false}
+                    />
+                    <Tooltip
+                      content={() => null}
+                      cursor={{ stroke: colors.baseline }}
+                    />
+                    <ReferenceLine y={0} stroke={colors.baseline} />
+                    <Line
+                      type="linear"
+                      dataKey="runningBalance"
+                      name="Running balance"
+                      stroke={balanceColor}
+                      strokeWidth={2}
+                      dot={false}
+                      activeDot={{
+                        r: 4,
+                        fill: balanceColor,
+                        stroke: colors.surface,
+                        strokeWidth: 2,
+                      }}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        {[
-          {
-            label: 'Created',
-            value: storyData.reduce((total, month) => total + month.created, 0),
-            color: colors.primary,
-          },
-          {
-            label: 'Completed',
-            value: storyData.reduce(
-              (total, month) => total + month.completed,
-              0,
-            ),
-            color: colors.statusDone,
-          },
-          {
-            label: 'Running balance',
-            value: balanceLabel.replace('Balance ', ''),
-            color: colors.accent,
-          },
-        ].map((item) => (
-          <div
-            key={item.label}
-            className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs sm:text-sm"
-            style={{
-              borderColor: 'var(--border-color)',
-              backgroundColor: `color-mix(in srgb, ${item.color} 10%, var(--surface-2))`,
-              color: 'var(--text-primary)',
-            }}
-          >
-            <span
-              className="inline-block h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: item.color }}
-            />
-            <span>{item.label}</span>
-            <span style={{ color: 'var(--text-muted)' }}>{item.value}</span>
-          </div>
-        ))}
-      </div>
-    </div>
+            <details className="dd-chart__data">
+              <summary>View as table</summary>
+              <div className="dd-chart__data-scroll">
+                <table>
+                  <caption className="dd-visually-hidden">
+                    Tasks created and completed per month, with the running
+                    balance
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Month</th>
+                      <th scope="col">Created</th>
+                      <th scope="col">Completed</th>
+                      <th scope="col">Net</th>
+                      <th scope="col">Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {storyData.map((month) => (
+                      <tr key={month.month}>
+                        <th scope="row">{month.label}</th>
+                        <td>{month.created}</td>
+                        <td>{month.completed}</td>
+                        <td>{formatSigned(month.delta)}</td>
+                        <td>{formatSigned(month.runningBalance)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          </>
+        )}
+      </figure>
+    </section>
   )
 }

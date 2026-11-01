@@ -1,6 +1,5 @@
 'use client'
 
-import { Undo2 } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import {
   Toast,
@@ -9,7 +8,6 @@ import {
   ToastProvider,
   ToastTitle,
   ToastViewport,
-  ToastAction,
 } from '@/components/ui/toast'
 
 export function Toaster() {
@@ -20,19 +18,14 @@ export function Toaster() {
       {toasts.map(function ({ id, title, description, action, ...props }) {
         return (
           <Toast key={id} {...props}>
-            <div className="flex min-w-0 flex-1 items-center gap-2">
+            <div className="dd-toast__body">
               {title && <ToastTitle>{title}</ToastTitle>}
               {description && (
-                <>
-                  <span className="text-muted-foreground/50">·</span>
-                  <ToastDescription>{description}</ToastDescription>
-                </>
+                <ToastDescription>{description}</ToastDescription>
               )}
             </div>
-            <div className="flex shrink-0 items-center gap-1">
-              {action}
-              <ToastClose />
-            </div>
+            {action && <div className="dd-toast__actions">{action}</div>}
+            <ToastClose />
           </Toast>
         )
       })}

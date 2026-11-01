@@ -2,7 +2,8 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { ArrowRight, Search, Tags } from 'lucide-react'
+import { Icon } from '@/components/ui/icon'
+import { Input } from '@/components/ui/input'
 import { useLabels } from '@/hooks/use-labels'
 import { useTodos } from '@/hooks/use-todos'
 import {
@@ -13,6 +14,8 @@ import {
 import type { BoardColumnKey } from '@/lib/board-columns'
 import { LABELS_ROUTE } from '@/lib/labels'
 import { projectHref, searchProjects, sortProjectsByName } from '@/lib/projects'
+import { STATUS_CONFIG } from '@/lib/status'
+import { cssVars } from '@/lib/utils'
 
 type ProjectStats = Record<BoardColumnKey, number>
 
@@ -62,14 +65,20 @@ export default function ProjectsPage() {
 
   if (labelsLoading || isLoading) {
     return (
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {[...Array(6)].map((_, index) => (
-          <div
-            key={index}
-            className="h-28 animate-pulse rounded-xl"
-            style={{ backgroundColor: 'var(--surface-2)' }}
-          />
-        ))}
+      <div className="dd-skeleton-group" aria-busy="true">
+        <span className="dd-visually-hidden">Loading projects…</span>
+        <span
+          className="dd-skeleton dd-skeleton--button w-64"
+          aria-hidden="true"
+        />
+        <div
+          className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))] gap-3"
+          aria-hidden="true"
+        >
+          {[...Array(6)].map((_, index) => (
+            <span key={index} className="dd-skeleton rounded-box h-28" />
+          ))}
+        </div>
       </div>
     )
   }
@@ -77,119 +86,116 @@ export default function ProjectsPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="relative w-full max-w-xs">
-          <Search
-            className="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2"
-            style={{ color: 'var(--text-muted)' }}
-          />
-          <input
-            type="text"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Filter projects..."
-            aria-label="Filter projects"
-            className="h-9 w-full rounded-lg border pr-3 pl-8 text-xs transition-colors outline-none"
-            style={{
-              backgroundColor: 'var(--surface-2)',
-              color: 'var(--text-primary)',
-              borderColor: 'var(--border-color)',
-            }}
-          />
-        </div>
-        <Link
-          href={LABELS_ROUTE}
-          className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
-          style={{
-            backgroundColor: 'var(--surface-2)',
-            color: 'var(--text-muted)',
-            border: '1px solid var(--border-color)',
-          }}
-        >
-          <Tags className="h-3.5 w-3.5" />
-          Manage projects
+        <Input
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Filter projects"
+          aria-label="Filter projects"
+          leading={<Icon name="search" />}
+          boxClassName="w-full max-w-xs"
+        />
+        <Link href={LABELS_ROUTE} className="dd-btn dd-btn--secondary">
+          <Icon name="tag" />
+          <span>Manage projects</span>
         </Link>
       </div>
 
       {projects.length === 0 ? (
-        <div
-          className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed py-16 text-center"
-          style={{ borderColor: 'var(--border-color)' }}
-        >
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            {query ? 'No projects match that filter.' : 'No projects yet.'}
-          </p>
-          <Link
-            href={LABELS_ROUTE}
-            className="text-xs font-medium underline underline-offset-4"
-            style={{ color: 'var(--primary)' }}
-          >
-            Create one
-          </Link>
+        <div className="dd-surface">
+          <div className="dd-empty-state">
+            <div className="dd-empty-state__icon">
+              <Icon name={query ? 'search' : 'folder'} />
+            </div>
+            <h2 className="dd-empty-state__title">
+              {query ? 'No projects match that filter' : 'No projects yet'}
+            </h2>
+            <p className="dd-empty-state__text">
+              Projects are labels: every task filed under one shows up on its
+              board.
+            </p>
+            <div className="dd-empty-state__actions">
+              <Link href={LABELS_ROUTE} className="dd-btn dd-btn--sm">
+                <Icon name="plus" />
+                <span>Create one</span>
+              </Link>
+            </div>
+          </div>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))] gap-3">
           {projects.map((project) => {
             const stats = statsByProject.get(project.id) ?? emptyStats()
             const open = OPEN_COLUMNS.reduce(
               (total, column) => total + stats[column.key],
               0,
             )
+            const total = open + stats.DONE
+            const percentDone =
+              total === 0 ? 0 : Math.round((stats.DONE / total) * 100)
+            const progressLabelId = `${project.id}-progress`
 
             return (
               <Link
                 key={project.id}
                 href={projectHref(project.id)}
-                className="group flex flex-col gap-3 rounded-xl border p-4 transition-all hover:-translate-y-0.5"
-                style={{
-                  borderColor: 'var(--border-color)',
-                  backgroundColor: 'var(--surface)',
-                }}
+                className="dd-card dd-card--link dd-card--compact"
               >
-                <div className="flex items-center gap-2">
-                  <span
-                    className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
-                    style={{ backgroundColor: project.color }}
-                  />
-                  <span
-                    className="min-w-0 flex-1 truncate text-sm font-semibold"
-                    style={{ color: 'var(--text-primary)' }}
-                  >
-                    {project.name}
-                  </span>
-                  <ArrowRight
-                    className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-60"
-                    style={{ color: 'var(--text-muted)' }}
-                  />
-                </div>
+                <div className="dd-card__body">
+                  <h3 className="dd-card__title flex items-center gap-2">
+                    <span
+                      className="size-2.5 flex-none rounded-full bg-(--project)"
+                      style={cssVars({ '--project': project.color })}
+                      aria-hidden="true"
+                    />
+                    <span className="min-w-0 truncate">{project.name}</span>
+                  </h3>
 
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  {SUMMARY_COLUMNS.map((column) => (
-                    <div key={column.key} className="flex items-center gap-1.5">
+                  <ul className="text-muted flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                    {SUMMARY_COLUMNS.map((column) => {
+                      const status = STATUS_CONFIG[column.dropStatus]
+                      return (
+                        <li
+                          key={column.key}
+                          className="inline-flex items-center gap-1"
+                        >
+                          <Icon
+                            name={status.icon}
+                            style={{ color: status.colorVar }}
+                          />
+                          <b className="text-text font-mono font-medium tabular-nums">
+                            {stats[column.key]}
+                          </b>
+                          {column.title.toLowerCase()}
+                        </li>
+                      )
+                    })}
+                  </ul>
+
+                  <div className="dd-progress dd-progress--sm mt-1.5">
+                    <div className="dd-progress__head">
                       <span
-                        className="h-1.5 w-1.5 rounded-full"
-                        style={{ backgroundColor: column.color }}
-                      />
-                      <span
-                        className="text-[11px] tabular-nums"
-                        style={{ color: 'var(--text-muted)' }}
+                        className="dd-progress__label text-muted text-xs"
+                        id={progressLabelId}
                       >
-                        {stats[column.key]} {column.title.toLowerCase()}
+                        Done
+                      </span>
+                      <span className="dd-progress__value">
+                        <b>{stats.DONE}</b> / {total}
                       </span>
                     </div>
-                  ))}
-                </div>
-
-                <div
-                  className="h-1 overflow-hidden rounded-full"
-                  style={{ backgroundColor: 'var(--surface-2)' }}
-                >
-                  <div
-                    className="h-full rounded-full"
-                    style={{
-                      width: `${open + stats.DONE === 0 ? 0 : Math.round((stats.DONE / (open + stats.DONE)) * 100)}%`,
-                      backgroundColor: 'var(--status-done)',
-                    }}
-                  />
+                    <div
+                      className="dd-progress__track"
+                      role="progressbar"
+                      aria-labelledby={progressLabelId}
+                      aria-valuenow={percentDone}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      style={cssVars({ '--dd-value': String(percentDone) })}
+                    >
+                      <div className="dd-progress__fill" />
+                    </div>
+                  </div>
                 </div>
               </Link>
             )

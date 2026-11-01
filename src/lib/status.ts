@@ -1,76 +1,34 @@
-import type { ElementType } from 'react'
-import {
-  Ban,
-  CheckCircle2,
-  Circle,
-  Clock,
-  Eye,
-  Pause,
-  Play,
-  XCircle,
-} from 'lucide-react'
+import type { IconName } from '@/components/ui/icon'
 import type { Status } from '@/types/todo'
 
 export interface StatusConfigEntry {
   label: string
-  icon: ElementType
+  /** dawn & dusk icon name; render with <Icon name={config.icon} />. */
+  icon: IconName
+  /** Token colour for the status: status tokens where the lane means a state, set tokens where it's a category. */
   colorVar: string
   bgVar: string
 }
 
-// Canonical status metadata. The board (StatusChip/StatusDropdown) is the
-// source of truth for wording and color; every other surface derives from here.
+const entry = (label: string, icon: IconName, token: string) => ({
+  label,
+  icon,
+  colorVar: `var(${token})`,
+  bgVar: `var(${token})`,
+})
+
+// Canonical status metadata. The board (StatusChip/StatusDropdown) is the source of truth for wording and colour;
+// every other surface derives from here. Colours follow dawn & dusk: pending → info, waiting → warn,
+// blocked → bad, done → ok, parked/dropped → muted; review and on-hold take set colours so every lane stays distinct.
 export const STATUS_CONFIG: Record<Status, StatusConfigEntry> = {
-  TODO: {
-    label: 'To Do',
-    icon: Circle,
-    colorVar: 'var(--status-todo)',
-    bgVar: 'var(--status-todo)',
-  },
-  IN_PROGRESS: {
-    label: 'In Progress',
-    icon: Play,
-    colorVar: 'var(--status-in-progress)',
-    bgVar: 'var(--status-in-progress)',
-  },
-  WAITING: {
-    label: 'Waiting',
-    icon: Clock,
-    colorVar: 'var(--status-waiting)',
-    bgVar: 'var(--status-waiting)',
-  },
-  UNDER_REVIEW: {
-    label: 'Under Review',
-    icon: Eye,
-    colorVar: 'var(--status-under-review)',
-    bgVar: 'var(--status-under-review)',
-  },
-  ON_HOLD: {
-    label: 'On Hold',
-    icon: Pause,
-    colorVar: 'var(--status-on-hold)',
-    bgVar: 'var(--status-on-hold)',
-  },
-  BLOCKED: {
-    label: 'Blocked',
-    icon: Ban,
-    colorVar: 'var(--status-blocked)',
-    bgVar: 'var(--status-blocked)',
-  },
-  COMPLETED: {
-    label: 'Done',
-    icon: CheckCircle2,
-    colorVar: 'var(--status-done)',
-    bgVar: 'var(--status-done)',
-  },
-  // Dropped work. On-hold pink now belongs to the Blocked lane, so cancelled
-  // takes the muted grey its own lane is drawn in.
-  CANCELLED: {
-    label: 'Cancelled',
-    icon: XCircle,
-    colorVar: 'var(--text-muted)',
-    bgVar: 'var(--text-muted)',
-  },
+  TODO: entry('To Do', 'inbox', '--dd-muted'),
+  IN_PROGRESS: entry('In Progress', 'play', '--dd-info'),
+  WAITING: entry('Waiting', 'clock', '--dd-warn'),
+  UNDER_REVIEW: entry('Under Review', 'eye', '--dd-set-6'),
+  ON_HOLD: entry('On Hold', 'pause', '--dd-set-5'),
+  BLOCKED: entry('Blocked', 'danger', '--dd-bad'),
+  COMPLETED: entry('Done', 'success', '--dd-ok'),
+  CANCELLED: entry('Cancelled', 'x', '--dd-quiet'),
 }
 
 export const STATUS_LABELS = Object.fromEntries(
@@ -85,8 +43,7 @@ export const STATUS_COLOR_VARS = Object.fromEntries(
   ),
 ) as Record<Status, string>
 
-// Keys into the ChartColors palette (see lib/themes.ts). There is no dedicated
-// cancelled swatch, so cancelled reuses the muted grey like STATUS_CONFIG.
+// Keys into the chart palette (hooks/use-chart-colors.ts).
 export const STATUS_COLOR_KEYS: Record<Status, string> = {
   TODO: 'statusTodo',
   IN_PROGRESS: 'statusInProgress',

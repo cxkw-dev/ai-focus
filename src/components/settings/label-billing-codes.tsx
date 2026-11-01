@@ -1,7 +1,14 @@
-import { Plus, ReceiptText, Trash2 } from 'lucide-react'
+'use client'
+
+import * as React from 'react'
 import { buildBillingCodeTitle, formatBillingCodeDisplay } from '@/lib/labels'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Button, IconButton } from '@/components/ui/button'
+import { Chip } from '@/components/ui/chip'
+import { Icon } from '@/components/ui/icon'
+import { Input, Textarea, TextField } from '@/components/ui/input'
+import { Tip } from '@/components/ui/tooltip'
+import { cn } from '@/lib/utils'
+import type { PresetColor } from './use-label-manager'
 import type {
   BillingCodeInput,
   CreateLabelInput,
@@ -17,6 +24,7 @@ export type BillingCodeDraft = {
 
 export type LabelDraft = {
   name: string
+  /** Hex colour; empty on a new draft until one is picked (the manager fills in the first set colour). */
   color: string
   repoUrl: string
   billingCodes: BillingCodeDraft[]
@@ -30,7 +38,7 @@ export const EMPTY_BILLING_CODE_DRAFT: BillingCodeDraft = {
 
 export const EMPTY_LABEL_DRAFT: LabelDraft = {
   name: '',
-  color: '#22c55e',
+  color: '',
   repoUrl: '',
   billingCodes: [],
 }
@@ -119,7 +127,7 @@ export function buildCreatePayload(draft: LabelDraft): CreateLabelInput {
 
   return {
     name: draft.name.trim(),
-    color: draft.color,
+    ...(draft.color ? { color: draft.color } : {}),
     ...(repoUrl ? { repoUrl } : {}),
     ...(billingCodes.length > 0 ? { billingCodes } : {}),
   }
@@ -170,6 +178,130 @@ export function hasDraftChanges(label: TodoLabel, draft: LabelDraft) {
   return Object.keys(buildUpdatePayload(label, draft)).length > 0
 }
 
+/** A form-level problem (a billing code missing its type, a duplicate code), in the field error style. */
+export function LabelDraftError({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="dd-field__error" role="alert">
+      <Icon name="error" />
+      {children}
+    </p>
+  )
+}
+
+interface LabelColorPickerProps {
+  color: string
+  presetColors: PresetColor[]
+  disabled?: boolean
+  onChange: (color: string) => void
+  className?: string
+}
+
+/** The colour set as round swatches, plus a native picker for any other colour. Stores a hex either way. */
+export function LabelColorPicker({
+  color,
+  presetColors,
+  disabled,
+  onChange,
+  className,
+}: LabelColorPickerProps) {
+  return (
+    <fieldset
+      className={cn('m-0 flex min-w-0 flex-col border-0 p-0', className)}
+      disabled={disabled}
+    >
+      <legend className="dd-radio-group__legend">Colour</legend>
+      <div className="flex flex-wrap items-center gap-2">
+        {presetColors.map((preset) => {
+          const selected = color.toLowerCase() === preset.value
+          return (
+            <Tip key={preset.token} label={preset.name}>
+              <button
+                type="button"
+                aria-pressed={selected}
+                aria-label={`Use ${preset.name.toLowerCase()}`}
+                onClick={() => onChange(preset.value)}
+                className={cn(
+                  'ease-gentle size-6 rounded-full outline-offset-2 transition-transform duration-[var(--dd-dur-fast)] hover:scale-110 disabled:cursor-not-allowed disabled:opacity-50',
+                  preset.className,
+                  selected && 'outline-text outline-2',
+                )}
+              />
+            </Tip>
+          )
+        })}
+        {color && (
+          <span className="flex items-center gap-2">
+            <span
+              className="bg-border mx-1 hidden h-5 w-px sm:block"
+              aria-hidden="true"
+            />
+            <Tip label="Any colour">
+              <input
+                type="color"
+                value={color}
+                onChange={(e) => onChange(e.target.value)}
+                aria-label="Label color"
+                className="app-color-swatch size-6 cursor-pointer rounded-full border-0 bg-transparent p-0 disabled:cursor-not-allowed"
+              />
+            </Tip>
+            <span className="dd-mono text-quiet text-xs">{color}</span>
+          </span>
+        )}
+      </div>
+    </fieldset>
+  )
+}
+
+interface LabelFieldsProps {
+  draft: LabelDraft
+  presetColors: PresetColor[]
+  disabled?: boolean
+  onChange: (updates: Partial<LabelDraft>) => void
+}
+
+/** Name, repository and colour: the label's identity, shared by the create form and the edit drawer. */
+export function LabelFields({
+  draft,
+  presetColors,
+  disabled,
+  onChange,
+}: LabelFieldsProps) {
+  const repoId = React.useId()
+  return (
+    <div className="dd-form__grid">
+      <TextField
+        label="Name"
+        value={draft.name}
+        onChange={(e) => onChange({ name: e.target.value })}
+        placeholder="e.g. AMEX"
+        autoComplete="off"
+        disabled={disabled}
+      />
+      <div className="dd-field">
+        <label className="dd-field__label" htmlFor={repoId}>
+          GitHub repo <span className="dd-field__opt">· optional</span>
+        </label>
+        <Input
+          id={repoId}
+          type="url"
+          inputMode="url"
+          value={draft.repoUrl}
+          onChange={(e) => onChange({ repoUrl: e.target.value })}
+          placeholder="https://github.com/org/repo"
+          disabled={disabled}
+        />
+      </div>
+      <LabelColorPicker
+        className="dd-form__span"
+        color={draft.color}
+        presetColors={presetColors}
+        disabled={disabled}
+        onChange={(color) => onChange({ color })}
+      />
+    </div>
+  )
+}
+
 interface BillingCodeFieldsProps {
   billingCodes: BillingCodeDraft[]
   disabled?: boolean
@@ -191,147 +323,123 @@ export function BillingCodeFields({
   emptyText,
   labelName,
 }: BillingCodeFieldsProps) {
+  const headingId = React.useId()
+
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <ReceiptText
-            className="h-4 w-4"
-            style={{ color: 'var(--primary)' }}
-          />
-          <span
-            className="text-xs font-semibold tracking-wide uppercase"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            Billing Codes
-          </span>
+    <div
+      role="group"
+      aria-labelledby={headingId}
+      className="flex min-w-0 flex-col gap-3"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <div className="flex min-w-0 flex-1 basis-60 flex-col gap-0.5">
+          <h3 id={headingId} className="m-0 text-sm font-semibold">
+            Billing codes
+          </h3>
+          <p className="text-muted m-0 text-xs">{helperText}</p>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onAdd}
-          disabled={disabled}
-          className="h-8 px-2.5 text-xs"
-        >
-          <Plus className="mr-1 h-3 w-3" />
+        <Button type="button" size="sm" onClick={onAdd} disabled={disabled}>
+          <Icon name="plus" />
           Add code
         </Button>
       </div>
 
       {billingCodes.length === 0 ? (
-        <div
-          className="rounded-lg border border-dashed px-3 py-3 text-xs"
-          style={{
-            borderColor: 'var(--border-color)',
-            color: 'var(--text-muted)',
-            backgroundColor:
-              'color-mix(in srgb, var(--surface) 60%, transparent)',
-          }}
-        >
+        <p className="bg-surface-2 rounded-box text-muted m-0 flex items-center gap-2 px-3 py-2.5 text-xs">
+          <Icon name="file" className="text-quiet" />
           {emptyText}
-        </div>
+        </p>
       ) : (
-        <div className="space-y-3">
+        <ol className="m-0 flex list-none flex-col p-0">
           {billingCodes.map((billingCode, index) => {
             const type = normalizeField(billingCode.type)
             const code = normalizeField(billingCode.code)
             const description = normalizeField(billingCode.description)
-            const canPreview = Boolean(type && code)
 
             return (
-              <div
+              <li
                 key={index}
-                className="rounded-lg border p-3"
-                style={{
-                  borderColor: 'var(--border-color)',
-                  backgroundColor:
-                    'color-mix(in srgb, var(--surface) 68%, transparent)',
-                }}
+                className="border-border flex flex-col gap-2 border-t py-3 first:border-t-0 first:pt-0 last:pb-0"
               >
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex min-w-0 flex-wrap items-center gap-2">
-                    <span
-                      className="text-[10px] font-semibold tracking-wide uppercase"
-                      style={{ color: 'var(--text-muted)' }}
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="dd-eyebrow flex-none">Code {index + 1}</span>
+                  {type && code && (
+                    <Chip
+                      className="min-w-0"
+                      title={buildBillingCodeTitle(labelName, {
+                        type,
+                        code,
+                        description,
+                      })}
                     >
-                      Billing code {index + 1}
-                    </span>
-                    {canPreview && (
-                      <span
-                        className="inline-flex h-5 max-w-[18rem] items-center gap-1 rounded px-1.5 text-[10px] font-semibold"
-                        style={{
-                          backgroundColor:
-                            'color-mix(in srgb, var(--surface-2) 80%, transparent)',
-                          color: 'var(--text-primary)',
-                        }}
-                        title={buildBillingCodeTitle(labelName, {
-                          type: type!,
-                          code: code!,
-                          description,
-                        })}
-                      >
-                        <ReceiptText className="h-3 w-3 flex-shrink-0" />
-                        <span className="truncate font-mono">
-                          {formatBillingCodeDisplay({
-                            type: type!,
-                            code: code!,
-                          })}
-                        </span>
+                      <Icon name="file" />
+                      <span className="truncate font-mono">
+                        {formatBillingCodeDisplay({ type, code })}
                       </span>
-                    )}
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
+                    </Chip>
+                  )}
+                  <IconButton
+                    icon="trash"
+                    label={`Remove billing code ${index + 1}`}
+                    size="sm"
+                    className="ml-auto flex-none"
                     onClick={() => onRemove(index)}
                     disabled={disabled}
-                    className="border-destructive/40 text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
-                    aria-label={`Remove billing code ${index + 1}`}
-                    title="Remove billing code"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-2">
-                  <Input
-                    value={billingCode.type}
-                    onChange={(e) => onChange(index, { type: e.target.value })}
-                    disabled={disabled}
-                    className="text-sm"
-                    placeholder="Type, e.g. WBS"
-                  />
-                  <Input
-                    value={billingCode.code}
-                    onChange={(e) => onChange(index, { code: e.target.value })}
-                    disabled={disabled}
-                    className="font-mono text-sm"
-                    placeholder="Billing code"
                   />
                 </div>
-
-                <textarea
-                  value={billingCode.description}
-                  onChange={(e) =>
-                    onChange(index, { description: e.target.value })
-                  }
+                <BillingCodeInputs
+                  billingCode={billingCode}
                   disabled={disabled}
-                  rows={2}
-                  placeholder="Description (optional)"
-                  className="mt-3 w-full rounded-md border bg-transparent px-3 py-2 text-sm transition-colors outline-none"
-                  style={{
-                    borderColor: 'var(--border-color)',
-                    color: 'var(--text-primary)',
-                  }}
+                  onChange={(updates) => onChange(index, updates)}
                 />
-              </div>
+              </li>
             )
           })}
-        </div>
+        </ol>
       )}
+    </div>
+  )
+}
 
-      <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-        {helperText}
+function BillingCodeInputs({
+  billingCode,
+  disabled,
+  onChange,
+}: {
+  billingCode: BillingCodeDraft
+  disabled?: boolean
+  onChange: (updates: Partial<BillingCodeDraft>) => void
+}) {
+  const descriptionId = React.useId()
+  return (
+    <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-x-3 gap-y-3">
+      <TextField
+        label="Type"
+        value={billingCode.type}
+        onChange={(e) => onChange({ type: e.target.value })}
+        placeholder="e.g. WBS"
+        autoComplete="off"
+        disabled={disabled}
+      />
+      <TextField
+        label="Code"
+        value={billingCode.code}
+        onChange={(e) => onChange({ code: e.target.value })}
+        className="dd-mono"
+        autoComplete="off"
+        disabled={disabled}
+      />
+      <div className="dd-field col-span-2">
+        <label className="dd-field__label" htmlFor={descriptionId}>
+          Description <span className="dd-field__opt">· optional</span>
+        </label>
+        <Textarea
+          id={descriptionId}
+          value={billingCode.description}
+          onChange={(e) => onChange({ description: e.target.value })}
+          rows={2}
+          disabled={disabled}
+        />
       </div>
     </div>
   )

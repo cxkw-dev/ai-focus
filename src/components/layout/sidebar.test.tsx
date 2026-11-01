@@ -30,28 +30,8 @@ vi.mock('next/image', () => ({
   ),
 }))
 
-vi.mock('framer-motion', () => ({
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => (
-    <>{children}</>
-  ),
-  motion: new Proxy(
-    {},
-    {
-      get: (_, tag: string) => {
-        const Forwarded = React.forwardRef<
-          HTMLElement,
-          React.HTMLAttributes<HTMLElement>
-        >(({ children, ...props }, ref) =>
-          React.createElement(tag, { ref, ...props }, children),
-        )
-        Forwarded.displayName = `motion.${tag}`
-        return Forwarded
-      },
-    },
-  ),
-}))
-
 vi.mock('@/components/ui/tooltip', () => ({
+  Tip: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   TooltipProvider: ({ children }: { children: React.ReactNode }) => (
     <>{children}</>
   ),
@@ -126,7 +106,7 @@ describe('Sidebar projects', () => {
     expect(githubLink).toHaveAttribute('rel', 'noopener noreferrer')
   })
 
-  it('links the section header to the projects index', () => {
+  it('links the Projects rail item to the projects index', () => {
     render(<Sidebar collapsed={false} onCollapse={() => {}} />)
 
     expect(screen.getByRole('link', { name: 'Projects' })).toHaveAttribute(

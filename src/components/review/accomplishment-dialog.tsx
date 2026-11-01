@@ -1,13 +1,16 @@
 'use client'
 
 import * as React from 'react'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
+  DialogBody,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogFooter,
+  DialogHeader,
 } from '@/components/ui/dialog'
+import { TextField, Textarea } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 import type {
   Accomplishment,
   AccomplishmentCategory,
@@ -21,6 +24,9 @@ const CATEGORIES: { value: AccomplishmentCategory; label: string }[] = [
   { value: 'GROWTH', label: 'Growth' },
   { value: 'OTHER', label: 'Other' },
 ]
+
+const isCategory = (value: string): value is AccomplishmentCategory =>
+  CATEGORIES.some((c) => c.value === value)
 
 interface AccomplishmentDialogProps {
   open: boolean
@@ -78,135 +84,82 @@ export function AccomplishmentDialog({
     onOpenChange(false)
   }
 
-  const inputStyle: React.CSSProperties = {
-    backgroundColor: 'var(--surface-2)',
-    borderColor: 'var(--border-color)',
-    color: 'var(--text-primary)',
-  }
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md overflow-hidden p-0">
-        <form onSubmit={handleSubmit}>
-          <DialogHeader className="px-5 pt-5 pb-3">
-            <DialogTitle>
-              {accomplishment ? 'Edit' : 'Add'} Accomplishment
-            </DialogTitle>
-          </DialogHeader>
+      <DialogContent>
+        <form className="dd-dialog__form" onSubmit={handleSubmit}>
+          <DialogHeader
+            icon="star"
+            title={
+              accomplishment ? 'edit accomplishment' : 'add accomplishment'
+            }
+          />
 
-          <div className="space-y-3 px-5 pb-4">
-            <div>
-              <label
-                className="mb-1 block text-xs font-medium"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                Title
-              </label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="What did you accomplish?"
-                className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2"
-                style={{
-                  ...inputStyle,
-                  ['--tw-ring-color' as string]: 'var(--primary)',
-                }}
-                autoFocus
-              />
-            </div>
+          <DialogBody className="dd-form__body">
+            <TextField
+              label="Title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="What did you accomplish?"
+              required
+              autoFocus
+            />
 
-            <div>
+            <div className="dd-field">
               <label
-                className="mb-1 block text-xs font-medium"
-                style={{ color: 'var(--text-muted)' }}
+                className="dd-field__label"
+                htmlFor="accomplishment-description"
               >
-                Description (optional)
+                Description <span className="dd-field__opt">· optional</span>
               </label>
-              <textarea
+              <Textarea
+                id="accomplishment-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Add details..."
+                placeholder="Add details"
                 rows={3}
-                className="w-full resize-none rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2"
-                style={{
-                  ...inputStyle,
-                  ['--tw-ring-color' as string]: 'var(--primary)',
-                }}
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
+            <div className="dd-form__grid">
+              <div className="dd-field">
                 <label
-                  className="mb-1 block text-xs font-medium"
-                  style={{ color: 'var(--text-muted)' }}
+                  className="dd-field__label"
+                  htmlFor="accomplishment-category"
                 >
                   Category
                 </label>
-                <select
+                <Select
+                  id="accomplishment-category"
                   value={category}
-                  onChange={(e) =>
-                    setCategory(e.target.value as AccomplishmentCategory)
-                  }
-                  className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2"
-                  style={{
-                    ...inputStyle,
-                    ['--tw-ring-color' as string]: 'var(--primary)',
+                  onChange={(e) => {
+                    if (isCategory(e.target.value)) setCategory(e.target.value)
                   }}
-                >
-                  {CATEGORIES.map((c) => (
-                    <option key={c.value} value={c.value}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label
-                  className="mb-1 block text-xs font-medium"
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  Date
-                </label>
-                <input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2"
-                  style={{
-                    ...inputStyle,
-                    ['--tw-ring-color' as string]: 'var(--primary)',
-                  }}
+                  options={CATEGORIES}
                 />
               </div>
-            </div>
-          </div>
 
-          <DialogFooter
-            className="border-t px-5 py-3"
-            style={{ borderColor: 'var(--border-color)' }}
-          >
-            <button
-              type="button"
-              onClick={() => onOpenChange(false)}
-              className="rounded-lg px-4 py-2 text-sm font-medium"
-              style={{ color: 'var(--text-muted)' }}
-            >
+              <TextField
+                label="Date"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+              />
+            </div>
+          </DialogBody>
+
+          <DialogFooter hint="esc to cancel">
+            <Button variant="ghost" onClick={() => onOpenChange(false)}>
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="primary"
               type="submit"
               disabled={!title.trim() || !date}
-              className="rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
-              style={{
-                backgroundColor: 'var(--primary)',
-                color: 'var(--primary-foreground)',
-              }}
             >
               {accomplishment ? 'Save' : 'Add'}
-            </button>
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

@@ -5,30 +5,56 @@ import * as TooltipPrimitive from '@radix-ui/react-tooltip'
 import { cn } from '@/lib/utils'
 
 const TooltipProvider = TooltipPrimitive.Provider
-
 const Tooltip = TooltipPrimitive.Root
-
 const TooltipTrigger = TooltipPrimitive.Trigger
 
+/**
+ * The dawn & dusk tooltip chip (ink in dawn, a raised surface in dusk) with its arrow. Radix places it; the system's
+ * `.dd-tooltip--static` keeps it in Radix's positioned wrapper instead of its own fixed layer.
+ */
 const TooltipContent = React.forwardRef<
   React.ElementRef<typeof TooltipPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>
->(({ className, sideOffset = 4, ...props }, ref) => (
-  <TooltipPrimitive.Content
-    ref={ref}
-    sideOffset={sideOffset}
-    className={cn(
-      'animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 overflow-hidden rounded-md border px-3 py-1.5 text-sm shadow-md',
-      className,
-    )}
-    style={{
-      backgroundColor: 'var(--surface-2)',
-      borderColor: 'var(--border-color)',
-      color: 'var(--text-primary)',
-    }}
-    {...props}
-  />
-))
-TooltipContent.displayName = TooltipPrimitive.Content.displayName
+>(function TooltipContent(
+  { className, side = 'top', sideOffset = 8, ...props },
+  ref,
+) {
+  return (
+    <TooltipPrimitive.Portal>
+      <TooltipPrimitive.Content
+        ref={ref}
+        side={side}
+        sideOffset={sideOffset}
+        data-placement={side}
+        className={cn(
+          'dd-tooltip dd-tooltip--static is-open animate-fade-in z-[90]',
+          className,
+        )}
+        {...props}
+      />
+    </TooltipPrimitive.Portal>
+  )
+})
 
-export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }
+interface TipProps {
+  label: React.ReactNode
+  children: React.ReactElement
+  side?: 'top' | 'right' | 'bottom' | 'left'
+  /** Render the child without a tooltip. */
+  disabled?: boolean
+}
+
+/** Wraps one focusable element with a short tooltip on hover and keyboard focus. */
+function Tip({ label, children, side = 'top', disabled }: TipProps) {
+  if (disabled || !label) return children
+  return (
+    <TooltipProvider delayDuration={250} skipDelayDuration={150}>
+      <Tooltip>
+        <TooltipTrigger asChild>{children}</TooltipTrigger>
+        <TooltipContent side={side}>{label}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  )
+}
+
+export { Tip, Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }

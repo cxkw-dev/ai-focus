@@ -1,62 +1,33 @@
 import type { Metadata, Viewport } from 'next'
-import {
-  DM_Sans,
-  Geist,
-  Geist_Mono,
-  Inconsolata,
-  Inter,
-  Lora,
-  Pixelify_Sans,
-} from 'next/font/google'
-import { ThemeProvider } from '@/components/providers/theme-provider'
+import { DM_Mono, Figtree, Outfit } from 'next/font/google'
+import { ThemeScript } from 'dawn-and-dusk/theme'
 import { QueryProvider } from '@/components/providers/query-provider'
 import { Toaster } from '@/components/ui/toaster'
 import { EvalStatus } from '@/components/ui/eval-pill'
 import './globals.css'
 
-const pixelifySans = Pixelify_Sans({
+// dawn & dusk's three families, self-hosted by next/font. globals.css points the system's font tokens at them.
+const outfit = Outfit({
+  subsets: ['latin'],
+  weight: ['400', '600', '700', '800'],
+  variable: '--font-outfit',
+})
+
+const figtree = Figtree({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
-  variable: '--font-pixelify',
+  variable: '--font-figtree',
 })
 
-const inconsolata = Inconsolata({
+const dmMono = DM_Mono({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-inconsolata',
-})
-
-const lora = Lora({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-lora',
-})
-
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-dm-sans',
-})
-
-const inter = Inter({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-inter',
-})
-
-const geistSans = Geist({
-  subsets: ['latin'],
-  variable: '--font-geist-sans',
-})
-
-const geistMono = Geist_Mono({
-  subsets: ['latin'],
-  variable: '--font-geist-mono',
+  weight: ['400', '500'],
+  variable: '--font-dm-mono',
 })
 
 export const metadata: Metadata = {
   title: 'ai-focus',
-  description: 'A modern, minimal productivity app',
+  description: 'A quiet place for todos, notes and the year in review',
   manifest: '/manifest.json?v=8',
   icons: {
     icon: [
@@ -79,10 +50,11 @@ export const metadata: Metadata = {
   },
 }
 
+// The browser chrome takes the page tone of each theme (--dd-bg in dawn and dusk).
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#FAFAFA' },
-    { media: '(prefers-color-scheme: dark)', color: '#000000' },
+    { media: '(prefers-color-scheme: light)', color: '#f4efe7' },
+    { media: '(prefers-color-scheme: dark)', color: '#1c1916' },
   ],
   width: 'device-width',
   initialScale: 1,
@@ -95,21 +67,20 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} ${pixelifySans.variable} ${inconsolata.variable} ${lora.variable} ${dmSans.variable} ${inter.variable} font-sans antialiased`}
-      >
+    // ThemeScript restores the saved dawn/dusk choice onto <html data-theme> before hydration.
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${outfit.variable} ${figtree.variable} ${dmMono.variable}`}
+    >
+      <head>
+        <ThemeScript />
+      </head>
+      <body>
         <QueryProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-            <Toaster />
-            <EvalStatus />
-          </ThemeProvider>
+          {children}
+          <Toaster />
+          <EvalStatus />
         </QueryProvider>
       </body>
     </html>

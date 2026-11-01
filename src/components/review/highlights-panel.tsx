@@ -1,109 +1,78 @@
-'use client'
-
-import { Calendar, Trophy, Tag, Award } from 'lucide-react'
+import { Icon, type IconName } from '@/components/ui/icon'
 import type { Highlights } from '@/types/stats'
-import { getCategoryLabel } from './category-badge'
 import type { AccomplishmentCategory } from '@/types/accomplishment'
+import { getCategoryLabel } from './category-badge'
 
 interface HighlightsPanelProps {
   highlights: Highlights
 }
 
+interface Highlight {
+  icon: IconName
+  label: string
+  value: string | null
+}
+
+/** The year's standout months, label and category as a dawn & dusk description list on a surface. */
 export function HighlightsPanel({ highlights }: HighlightsPanelProps) {
-  const items = [
+  const all: Highlight[] = [
     {
-      icon: Calendar,
-      label: 'Busiest Month',
+      icon: 'calendar',
+      label: 'Busiest month',
       value: highlights.busiestMonth,
-      color: 'var(--primary)',
     },
     {
-      icon: Trophy,
-      label: 'Most Productive',
+      icon: 'success',
+      label: 'Most productive',
       value: highlights.mostProductiveMonth,
-      color: 'var(--status-done)',
     },
+    { icon: 'tag', label: 'Top label', value: highlights.topLabel },
     {
-      icon: Tag,
-      label: 'Top Label',
-      value: highlights.topLabel,
-      color: 'var(--status-in-progress)',
-    },
-    {
-      icon: Award,
-      label: 'Top Category',
+      icon: 'star',
+      label: 'Top category',
       value: highlights.topCategory
         ? getCategoryLabel(highlights.topCategory as AccomplishmentCategory)
         : null,
-      color: 'var(--category-delivery)',
     },
-  ].filter((item) => item.value)
-
-  if (items.length === 0) {
-    return (
-      <div
-        className="flex items-center justify-center rounded-xl border p-5"
-        style={{
-          backgroundColor: 'var(--surface)',
-          borderColor: 'var(--border-color)',
-          minHeight: 200,
-        }}
-      >
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-          No highlights yet
-        </p>
-      </div>
-    )
-  }
+  ]
+  const items = all.filter(
+    (item): item is Highlight & { value: string } => !!item.value,
+  )
 
   return (
-    <div
-      className="rounded-xl border p-3 sm:p-5"
-      style={{
-        backgroundColor: 'var(--surface)',
-        borderColor: 'var(--border-color)',
-      }}
-    >
-      <div className="mb-4 flex items-center gap-2">
-        <div
-          className="h-2 w-2 rounded-full"
-          style={{ backgroundColor: 'var(--status-waiting)' }}
-        />
-        <h3
-          className="text-sm font-semibold"
-          style={{ color: 'var(--text-primary)' }}
-        >
-          Highlights
-        </h3>
-      </div>
-      <div className="space-y-4">
-        {items.map((item) => {
-          const Icon = item.icon
-          return (
-            <div key={item.label} className="flex items-center gap-3">
-              <div
-                className="flex h-9 w-9 items-center justify-center rounded-lg"
-                style={{
-                  backgroundColor: `color-mix(in srgb, ${item.color} 15%, transparent)`,
-                }}
-              >
-                <Icon className="h-4 w-4" style={{ color: item.color }} />
-              </div>
-              <div>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  {item.label}
-                </p>
-                <p
-                  className="text-sm font-semibold"
-                  style={{ color: 'var(--text-primary)' }}
-                >
-                  {item.value}
-                </p>
-              </div>
+    <section aria-labelledby="review-highlights-title">
+      <header className="dd-table-header">
+        <h2 className="dd-table-header__title" id="review-highlights-title">
+          highlights
+        </h2>
+      </header>
+      {items.length === 0 ? (
+        <div className="dd-surface">
+          <div className="dd-empty-state dd-empty-state--compact">
+            <div className="dd-empty-state__icon">
+              <Icon name="star" />
             </div>
-          )
-        })}
-      </div>
-    </div>
+            <h3 className="dd-empty-state__title">No highlights yet</h3>
+            <p className="dd-empty-state__text">
+              Your busiest month, top label and top category show up here.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <dl className="dd-description-list dd-description-list--card">
+          {items.map((item) => (
+            <div key={item.label} className="dd-description-list__item">
+              <dt className="dd-description-list__term">
+                <span className="inline-flex items-center gap-1.5">
+                  <Icon name={item.icon} />
+                  {item.label}
+                </span>
+              </dt>
+              <dd className="dd-description-list__details">{item.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </section>
   )
 }

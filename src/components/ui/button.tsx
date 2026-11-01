@@ -1,85 +1,55 @@
+'use client'
+
 import * as React from 'react'
-import { Slot } from '@radix-ui/react-slot'
-import { cva, type VariantProps } from 'class-variance-authority'
+import {
+  Button as DdButton,
+  type ButtonProps as DdButtonProps,
+} from 'dawn-and-dusk/react'
+import { Icon, type IconName } from '@/components/ui/icon'
+import { Tip } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
-const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
-  {
-    variants: {
-      variant: {
-        default: 'btn-vercel-primary',
-        destructive: 'btn-vercel-destructive',
-        outline: 'border btn-vercel-outline',
-        secondary: 'btn-vercel-secondary',
-        ghost: 'btn-vercel-ghost',
-        link: 'btn-vercel-link underline-offset-4 hover:underline',
-      },
-      size: {
-        default: 'h-10 px-4 py-2',
-        sm: 'h-9 rounded-md px-3',
-        lg: 'h-11 rounded-md px-8',
-        icon: 'h-10 w-10',
-      },
-    },
-    defaultVariants: {
-      variant: 'default',
-      size: 'default',
-    },
-  },
-)
+/**
+ * dawn & dusk button: `variant` primary | secondary (default) | ghost | ink | danger | link, `size` sm | md | lg,
+ * `loading`. One primary per screenful; row actions are ghost. Icons lead the label: `<Icon name="plus" />Add`.
+ */
+export type ButtonProps = DdButtonProps
+export const Button = DdButton
 
-const variantStyles: Record<string, React.CSSProperties> = {
-  default: {
-    backgroundColor: 'var(--primary)',
-    color: 'var(--primary-foreground)',
-  },
-  destructive: {
-    backgroundColor: 'var(--destructive)',
-    color: 'var(--destructive-foreground)',
-  },
-  outline: {
-    backgroundColor: 'transparent',
-    borderColor: 'var(--border-color)',
-    color: 'var(--text-primary)',
-  },
-  secondary: {
-    backgroundColor: 'var(--surface-2)',
-    color: 'var(--text-primary)',
-  },
-  ghost: {
-    backgroundColor: 'transparent',
-    color: 'var(--text-primary)',
-  },
-  link: {
-    backgroundColor: 'transparent',
-    color: 'var(--primary)',
-  },
+export interface IconButtonProps extends Omit<
+  DdButtonProps,
+  'children' | 'aria-label'
+> {
+  icon: IconName
+  /** Accessible name, also shown as the tooltip. */
+  label: string
+  /** Hide the tooltip (e.g. when a menu opens from this button). */
+  noTip?: boolean
+  side?: 'top' | 'right' | 'bottom' | 'left'
 }
 
-export interface ButtonProps
-  extends
-    React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
-  asChild?: boolean
-}
-
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  (
-    { className, variant = 'default', size, asChild = false, style, ...props },
+/** A square, icon-only dd-btn (ghost by default) with an accessible name and a tooltip. */
+export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
+  function IconButton(
+    { icon, label, noTip, side, variant = 'ghost', className, ...props },
     ref,
-  ) => {
-    const Comp = asChild ? Slot : 'button'
-    return (
-      <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
-        style={{ ...variantStyles[variant || 'default'], ...style }}
+  ) {
+    const button = (
+      <DdButton
         ref={ref}
+        variant={variant}
+        aria-label={label}
+        className={cn('dd-btn--icon', className)}
         {...props}
-      />
+      >
+        <Icon name={icon} />
+      </DdButton>
+    )
+    if (noTip) return button
+    return (
+      <Tip label={label} side={side}>
+        {button}
+      </Tip>
     )
   },
 )
-Button.displayName = 'Button'
-
-export { Button, buttonVariants }

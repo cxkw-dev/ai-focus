@@ -1,11 +1,11 @@
 'use client'
 
 import * as React from 'react'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { Check, ChevronDown, ChevronRight, Terminal, X } from 'lucide-react'
 import type { IconType } from 'react-icons'
 import { SiAnthropic } from 'react-icons/si'
 import { TbBrandOpenai } from 'react-icons/tb'
+import { IconButton } from '@/components/ui/button'
+import { Icon } from '@/components/ui/icon'
 import { cn, formatRelativeTime } from '@/lib/utils'
 import {
   SESSION_TOOL_VALUES,
@@ -13,34 +13,11 @@ import {
   type SessionTool,
 } from '@/types/todo'
 
-const TOOL_CONFIG = {
-  claude: {
-    icon: SiAnthropic,
-    colorVar: '#d4a574',
-    bgTint: 'rgba(212,165,116,0.04)',
-    borderTint: 'rgba(212,165,116,0.10)',
-    buttonBg: 'rgba(212,165,116,0.10)',
-    buttonBorder: 'rgba(212,165,116,0.15)',
-  },
-  codex: {
-    icon: TbBrandOpenai,
-    colorVar: '#4ade80',
-    bgTint: 'rgba(74,222,128,0.04)',
-    borderTint: 'rgba(74,222,128,0.10)',
-    buttonBg: 'rgba(74,222,128,0.10)',
-    buttonBorder: 'rgba(74,222,128,0.15)',
-  },
-} satisfies Record<
-  SessionTool,
-  {
-    icon: IconType
-    colorVar: string
-    bgTint: string
-    borderTint: string
-    buttonBg: string
-    buttonBorder: string
-  }
->
+/** Brand marks identify the tool; they stay neutral so they don't read as status. */
+const TOOL_ICONS = {
+  claude: SiAnthropic,
+  codex: TbBrandOpenai,
+} satisfies Record<SessionTool, IconType>
 
 interface SessionListProps {
   sessions: Session[]
@@ -59,7 +36,6 @@ export function SessionList({
   compact = false,
 }: SessionListProps) {
   const [expanded, setExpanded] = React.useState(false)
-  const shouldReduceMotion = useReducedMotion()
   const [copyFeedback, setCopyFeedback] = React.useState<CopyFeedback | null>(
     null,
   )
@@ -125,70 +101,40 @@ export function SessionList({
   }
 
   return (
-    <div
-      className={cn(!compact && 'pt-1.5')}
-      style={
-        !compact
-          ? {
-              borderTop:
-                '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)',
-            }
-          : undefined
-      }
-    >
-      <div className="mb-1 flex items-center gap-1.5">
-        <button
-          type="button"
-          onClick={() => setExpanded((previous) => !previous)}
-          className="flex cursor-pointer items-center gap-1.5 transition-opacity hover:opacity-80"
-        >
-          {expanded ? (
-            <ChevronDown
-              className="h-3 w-3"
-              style={{ color: 'var(--text-muted)', opacity: 0.6 }}
-            />
-          ) : (
-            <ChevronRight
-              className="h-3 w-3"
-              style={{ color: 'var(--text-muted)', opacity: 0.6 }}
-            />
-          )}
-          <span
-            className="text-[10px] font-semibold tracking-wide uppercase"
-            style={{ color: 'var(--text-muted)', opacity: 0.6 }}
-          >
-            Sessions
-          </span>
-        </button>
-        <span
-          className="text-[10px] font-medium"
-          style={{ color: 'var(--text-muted)' }}
-        >
+    <div className={cn(!compact && 'border-border border-t pt-1.5')}>
+      <button
+        type="button"
+        onClick={() => setExpanded((previous) => !previous)}
+        aria-expanded={expanded}
+        className={cn(
+          'rounded-ctl inline-flex items-center gap-1 transition-colors',
+          compact
+            ? 'text-text text-sm font-semibold'
+            : 'text-muted hover:text-text text-xs font-medium',
+        )}
+      >
+        <Icon name={expanded ? 'chevron-down' : 'chevron-right'} />
+        Sessions
+        <span className="text-quiet font-mono tabular-nums">
           {sessions.length}
         </span>
-      </div>
+      </button>
 
       {expanded && (
-        <div className="mt-1 flex flex-col gap-2.5">
+        <div className="mt-1.5 flex flex-col gap-2.5">
           {sessionGroups.map(({ tool, toolSessions }) => {
-            const config = TOOL_CONFIG[tool]
-            const Icon = config.icon
+            const ToolIcon = TOOL_ICONS[tool]
 
             return (
-              <div key={tool}>
-                <div className="mb-1.5 flex items-center gap-1.5 pl-0.5">
-                  <Icon
-                    style={{ color: config.colorVar, width: 14, height: 14 }}
-                  />
-                  <span
-                    className="text-[8px] tracking-wide uppercase"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
+              <div key={tool} className="flex flex-col gap-0.5">
+                <div className="text-quiet flex items-center gap-1.5 text-xs">
+                  <ToolIcon className="text-muted size-[1.15em] flex-none" />
+                  <span>
                     {toolSessions.length}{' '}
                     {toolSessions.length === 1 ? 'session' : 'sessions'}
                   </span>
                 </div>
-                <div className="flex flex-col gap-1 pl-0.5">
+                <ul className="flex flex-col">
                   {toolSessions.map((session) => {
                     const feedbackState =
                       copyFeedback?.sessionId === session.id
@@ -198,196 +144,67 @@ export function SessionList({
                     const isError = feedbackState === 'error'
 
                     return (
-                      <motion.div
+                      <li
                         key={session.id}
-                        initial={false}
-                        animate={
-                          shouldReduceMotion
-                            ? undefined
-                            : isCopied
-                              ? { y: [0, -1, 0] }
-                              : isError
-                                ? { x: [0, -2, 2, 0] }
-                                : { x: 0, y: 0 }
-                        }
-                        transition={{ duration: 0.22, ease: 'easeOut' }}
-                        className="group/session relative flex items-center gap-1.5 overflow-hidden rounded-md px-2 py-1"
-                        style={{
-                          background: config.bgTint,
-                          border: isCopied
-                            ? '1px solid color-mix(in srgb, var(--status-done) 22%, transparent)'
-                            : isError
-                              ? '1px solid color-mix(in srgb, var(--destructive) 24%, transparent)'
-                              : `1px solid ${config.borderTint}`,
-                        }}
+                        className="group/session rounded-ctl ease-gentle hover:bg-wash flex items-center gap-1 py-0.5 pr-0.5 pl-1.5 transition-colors duration-[var(--dd-dur-fast)]"
                       >
-                        <AnimatePresence initial={false}>
-                          {(isCopied || isError) && (
-                            <motion.span
-                              aria-hidden
-                              initial={
-                                shouldReduceMotion
-                                  ? false
-                                  : { opacity: 0, scaleX: 0.4 }
-                              }
-                              animate={{ opacity: 1, scaleX: 1 }}
-                              exit={
-                                shouldReduceMotion
-                                  ? undefined
-                                  : { opacity: 0, scaleX: 0.7 }
-                              }
-                              transition={{ duration: 0.2, ease: 'easeOut' }}
-                              className="absolute inset-x-2 bottom-0 h-px origin-left"
-                              style={{
-                                background: isCopied
-                                  ? 'color-mix(in srgb, var(--status-done) 55%, transparent)'
-                                  : 'color-mix(in srgb, var(--destructive) 55%, transparent)',
-                              }}
-                            />
-                          )}
-                        </AnimatePresence>
-                        <div className="min-w-0 flex-1">
-                          <div
-                            className="truncate font-mono text-[10px]"
-                            style={{ color: 'var(--text-primary)' }}
-                          >
+                        <div className="min-w-0 flex-1 font-mono text-xs">
+                          <div className="text-text truncate">
                             {session.command}
                           </div>
-                          <div className="mt-0.5 flex items-center gap-1.5 text-[8px]">
-                            <span
-                              style={{
-                                color: 'var(--text-muted)',
-                                opacity: 0.6,
-                              }}
-                            >
+                          <div className="text-quiet flex items-center gap-1.5">
+                            <span className="truncate">
                               {session.workingPath} ·{' '}
                               {formatRelativeTime(session.createdAt)}
                             </span>
-                            <AnimatePresence initial={false} mode="wait">
-                              {feedbackState ? (
-                                <motion.span
-                                  key={feedbackState}
-                                  initial={
-                                    shouldReduceMotion
-                                      ? false
-                                      : { opacity: 0, x: 4 }
-                                  }
-                                  animate={{ opacity: 1, x: 0 }}
-                                  exit={
-                                    shouldReduceMotion
-                                      ? undefined
-                                      : { opacity: 0, x: 2 }
-                                  }
-                                  transition={{
-                                    duration: 0.18,
-                                    ease: 'easeOut',
-                                  }}
-                                  className="inline-flex items-center gap-1 font-medium"
-                                  style={{
-                                    color: isCopied
-                                      ? 'var(--status-done)'
-                                      : 'var(--destructive)',
-                                  }}
-                                >
-                                  {isCopied ? (
-                                    <>
-                                      <Check className="h-2.5 w-2.5" />
-                                      Copied
-                                    </>
-                                  ) : (
-                                    'Copy failed'
-                                  )}
-                                </motion.span>
-                              ) : null}
-                            </AnimatePresence>
+                            {isCopied && (
+                              <span className="animate-fade-in font-body text-ok inline-flex flex-none items-center gap-1">
+                                <Icon name="check" />
+                                Copied
+                              </span>
+                            )}
+                            {isError && (
+                              <span className="animate-fade-in font-body text-bad flex-none">
+                                Copy failed
+                              </span>
+                            )}
                           </div>
                         </div>
-                        <motion.button
-                          type="button"
-                          whileTap={
-                            shouldReduceMotion ? undefined : { scale: 0.94 }
-                          }
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            void handleCopy(session)
-                          }}
-                          className="relative flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md transition-colors duration-150"
-                          style={{
-                            background: isCopied
-                              ? 'color-mix(in srgb, var(--status-done) 12%, transparent)'
-                              : isError
-                                ? 'color-mix(in srgb, var(--destructive) 12%, transparent)'
-                                : config.buttonBg,
-                            border: isCopied
-                              ? '1px solid color-mix(in srgb, var(--status-done) 20%, transparent)'
-                              : isError
-                                ? '1px solid color-mix(in srgb, var(--destructive) 20%, transparent)'
-                                : `1px solid ${config.buttonBorder}`,
-                            color: isCopied
-                              ? 'var(--status-done)'
-                              : isError
-                                ? 'var(--destructive)'
-                                : config.colorVar,
-                          }}
-                          aria-label={
+                        <IconButton
+                          icon={isCopied ? 'check' : isError ? 'error' : 'copy'}
+                          label={
                             isCopied
                               ? 'Session command copied'
                               : isError
                                 ? 'Copy session command failed'
                                 : 'Copy session command'
                           }
-                          title={
-                            isCopied
-                              ? 'Copied session command'
-                              : isError
-                                ? 'Copy failed, click to retry'
-                                : 'Copy session command'
-                          }
-                        >
-                          <AnimatePresence initial={false} mode="wait">
-                            <motion.span
-                              key={feedbackState ?? 'idle'}
-                              initial={
-                                shouldReduceMotion
-                                  ? false
-                                  : { opacity: 0, rotate: -8, scale: 0.92 }
-                              }
-                              animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                              exit={
-                                shouldReduceMotion
-                                  ? undefined
-                                  : { opacity: 0, rotate: 8, scale: 0.92 }
-                              }
-                              transition={{ duration: 0.16, ease: 'easeOut' }}
-                              className="relative z-10 inline-flex items-center justify-center"
-                            >
-                              {isCopied ? (
-                                <Check className="h-2.5 w-2.5" />
-                              ) : isError ? (
-                                <X className="h-2.5 w-2.5" />
-                              ) : (
-                                <Terminal className="h-2.5 w-2.5" />
-                              )}
-                            </motion.span>
-                          </AnimatePresence>
-                        </motion.button>
+                          size="sm"
+                          className={cn(
+                            isCopied && 'text-ok',
+                            isError && 'text-bad',
+                          )}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            void handleCopy(session)
+                          }}
+                        />
                         {onDelete && (
-                          <button
-                            type="button"
+                          <IconButton
+                            icon="trash"
+                            label="Delete session"
+                            size="sm"
+                            className="opacity-0 group-focus-within/session:opacity-100 group-hover/session:opacity-100 focus-visible:opacity-100"
                             onClick={(event) => {
                               event.stopPropagation()
                               onDelete(session.id)
                             }}
-                            className="flex-shrink-0 rounded p-0.5 opacity-0 transition-opacity group-hover/session:opacity-100"
-                            style={{ color: 'var(--destructive)' }}
-                          >
-                            <X className="h-2.5 w-2.5" />
-                          </button>
+                          />
                         )}
-                      </motion.div>
+                      </li>
                     )
                   })}
-                </div>
+                </ul>
               </div>
             )
           })}

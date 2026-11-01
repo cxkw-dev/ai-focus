@@ -1,8 +1,10 @@
 'use client'
 
 import * as React from 'react'
-import { Tags } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { Chip } from '@/components/ui/chip'
+import { Icon } from '@/components/ui/icon'
+import { cn, cssVars } from '@/lib/utils'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -46,66 +48,37 @@ export function LabelMultiSelect({
   }
 
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col gap-2">
       {!showQuickPick && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              disabled={disabled}
-              className={cn(
-                'flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] transition-colors',
-                disabled && 'cursor-not-allowed opacity-50',
-              )}
-              style={{
-                backgroundColor: selectedLabels.length
-                  ? 'color-mix(in srgb, var(--primary) 12%, transparent)'
-                  : 'transparent',
-                color: selectedLabels.length
-                  ? 'var(--primary)'
-                  : 'var(--text-muted)',
-              }}
-            >
-              <Tags className="h-3 w-3" />
+            <Button size="sm" disabled={disabled} className="self-start">
+              <Icon name="tag" />
               Labels
               {selectedLabels.length > 0 && (
-                <span
-                  className="ml-1 rounded-full px-1.5 py-0.5 text-[9px] font-semibold"
-                  style={{
-                    backgroundColor: 'var(--primary)',
-                    color: 'var(--primary-foreground)',
-                  }}
-                >
+                <span className="dd-badge dd-badge--count">
                   {selectedLabels.length}
                 </span>
               )}
-            </button>
+              <Icon name="chevron-down" className="text-quiet" />
+            </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="min-w-[220px]">
+          <DropdownMenuContent align="start" className="min-w-56">
             {labels.length === 0 && (
-              <div
-                className="px-2 py-2 text-xs"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                No labels yet.
-              </div>
+              <p className="text-quiet px-3 py-2 text-xs">No labels yet.</p>
             )}
             {labels.map((label) => (
               <DropdownMenuCheckboxItem
                 key={label.id}
                 checked={selected.has(label.id)}
                 onCheckedChange={() => toggleLabel(label.id)}
-                className="gap-2 text-xs"
               >
-                <span
-                  className="h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: label.color }}
-                />
+                <LabelDot color={label.color} />
                 {label.name}
               </DropdownMenuCheckboxItem>
             ))}
             <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={onManage} className="text-xs">
+            <DropdownMenuItem icon="settings" onSelect={onManage}>
               Manage labels
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -113,60 +86,36 @@ export function LabelMultiSelect({
       )}
 
       {showQuickPick && (
-        <div className="space-y-2">
-          <div
-            className="flex items-center justify-between text-[10px] tracking-wide uppercase"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            <span>Selected</span>
-            <span>{selectedLabels.length}</span>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-col gap-2" data-dd-manual>
+          <GroupHeading label="Selected" count={selectedLabels.length} />
+          <div className="dd-chip-group">
             {selectedLabels.length === 0 && (
-              <span
-                className="text-[11px]"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                None selected.
-              </span>
+              <span className="text-quiet text-xs">None selected.</span>
             )}
             {selectedLabels.map((label) => (
-              <button
-                key={label.id}
-                type="button"
-                onClick={() => toggleLabel(label.id)}
-                disabled={disabled}
-                className={cn(
-                  'inline-flex h-5 items-center gap-1 rounded px-1.5 text-[10px] font-semibold transition-colors',
-                  disabled && 'cursor-not-allowed opacity-50',
-                )}
-                style={{
-                  backgroundColor: `color-mix(in srgb, ${label.color} 15%, transparent)`,
-                  color: label.color,
-                }}
-                title="Remove label"
-              >
-                {label.name}
-                <span className="text-[10px] opacity-70">&times;</span>
-              </button>
+              <Chip key={label.id} color={label.color}>
+                <span>{label.name}</span>
+                <button
+                  type="button"
+                  className="dd-chip__remove"
+                  onClick={() => toggleLabel(label.id)}
+                  disabled={disabled}
+                  aria-label={`Remove ${label.name}`}
+                >
+                  <Icon name="x" />
+                </button>
+              </Chip>
             ))}
           </div>
 
-          <div
-            className="flex items-center justify-between pt-2 text-[10px] tracking-wide uppercase"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            <span>Available</span>
-            <span>{labels.length - selectedLabels.length}</span>
-          </div>
-          <div className="grid gap-1.5">
+          <GroupHeading
+            label="Available"
+            count={labels.length - selectedLabels.length}
+            className="pt-1"
+          />
+          <div className="dd-chip-group" role="group" aria-label="Labels">
             {labels.length === 0 && (
-              <span
-                className="text-[11px]"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                No labels yet.
-              </span>
+              <span className="text-quiet text-xs">No labels yet.</span>
             )}
             {labels.map((label) => {
               const isSelected = selected.has(label.id)
@@ -177,36 +126,13 @@ export function LabelMultiSelect({
                   onClick={() => toggleLabel(label.id)}
                   disabled={disabled}
                   aria-pressed={isSelected}
-                  className={cn(
-                    'flex w-full items-center justify-between rounded-md border px-2.5 py-2 text-[11px] transition-colors',
-                    disabled && 'cursor-not-allowed opacity-50',
-                  )}
-                  style={
-                    isSelected
-                      ? {
-                          borderColor: `${label.color}66`,
-                          backgroundColor: `${label.color}14`,
-                          color: label.color,
-                        }
-                      : {
-                          borderColor: 'var(--border-color)',
-                          backgroundColor:
-                            'color-mix(in srgb, var(--surface-2) 60%, transparent)',
-                          color: 'var(--text-muted)',
-                        }
-                  }
-                  title={isSelected ? 'Remove label' : 'Add label'}
+                  className="dd-chip dd-chip--filter"
+                  style={cssVars({ '--dd-chip': label.color })}
                 >
-                  <span className="flex items-center gap-2">
-                    <span
-                      className="h-2.5 w-2.5 rounded-full"
-                      style={{ backgroundColor: label.color }}
-                    />
-                    {label.name}
+                  <span className="dd-chip__check">
+                    <Icon name="check" />
                   </span>
-                  <span className="text-[10px] tracking-wide uppercase">
-                    {isSelected ? 'On' : 'Add'}
-                  </span>
+                  <span>{label.name}</span>
                 </button>
               )
             })}
@@ -215,29 +141,49 @@ export function LabelMultiSelect({
       )}
 
       {!showQuickPick && showChips && (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="dd-chip-group">
           {selectedLabels.length === 0 && (
-            <span
-              className="text-[11px]"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              No labels selected.
-            </span>
+            <span className="text-quiet text-xs">No labels selected.</span>
           )}
           {selectedLabels.map((label) => (
-            <span
-              key={label.id}
-              className="inline-flex h-5 items-center gap-1 rounded px-1.5 text-[10px] font-semibold"
-              style={{
-                backgroundColor: `color-mix(in srgb, ${label.color} 15%, transparent)`,
-                color: label.color,
-              }}
-            >
-              {label.name}
-            </span>
+            <Chip key={label.id} color={label.color}>
+              <span>{label.name}</span>
+            </Chip>
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+function LabelDot({ color }: { color: string }) {
+  return (
+    <span
+      className="size-2 flex-none rounded-full bg-(--dot)"
+      style={cssVars({ '--dot': color })}
+      aria-hidden="true"
+    />
+  )
+}
+
+function GroupHeading({
+  label,
+  count,
+  className,
+}: {
+  label: string
+  count: number
+  className?: string
+}) {
+  return (
+    <div
+      className={cn(
+        'text-quiet flex items-center justify-between text-xs',
+        className,
+      )}
+    >
+      <span>{label}</span>
+      <span className="font-mono tabular-nums">{count}</span>
     </div>
   )
 }

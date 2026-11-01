@@ -1,18 +1,19 @@
 'use client'
 
-import { CalendarDays, Flame, TrendingUp } from 'lucide-react'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Select, type SelectOption } from '@/components/ui/select'
+import { STATUS_CONFIG } from '@/lib/status'
 import { PrioritySelector } from './priority-selector'
 import type { TodoFormState } from '@/hooks/use-todo-form'
 import type { Status } from '@/types/todo'
+
+const STATUS_OPTIONS: SelectOption[] = Object.entries(STATUS_CONFIG).map(
+  ([value, config]) => ({ value, label: config.label }),
+)
+
+function isStatus(value: string): value is Status {
+  return value in STATUS_CONFIG
+}
 
 interface EditTodoDialogMetaFieldsProps {
   form: TodoFormState
@@ -25,45 +26,22 @@ export function EditTodoDialogMetaFields({
 }: EditTodoDialogMetaFieldsProps) {
   return (
     <>
-      {/* Status */}
-      <div className="space-y-2">
-        <Label
-          htmlFor="status"
-          className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          <TrendingUp className="h-3.5 w-3.5" />
+      <div className="dd-field dd-field--above">
+        <label className="dd-field__label" htmlFor="status">
           Status
-        </Label>
+        </label>
         <Select
+          id="status"
           value={form.status}
-          onValueChange={(v) => form.setStatus(v as Status)}
-        >
-          <SelectTrigger className="h-10">
-            <SelectValue placeholder="Select status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="TODO">To Do</SelectItem>
-            <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-            <SelectItem value="WAITING">Waiting</SelectItem>
-            <SelectItem value="UNDER_REVIEW">Under Review</SelectItem>
-            <SelectItem value="ON_HOLD">On Hold</SelectItem>
-            <SelectItem value="BLOCKED">Blocked</SelectItem>
-            <SelectItem value="COMPLETED">Completed</SelectItem>
-            <SelectItem value="CANCELLED">Cancelled</SelectItem>
-          </SelectContent>
-        </Select>
+          onChange={(e) => {
+            if (isStatus(e.target.value)) form.setStatus(e.target.value)
+          }}
+          options={STATUS_OPTIONS}
+        />
       </div>
 
-      {/* Priority */}
-      <div className="space-y-2">
-        <Label
-          className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          <Flame className="h-3.5 w-3.5" />
-          Priority
-        </Label>
+      <div className="dd-field dd-field--above">
+        <span className="dd-field__label">Priority</span>
         <PrioritySelector
           value={form.priority}
           onChange={(next) => form.setPriority(next)}
@@ -71,22 +49,15 @@ export function EditTodoDialogMetaFields({
         />
       </div>
 
-      {/* Due Date */}
-      <div className="space-y-2">
-        <Label
-          htmlFor="dueDate"
-          className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          <CalendarDays className="h-3.5 w-3.5" />
-          Due Date
-        </Label>
+      <div className="dd-field dd-field--above">
+        <label className="dd-field__label" htmlFor="dueDate">
+          Due date
+        </label>
         <Input
           id="dueDate"
           type="date"
           value={form.dueDate}
           onChange={(e) => form.setDueDate(e.target.value)}
-          className="h-10 text-sm"
         />
       </div>
     </>

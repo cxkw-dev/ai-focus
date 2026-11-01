@@ -6,6 +6,7 @@ import {
   useEditorState,
   EditorContent,
   ReactNodeViewRenderer,
+  type Editor,
 } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
@@ -16,22 +17,11 @@ import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import { common, createLowlight } from 'lowlight'
 import { handleLinkPaste } from '@/lib/tiptap-link-paste'
-import {
-  Bold,
-  Italic,
-  Strikethrough,
-  List,
-  ListOrdered,
-  ListTodo,
-  Heading2,
-  Link as LinkIcon,
-  Code,
-  Undo,
-  Redo,
-  RemoveFormatting,
-} from 'lucide-react'
 import { FontSize } from '@/lib/tiptap-font-size'
 import { CodeBlockView } from '@/components/notes/code-block-view'
+import { Icon } from '@/components/ui/icon'
+import { Select } from '@/components/ui/select'
+import { Tip } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { CustomMention } from '@/lib/tiptap-mention'
 import { createMentionSuggestion } from '@/lib/mention-suggestion'
@@ -39,47 +29,292 @@ import type { MentionSuggestionItem } from '@/components/ui/mention-suggestion'
 
 const lowlight = createLowlight(common)
 
+const FONT_SIZES = [
+  { value: '', label: 'Size' },
+  { value: '12px', label: 'Small' },
+  { value: '14px', label: 'Normal' },
+  { value: '18px', label: 'Large' },
+  { value: '24px', label: 'XL' },
+]
+
+interface ToolbarButtonProps {
+  label: string
+  shortcut?: string
+  /** Toggle state; leave undefined for plain actions (undo, clear formatting). */
+  pressed?: boolean
+  disabled?: boolean
+  onClick: () => void
+  children: React.ReactNode
+}
+
+function ToolbarButton({
+  label,
+  shortcut,
+  pressed,
+  disabled,
+  onClick,
+  children,
+}: ToolbarButtonProps) {
+  return (
+    <Tip label={shortcut ? `${label} · ${shortcut}` : label}>
+      <button
+        type="button"
+        aria-label={label}
+        aria-pressed={pressed}
+        disabled={disabled}
+        // Keep the editor's selection: the click must not move focus out of the document.
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={onClick}
+        className={cn(
+          // Sized up from the small button's caption type so marks and icons read at a glance.
+          'dd-btn dd-btn--ghost dd-btn--sm dd-btn--icon min-w-6.5 text-sm',
+          pressed === undefined && 'text-muted hover:text-text',
+        )}
+      >
+        {children}
+      </button>
+    </Tip>
+  )
+}
+
+/** A formatting mark with no icon in the set (B, I, H2…), set as type in the button. */
+function Glyph({
+  className,
+  children,
+}: {
+  className?: string
+  children: React.ReactNode
+}) {
+  return (
+    <span aria-hidden="true" className={cn('leading-none', className)}>
+      {children}
+    </span>
+  )
+}
+
+function ToolbarDivider() {
+  return (
+    <hr
+      aria-orientation="vertical"
+      className="dd-divider dd-divider--vertical mx-1 my-1.5"
+    />
+  )
+}
+
+interface RichTextToolbarProps {
+  editor: Editor
+  disabled?: boolean
+  /** Show the checklist button (the editor must load TaskList/TaskItem). */
+  checklist?: boolean
+  /** Show the clear-formatting button. */
+  clearFormatting?: boolean
+  className?: string
+}
+
+/**
+ * The editor's formatting row: ghost icon buttons in groups (toggles carry aria-pressed), hairlines between the
+ * groups, and a small native select for the font size. Shared by RichTextEditor and the notebook's NoteEditor.
+ */
+export function RichTextToolbar({
+  editor,
+  disabled = false,
+  checklist = false,
+  clearFormatting = false,
+  className,
+}: RichTextToolbarProps) {
+  const state = useEditorState({
+    editor,
+    selector: ({ editor: e }) => ({
+      isBold: e.isActive('bold'),
+      isItalic: e.isActive('italic'),
+      isStrike: e.isActive('strike'),
+      isHeading2: e.isActive('heading', { level: 2 }),
+      isBulletList: e.isActive('bulletList'),
+      isOrderedList: e.isActive('orderedList'),
+      isTaskList: e.isActive('taskList'),
+      isLink: e.isActive('link'),
+      isCodeBlock: e.isActive('codeBlock'),
+      canUndo: e.can().undo(),
+      canRedo: e.can().redo(),
+      fontSize: (e.getAttributes('textStyle').fontSize as string) || '',
+    }),
+  })
+
+  const editLink = () => {
+    const previousUrl = editor.getAttributes('link').href as string | undefined
+    const url = window.prompt('Enter link URL', previousUrl || '')
+    if (url === null) return
+    if (url.trim() === '') {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run()
+      return
+    }
+    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+  }
+
+  return (
+    <div
+      className={cn(
+        'app-rte__toolbar flex flex-wrap items-center gap-y-1 px-1.5 py-1',
+        className,
+      )}
+    >
+      <div className="dd-btn-group" role="group" aria-label="Text style">
+        <ToolbarButton
+          label="Bold"
+          shortcut="Ctrl+B"
+          pressed={state.isBold}
+          disabled={disabled}
+          onClick={() => editor.chain().focus().toggleBold().run()}
+        >
+          <Glyph className="font-bold">B</Glyph>
+        </ToolbarButton>
+        <ToolbarButton
+          label="Italic"
+          shortcut="Ctrl+I"
+          pressed={state.isItalic}
+          disabled={disabled}
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+        >
+          <Glyph className="font-semibold italic">I</Glyph>
+        </ToolbarButton>
+        <ToolbarButton
+          label="Strikethrough"
+          pressed={state.isStrike}
+          disabled={disabled}
+          onClick={() => editor.chain().focus().toggleStrike().run()}
+        >
+          <Glyph className="font-semibold line-through">S</Glyph>
+        </ToolbarButton>
+      </div>
+
+      <ToolbarDivider />
+
+      <Select
+        size="sm"
+        aria-label="Font size"
+        title="Font size"
+        value={state.fontSize}
+        disabled={disabled}
+        options={FONT_SIZES}
+        onChange={(event) => {
+          const value = event.target.value
+          if (value) {
+            editor.chain().focus().setFontSize(value).run()
+          } else {
+            editor.chain().focus().unsetFontSize().run()
+          }
+        }}
+        boxClassName="w-auto bg-transparent hover:bg-wash-strong"
+      />
+
+      <ToolbarDivider />
+
+      <div className="dd-btn-group" role="group" aria-label="Blocks">
+        <ToolbarButton
+          label="Heading"
+          pressed={state.isHeading2}
+          disabled={disabled}
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 2 }).run()
+          }
+        >
+          <Glyph className="font-display font-extrabold">H2</Glyph>
+        </ToolbarButton>
+        <ToolbarButton
+          label="Bullet list"
+          pressed={state.isBulletList}
+          disabled={disabled}
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+        >
+          <Icon name="list" />
+        </ToolbarButton>
+        <ToolbarButton
+          label="Numbered list"
+          pressed={state.isOrderedList}
+          disabled={disabled}
+          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+        >
+          <Glyph className="font-mono">1.</Glyph>
+        </ToolbarButton>
+        {checklist && (
+          <ToolbarButton
+            label="Checklist"
+            pressed={state.isTaskList}
+            disabled={disabled}
+            onClick={() => editor.chain().focus().toggleTaskList().run()}
+          >
+            <Glyph className="font-mono">[x]</Glyph>
+          </ToolbarButton>
+        )}
+      </div>
+
+      <ToolbarDivider />
+
+      <div className="dd-btn-group" role="group" aria-label="Insert">
+        <ToolbarButton
+          label="Link"
+          pressed={state.isLink}
+          disabled={disabled}
+          onClick={editLink}
+        >
+          <Icon name="link" />
+        </ToolbarButton>
+        <ToolbarButton
+          label="Code block"
+          pressed={state.isCodeBlock}
+          disabled={disabled}
+          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+        >
+          <Icon name="code" />
+        </ToolbarButton>
+      </div>
+
+      <ToolbarDivider />
+
+      <div className="dd-btn-group" role="group" aria-label="History">
+        {clearFormatting && (
+          <ToolbarButton
+            label="Clear formatting"
+            disabled={disabled}
+            onClick={() =>
+              editor.chain().focus().unsetAllMarks().clearNodes().run()
+            }
+          >
+            <Glyph className="font-semibold">
+              T<span className="align-sub text-xs">x</span>
+            </Glyph>
+          </ToolbarButton>
+        )}
+        <ToolbarButton
+          label="Undo"
+          shortcut="Ctrl+Z"
+          disabled={disabled || !state.canUndo}
+          onClick={() => editor.chain().focus().undo().run()}
+        >
+          <Icon name="arrow-left" />
+        </ToolbarButton>
+        <ToolbarButton
+          label="Redo"
+          shortcut="Ctrl+Shift+Z"
+          disabled={disabled || !state.canRedo}
+          onClick={() => editor.chain().focus().redo().run()}
+        >
+          <Icon name="arrow-right" />
+        </ToolbarButton>
+      </div>
+    </div>
+  )
+}
+
 interface RichTextEditorProps {
   value: string
   onChange: (value: string) => void
   placeholder?: string
   disabled?: boolean
   compact?: boolean
+  /** Fill the parent and drop the field box: for document surfaces (scratch pad, note drawer). */
   fullHeight?: boolean
   mentions?: MentionSuggestionItem[]
-}
-
-function ToolbarButton({
-  onClick,
-  isActive,
-  disabled,
-  children,
-  title,
-}: {
-  onClick: () => void
-  isActive?: boolean
-  disabled?: boolean
-  children: React.ReactNode
-  title: string
-}) {
-  return (
-    <button
-      type="button"
-      onMouseDown={(e) => e.preventDefault()}
-      onClick={onClick}
-      disabled={disabled}
-      title={title}
-      className={cn(
-        'rounded p-1 transition-colors',
-        isActive
-          ? 'bg-[color-mix(in_srgb,var(--primary)_20%,transparent)] text-[var(--primary)]'
-          : 'text-[var(--text-muted)] hover:bg-[color-mix(in_srgb,var(--text-muted)_10%,transparent)] hover:text-[var(--text-primary)]',
-        disabled && 'cursor-not-allowed opacity-30',
-      )}
-    >
-      {children}
-    </button>
-  )
 }
 
 export function RichTextEditor({
@@ -162,56 +397,12 @@ export function RichTextEditor({
     editorProps: {
       attributes: {
         class: cn(
-          'prose prose-sm prose-invert max-w-none focus:outline-none break-words',
-          compact
-            ? 'min-h-[60px] max-h-[120px]'
-            : 'min-h-[100px] max-h-[250px]',
-          fullHeight && 'min-h-full max-h-none h-full',
-          'overflow-y-auto px-3 py-2',
+          'overflow-y-auto px-3 py-2 break-words',
+          compact ? 'min-h-12 max-h-24' : 'min-h-20 max-h-50',
+          fullHeight && 'h-full max-h-none min-h-full',
         ),
       },
       handlePaste: handleLinkPaste,
-    },
-  })
-
-  const editorState = useEditorState({
-    editor,
-    selector: ({ editor: editorInstance }) => {
-      if (!editorInstance) {
-        return {
-          isBold: false,
-          isItalic: false,
-          isStrike: false,
-          isHeading2: false,
-          isBulletList: false,
-          isOrderedList: false,
-          isTaskList: false,
-          isLink: false,
-          isCodeBlock: false,
-          canUndo: false,
-          canRedo: false,
-          isFocused: false,
-          fontSize: null as string | null,
-        }
-      }
-
-      return {
-        isBold: editorInstance.isActive('bold'),
-        isItalic: editorInstance.isActive('italic'),
-        isStrike: editorInstance.isActive('strike'),
-        isHeading2: editorInstance.isActive('heading', { level: 2 }),
-        isBulletList: editorInstance.isActive('bulletList'),
-        isOrderedList: editorInstance.isActive('orderedList'),
-        isTaskList: editorInstance.isActive('taskList'),
-        isLink: editorInstance.isActive('link'),
-        isCodeBlock: editorInstance.isActive('codeBlock'),
-        canUndo: editorInstance.can().undo(),
-        canRedo: editorInstance.can().redo(),
-        isFocused: editorInstance.isFocused,
-        fontSize:
-          (editorInstance.getAttributes('textStyle').fontSize as string) ||
-          null,
-      }
     },
   })
 
@@ -236,186 +427,19 @@ export function RichTextEditor({
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-md border transition-colors duration-150',
-        fullHeight && 'flex h-full w-full flex-col',
+        fullHeight
+          ? 'flex h-full min-h-0 w-full flex-col'
+          : // The tonal field box, so the editor reads like the inputs around it (hover, focus, disabled).
+            'dd-input flex-col gap-0 p-0',
+        disabled && !fullHeight && 'is-disabled',
       )}
-      style={{
-        backgroundColor: 'var(--background)',
-        borderColor: editorState?.isFocused
-          ? 'var(--primary)'
-          : 'var(--border-color)',
-        boxShadow: editorState?.isFocused ? '0 0 0 1px var(--primary)' : 'none',
-      }}
     >
-      {/* Toolbar */}
-      <div
-        className="flex flex-wrap items-center gap-0.5 border-b px-2 py-1 transition-colors duration-150"
-        style={{
-          borderColor: editorState?.isFocused
-            ? 'color-mix(in srgb, var(--primary) 40%, transparent)'
-            : 'var(--border-color)',
-          backgroundColor:
-            'color-mix(in srgb, var(--surface) 50%, transparent)',
-        }}
-      >
-        <ToolbarButton
-          onClick={() => editor.chain().focus().toggleBold().run()}
-          isActive={editorState?.isBold}
-          disabled={disabled}
-          title="Bold (Ctrl+B)"
-        >
-          <Bold className="h-3.5 w-3.5" />
-        </ToolbarButton>
-        <ToolbarButton
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-          isActive={editorState?.isItalic}
-          disabled={disabled}
-          title="Italic (Ctrl+I)"
-        >
-          <Italic className="h-3.5 w-3.5" />
-        </ToolbarButton>
-        <ToolbarButton
-          onClick={() => editor.chain().focus().toggleStrike().run()}
-          isActive={editorState?.isStrike}
-          disabled={disabled}
-          title="Strikethrough"
-        >
-          <Strikethrough className="h-3.5 w-3.5" />
-        </ToolbarButton>
-
-        <div
-          className="mx-1 h-4 w-px"
-          style={{ backgroundColor: 'var(--border-color)' }}
-        />
-
-        <select
-          title="Font size"
-          value={editorState?.fontSize || ''}
-          onChange={(e) => {
-            const val = e.target.value
-            if (val) {
-              editor.chain().focus().setFontSize(val).run()
-            } else {
-              editor.chain().focus().unsetFontSize().run()
-            }
-          }}
-          className="h-6 rounded border px-1 text-[10px] outline-none"
-          style={{
-            backgroundColor: 'transparent',
-            borderColor: 'var(--border-color)',
-            color: 'var(--text-muted)',
-          }}
-        >
-          <option value="">Size</option>
-          <option value="12px">Small</option>
-          <option value="14px">Normal</option>
-          <option value="18px">Large</option>
-          <option value="24px">XL</option>
-        </select>
-
-        <div
-          className="mx-1 h-4 w-px"
-          style={{ backgroundColor: 'var(--border-color)' }}
-        />
-
-        <ToolbarButton
-          onClick={() =>
-            editor.chain().focus().toggleHeading({ level: 2 }).run()
-          }
-          isActive={editorState?.isHeading2}
-          disabled={disabled}
-          title="Heading"
-        >
-          <Heading2 className="h-3.5 w-3.5" />
-        </ToolbarButton>
-        <ToolbarButton
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-          isActive={editorState?.isBulletList}
-          disabled={disabled}
-          title="Bullet List"
-        >
-          <List className="h-3.5 w-3.5" />
-        </ToolbarButton>
-        <ToolbarButton
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          isActive={editorState?.isOrderedList}
-          disabled={disabled}
-          title="Numbered List"
-        >
-          <ListOrdered className="h-3.5 w-3.5" />
-        </ToolbarButton>
-        <ToolbarButton
-          onClick={() => editor.chain().focus().toggleTaskList().run()}
-          isActive={editorState?.isTaskList}
-          disabled={disabled}
-          title="Checklist"
-        >
-          <ListTodo className="h-3.5 w-3.5" />
-        </ToolbarButton>
-
-        <ToolbarButton
-          onClick={() => {
-            const previousUrl = editor.getAttributes('link').href as
-              string | undefined
-            const url = window.prompt('Enter link URL', previousUrl || '')
-            if (url === null) return
-            if (url.trim() === '') {
-              editor.chain().focus().extendMarkRange('link').unsetLink().run()
-              return
-            }
-            editor
-              .chain()
-              .focus()
-              .extendMarkRange('link')
-              .setLink({ href: url })
-              .run()
-          }}
-          isActive={editorState?.isLink}
-          disabled={disabled}
-          title="Insert Link"
-        >
-          <LinkIcon className="h-3.5 w-3.5" />
-        </ToolbarButton>
-        <ToolbarButton
-          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-          isActive={editorState?.isCodeBlock}
-          disabled={disabled}
-          title="Code Block"
-        >
-          <Code className="h-3.5 w-3.5" />
-        </ToolbarButton>
-
-        <div
-          className="mx-1 h-4 w-px"
-          style={{ backgroundColor: 'var(--border-color)' }}
-        />
-
-        <ToolbarButton
-          onClick={() =>
-            editor.chain().focus().unsetAllMarks().clearNodes().run()
-          }
-          disabled={disabled}
-          title="Clear Formatting"
-        >
-          <RemoveFormatting className="h-3.5 w-3.5" />
-        </ToolbarButton>
-        <ToolbarButton
-          onClick={() => editor.chain().focus().undo().run()}
-          disabled={disabled || !editorState?.canUndo}
-          title="Undo (Ctrl+Z)"
-        >
-          <Undo className="h-3.5 w-3.5" />
-        </ToolbarButton>
-        <ToolbarButton
-          onClick={() => editor.chain().focus().redo().run()}
-          disabled={disabled || !editorState?.canRedo}
-          title="Redo (Ctrl+Shift+Z)"
-        >
-          <Redo className="h-3.5 w-3.5" />
-        </ToolbarButton>
-      </div>
-
-      {/* Editor content */}
+      <RichTextToolbar
+        editor={editor}
+        disabled={disabled}
+        checklist
+        clearFormatting
+      />
       <EditorContent
         editor={editor}
         className={cn(fullHeight && 'min-h-0 flex-1 overflow-y-auto')}

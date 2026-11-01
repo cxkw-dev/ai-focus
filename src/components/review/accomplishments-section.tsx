@@ -1,12 +1,14 @@
 'use client'
 
 import * as React from 'react'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Button, IconButton } from '@/components/ui/button'
+import { Icon } from '@/components/ui/icon'
+import { Tip } from '@/components/ui/tooltip'
 import type {
   Accomplishment,
   AccomplishmentCategory,
 } from '@/types/accomplishment'
-import { CategoryBadge, getCategoryLabel } from './category-badge'
+import { CategoryBadge } from './category-badge'
 import { AccomplishmentDialog } from './accomplishment-dialog'
 
 const MONTH_NAMES = [
@@ -70,24 +72,27 @@ export function AccomplishmentsSection({
   )
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<Accomplishment | null>(null)
+  const filterName = React.useId()
 
   const filtered =
     filter === 'ALL'
       ? accomplishments
       : accomplishments.filter((a) => a.category === filter)
 
-  // Group by month
-  const grouped = React.useMemo(() => {
-    const map = new Map<number, Accomplishment[]>()
-    for (const a of filtered) {
-      const month = new Date(a.date).getMonth()
-      const list = map.get(month) || []
-      list.push(a)
-      map.set(month, list)
-    }
-    // Sort months descending
-    return Array.from(map.entries()).sort((a, b) => b[0] - a[0])
-  }, [filtered])
+  // Group by month, newest month first
+  const monthGroups = new Map<number, Accomplishment[]>()
+  for (const a of filtered) {
+    const month = new Date(a.date).getMonth()
+    const list = monthGroups.get(month) || []
+    list.push(a)
+    monthGroups.set(month, list)
+  }
+  const grouped = Array.from(monthGroups.entries()).sort((a, b) => b[0] - a[0])
+
+  const countFor = (value: AccomplishmentCategory | 'ALL') =>
+    value === 'ALL'
+      ? accomplishments.length
+      : accomplishments.filter((a) => a.category === value).length
 
   function handleEdit(a: Accomplishment) {
     setEditing(a)
@@ -109,158 +114,147 @@ export function AccomplishmentsSection({
   }
 
   return (
-    <div
-      className="rounded-xl border p-3 sm:p-5"
-      style={{
-        backgroundColor: 'var(--surface)',
-        borderColor: 'var(--border-color)',
-      }}
-    >
-      {/* Header */}
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div
-            className="h-2 w-2 rounded-full"
-            style={{ backgroundColor: 'var(--primary)' }}
-          />
-          <h3
-            className="text-sm font-semibold"
-            style={{ color: 'var(--text-primary)' }}
-          >
-            Accomplishments
-          </h3>
-          {accomplishments.length > 0 && (
-            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              ({accomplishments.length})
-            </span>
-          )}
-        </div>
-        <button
+    <section aria-labelledby="review-accomplishments-title">
+      <header className="dd-table-header">
+        <h2
+          className="dd-table-header__title"
+          id="review-accomplishments-title"
+        >
+          accomplishments
+        </h2>
+        {accomplishments.length > 0 && (
+          <span className="dd-table-header__meta">
+            {accomplishments.length}
+          </span>
+        )}
+        <Button
+          variant="primary"
+          size="sm"
           onClick={() => {
             setEditing(null)
             setDialogOpen(true)
           }}
-          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
-          style={{
-            backgroundColor: 'var(--primary)',
-            color: 'var(--primary-foreground)',
-          }}
         >
-          <Plus className="h-3.5 w-3.5" />
+          <Icon name="plus" />
           Add
-        </button>
-      </div>
+        </Button>
+      </header>
 
-      {/* Category filter chips */}
-      <div className="mb-4 flex flex-wrap gap-1.5">
-        {FILTER_OPTIONS.map((opt) => {
-          const active = filter === opt.value
-          return (
-            <button
-              key={opt.value}
-              onClick={() => setFilter(opt.value)}
-              className="rounded-full px-3 py-1 text-xs font-medium transition-colors"
-              style={{
-                backgroundColor: active ? 'var(--primary)' : 'var(--surface-2)',
-                color: active
-                  ? 'var(--primary-foreground)'
-                  : 'var(--text-muted)',
-              }}
-            >
-              {opt.label}
-            </button>
-          )
-        })}
-      </div>
+      <fieldset className="dd-segmented dd-segmented--sm mb-3">
+        <legend className="dd-visually-hidden">Filter by category</legend>
+        {FILTER_OPTIONS.map((opt) => (
+          <label key={opt.value} className="dd-segmented__item">
+            <input
+              type="radio"
+              name={filterName}
+              value={opt.value}
+              checked={filter === opt.value}
+              onChange={() => setFilter(opt.value)}
+            />
+            <span>{opt.label}</span>
+            <span className="dd-segmented__count">{countFor(opt.value)}</span>
+          </label>
+        ))}
+      </fieldset>
 
-      {/* Timeline list */}
-      {filtered.length === 0 ? (
-        <div className="py-8 text-center">
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            {accomplishments.length === 0
-              ? `No accomplishments for ${year} yet. Start tracking your wins!`
-              : 'No accomplishments match the selected filter.'}
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-5">
-          {grouped.map(([month, items]) => (
-            <div key={month}>
-              <h4
-                className="mb-2 text-xs font-semibold tracking-wider uppercase"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                {MONTH_NAMES[month]} {year}
-              </h4>
-              <div className="space-y-1.5">
-                {items.map((a) => (
-                  <div
-                    key={a.id}
-                    className="group flex items-start gap-3 rounded-lg px-3 py-2 transition-colors"
-                    style={{ ['--hover-bg' as string]: 'var(--surface-2)' }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--surface-2)'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent'
-                    }}
-                  >
-                    {/* Date */}
-                    <span
-                      className="mt-0.5 shrink-0 text-xs tabular-nums"
-                      style={{ color: 'var(--text-muted)', width: '2.5rem' }}
-                    >
-                      {new Date(a.date).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                      })}
-                    </span>
-
-                    {/* Content */}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <CategoryBadge category={a.category} />
-                        <span
-                          className="truncate text-sm font-medium"
-                          style={{ color: 'var(--text-primary)' }}
-                        >
-                          {a.title}
-                        </span>
-                      </div>
-                      {a.description && (
-                        <p
-                          className="mt-0.5 line-clamp-2 text-xs"
-                          style={{ color: 'var(--text-muted)' }}
-                        >
-                          {a.description}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                      <button
-                        onClick={() => handleEdit(a)}
-                        className="rounded p-1 transition-colors hover:bg-[var(--surface)]"
-                        style={{ color: 'var(--text-muted)' }}
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        onClick={() => onDelete(a.id)}
-                        className="rounded p-1 transition-colors hover:bg-[var(--surface)]"
-                        style={{ color: 'var(--destructive)' }}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+      <div className="dd-surface p-2 sm:p-3">
+        {filtered.length === 0 ? (
+          <div className="dd-empty-state dd-empty-state--compact">
+            <div className="dd-empty-state__icon">
+              <Icon name={accomplishments.length === 0 ? 'star' : 'filter'} />
             </div>
-          ))}
-        </div>
-      )}
+            {accomplishments.length === 0 ? (
+              <>
+                <h3 className="dd-empty-state__title">
+                  No accomplishments for {year} yet
+                </h3>
+                <p className="dd-empty-state__text">
+                  Start tracking your wins.
+                </p>
+              </>
+            ) : (
+              <>
+                <h3 className="dd-empty-state__title">
+                  No accomplishments match
+                </h3>
+                <p className="dd-empty-state__text">
+                  Nothing in this category yet.
+                </p>
+                <div className="dd-empty-state__actions">
+                  <Button size="sm" onClick={() => setFilter('ALL')}>
+                    <Icon name="x" />
+                    Show all
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {grouped.map(([month, items]) => (
+              <div key={month}>
+                <h3 className="dd-eyebrow px-2 pt-1 pb-1.5">
+                  {MONTH_NAMES[month]} {year}
+                </h3>
+                <ul className="flex flex-col">
+                  {items.map((a) => (
+                    <li
+                      key={a.id}
+                      className="group rounded-ctl hover:bg-wash flex items-start gap-3 px-2 py-1.5 transition-colors"
+                    >
+                      <time
+                        dateTime={a.date}
+                        className="text-muted w-10 shrink-0 pt-0.5 font-mono text-xs tabular-nums"
+                      >
+                        {new Date(a.date).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </time>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 sm:flex-nowrap">
+                          <CategoryBadge category={a.category} />
+                          {a.todoId && (
+                            <Tip label="Picked out of a completed task by the local AI">
+                              <span className="text-muted inline-flex shrink-0">
+                                <Icon name="ai-wand" label="Classified by AI" />
+                              </span>
+                            </Tip>
+                          )}
+                          <span className="min-w-0 text-sm font-medium sm:truncate">
+                            {a.title}
+                          </span>
+                        </div>
+                        {a.description && (
+                          <p className="text-muted mt-0.5 line-clamp-2 text-xs">
+                            {a.description}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100">
+                        <IconButton
+                          icon="edit"
+                          label="Edit accomplishment"
+                          size="sm"
+                          onClick={() => handleEdit(a)}
+                        />
+                        <IconButton
+                          icon="trash"
+                          label="Delete accomplishment"
+                          size="sm"
+                          onClick={() => onDelete(a.id)}
+                        />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <AccomplishmentDialog
         open={dialogOpen}
@@ -271,6 +265,6 @@ export function AccomplishmentsSection({
         onSubmit={handleDialogSubmit}
         accomplishment={editing}
       />
-    </div>
+    </section>
   )
 }

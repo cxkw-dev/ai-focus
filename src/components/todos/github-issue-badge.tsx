@@ -1,30 +1,30 @@
 'use client'
 
-import {
-  CircleDot,
-  CheckCircle2,
-  SkipForward,
-  Loader2,
-  Check,
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
-import {
-  useGithubIssueStatus,
-  useGithubIssueStatuses,
-} from '@/hooks/use-github-issue-status'
+import { Icon, type IconName } from '@/components/ui/icon'
+import { useGithubIssueStatus } from '@/hooks/use-github-issue-status'
 import type { GitHubIssueStatus } from '@/types/todo'
+import {
+  IntegrationBadge,
+  IntegrationBadgeLoading,
+  IntegrationTitleRow,
+  type IntegrationIntent,
+} from './integration-badge'
 
-const CHIP_BASE =
-  'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors min-w-0 max-w-full whitespace-nowrap'
+// `danger` (a circle with a mark) is the closest dd icon to GitHub's open-issue glyph.
+const ISSUE_ICON: IconName = 'danger'
 
-function getBadgeConfig(data: GitHubIssueStatus) {
+function getBadgeConfig(data: GitHubIssueStatus): {
+  intent: IntegrationIntent
+  icon: IconName
+  label: string
+} {
   if (data.state === 'closed') {
     if (data.stateReason === 'not_planned') {
-      return { color: '#8b949e', icon: SkipForward, label: 'Not Planned' }
+      return { intent: 'neutral', icon: 'minus', label: 'Not planned' }
     }
-    return { color: '#a371f7', icon: CheckCircle2, label: 'Done' }
+    return { intent: 'ok', icon: 'success', label: 'Done' }
   }
-  return { color: '#3fb950', icon: CircleDot, label: 'Open' }
+  return { intent: 'info', icon: ISSUE_ICON, label: 'Open' }
 }
 
 interface GitHubIssueBadgeProps {
@@ -50,137 +50,52 @@ export function GitHubIssueBadge({
   const match = url.match(/\/issues\/(\d+)/)
   const issueNumber = data?.number ?? (match ? match[1] : '?')
 
-  if (isLoading) {
-    return (
-      <span
-        className={cn(CHIP_BASE)}
-        style={{
-          backgroundColor:
-            'color-mix(in srgb, var(--text-muted) 10%, transparent)',
-          color: 'var(--text-muted)',
-        }}
-      >
-        <Loader2 className="h-3 w-3 animate-spin" />
-        <span className="truncate">#{issueNumber}</span>
-      </span>
-    )
-  }
+  if (isLoading) return <IntegrationBadgeLoading reference={issueNumber} />
 
   if (isError || !data) {
     return (
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={(e) => e.stopPropagation()}
-        className={cn(
-          CHIP_BASE,
-          'cursor-pointer no-underline hover:brightness-110',
-        )}
-        style={{
-          backgroundColor:
-            'color-mix(in srgb, var(--text-muted) 10%, transparent)',
-          color: 'var(--text-muted)',
-        }}
-      >
-        <CircleDot className="h-3 w-3" />
-        <span className="truncate">#{issueNumber}</span>
-      </a>
+      <IntegrationBadge
+        url={url}
+        reference={issueNumber}
+        icon={<Icon name={ISSUE_ICON} />}
+      />
     )
   }
 
   const config = getBadgeConfig(data)
-  const Icon = config.icon
-
-  const chip = (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={(e) => e.stopPropagation()}
-      className={cn(
-        CHIP_BASE,
-        'flex-shrink-0 cursor-pointer no-underline hover:brightness-110',
-      )}
-      style={{
-        backgroundColor: `color-mix(in srgb, ${config.color} 15%, transparent)`,
-        color: config.color,
-      }}
-      title={`${data.title} — ${config.label}${data.assignees.length ? ` (${data.assignees.join(', ')})` : ''}`}
-    >
-      <Icon className="h-3 w-3" />
-      <span className="max-w-[7rem] truncate">{config.label}</span>
-      <span className="shrink-0">#{data.number}</span>
-    </a>
+  const assignees = data.assignees.length
+    ? ` (${data.assignees.join(', ')})`
+    : ''
+  const badge = (
+    <IntegrationBadge
+      url={url}
+      reference={data.number}
+      icon={<Icon name={config.icon} />}
+      intent={config.intent}
+      label={config.label}
+      tip={`${data.title} — ${config.label}${assignees}`}
+    />
   )
 
-  if (!showTitle) return chip
+  if (!showTitle) return badge
 
   return (
-    <span className="flex w-full min-w-0 items-center gap-1.5">
-      {chip}
+    <IntegrationTitleRow badge={badge} title={data.title}>
       {data.labels.length > 0 && (
-        <span className="flex flex-shrink-0 items-center gap-1">
+        <span className="flex shrink-0 items-center gap-1">
           {data.labels.slice(0, 3).map((label) => (
+            // GitHub label colours are data, so they stay inline.
             <span
               key={label.name}
-              className="h-2 w-2 flex-shrink-0 rounded-full"
-              style={{ backgroundColor: label.color }}
+              role="img"
+              aria-label={label.name}
               title={label.name}
+              className="size-1.5 shrink-0 rounded-full"
+              style={{ backgroundColor: label.color }}
             />
           ))}
         </span>
       )}
-      <span
-        className="min-w-0 flex-1 truncate text-[10px]"
-        style={{ color: 'var(--text-muted)' }}
-      >
-        {data.title}
-      </span>
-    </span>
-  )
-}
-
-interface GitHubIssueRowProps {
-  urls: string[]
-  showTitle?: boolean
-}
-
-export function GitHubIssueRow({ urls, showTitle }: GitHubIssueRowProps) {
-  const { isLoading, allClosed } = useGithubIssueStatuses(urls)
-
-  let label: string
-  let labelColor: string
-
-  if (isLoading) {
-    label = 'Checking issues'
-    labelColor = 'var(--text-muted)'
-  } else if (allClosed) {
-    label = 'Issues closed'
-    labelColor = '#a371f7'
-  } else {
-    label = 'Waiting on'
-    labelColor = 'var(--text-muted)'
-  }
-
-  return (
-    <div
-      className="flex flex-wrap items-center gap-1.5 pt-1.5"
-      style={{
-        borderTop:
-          '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)',
-      }}
-    >
-      <span
-        className="flex items-center gap-1 text-[10px] font-medium"
-        style={{ color: labelColor }}
-      >
-        {allClosed && !isLoading && <Check className="h-3 w-3" />}
-        {label}
-      </span>
-      {urls.map((url) => (
-        <GitHubIssueBadge key={url} url={url} showTitle={showTitle} />
-      ))}
-    </div>
+    </IntegrationTitleRow>
   )
 }

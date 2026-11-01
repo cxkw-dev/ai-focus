@@ -23,7 +23,6 @@ export type BoardColumnKey = (typeof BOARD_COLUMN_KEYS)[number]
 export interface BoardColumnConfig {
   key: BoardColumnKey
   title: string
-  color: string
   /** Statuses that live in this lane. */
   statuses: readonly Status[]
   /** Status applied when a card is dropped in from another lane. */
@@ -42,28 +41,24 @@ export const BOARD_COLUMNS: readonly BoardColumnConfig[] = [
   {
     key: 'BACKLOG',
     title: 'Backlog',
-    color: 'var(--status-todo)',
     statuses: ['TODO'],
     dropStatus: 'TODO',
   },
   {
     key: 'IN_PROGRESS',
     title: 'In Progress',
-    color: 'var(--status-in-progress)',
     statuses: ['IN_PROGRESS'],
     dropStatus: 'IN_PROGRESS',
   },
   {
     key: 'BLOCKED',
     title: 'Blocked',
-    color: 'var(--status-blocked)',
     statuses: ['BLOCKED', 'WAITING', 'ON_HOLD', 'UNDER_REVIEW'],
     dropStatus: 'BLOCKED',
   },
   {
     key: 'DONE',
     title: 'Done',
-    color: 'var(--status-done)',
     statuses: ['COMPLETED'],
     dropStatus: 'COMPLETED',
     terminal: true,
@@ -73,7 +68,6 @@ export const BOARD_COLUMNS: readonly BoardColumnConfig[] = [
     key: 'CANCELLED',
     // Dropped work, kept out of the way: a rail you have to open on purpose.
     title: 'Cancelled',
-    color: 'var(--text-muted)',
     statuses: ['CANCELLED'],
     dropStatus: 'CANCELLED',
     terminal: true,

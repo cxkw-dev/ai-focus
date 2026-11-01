@@ -1,0 +1,431 @@
+/*
+ * Rich text (TipTap) — the editor surface, read-only rendered rich text, mentions, link chips and code blocks.
+ * Page glue on dawn & dusk tokens only; imported into the components layer by app/globals.css.
+ */
+
+/* ---------- editor ---------- */
+.tiptap {
+  color: var(--dd-text);
+  font-size: var(--dd-fs-sm);
+  line-height: 1.7;
+}
+.tiptap > * + * {
+  margin-top: 0.6em;
+}
+.tiptap p {
+  margin: 0.4em 0;
+}
+.tiptap h2 {
+  margin: 1.4em 0 0.4em;
+  font-family: var(--dd-font-display);
+  font-size: var(--dd-fs-lg);
+  font-weight: var(--dd-h-weight);
+  letter-spacing: -0.03em;
+  line-height: var(--dd-lh-tight);
+  color: var(--dd-text);
+}
+.tiptap h2:first-child {
+  margin-top: 0;
+}
+.tiptap h3 {
+  margin: 1.1em 0 0.3em;
+  font-size: var(--dd-fs-base);
+  font-weight: 650;
+  line-height: var(--dd-lh-tight);
+  color: var(--dd-text);
+}
+.tiptap a {
+  color: inherit;
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.2em;
+  text-decoration-color: var(--dd-border-strong);
+  transition:
+    color var(--dd-dur-fast) var(--dd-ease),
+    text-decoration-color var(--dd-dur-fast) var(--dd-ease);
+}
+.tiptap a:hover {
+  color: var(--dd-accent);
+  text-decoration-style: solid;
+  text-decoration-color: var(--dd-accent);
+}
+.tiptap ul,
+.tiptap ol {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+.tiptap ul {
+  list-style-type: disc;
+}
+.tiptap ol {
+  list-style-type: decimal;
+}
+.tiptap li {
+  margin: 0.2em 0;
+}
+.tiptap li p {
+  margin: 0.1em 0;
+}
+.tiptap li::marker {
+  color: var(--dd-muted);
+}
+
+/* Checklists: checkbox and content side by side, no list marker. */
+.tiptap ul[data-type='taskList'] {
+  padding-left: 0;
+  list-style: none;
+}
+.tiptap ul[data-type='taskList'] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5em;
+  margin: 0.3em 0;
+}
+.tiptap ul[data-type='taskList'] li > label {
+  display: flex;
+  align-items: center;
+  margin-top: 0.3em;
+  user-select: none;
+}
+.tiptap ul[data-type='taskList'] li > label input[type='checkbox'] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--dd-accent);
+  cursor: pointer;
+}
+.tiptap ul[data-type='taskList'] li > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.tiptap ul[data-type='taskList'] li[data-checked='true'] > div > p {
+  color: var(--dd-quiet);
+  text-decoration: line-through;
+}
+
+.tiptap blockquote {
+  margin: 0.75em 0;
+  padding-left: 1em;
+  box-shadow: inset 2px 0 0 var(--dd-border-strong);
+  color: var(--dd-muted);
+}
+.tiptap hr {
+  margin: 1.5em 0;
+  border: none;
+  border-top: 1px solid var(--dd-border);
+}
+.tiptap s {
+  color: var(--dd-muted);
+  text-decoration: line-through;
+}
+.tiptap strong {
+  font-weight: 650;
+  color: var(--dd-text);
+}
+.tiptap em {
+  font-style: italic;
+}
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--dd-quiet);
+  pointer-events: none;
+}
+
+/* Inline code: the system's inline code look (a wash chip in DM Mono). */
+.tiptap code {
+  padding: 0.12em 0.35em;
+  border-radius: 4px;
+  background: var(--dd-wash);
+  color: var(--dd-text);
+  font-family: var(--dd-font-mono);
+  font-size: 0.88em;
+}
+
+/* Code blocks: an inset in DM Mono. A wash rather than a surface step, so the block reads on any surface the
+   editor sits on (field box, dialog, drawer, scratch pad). */
+.tiptap pre {
+  margin: 0.75em 0;
+  padding: calc(var(--dd-u) * 3) calc(var(--dd-u) * 4);
+  overflow-x: auto;
+  border-radius: var(--dd-r-box);
+  background: var(--dd-wash);
+  font-family: var(--dd-font-mono);
+  font-size: 0.92em;
+  line-height: 1.7;
+}
+.tiptap pre code {
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: inherit;
+  color: var(--dd-text);
+}
+
+/* ---------- mentions and link chips ---------- */
+.tiptap .mention,
+.subtask-mention-editor .mention {
+  padding: 0.08em 0.3em;
+  border-radius: 4px;
+  background: var(--dd-accent-soft);
+  color: var(--dd-text);
+  font-weight: 600;
+  font-size: 0.95em;
+  box-decoration-break: clone;
+}
+
+/* Pasted links read as what they point at, not as a wall of URL. The full address stays in the href and the tooltip. */
+.link-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.2em;
+  max-width: 100%;
+  padding: 0.06em 0.35em;
+  border-radius: 4px;
+  background: var(--dd-wash);
+  color: var(--dd-text);
+  font-weight: 500;
+  font-size: 0.95em;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  box-decoration-break: clone;
+  transition: background-color var(--dd-dur-fast) var(--dd-ease);
+}
+.link-chip::after {
+  content: '↗';
+  font-size: 0.85em;
+  color: var(--dd-muted);
+}
+.link-chip:hover {
+  background: var(--dd-wash-strong);
+  text-decoration: none;
+}
+
+/* ---------- compact mention editor (subtask rows) ---------- */
+.subtask-mention-editor {
+  display: block;
+  width: 100%;
+}
+.subtask-mention-editor > * + * {
+  margin-top: 0;
+}
+.subtask-mention-editor p {
+  margin: 0;
+}
+.subtask-mention-editor p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--dd-quiet);
+  pointer-events: none;
+}
+
+/* ---------- rendered rich text (todo cards, previews) ---------- */
+.rich-text-display {
+  font-size: var(--dd-fs-xs);
+  line-height: 1.45;
+  color: var(--dd-muted);
+}
+.rich-text-display p {
+  margin: 0.1em 0;
+}
+.rich-text-display h2 {
+  margin: 0.3em 0 0.1em;
+  font-size: var(--dd-fs-sm);
+  font-weight: 650;
+  color: var(--dd-text);
+}
+.rich-text-display h3 {
+  margin: 0.2em 0 0.1em;
+  font-size: var(--dd-fs-xs);
+  font-weight: 650;
+  color: var(--dd-text);
+}
+.rich-text-display ul,
+.rich-text-display ol {
+  margin: 0.1em 0;
+  padding-left: 1.25em;
+}
+.rich-text-display ul {
+  list-style-type: disc;
+}
+.rich-text-display ol {
+  list-style-type: decimal;
+}
+.rich-text-display li {
+  margin: 0;
+}
+/* Checklists are read-only here: the checkbox reflects state but doesn't respond to clicks. */
+.rich-text-display ul[data-type='taskList'] {
+  padding-left: 0;
+  list-style: none;
+}
+.rich-text-display ul[data-type='taskList'] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4em;
+}
+.rich-text-display ul[data-type='taskList'] li > label {
+  display: flex;
+  align-items: center;
+  margin-top: 0.15em;
+}
+.rich-text-display ul[data-type='taskList'] li > label input[type='checkbox'] {
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+  accent-color: var(--dd-accent);
+}
+.rich-text-display ul[data-type='taskList'] li > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.rich-text-display ul[data-type='taskList'] li[data-checked='true'] > div,
+.rich-text-display s {
+  color: var(--dd-quiet);
+  text-decoration: line-through;
+}
+.rich-text-display a {
+  color: var(--dd-text);
+  text-decoration: underline dotted;
+  text-decoration-color: var(--dd-border-strong);
+  text-underline-offset: 0.2em;
+}
+.rich-text-display a:hover {
+  color: var(--dd-accent);
+  text-decoration-style: solid;
+}
+.rich-text-display code {
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+  background: var(--dd-wash);
+  font-family: var(--dd-font-mono);
+  font-size: 0.9em;
+}
+.rich-text-display pre {
+  margin: 0.3em 0;
+  padding: 0.5em 0.75em;
+  overflow-x: auto;
+  border-radius: var(--dd-r-ctl);
+  background: var(--dd-wash);
+}
+.rich-text-display pre code {
+  padding: 0;
+  background: none;
+  line-height: 1.5;
+}
+.rich-text-display .mention {
+  color: var(--dd-text);
+  font-weight: 600;
+  cursor: pointer;
+}
+.rich-text-display .mention:hover {
+  text-decoration: underline;
+}
+
+/* Wrap long content without shattering normal words; long URLs still break. */
+.ProseMirror {
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+}
+.ProseMirror:focus-visible {
+  outline: none;
+}
+.ProseMirror a {
+  word-break: break-all;
+}
+
+/* ---------- editor toolbar (rich-text-editor.tsx) ---------- */
+/* A hairline under the formatting row; translucent, so it reads on the field box, a dialog or a page surface. */
+.app-rte__toolbar {
+  box-shadow: inset 0 -1px 0 color-mix(in oklab, var(--dd-text) 9%, transparent);
+}
+
+/* ---------- code blocks (code-block-view.tsx) ---------- */
+.app-code-block {
+  position: relative;
+}
+/* The language picker floats in the block's top-right corner. */
+.app-code-block__lang {
+  position: absolute;
+  top: calc(var(--dd-u) * 0.75);
+  right: calc(var(--dd-u) * 0.75);
+  z-index: 1;
+}
+.app-code-block__content {
+  font-family: var(--dd-font-mono);
+  white-space: pre;
+}
+/* The language list nests its options under the search box, so mirror the listbox's own rule: while a row is
+   active (keyboard or pointer), plain hover doesn't light a second one. */
+.app-code-lang .dd-listbox__option:hover:not(.is-active) {
+  background: none;
+}
+
+/* ---------- syntax highlighting (lowlight / highlight.js) on the system's syntax tokens ---------- */
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-built_in,
+.hljs-meta .hljs-keyword {
+  color: var(--dd-syntax-keyword);
+}
+.hljs-name,
+.hljs-tag {
+  color: var(--dd-syntax-tag);
+}
+.hljs-attr,
+.hljs-attribute,
+.hljs-property {
+  color: var(--dd-syntax-attr);
+}
+.hljs-string,
+.hljs-addition,
+.hljs-regexp {
+  color: var(--dd-syntax-string);
+}
+.hljs-number,
+.hljs-literal,
+.hljs-symbol,
+.hljs-bullet {
+  color: var(--dd-syntax-number);
+}
+.hljs-title,
+.hljs-title.function_,
+.hljs-section,
+.hljs-type,
+.hljs-class .hljs-title {
+  color: var(--dd-syntax-function);
+}
+.hljs-variable,
+.hljs-template-variable,
+.hljs-params {
+  color: var(--dd-syntax-variable);
+}
+.hljs-comment,
+.hljs-quote,
+.hljs-meta {
+  color: var(--dd-syntax-comment);
+  font-style: italic;
+}
+.hljs-punctuation {
+  color: var(--dd-syntax-punct);
+}
+.hljs-deletion {
+  color: var(--dd-bad);
+}
+.hljs-link {
+  color: var(--dd-accent);
+}
+.hljs-emphasis {
+  font-style: italic;
+}
+.hljs-strong {
+  font-weight: 650;
+}
+
+/* TipTap's mention list is a tippy layer on <body>: keep it clickable while a modal dialog or drawer is open. */
+[data-tippy-root] {
+  z-index: calc(var(--dd-z-overlay) + 10) !important;
+  pointer-events: auto;
+}

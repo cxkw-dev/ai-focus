@@ -1,4 +1,4 @@
-import { Label } from '@/components/ui/label'
+import * as React from 'react'
 import {
   AzureIcon,
   GitHubIcon,
@@ -22,6 +22,46 @@ interface EditTodoLinksProps {
   setNewIssueUrl: (url: string) => void
 }
 
+/** A titled group of link fields; the floated legend keeps it in flow like `.dd-form__legend`. */
+function LinkGroup({
+  icon,
+  title,
+  children,
+}: {
+  icon: React.ReactNode
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <fieldset className="m-0 flex min-w-0 flex-col gap-3 border-0 p-0">
+      <legend className="text-text float-left flex w-full items-center gap-1.5 p-0 text-sm leading-tight font-semibold">
+        {icon}
+        {title}
+      </legend>
+      {children}
+    </fieldset>
+  )
+}
+
+function LinkField({
+  id,
+  label,
+  children,
+}: {
+  id: string
+  label: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="flex min-w-0 flex-col gap-1">
+      <label htmlFor={id} className="text-muted text-xs font-medium">
+        {label}
+      </label>
+      {children}
+    </div>
+  )
+}
+
 export function EditTodoLinks({
   form,
   disabled,
@@ -36,112 +76,65 @@ export function EditTodoLinks({
   newIssueUrl,
   setNewIssueUrl,
 }: EditTodoLinksProps) {
+  const id = React.useId()
+
   return (
-    <>
-      <div
-        className="mt-4 grid grid-cols-1 gap-4 pt-4 sm:grid-cols-2"
-        style={{ borderTop: '1px solid var(--border-color)' }}
-      >
-        <div className="min-w-0 space-y-3">
-          <Label
-            className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            <AzureIcon className="h-3.5 w-3.5" />
-            Azure
-          </Label>
-
-          <div className="space-y-1.5">
-            <span
-              className="text-[10px] font-medium tracking-wide uppercase"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              My Work Item
-            </span>
-            <SingleUrlField
-              value={form.azureWorkItemUrl}
-              onChange={form.setAzureWorkItemUrl}
-              type="azure"
-              disabled={disabled}
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <span
-              className="text-[10px] font-medium tracking-wide uppercase"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              Waiting On
-            </span>
-            <UrlListField
-              type="azure"
-              urls={form.azureDepUrls}
-              onAdd={(url) => form.addAzureDepUrl(url)}
-              onRemove={(i) => form.removeAzureDepUrl(i)}
-              inputValue={newAzureDepUrl}
-              onInputChange={setNewAzureDepUrl}
-              disabled={disabled}
-            />
-          </div>
-        </div>
-
-        <div className="min-w-0 space-y-3">
-          <Label
-            className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            <GitHubIcon className="h-3.5 w-3.5" />
-            GitHub PRs
-          </Label>
-
-          <div className="space-y-1.5">
-            <span
-              className="text-[10px] font-medium tracking-wide uppercase"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              My PRs
-            </span>
-            <UrlListField
-              type="github"
-              urls={form.myPrUrls}
-              onAdd={(url) => form.addMyPrUrl(url)}
-              onRemove={(i) => form.removeMyPrUrl(i)}
-              inputValue={newMyPrUrl}
-              onInputChange={setNewMyPrUrl}
-              disabled={disabled}
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <span
-              className="text-[10px] font-medium tracking-wide uppercase"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              Waiting On
-            </span>
-            <UrlListField
-              type="github"
-              urls={form.githubPrUrls}
-              onAdd={(url) => form.addGithubPrUrl(url)}
-              onRemove={(i) => form.removeGithubPrUrl(i)}
-              inputValue={newPrUrl}
-              onInputChange={setNewPrUrl}
-              disabled={disabled}
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="min-w-0 space-y-1.5">
-          <Label
-            className="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            <GitHubIcon className="h-3.5 w-3.5" />
-            My Issues
-          </Label>
+    <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
+      <LinkGroup icon={<AzureIcon />} title="Azure DevOps">
+        <LinkField id={`${id}-azure-item`} label="My work item">
+          <SingleUrlField
+            id={`${id}-azure-item`}
+            value={form.azureWorkItemUrl}
+            onChange={form.setAzureWorkItemUrl}
+            type="azure"
+            disabled={disabled}
+          />
+        </LinkField>
+        <LinkField id={`${id}-azure-deps`} label="Waiting on">
           <UrlListField
+            id={`${id}-azure-deps`}
+            type="azure"
+            urls={form.azureDepUrls}
+            onAdd={(url) => form.addAzureDepUrl(url)}
+            onRemove={(i) => form.removeAzureDepUrl(i)}
+            inputValue={newAzureDepUrl}
+            onInputChange={setNewAzureDepUrl}
+            disabled={disabled}
+          />
+        </LinkField>
+      </LinkGroup>
+
+      <LinkGroup icon={<GitHubIcon />} title="GitHub PRs">
+        <LinkField id={`${id}-my-prs`} label="My PRs">
+          <UrlListField
+            id={`${id}-my-prs`}
+            type="github"
+            urls={form.myPrUrls}
+            onAdd={(url) => form.addMyPrUrl(url)}
+            onRemove={(i) => form.removeMyPrUrl(i)}
+            inputValue={newMyPrUrl}
+            onInputChange={setNewMyPrUrl}
+            disabled={disabled}
+          />
+        </LinkField>
+        <LinkField id={`${id}-pr-deps`} label="Waiting on">
+          <UrlListField
+            id={`${id}-pr-deps`}
+            type="github"
+            urls={form.githubPrUrls}
+            onAdd={(url) => form.addGithubPrUrl(url)}
+            onRemove={(i) => form.removeGithubPrUrl(i)}
+            inputValue={newPrUrl}
+            onInputChange={setNewPrUrl}
+            disabled={disabled}
+          />
+        </LinkField>
+      </LinkGroup>
+
+      <LinkGroup icon={<GitHubIcon />} title="GitHub issues">
+        <LinkField id={`${id}-my-issues`} label="My issues">
+          <UrlListField
+            id={`${id}-my-issues`}
             type="github-issue"
             urls={form.myIssueUrls}
             onAdd={(url) => form.addMyIssueUrl(url)}
@@ -150,17 +143,10 @@ export function EditTodoLinks({
             onInputChange={setNewMyIssueUrl}
             disabled={disabled}
           />
-        </div>
-
-        <div className="min-w-0 space-y-1.5">
-          <Label
-            className="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            <GitHubIcon className="h-3.5 w-3.5" />
-            Waiting On Issues
-          </Label>
+        </LinkField>
+        <LinkField id={`${id}-issue-deps`} label="Waiting on">
           <UrlListField
+            id={`${id}-issue-deps`}
             type="github-issue"
             urls={form.githubIssueUrls}
             onAdd={(url) => form.addGithubIssueUrl(url)}
@@ -169,8 +155,8 @@ export function EditTodoLinks({
             onInputChange={setNewIssueUrl}
             disabled={disabled}
           />
-        </div>
-      </div>
-    </>
+        </LinkField>
+      </LinkGroup>
+    </div>
   )
 }

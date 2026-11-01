@@ -1,9 +1,17 @@
 'use client'
 
 import * as React from 'react'
-import { Trash2, Pencil, Search, X, Check } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Button, IconButton } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+} from '@/components/ui/dialog'
+import { Icon } from '@/components/ui/icon'
+import { Input, TextField } from '@/components/ui/input'
 import type { Person } from '@/types/person'
 
 interface PeopleManagerProps {
@@ -15,6 +23,31 @@ interface PeopleManagerProps {
   ) => Promise<boolean>
   onDeletePerson: (id: string) => Promise<boolean>
   disabled?: boolean
+}
+
+// People take a colour from the set by a hash of their id, skipping set-3 apricot (it means "do this").
+const AVATAR_SETS = [
+  'dd-avatar--set-1',
+  'dd-avatar--set-2',
+  'dd-avatar--set-4',
+  'dd-avatar--set-5',
+  'dd-avatar--set-6',
+  'dd-avatar--set-7',
+  'dd-avatar--set-8',
+] as const
+
+function avatarSetClass(id: string) {
+  let hash = 0
+  for (const char of id) hash = (hash * 31 + char.charCodeAt(0)) >>> 0
+  return AVATAR_SETS[hash % AVATAR_SETS.length]
+}
+
+function initials(name: string) {
+  const words = name.trim().split(/\s+/).filter(Boolean)
+  if (words.length === 0) return '?'
+  const first = words[0][0]
+  const last = words.length > 1 ? words[words.length - 1][0] : ''
+  return `${first}${last}`.toUpperCase()
 }
 
 export function PeopleManager({
@@ -33,15 +66,19 @@ export function PeopleManager({
     name: string
     email: string
   }>({ name: '', email: '' })
+  const [deleteTarget, setDeleteTarget] = React.useState<Person | null>(null)
+  const addTitleId = React.useId()
+  const listTitleId = React.useId()
 
-  const filtered = React.useMemo(() => {
-    if (!search.trim()) return people
-    const q = search.toLowerCase()
-    return people.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) || p.email.toLowerCase().includes(q),
-    )
-  }, [people, search])
+  const query = search.trim().toLowerCase()
+  const filtered = query
+    ? people.filter(
+        (p) =>
+          p.name.toLowerCase().includes(query) ||
+          p.email.toLowerCase().includes(query),
+      )
+    : people
+  const editingPerson = people.find((p) => p.id === editingId) ?? null
 
   const handleCreate = async () => {
     if (!newName.trim() || !newEmail.trim()) return
@@ -89,264 +126,288 @@ export function PeopleManager({
   }
 
   return (
-    <div className="space-y-5">
-      <div
-        className="space-y-3 rounded-xl border p-4"
-        style={{
-          borderColor: 'var(--border-color)',
-          backgroundColor:
-            'color-mix(in srgb, var(--surface) 60%, transparent)',
-        }}
-      >
-        <div
-          className="text-xs font-semibold tracking-wide uppercase"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          Add Person
+    <div className="dd-form dd-form--divided">
+      <section className="dd-form__section" aria-labelledby={addTitleId}>
+        <div className="dd-form__head">
+          <h2 className="dd-form__title" id={addTitleId}>
+            Add a person
+          </h2>
+          <p className="dd-form__desc">
+            Everyone here can be @mentioned in task descriptions.
+          </p>
         </div>
-
-        <div className="grid items-center gap-2 sm:grid-cols-[1fr_1fr_auto]">
-          <Input
+        <form
+          className="flex flex-wrap items-center gap-3"
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault()
+            void handleCreate()
+          }}
+        >
+          <TextField
+            label="Name"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            placeholder="Name"
+            autoComplete="off"
             disabled={disabled || isSaving}
-            className="text-sm"
+            fieldClassName="min-w-0 flex-1 basis-48"
           />
-          <Input
+          <TextField
+            label="Email"
             type="email"
             value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
-            placeholder="Email"
+            autoComplete="off"
             disabled={disabled || isSaving}
-            className="text-sm"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault()
-                void handleCreate()
-              }
-            }}
+            fieldClassName="min-w-0 flex-1 basis-56"
           />
           <Button
-            type="button"
-            onClick={handleCreate}
+            type="submit"
+            variant="primary"
             disabled={
               !newName.trim() || !newEmail.trim() || disabled || isSaving
             }
           >
-            Add
+            <Icon name="plus" />
+            Add person
           </Button>
-        </div>
-      </div>
+        </form>
+      </section>
 
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div
-            className="text-xs font-semibold tracking-wide uppercase"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            Directory
+      <section className="dd-form__section" aria-labelledby={listTitleId}>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div className="dd-form__head">
+            <h2 className="dd-form__title" id={listTitleId}>
+              Directory
+            </h2>
+            <p className="dd-form__desc">
+              <span className="dd-num">{people.length}</span>{' '}
+              {people.length === 1 ? 'person' : 'people'}
+            </p>
           </div>
           {people.length > 5 && (
-            <div className="relative">
-              <Search
-                className="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2"
-                style={{ color: 'var(--text-muted)' }}
-              />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Filter..."
-                className="h-7 w-40 rounded-md border pr-7 pl-8 text-xs outline-none"
-                style={{
-                  backgroundColor: 'var(--surface-2)',
-                  borderColor: 'var(--border-color)',
-                  color: 'var(--text-primary)',
-                }}
-              />
-              {search && (
-                <button
-                  type="button"
-                  onClick={() => setSearch('')}
-                  className="absolute top-1/2 right-2 -translate-y-1/2"
-                >
-                  <X
-                    className="h-3 w-3"
-                    style={{ color: 'var(--text-muted)' }}
-                  />
-                </button>
-              )}
-            </div>
+            <Input
+              type="search"
+              size="sm"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Filter people"
+              aria-label="Filter people"
+              leading={<Icon name="search" />}
+              trailing={
+                search && (
+                  <span className="dd-input__affix">
+                    <button
+                      type="button"
+                      className="dd-input__btn"
+                      aria-label="Clear filter"
+                      onClick={() => setSearch('')}
+                    >
+                      <Icon name="x" />
+                    </button>
+                  </span>
+                )
+              }
+              boxClassName="w-full sm:w-60"
+            />
           )}
         </div>
 
-        {people.length === 0 && (
-          <div
-            className="rounded-xl border p-4 text-xs"
-            style={{
-              borderColor: 'var(--border-color)',
-              backgroundColor:
-                'color-mix(in srgb, var(--surface) 70%, transparent)',
-              color: 'var(--text-muted)',
-            }}
-          >
-            No people yet. Add your first contact above.
-          </div>
-        )}
-
-        {people.length > 0 && (
-          <div
-            className="overflow-hidden rounded-xl border"
-            style={{
-              borderColor: 'var(--border-color)',
-              backgroundColor:
-                'color-mix(in srgb, var(--surface-2) 80%, transparent)',
-            }}
-          >
-            <div className="max-h-[400px] overflow-y-auto">
-              {filtered.length === 0 && (
-                <div
-                  className="px-4 py-6 text-center text-xs"
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  No matches for &ldquo;{search}&rdquo;
-                </div>
-              )}
-              {filtered.map((person, i) => (
-                <div
-                  key={person.id}
-                  className="group flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]"
-                  style={
-                    i < filtered.length - 1
-                      ? {
-                          borderBottom:
-                            '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)',
-                        }
-                      : undefined
-                  }
-                >
-                  {editingId === person.id ? (
-                    <>
-                      <div className="flex min-w-0 flex-1 items-center gap-2">
-                        <Input
-                          value={editDraft.name}
-                          onChange={(e) =>
-                            setEditDraft((d) => ({
-                              ...d,
-                              name: e.target.value,
-                            }))
-                          }
-                          disabled={disabled || isSaving}
-                          className="h-7 min-w-[100px] flex-1 text-sm"
-                          placeholder="Name"
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') void commitEdit(person)
-                            if (e.key === 'Escape') cancelEdit()
-                          }}
-                        />
-                        <Input
-                          type="email"
-                          value={editDraft.email}
-                          onChange={(e) =>
-                            setEditDraft((d) => ({
-                              ...d,
-                              email: e.target.value,
-                            }))
-                          }
-                          disabled={disabled || isSaving}
-                          className="h-7 min-w-[140px] flex-1 text-sm"
-                          placeholder="Email"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') void commitEdit(person)
-                            if (e.key === 'Escape') cancelEdit()
-                          }}
-                        />
-                      </div>
-                      <div className="flex flex-shrink-0 items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => commitEdit(person)}
-                          disabled={
-                            disabled ||
-                            isSaving ||
-                            !editDraft.name.trim() ||
-                            !editDraft.email.trim()
-                          }
-                          className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_10%,transparent)]"
-                          style={{ color: 'var(--status-done)' }}
-                          title="Save"
-                        >
-                          <Check className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={cancelEdit}
-                          className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_10%,transparent)]"
-                          style={{ color: 'var(--text-muted)' }}
-                          title="Cancel"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div
-                        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-semibold uppercase"
-                        style={{
-                          backgroundColor:
-                            'color-mix(in srgb, var(--primary) 15%, transparent)',
-                          color: 'var(--primary)',
-                        }}
-                      >
-                        {person.name.charAt(0)}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div
-                          className="truncate text-sm font-medium"
-                          style={{ color: 'var(--text-primary)' }}
-                        >
-                          {person.name}
-                        </div>
-                        <div
-                          className="truncate text-[11px]"
-                          style={{ color: 'var(--text-muted)' }}
-                        >
-                          {person.email}
-                        </div>
-                      </div>
-                      <div className="flex flex-shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                        <button
-                          type="button"
-                          onClick={() => startEdit(person)}
-                          disabled={disabled || isSaving}
-                          className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_10%,transparent)]"
-                          style={{ color: 'var(--text-muted)' }}
-                          title="Edit"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(person.id)}
-                          disabled={disabled || isSaving}
-                          className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_10%,transparent)]"
-                          style={{ color: 'var(--destructive)' }}
-                          title="Delete"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              ))}
+        {people.length === 0 ? (
+          <div className="dd-surface">
+            <div className="dd-empty-state dd-empty-state--compact">
+              <div className="dd-empty-state__icon">
+                <Icon name="users" />
+              </div>
+              <p className="dd-empty-state__title">No people yet</p>
+              <p className="dd-empty-state__text">
+                People you add above show up here and in @mention suggestions.
+              </p>
             </div>
           </div>
+        ) : filtered.length === 0 ? (
+          <div className="dd-surface">
+            <div className="dd-empty-state dd-empty-state--compact">
+              <div className="dd-empty-state__icon">
+                <Icon name="search" />
+              </div>
+              <p className="dd-empty-state__title">No one matches</p>
+              <p className="dd-empty-state__text">
+                Nobody’s name or email contains “{search}”.
+              </p>
+              <div className="dd-empty-state__actions">
+                <Button type="button" size="sm" onClick={() => setSearch('')}>
+                  <Icon name="x" />
+                  Clear filter
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div
+            className="dd-table dd-table--compact"
+            tabIndex={0}
+            role="region"
+            aria-labelledby={listTitleId}
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Person</th>
+                  <th scope="col" className="is-shrink">
+                    <span className="dd-visually-hidden">Actions</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((person) => (
+                  <tr key={person.id}>
+                    <td className="w-full max-w-0">
+                      <span className="dd-avatar-label max-w-full">
+                        <span
+                          className={`dd-avatar dd-avatar--sm ${avatarSetClass(person.id)}`}
+                          aria-hidden="true"
+                        >
+                          {initials(person.name)}
+                        </span>
+                        <span className="dd-avatar-label__text">
+                          <span>{person.name}</span>
+                          <span className="font-mono">{person.email}</span>
+                        </span>
+                      </span>
+                    </td>
+                    <td className="is-shrink">
+                      <div className="flex items-center justify-end gap-0.5">
+                        <IconButton
+                          icon="edit"
+                          label={`Edit ${person.name}`}
+                          size="sm"
+                          onClick={() => startEdit(person)}
+                          disabled={disabled || isSaving}
+                        />
+                        <IconButton
+                          icon="trash"
+                          label={`Delete ${person.name}`}
+                          size="sm"
+                          onClick={() => setDeleteTarget(person)}
+                          disabled={disabled || isSaving}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
-      </div>
+      </section>
+
+      <Dialog
+        open={editingPerson !== null}
+        onOpenChange={(open) => !open && cancelEdit()}
+      >
+        {editingPerson && (
+          <DialogContent size="sm">
+            <form
+              className="dd-dialog__form"
+              noValidate
+              onSubmit={(event) => {
+                event.preventDefault()
+                void commitEdit(editingPerson)
+              }}
+            >
+              <DialogHeader
+                icon="user"
+                eyebrow="Contacts"
+                title="edit person"
+              />
+              <DialogBody className="dd-form__body">
+                <TextField
+                  label="Name"
+                  value={editDraft.name}
+                  onChange={(e) =>
+                    setEditDraft((d) => ({ ...d, name: e.target.value }))
+                  }
+                  autoComplete="off"
+                  autoFocus
+                  disabled={disabled || isSaving}
+                />
+                <TextField
+                  label="Email"
+                  type="email"
+                  value={editDraft.email}
+                  onChange={(e) =>
+                    setEditDraft((d) => ({ ...d, email: e.target.value }))
+                  }
+                  autoComplete="off"
+                  disabled={disabled || isSaving}
+                />
+              </DialogBody>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="button" variant="ghost">
+                    Cancel
+                  </Button>
+                </DialogClose>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  disabled={
+                    disabled ||
+                    isSaving ||
+                    !editDraft.name.trim() ||
+                    !editDraft.email.trim()
+                  }
+                >
+                  Save
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        )}
+      </Dialog>
+
+      <Dialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
+        {deleteTarget && (
+          <DialogContent size="sm" danger role="alertdialog">
+            <DialogHeader
+              icon="danger"
+              eyebrow="Contacts"
+              title={`remove ${deleteTarget.name}?`}
+              hideClose
+            />
+            <DialogBody>
+              <p className="m-0">
+                They leave your directory and @mention suggestions. This can’t
+                be undone.
+              </p>
+            </DialogBody>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="ghost" autoFocus>
+                  Keep them
+                </Button>
+              </DialogClose>
+              <Button
+                type="button"
+                variant="danger"
+                disabled={disabled || isSaving}
+                onClick={async () => {
+                  const target = deleteTarget
+                  setDeleteTarget(null)
+                  await handleDelete(target.id)
+                }}
+              >
+                <Icon name="trash" />
+                Remove
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        )}
+      </Dialog>
     </div>
   )
 }

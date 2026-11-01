@@ -34,39 +34,30 @@ export function TodoDescriptionPreview({
   const collapsed = overflows && !expanded
 
   return (
-    <div className="mt-1.5">
+    <div className="mt-1">
       <div
-        className="relative overflow-hidden"
-        style={{
-          maxHeight: collapsed ? COLLAPSED_MAX_HEIGHT : undefined,
-        }}
+        // A collapsed preview fades out through a mask, so it works on any card tone (and its hover).
+        className={cn(
+          'overflow-hidden',
+          collapsed &&
+            '[mask-image:linear-gradient(to_bottom,var(--dd-text)_55%,transparent)]',
+        )}
+        style={{ maxHeight: collapsed ? COLLAPSED_MAX_HEIGHT : undefined }}
       >
         <div ref={contentRef}>
           {isHtml ? (
             <div
-              className="rich-text-display leading-snug break-words"
+              className="rich-text-display break-words"
               dangerouslySetInnerHTML={{
                 __html: sanitizeHtml(linkifyHtml(mentionifyHtml(description))),
               }}
             />
           ) : (
-            <p
-              className="text-[11px] leading-snug break-words whitespace-pre-wrap"
-              style={{ color: 'var(--text-muted)' }}
-            >
+            <p className="text-muted text-xs leading-snug break-words whitespace-pre-wrap">
               {renderTextWithLinks(description)}
             </p>
           )}
         </div>
-        {collapsed && (
-          <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-8"
-            style={{
-              background:
-                'linear-gradient(to bottom, transparent, color-mix(in srgb, var(--background) 50%, transparent))',
-            }}
-          />
-        )}
       </div>
       {overflows && (
         <button
@@ -76,12 +67,10 @@ export function TodoDescriptionPreview({
             setExpanded((v) => !v)
           }}
           onPointerDown={(e) => e.stopPropagation()}
-          className={cn(
-            'mt-1 text-[11px] font-medium transition-colors hover:underline',
-          )}
-          style={{ color: 'var(--primary)' }}
+          aria-expanded={expanded}
+          className="dd-btn dd-btn--link dd-btn--sm text-muted py-0.5"
         >
-          {expanded ? 'See less' : 'See more'}
+          <span>{expanded ? 'See less' : 'See more'}</span>
         </button>
       )}
     </div>

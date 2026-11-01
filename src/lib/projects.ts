@@ -65,7 +65,7 @@ export interface ProjectTodoGroup {
   todos: Todo[]
 }
 
-const NO_PROJECT_COLOR = 'var(--status-waiting)'
+const NO_PROJECT_COLOR = 'var(--dd-quiet)'
 
 /**
  * Group todos under their primary (first) project for overview surfaces. Unlike

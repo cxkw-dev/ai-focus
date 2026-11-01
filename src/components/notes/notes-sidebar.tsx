@@ -2,13 +2,22 @@
 
 import * as React from 'react'
 import * as Popover from '@radix-ui/react-popover'
-import { Plus, Search, Trash2, Calendar, Tag, PenLine } from 'lucide-react'
 import type { NotebookNote } from '@/types/notebook'
-import { STATUS_LABELS, STATUS_COLOR_VARS as STATUS_COLORS } from '@/lib/status'
-import {
-  PRIORITY_LABELS,
-  PRIORITY_COLOR_VARS as PRIORITY_COLORS,
-} from '@/lib/priority'
+import { IconButton } from '@/components/ui/button'
+import { Chip } from '@/components/ui/chip'
+import { Icon, type IconName } from '@/components/ui/icon'
+import { Input } from '@/components/ui/input'
+import { STATUS_CONFIG } from '@/lib/status'
+import { PRIORITY_MAP } from '@/lib/priority'
+import { cn } from '@/lib/utils'
+
+type NotesTab = 'notes' | 'tasks' | 'archived'
+
+const TABS: { value: NotesTab; label: string }[] = [
+  { value: 'notes', label: 'Notes' },
+  { value: 'tasks', label: 'Tasks' },
+  { value: 'archived', label: 'Archived' },
+]
 
 interface NotesSidebarProps {
   notes: NotebookNote[]
@@ -19,6 +28,7 @@ interface NotesSidebarProps {
   onDelete: (id: string) => void
   onOpenScratchPad: () => void
   isLoading: boolean
+  className?: string
 }
 
 function stripHtml(html: string): string {
@@ -48,79 +58,53 @@ function TodoPreviewCard({
 }: {
   todo: NonNullable<NotebookNote['todo']>
 }) {
+  const status = STATUS_CONFIG[todo.status]
+  const priority = PRIORITY_MAP[todo.priority]
+
   return (
-    <div
-      className="w-64 rounded-lg border p-3 shadow-lg"
-      style={{
-        backgroundColor: 'var(--surface-2)',
-        borderColor: 'var(--border-color)',
-      }}
-    >
-      <p
-        className="mb-2 text-xs leading-snug font-semibold"
-        style={{ color: 'var(--text-primary)' }}
-      >
-        #{todo.taskNumber} {todo.title}
+    <>
+      <p className="text-sm leading-tight font-semibold">
+        <span className="text-quiet font-mono font-normal">
+          #{todo.taskNumber}
+        </span>{' '}
+        {todo.title}
       </p>
 
-      <div className="mb-2 flex items-center gap-2">
-        <span
-          className="rounded-full px-1.5 py-0.5 text-[10px] font-medium"
-          style={{
-            color: STATUS_COLORS[todo.status],
-            backgroundColor: `color-mix(in srgb, ${STATUS_COLORS[todo.status]} 15%, transparent)`,
-          }}
-        >
-          {STATUS_LABELS[todo.status]}
-        </span>
-        <span
-          className="rounded-full px-1.5 py-0.5 text-[10px] font-medium"
-          style={{
-            color: PRIORITY_COLORS[todo.priority],
-            backgroundColor: `color-mix(in srgb, ${PRIORITY_COLORS[todo.priority]} 15%, transparent)`,
-          }}
-        >
-          {PRIORITY_LABELS[todo.priority]}
-        </span>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <Chip color={status.colorVar}>
+          <Icon name={status.icon} />
+          {status.label}
+        </Chip>
+        <Chip color={priority.colorVar}>
+          <Icon name={priority.icon} />
+          {priority.label}
+        </Chip>
       </div>
 
       {todo.dueDate && (
-        <div className="mb-2 flex items-center gap-1.5">
-          <Calendar
-            className="h-3 w-3"
-            style={{ color: 'var(--text-muted)' }}
-          />
-          <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-muted flex items-center gap-1.5 text-xs">
+          <Icon name="calendar" />
+          <span className="font-mono">
             {new Date(todo.dueDate).toLocaleDateString('en-US', {
               month: 'short',
               day: 'numeric',
               year: 'numeric',
             })}
           </span>
-        </div>
+        </p>
       )}
 
       {todo.labels.length > 0 && (
         <div className="flex flex-wrap items-center gap-1">
-          <Tag
-            className="h-3 w-3 shrink-0"
-            style={{ color: 'var(--text-muted)' }}
-          />
+          <Icon name="tag" className="text-muted" />
           {todo.labels.map((label) => (
-            <span
-              key={label.id}
-              className="rounded-full px-1.5 py-0.5 text-[10px] font-medium"
-              style={{
-                color: label.color,
-                backgroundColor: `color-mix(in srgb, ${label.color} 15%, transparent)`,
-              }}
-            >
+            <Chip key={label.id} color={label.color}>
               {label.name}
-            </span>
+            </Chip>
           ))}
         </div>
       )}
-    </div>
+    </>
   )
 }
 
@@ -143,12 +127,7 @@ function TodoBadge({ note }: { note: NotebookNote }) {
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
         <span
-          className="shrink-0 cursor-default rounded px-1 text-[10px] font-medium"
-          style={{
-            color: 'var(--primary)',
-            backgroundColor:
-              'color-mix(in srgb, var(--primary) 12%, transparent)',
-          }}
+          className="dd-badge dd-badge--count shrink-0 cursor-default"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
           onClick={(e) => e.stopPropagation()}
@@ -161,16 +140,81 @@ function TodoBadge({ note }: { note: NotebookNote }) {
           side="right"
           sideOffset={8}
           align="start"
+          collisionPadding={10}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
           onOpenAutoFocus={(e) => e.preventDefault()}
           onCloseAutoFocus={(e) => e.preventDefault()}
+          className="dd-popover dd-popover--static z-[70] w-60 p-3"
         >
           <TodoPreviewCard todo={note.todo} />
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>
   )
+}
+
+/** Notes / Tasks / Archived: a segmented control owned by React state (radio semantics, arrow keys move). */
+function NotesTabs({
+  value,
+  onChange,
+}: {
+  value: NotesTab
+  onChange: (value: NotesTab) => void
+}) {
+  const itemRefs = React.useRef<(HTMLButtonElement | null)[]>([])
+
+  const handleKeyDown = (event: React.KeyboardEvent, index: number) => {
+    const last = TABS.length - 1
+    const targets: Record<string, number> = {
+      ArrowRight: index === last ? 0 : index + 1,
+      ArrowDown: index === last ? 0 : index + 1,
+      ArrowLeft: index === 0 ? last : index - 1,
+      ArrowUp: index === 0 ? last : index - 1,
+      Home: 0,
+      End: last,
+    }
+    const target = targets[event.key]
+    if (target === undefined) return
+    event.preventDefault()
+    onChange(TABS[target].value)
+    itemRefs.current[target]?.focus()
+  }
+
+  return (
+    <div
+      role="radiogroup"
+      aria-label="Show"
+      className="dd-segmented dd-segmented--sm dd-segmented--block min-w-0 flex-1"
+    >
+      {TABS.map((tab, index) => {
+        const checked = tab.value === value
+        return (
+          <button
+            key={tab.value}
+            ref={(el) => {
+              itemRefs.current[index] = el
+            }}
+            type="button"
+            role="radio"
+            aria-checked={checked}
+            tabIndex={checked ? 0 : -1}
+            className="dd-segmented__item"
+            onClick={() => onChange(tab.value)}
+            onKeyDown={(event) => handleKeyDown(event, index)}
+          >
+            {tab.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+const EMPTY_STATES: Record<NotesTab, { icon: IconName; title: string }> = {
+  notes: { icon: 'file', title: 'No notes yet' },
+  tasks: { icon: 'list', title: 'No task notes yet' },
+  archived: { icon: 'archive', title: 'No archived notes' },
 }
 
 export function NotesSidebar({
@@ -182,11 +226,10 @@ export function NotesSidebar({
   onDelete,
   onOpenScratchPad,
   isLoading,
+  className,
 }: NotesSidebarProps) {
   const [search, setSearch] = React.useState('')
-  const [activeTab, setActiveTab] = React.useState<
-    'notes' | 'tasks' | 'archived'
-  >('notes')
+  const [activeTab, setActiveTab] = React.useState<NotesTab>('notes')
 
   const { standaloneNotes, taskNotes, archivedNotes } = React.useMemo(() => {
     const standalone: NotebookNote[] = []
@@ -226,243 +269,104 @@ export function NotesSidebar({
     return source.filter((n) => n.title.toLowerCase().includes(q))
   }, [standaloneNotes, taskNotes, archivedNotes, activeTab, search])
 
-  const handleDelete = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation()
-    onDelete(id)
-  }
+  const empty: { icon: IconName; title: string } = search
+    ? { icon: 'search', title: 'No notes found' }
+    : EMPTY_STATES[activeTab]
 
   return (
-    <div
-      className="flex h-full flex-col border-r"
-      style={{ borderColor: 'var(--border-color)' }}
-    >
-      {/* Header with tabs */}
-      <div className="flex items-center justify-between gap-2 px-3 pt-4 pb-3">
-        <div
-          className="flex min-w-0 rounded-lg p-0.5"
-          style={{
-            backgroundColor:
-              'color-mix(in srgb, var(--text-muted) 10%, transparent)',
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => setActiveTab('notes')}
-            className="rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
-            style={{
-              color:
-                activeTab === 'notes'
-                  ? 'var(--text-primary)'
-                  : 'var(--text-muted)',
-              backgroundColor:
-                activeTab === 'notes' ? 'var(--surface-2)' : 'transparent',
-            }}
-          >
-            Notes
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('tasks')}
-            className="rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
-            style={{
-              color:
-                activeTab === 'tasks'
-                  ? 'var(--text-primary)'
-                  : 'var(--text-muted)',
-              backgroundColor:
-                activeTab === 'tasks' ? 'var(--surface-2)' : 'transparent',
-            }}
-          >
-            Tasks
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('archived')}
-            className="rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
-            style={{
-              color:
-                activeTab === 'archived'
-                  ? 'var(--text-primary)'
-                  : 'var(--text-muted)',
-              backgroundColor:
-                activeTab === 'archived' ? 'var(--surface-2)' : 'transparent',
-            }}
-          >
-            Archived
-          </button>
-        </div>
-        <button
-          type="button"
-          onClick={onCreate}
-          className="shrink-0 rounded-md p-1.5 transition-colors"
-          style={{ color: 'var(--primary)' }}
-          title="New note"
-        >
-          <Plus className="h-4 w-4" />
-        </button>
+    <div className={cn('flex min-h-0 min-w-0 flex-col gap-2', className)}>
+      <div className="flex items-center gap-1.5">
+        <NotesTabs value={activeTab} onChange={setActiveTab} />
+        <IconButton icon="plus" label="New note" size="sm" onClick={onCreate} />
       </div>
 
-      {/* Search */}
-      <div className="px-3 pb-3">
-        <div
-          className="flex items-center gap-2 rounded-md border px-2.5 py-1.5"
-          style={{
-            borderColor: 'var(--border-color)',
-            backgroundColor: 'var(--background)',
-          }}
-        >
-          <Search
-            className="h-3.5 w-3.5 shrink-0"
-            style={{ color: 'var(--text-muted)' }}
-          />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search notes..."
-            className="flex-1 bg-transparent text-xs outline-none"
-            style={{ color: 'var(--text-primary)' }}
-          />
-        </div>
-      </div>
+      <Input
+        size="sm"
+        aria-label="Search notes"
+        placeholder="Search notes"
+        leading={<Icon name="search" />}
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
 
-      <div className="px-3 pb-2">
-        <button
-          type="button"
-          onClick={onOpenScratchPad}
-          className="flex w-full items-center gap-2 rounded-md border px-2.5 py-2 text-left text-xs transition-colors"
-          style={{
-            borderColor: isScratchPadActive
-              ? 'var(--status-waiting)'
-              : 'var(--border-color)',
-            backgroundColor: isScratchPadActive
-              ? 'color-mix(in srgb, var(--status-waiting) 18%, transparent)'
-              : 'color-mix(in srgb, var(--status-waiting) 8%, transparent)',
-            color: isScratchPadActive
-              ? 'var(--status-waiting)'
-              : 'var(--text-primary)',
-          }}
-        >
-          <PenLine
-            className="h-3.5 w-3.5 shrink-0"
-            style={{ color: 'var(--status-waiting)' }}
-          />
-          <span className="min-w-0 flex-1 truncate">Scratch</span>
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={onOpenScratchPad}
+        aria-current={isScratchPadActive ? 'page' : undefined}
+        className={cn(
+          'ease-gentle rounded-box flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-semibold transition-colors duration-[var(--dd-dur-fast)]',
+          isScratchPadActive
+            ? 'bg-wash-strong text-text'
+            : 'text-muted hover:bg-wash hover:text-text',
+        )}
+      >
+        <Icon name="edit" />
+        <span className="min-w-0 flex-1 truncate">Scratch pad</span>
+        <Icon name="pin" className="text-quiet" />
+      </button>
 
-      {/* Notes list */}
-      <div className="flex-1 overflow-y-auto px-2">
+      <div className="dd-scroll -mx-1 min-h-0 flex-1 overflow-y-auto px-1">
         {isLoading ? (
-          <div className="space-y-2 px-2">
+          <div className="dd-skeleton-group gap-2" aria-busy="true">
+            <span className="dd-visually-hidden">Loading notes…</span>
             {[1, 2, 3].map((i) => (
-              <div
+              <span
                 key={i}
-                className="h-14 animate-pulse rounded-md"
-                style={{ backgroundColor: 'var(--surface-2)' }}
+                className="dd-skeleton rounded-box h-14"
+                aria-hidden="true"
               />
             ))}
           </div>
         ) : filteredNotes.length === 0 ? (
-          <div className="flex items-center justify-center py-8">
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              {search
-                ? 'No notes found'
-                : activeTab === 'archived'
-                  ? 'No archived notes'
-                  : activeTab === 'tasks'
-                    ? 'No task notes yet'
-                    : 'No notes yet'}
-            </p>
+          <div className="dd-empty-state dd-empty-state--compact">
+            <div className="dd-empty-state__icon">
+              <Icon name={empty.icon} />
+            </div>
+            <h3 className="dd-empty-state__title">{empty.title}</h3>
           </div>
         ) : (
-          <div className="space-y-0.5">
+          <ul aria-label="Notes" className="flex flex-col gap-0.5">
             {filteredNotes.map((note) => {
               const isSelected = note.id === selectedId
               const preview = stripHtml(note.content).slice(0, 60)
               return (
-                <div
-                  key={note.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => onSelect(note.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault()
-                      onSelect(note.id)
-                    }
-                  }}
-                  className="group relative w-full cursor-pointer overflow-hidden rounded-lg px-3 py-2.5 text-left transition-all duration-200"
-                  style={{
-                    backgroundColor: isSelected
-                      ? 'color-mix(in srgb, var(--primary) 8%, transparent)'
-                      : 'transparent',
-                    boxShadow: isSelected
-                      ? '0 0 12px color-mix(in srgb, var(--primary) 8%, transparent)'
-                      : 'none',
-                    opacity: note.archived ? 0.6 : 1,
-                  }}
-                >
-                  {/* Gradient glow on selected */}
-                  {isSelected && (
-                    <div
-                      className="pointer-events-none absolute inset-0 opacity-[0.07]"
-                      style={{
-                        background:
-                          'linear-gradient(135deg, var(--primary), var(--accent))',
-                      }}
-                    />
-                  )}
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <p
-                          className="truncate text-xs font-medium"
-                          style={
-                            isSelected
-                              ? {
-                                  background:
-                                    'linear-gradient(135deg, var(--primary), var(--accent))',
-                                  WebkitBackgroundClip: 'text',
-                                  WebkitTextFillColor: 'transparent',
-                                  backgroundClip: 'text',
-                                }
-                              : { color: 'var(--text-primary)' }
-                          }
-                        >
-                          {(note.title || 'Untitled').toUpperCase()}
-                        </p>
-                        <TodoBadge note={note} />
-                      </div>
-                      {preview && (
-                        <p
-                          className="mt-0.5 truncate text-[11px]"
-                          style={{ color: 'var(--text-muted)' }}
-                        >
-                          {preview}
-                        </p>
-                      )}
-                      <p
-                        className="mt-1 text-[10px]"
-                        style={{ color: 'var(--text-muted)', opacity: 0.6 }}
-                      >
-                        {formatRelativeTime(note.updatedAt)}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={(e) => handleDelete(e, note.id)}
-                      className="flex shrink-0 items-center justify-center rounded p-1 opacity-0 transition-all group-hover:opacity-100"
-                      style={{ color: 'var(--text-muted)' }}
-                      title="Delete note"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  </div>
-                </div>
+                <li key={note.id} className="group relative">
+                  <button
+                    type="button"
+                    onClick={() => onSelect(note.id)}
+                    aria-current={isSelected ? 'page' : undefined}
+                    className={cn(
+                      'ease-gentle rounded-box flex w-full min-w-0 flex-col gap-0.5 py-2 pr-9 pl-3 text-left transition-colors duration-[var(--dd-dur-fast)]',
+                      isSelected ? 'bg-wash-strong' : 'hover:bg-wash',
+                      note.archived && 'opacity-60',
+                    )}
+                  >
+                    <span className="flex w-full min-w-0 items-center gap-1.5">
+                      <span className="text-text truncate text-sm leading-tight font-semibold">
+                        {note.title || 'Untitled'}
+                      </span>
+                      <TodoBadge note={note} />
+                    </span>
+                    {preview && (
+                      <span className="text-muted w-full truncate text-xs">
+                        {preview}
+                      </span>
+                    )}
+                    <span className="text-quiet font-mono text-xs">
+                      {formatRelativeTime(note.updatedAt)}
+                    </span>
+                  </button>
+                  <IconButton
+                    icon="trash"
+                    label="Delete note"
+                    size="sm"
+                    onClick={() => onDelete(note.id)}
+                    className="absolute top-1.5 right-1 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100"
+                  />
+                </li>
               )
             })}
-          </div>
+          </ul>
         )}
       </div>
     </div>

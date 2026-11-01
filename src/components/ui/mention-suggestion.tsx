@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { cn } from '@/lib/utils'
 
 export interface MentionSuggestionItem {
   id: string
@@ -49,56 +50,39 @@ export const MentionSuggestionList = React.forwardRef<
     },
   }))
 
-  if (items.length === 0) {
-    return (
-      <div
-        className="rounded-lg border p-2 text-xs shadow-lg"
-        style={{
-          backgroundColor: 'var(--surface-2)',
-          borderColor: 'var(--border-color)',
-          color: 'var(--text-muted)',
-        }}
-      >
-        No people found
-      </div>
-    )
-  }
-
   return (
-    <div
-      className="overflow-hidden rounded-lg border py-1 shadow-lg"
-      style={{
-        backgroundColor: 'var(--surface-2)',
-        borderColor: 'var(--border-color)',
-      }}
+    <ul
+      role="listbox"
+      aria-label="People"
+      // At most eight people: show them all (no inner scroll; a modal dialog would swallow its wheel).
+      className="dd-listbox dd-listbox--static max-h-none min-w-52"
     >
-      {items.map((item, index) => (
-        <button
-          key={item.id}
-          type="button"
-          className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors"
-          style={{
-            backgroundColor:
-              index === selectedIndex
-                ? 'color-mix(in srgb, var(--primary) 15%, transparent)'
-                : 'transparent',
-            color:
-              index === selectedIndex
-                ? 'var(--primary)'
-                : 'var(--text-primary)',
-          }}
-          onClick={() => selectItem(index)}
-          onMouseEnter={() => setSelectedIndex(index)}
-        >
-          <span className="font-medium">{item.name}</span>
-          <span
-            className="truncate text-xs"
-            style={{ color: 'var(--text-muted)' }}
+      {items.length === 0 ? (
+        <li className="dd-listbox__empty" role="presentation">
+          No people found
+        </li>
+      ) : (
+        items.map((item, index) => (
+          <li
+            key={item.id}
+            role="option"
+            aria-selected={false}
+            className={cn(
+              'dd-listbox__option',
+              index === selectedIndex && 'is-active',
+            )}
+            // Keep focus (and the caret) in the editor while picking.
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => selectItem(index)}
+            onMouseEnter={() => setSelectedIndex(index)}
           >
-            {item.email}
-          </span>
-        </button>
-      ))}
-    </div>
+            <span className="dd-listbox__text">
+              <span>{item.name}</span>
+              <span className="dd-listbox__desc truncate">{item.email}</span>
+            </span>
+          </li>
+        ))
+      )}
+    </ul>
   )
 })

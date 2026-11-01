@@ -66,7 +66,7 @@ describe('NoteDrawer', () => {
     )
 
     expect(await screen.findByDisplayValue('Task note')).toBeInTheDocument()
-    expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
+    expect(screen.queryByText('Loading note')).not.toBeInTheDocument()
 
     fireEvent.change(screen.getByLabelText('Note content'), {
       target: { value: '<p>Updated body</p>' },
@@ -77,7 +77,7 @@ describe('NoteDrawer', () => {
         content: '<p>Updated body</p>',
       })
       expect(client.getQueryData(['notebook', 'n-1'])).toEqual(updatedNote)
-      expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
+      expect(screen.queryByText('Loading note')).not.toBeInTheDocument()
     })
   })
 })

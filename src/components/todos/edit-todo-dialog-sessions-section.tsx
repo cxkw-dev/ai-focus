@@ -16,9 +16,5 @@ export function EditTodoDialogSessionsSection({
     return null
   }
 
-  return (
-    <div className="space-y-2">
-      <SessionList sessions={sessions} onDelete={onDeleteSession} compact />
-    </div>
-  )
+  return <SessionList sessions={sessions} onDelete={onDeleteSession} compact />
 }

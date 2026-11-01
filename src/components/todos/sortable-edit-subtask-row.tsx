@@ -1,11 +1,12 @@
 'use client'
 
 import * as React from 'react'
-import { motion, useAnimationControls } from 'framer-motion'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { CheckSquare, GripVertical, Square, X } from 'lucide-react'
+import { GripVertical } from 'lucide-react'
+import { IconButton } from '@/components/ui/button'
 import { SubtaskMentionInput } from '@/components/ui/subtask-mention-input'
+import { cn } from '@/lib/utils'
 
 export function editSubtaskDndId(
   subtaskId: string | undefined,
@@ -32,7 +33,6 @@ export function SortableEditSubtaskRow({
   mentions: { id: string; name: string; email: string }[]
 }) {
   const [isEditing, setIsEditing] = React.useState(false)
-  const commitFxControls = useAnimationControls()
   const {
     attributes,
     listeners,
@@ -45,109 +45,57 @@ export function SortableEditSubtaskRow({
     transform: CSS.Transform.toString(transform),
     transition,
   }
-  const handleCommitFx = React.useCallback(() => {
-    void commitFxControls.start({
-      x: [0, -1.5, 1.5, -0.75, 0],
-      transition: { duration: 0.24, ease: 'easeOut' },
-    })
-  }, [commitFxControls])
 
   return (
-    <div ref={setNodeRef} style={style} className="relative py-0.5">
-      <motion.span
-        className="pointer-events-none absolute top-1/2 left-0 h-3 w-0.5 rounded-full"
-        animate={
-          isEditing
-            ? { opacity: [0.45, 1, 0.45], scaleY: [0.75, 1, 0.75] }
-            : { opacity: 0, scaleY: 0.75 }
-        }
-        transition={
-          isEditing
-            ? {
-                duration: 1.2,
-                ease: 'easeInOut',
-                repeat: Number.POSITIVE_INFINITY,
-              }
-            : { duration: 0.12, ease: 'easeOut' }
-        }
-        style={{ backgroundColor: 'var(--primary)' }}
-      />
-      <motion.div
-        className="group/subtask flex items-center gap-2 rounded pr-0.5 pl-1 transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]"
-        animate={{
-          backgroundColor: isEditing
-            ? 'color-mix(in srgb, var(--primary) 10%, transparent)'
-            : 'transparent',
-          boxShadow: isEditing
-            ? 'inset 0 0 0 1px color-mix(in srgb, var(--primary) 28%, transparent)'
-            : 'inset 0 0 0 1px transparent',
-          y: isEditing ? -0.5 : 0,
-        }}
-        transition={{ type: 'spring', stiffness: 300, damping: 28, mass: 0.6 }}
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        'group/subtask rounded-ctl ease-gentle hover:bg-wash flex items-center gap-1.5 py-0.5 pr-0.5 pl-0.5 transition-colors duration-[var(--dd-dur-fast)]',
+        isEditing && 'bg-wash',
+        isDragging && 'bg-wash-strong relative z-10',
+      )}
+    >
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className={cn(
+          'rounded-ctl text-quiet hover:text-muted flex-none cursor-grab p-0.5 transition-colors active:cursor-grabbing',
+          isDragging && 'text-muted',
+        )}
+        aria-label="Reorder subtask"
       >
-        <motion.div
-          className="flex w-full min-w-0 items-center gap-2"
-          animate={commitFxControls}
-        >
-          <button
-            type="button"
-            {...attributes}
-            {...listeners}
-            className="flex-shrink-0 cursor-grab rounded p-0.5 transition-colors active:cursor-grabbing"
-            style={{
-              color: 'var(--text-muted)',
-              opacity: isDragging ? 1 : 0.6,
-            }}
-            aria-label="Reorder subtask"
-          >
-            <GripVertical className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={onToggle}
-            className="flex-shrink-0 transition-colors"
-            style={{
-              color: completed ? 'var(--status-done)' : 'var(--text-muted)',
-            }}
-          >
-            {completed ? (
-              <CheckSquare className="h-4 w-4" />
-            ) : (
-              <Square className="h-4 w-4" />
-            )}
-          </button>
-          <SubtaskMentionInput
-            value={title}
-            onChange={onTitleChange}
-            onCommit={handleCommitFx}
-            onFocusChange={setIsEditing}
-            mentions={mentions}
-            completed={completed}
-            className={
-              completed
-                ? 'flex-1 text-sm text-[var(--text-muted)]'
-                : 'flex-1 text-sm text-[var(--text-primary)]'
-            }
-            ariaLabel="Subtask title"
-          />
-          <motion.span
-            className="flex-shrink-0 text-[9px] font-semibold tracking-wide uppercase"
-            animate={{ opacity: isEditing ? 1 : 0, x: isEditing ? 0 : -2 }}
-            transition={{ duration: 0.14, ease: 'easeOut' }}
-            style={{ color: 'var(--primary)' }}
-          >
-            editing
-          </motion.span>
-          <button
-            type="button"
-            onClick={onRemove}
-            className="flex-shrink-0 opacity-0 transition-opacity group-hover/subtask:opacity-100"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </motion.div>
-      </motion.div>
+        <GripVertical className="size-[1.15em]" aria-hidden />
+      </button>
+      <label className="dd-checkbox dd-checkbox--sm flex-none">
+        <input
+          className="dd-checkbox__input"
+          type="checkbox"
+          checked={completed}
+          onChange={onToggle}
+          aria-label={completed ? 'Mark subtask not done' : 'Mark subtask done'}
+        />
+      </label>
+      <SubtaskMentionInput
+        value={title}
+        onChange={onTitleChange}
+        onFocusChange={setIsEditing}
+        mentions={mentions}
+        completed={completed}
+        className={cn(
+          'min-w-0 flex-1 text-sm',
+          completed ? 'text-muted' : 'text-text',
+        )}
+        ariaLabel="Subtask title"
+      />
+      <IconButton
+        icon="x"
+        label="Remove subtask"
+        size="sm"
+        onClick={onRemove}
+        className="-my-1 text-sm opacity-0 group-focus-within/subtask:opacity-100 group-hover/subtask:opacity-100 focus-visible:opacity-100"
+      />
     </div>
   )
 }

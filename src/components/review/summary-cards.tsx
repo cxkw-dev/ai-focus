@@ -1,13 +1,5 @@
-'use client'
-
-import {
-  PlusCircle,
-  CheckCircle2,
-  TrendingUp,
-  Trophy,
-  Flame,
-  Zap,
-} from 'lucide-react'
+import type * as React from 'react'
+import { Icon, type IconName } from '@/components/ui/icon'
 import type { YearStats } from '@/types/stats'
 
 interface SummaryCardsProps {
@@ -15,97 +7,65 @@ interface SummaryCardsProps {
   accomplishmentsTotal?: number
 }
 
+interface SummaryTile {
+  label: string
+  icon: IconName
+  value: React.ReactNode
+  unit?: string
+}
+
+/** The year's headline figures as dawn & dusk stat tiles in one joined grid: 2 across on phones, 3, then 6. */
 export function SummaryCards({
   summary,
   accomplishmentsTotal = 0,
 }: SummaryCardsProps) {
-  const cards = [
+  const tiles: SummaryTile[] = [
+    { label: 'Tasks created', icon: 'plus', value: summary.totalCreated },
     {
-      label: 'Tasks Created',
-      value: summary.totalCreated,
-      icon: PlusCircle,
-      color: 'var(--primary)',
-    },
-    {
-      label: 'Tasks Completed',
+      label: 'Tasks completed',
+      icon: 'success',
       value: summary.totalCompleted,
-      icon: CheckCircle2,
-      color: 'var(--status-done)',
     },
     {
-      label: 'Completion Rate',
-      value: `${summary.completionRate}%`,
-      icon: TrendingUp,
-      color: 'var(--accent)',
+      label: 'Completion rate',
+      icon: 'graph',
+      value: summary.completionRate,
+      unit: '%',
+    },
+    { label: 'Accomplishments', icon: 'star', value: accomplishmentsTotal },
+    {
+      label: 'Active streak',
+      icon: 'calendar',
+      value: summary.currentStreak,
+      unit: 'mo',
     },
     {
-      label: 'Accomplishments',
-      value: accomplishmentsTotal,
-      icon: Trophy,
-      color: 'var(--category-delivery)',
-    },
-    {
-      label: 'Active Streak',
-      value: `${summary.currentStreak} mo`,
-      icon: Flame,
-      color: 'var(--priority-urgent)',
-    },
-    {
-      label: 'High Priority Done',
+      label: 'High priority done',
+      icon: 'bolt',
       value: summary.highPriorityCompleted,
-      icon: Zap,
-      color: 'var(--priority-high)',
     },
   ]
 
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-      {cards.map((card) => {
-        const Icon = card.icon
-        return (
-          <div
-            key={card.label}
-            className="relative overflow-hidden rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5"
-            style={{
-              backgroundColor: 'var(--surface)',
-              borderColor: 'var(--border-color)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = `color-mix(in srgb, ${card.color} 40%, var(--border-color))`
-              e.currentTarget.style.boxShadow = `0 4px 12px color-mix(in srgb, ${card.color} 10%, transparent)`
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'var(--border-color)'
-              e.currentTarget.style.boxShadow = 'none'
-            }}
-          >
-            {/* Colored top accent line */}
-            <div
-              className="absolute top-0 right-0 left-0 h-0.5"
-              style={{ backgroundColor: card.color }}
-            />
-            <div className="mb-3 flex items-center gap-2">
-              <div
-                className="flex h-7 w-7 items-center justify-center rounded-lg"
-                style={{
-                  backgroundColor: `color-mix(in srgb, ${card.color} 12%, transparent)`,
-                }}
-              >
-                <Icon className="h-3.5 w-3.5" style={{ color: card.color }} />
-              </div>
-              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                {card.label}
-              </span>
-            </div>
-            <p
-              className="text-2xl font-bold tabular-nums"
-              style={{ color: 'var(--text-primary)' }}
-            >
-              {card.value}
+    <div className="@container">
+      <div className="dd-stat-grid dd-stat-grid--joined [--dd-stat-min:40%] @2xl:[--dd-stat-min:30%] @6xl:[--dd-stat-min:15%]">
+        {tiles.map((tile) => (
+          <div key={tile.label} className="dd-stat">
+            <p className="dd-stat__label">
+              <Icon name={tile.icon} />
+              {tile.label}
             </p>
+            <div className="dd-stat__main">
+              <p className="dd-stat__value">
+                {tile.value}
+                {tile.unit && (
+                  <span className="dd-stat__unit">{tile.unit}</span>
+                )}
+              </p>
+            </div>
           </div>
-        )
-      })}
+        ))}
+      </div>
     </div>
   )
 }

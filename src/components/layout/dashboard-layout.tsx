@@ -2,13 +2,14 @@
 
 import * as React from 'react'
 import { usePathname } from 'next/navigation'
-import { motion } from 'framer-motion'
 import { Sidebar } from './sidebar'
-import { Header } from './header'
+import { TopBar, type Crumb } from './top-bar'
 import {
   HeaderActionsProvider,
   useHeaderActions,
 } from './header-actions-context'
+import { useProjectNav } from '@/hooks/use-project-nav'
+import { PROJECTS_ROUTE } from '@/lib/projects'
 
 const SIDEBAR_COLLAPSED_KEY = 'sidebar-collapsed'
 const SIDEBAR_COLLAPSED_EVENT = 'ai-focus-sidebar-collapsed'
@@ -31,28 +32,28 @@ function getSidebarCollapsedSnapshot(): boolean {
   }
 }
 
-function getSidebarCollapsedServerSnapshot(): boolean {
-  return false
-}
-
 const pageTitles: Record<string, string> = {
-  '/projects': 'Projects',
-  '/labels': 'Labels',
-  '/notes': 'Notes',
-  '/review': 'Year in Review',
-  '/settings': 'Settings',
+  [PROJECTS_ROUTE]: 'projects',
+  '/labels': 'labels',
+  '/notes': 'notes',
+  '/review': 'year in review',
+  '/settings': 'settings',
 }
 
-function resolvePageTitle(pathname: string) {
-  if (pathname.startsWith('/projects/')) return 'Project'
-  return pageTitles[pathname] || 'Focus'
+function useCrumbs(pathname: string): Crumb[] {
+  const { projects } = useProjectNav()
+  if (pathname.startsWith(`${PROJECTS_ROUTE}/`)) {
+    const id = pathname.slice(PROJECTS_ROUTE.length + 1)
+    const project = projects.find((p) => p.id === id)
+    return [
+      { label: 'projects', href: PROJECTS_ROUTE },
+      { label: project?.name ?? 'project' },
+    ]
+  }
+  return [{ label: pageTitles[pathname] ?? 'focus' }]
 }
 
-interface DashboardLayoutProps {
-  children: React.ReactNode
-}
-
-export function DashboardLayout({ children }: DashboardLayoutProps) {
+export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <HeaderActionsProvider>
       <DashboardLayoutInner>{children}</DashboardLayoutInner>
@@ -60,101 +61,53 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   )
 }
 
-function DashboardLayoutInner({ children }: DashboardLayoutProps) {
+/**
+ * The dawn & dusk app shell: side nav on the left, top bar and a scrolling content area on the right. The shell is
+ * the viewport; under 768px of it the side nav goes off-canvas and the top bar shows its menu button.
+ */
+function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const title = resolvePageTitle(pathname)
+  const crumbs = useCrumbs(pathname)
   const { actions } = useHeaderActions()
 
   const collapsed = React.useSyncExternalStore(
     subscribeSidebarCollapsed,
     getSidebarCollapsedSnapshot,
-    getSidebarCollapsedServerSnapshot,
+    () => false,
   )
-  const [isMobile, setIsMobile] = React.useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
-  const [isReady, setIsReady] = React.useState(false)
+  const [mobileNavOpen, setMobileNavOpen] = React.useState(false)
   const [prevPathname, setPrevPathname] = React.useState(pathname)
 
-  // Reset mobile menu when navigation happens (React 19 "reset on prop change" pattern)
+  // Close the off-canvas nav when navigation happens (React 19 "reset on prop change" pattern).
   if (prevPathname !== pathname) {
     setPrevPathname(pathname)
-    setMobileMenuOpen(false)
+    setMobileNavOpen(false)
   }
 
-  React.useEffect(() => {
-    const raf = requestAnimationFrame(() => setIsReady(true))
-    return () => cancelAnimationFrame(raf)
-  }, [])
-
-  React.useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024)
-      if (window.innerWidth >= 1024) {
-        setMobileMenuOpen(false)
-      }
-    }
-
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
-
-  const handleCollapse = (newCollapsed: boolean) => {
-    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, JSON.stringify(newCollapsed))
+  const handleCollapse = (next: boolean) => {
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, JSON.stringify(next))
     window.dispatchEvent(new Event(SIDEBAR_COLLAPSED_EVENT))
   }
 
-  const transition = isReady
-    ? { duration: 0.2, ease: 'easeInOut' as const }
-    : { duration: 0 }
-
   return (
-    <div
-      className="min-h-screen"
-      style={{ backgroundColor: 'var(--background)' }}
-    >
-      {/* Desktop Sidebar */}
-      {!isMobile && (
-        <Sidebar
-          collapsed={collapsed}
-          onCollapse={handleCollapse}
-          transition={transition}
-        />
-      )}
-
-      {/* Mobile Sidebar Overlay */}
-      {isMobile && mobileMenuOpen && (
-        <>
-          <div
-            className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-          <Sidebar
-            collapsed={false}
-            onCollapse={() => setMobileMenuOpen(false)}
-          />
-        </>
-      )}
-
-      {/* Main Content */}
-      <motion.main
-        initial={false}
-        animate={{
-          marginLeft: isMobile ? 0 : collapsed ? 72 : 256,
-        }}
-        transition={transition}
-        className="flex min-h-screen flex-col"
-      >
-        <Header
-          title={title}
-          showMenuButton={isMobile}
-          onMenuClick={() => setMobileMenuOpen(true)}
+    <div className="dd-app-shell">
+      <Sidebar
+        collapsed={collapsed}
+        onCollapse={handleCollapse}
+        mobileOpen={mobileNavOpen}
+        onMobileClose={() => setMobileNavOpen(false)}
+      />
+      <div className="dd-app-shell__main">
+        <TopBar
+          crumbs={crumbs}
+          mobileNavOpen={mobileNavOpen}
+          onOpenNav={() => setMobileNavOpen(true)}
           actions={actions}
         />
-        <div className="flex min-h-0 flex-1 flex-col px-3 py-3 sm:p-4">
+        <main className="dd-app-shell__content flex flex-col px-3 pt-3 pb-5 sm:px-5 sm:pt-4">
           {children}
-        </div>
-      </motion.main>
+        </main>
+      </div>
     </div>
   )
 }

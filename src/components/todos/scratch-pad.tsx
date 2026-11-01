@@ -2,9 +2,10 @@
 
 import * as React from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { PenLine } from 'lucide-react'
+import { Icon } from '@/components/ui/icon'
 import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import { useToast } from '@/components/ui/use-toast'
+import { cn } from '@/lib/utils'
 import type { Note } from '@/types/note'
 
 interface ScratchPadProps {
@@ -115,83 +116,44 @@ function useScratchPadLogic(initialContent: string) {
 function ScratchPadEditor({ initialContent }: { initialContent: string }) {
   const { content, handleChange, status } = useScratchPadLogic(initialContent)
 
-  const getStatusText = () => {
-    if (status.saveError) return 'Save failed'
-    if (status.isSaving) return 'Saving...'
-    if (status.hasUnsavedChanges) return 'Unsaved changes...'
-    return 'Saved'
-  }
-
-  const getStatusColor = () => {
-    if (status.saveError) return 'var(--status-urgent)'
-    if (status.isSaving || status.hasUnsavedChanges)
-      return 'var(--status-in-progress)'
-    return 'var(--text-muted)'
-  }
+  const saveState = status.saveError
+    ? { text: 'Save failed', dot: 'dd-status-dot--error' }
+    : status.isSaving
+      ? { text: 'Saving…', dot: 'dd-status-dot--info' }
+      : status.hasUnsavedChanges
+        ? { text: 'Unsaved changes', dot: 'dd-status-dot--info' }
+        : { text: 'Saved', dot: 'dd-status-dot--online' }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      {/* Folder-tab affordance — a single, unmistakable "you are here" marker
-          instead of a flat status bar. The status dot lives inside it so
-          save-state never needs its own separate label. */}
-      <div
-        className="ml-3 flex w-fit items-center gap-1.5 rounded-t-md border border-b-0 px-2.5 py-1"
-        style={{
-          borderColor:
-            'color-mix(in srgb, var(--status-waiting) 50%, transparent)',
-          backgroundColor:
-            'color-mix(in srgb, var(--status-waiting) 18%, transparent)',
-          color: 'var(--status-waiting)',
-        }}
-      >
-        <PenLine className="h-3 w-3" />
-        <span className="text-[10px] font-bold tracking-widest uppercase">
-          Scratch Pad
-        </span>
+    <div className="flex min-h-0 flex-1 flex-col gap-2">
+      <div className="flex items-center gap-3 px-1">
+        <p className="dd-eyebrow inline-flex items-center gap-1.5">
+          <Icon name="edit" />
+          Scratch pad
+        </p>
         <span
-          className="h-1.5 w-1.5 rounded-full transition-colors duration-300"
-          style={{ backgroundColor: getStatusColor() }}
-          title={getStatusText()}
-        />
+          className={cn(
+            'dd-status-dot dd-status-dot--sm dd-status-dot--muted ml-auto',
+            saveState.dot,
+          )}
+          role="status"
+        >
+          {saveState.text}
+        </span>
       </div>
-      <div
-        className="relative min-h-0 flex-1 overflow-hidden rounded-tr-lg rounded-b-lg border"
-        style={{
-          borderColor:
-            'color-mix(in srgb, var(--status-waiting) 50%, transparent)',
-          backgroundColor: 'var(--surface)',
-        }}
-      >
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: `radial-gradient(circle, var(--text-primary) 1px, transparent 1px)`,
-            backgroundSize: '16px 16px',
-            backgroundPosition: '8px 8px',
-          }}
+      <div className="rounded-box bg-surface-2 min-h-0 flex-1 overflow-hidden px-4 py-3">
+        <RichTextEditor
+          value={content}
+          onChange={handleChange}
+          placeholder="Jot down quick notes"
+          fullHeight
         />
-
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background: `linear-gradient(180deg, transparent 0%, transparent 85%, var(--surface) 100%)`,
-          }}
-        />
-
-        <div className="relative h-full w-full px-4 py-3">
-          <RichTextEditor
-            value={content}
-            onChange={handleChange}
-            placeholder="Jot down quick notes..."
-            fullHeight
-          />
-        </div>
       </div>
     </div>
   )
 }
 
-export function ScratchPad({ className = '' }: ScratchPadProps) {
+export function ScratchPad({ className }: ScratchPadProps) {
   const {
     data: note,
     isLoading,
@@ -208,25 +170,32 @@ export function ScratchPad({ className = '' }: ScratchPadProps) {
 
   if (isLoading) {
     return (
-      <div className={`flex min-h-0 flex-col ${className}`}>
-        <div className="bg-muted ml-3 h-6 w-28 animate-pulse rounded-t-md" />
-        <div className="bg-muted flex-1 animate-pulse rounded-tr-lg rounded-b-lg" />
+      <div
+        className={cn('flex min-h-0 flex-col gap-2', className)}
+        aria-busy="true"
+      >
+        <span className="dd-skeleton dd-skeleton--text ml-1 w-28" />
+        <span className="dd-skeleton rounded-box min-h-0 flex-1" />
       </div>
     )
   }
 
   if (isError) {
     return (
-      <div className={`flex min-h-0 flex-col ${className}`}>
-        <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-red-200 bg-red-50/10">
-          <p className="text-xs text-red-500">Failed to load notes</p>
+      <div className={cn('flex min-h-0 flex-col', className)}>
+        <div className="dd-empty-state dd-empty-state--compact">
+          <div className="dd-empty-state__icon">
+            <Icon name="error" />
+          </div>
+          <p className="dd-empty-state__title">Couldn’t load the scratch pad</p>
+          <p className="dd-empty-state__text">Reload the page to try again.</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className={`flex min-h-0 flex-col ${className}`}>
+    <div className={cn('flex min-h-0 flex-col', className)}>
       {/* Key forces remount if ID changes, ensuring fresh state */}
       <ScratchPadEditor
         key={note?.id || 'default'}

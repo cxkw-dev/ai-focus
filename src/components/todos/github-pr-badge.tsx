@@ -1,44 +1,84 @@
 'use client'
 
-import {
-  GitPullRequest,
-  GitMerge,
-  Check,
-  Loader2,
-  CircleDot,
-  ArrowDown,
-  ShieldCheck,
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
-import {
-  useGithubPrStatus,
-  useGithubPrStatuses,
-} from '@/hooks/use-github-pr-status'
+import type { ReactNode } from 'react'
+import { GitMerge, GitPullRequest } from 'lucide-react'
+import { Icon } from '@/components/ui/icon'
+import { useGithubPrStatus } from '@/hooks/use-github-pr-status'
 import type { GitHubPrStatus } from '@/types/todo'
+import {
+  IntegrationBadge,
+  IntegrationBadgeLoading,
+  IntegrationTitleRow,
+  type IntegrationIntent,
+} from './integration-badge'
 
-const CHIP_BASE =
-  'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors min-w-0 max-w-full whitespace-nowrap'
+const prIcon = <GitPullRequest className="dd-icon" aria-hidden />
 
-function getBadgeConfig(data: GitHubPrStatus) {
+interface BadgeConfig {
+  intent: IntegrationIntent
+  icon: ReactNode
+  label: string
+  /** Longer wording for the tooltip when the label is terse. */
+  hint?: string
+}
+
+function getBadgeConfig(data: GitHubPrStatus): BadgeConfig {
   if (data.state === 'merged')
-    return { color: '#a371f7', icon: GitMerge, label: 'Merged' }
+    return {
+      intent: 'ok',
+      icon: <GitMerge className="dd-icon" aria-hidden />,
+      label: 'Merged',
+    }
   if (data.state === 'closed')
-    return { color: '#f85149', icon: GitPullRequest, label: 'Closed' }
-  if (data.draft)
-    return { color: '#8b949e', icon: GitPullRequest, label: 'Draft' }
+    return { intent: 'bad', icon: prIcon, label: 'Closed' }
+  if (data.draft) return { intent: 'info', icon: prIcon, label: 'Draft' }
   if (data.reviewStatus === 'changes_requested')
-    return { color: '#e5534b', icon: CircleDot, label: 'Changes' }
+    return {
+      intent: 'warn',
+      icon: <Icon name="edit" />,
+      label: 'Changes',
+      hint: 'Changes requested',
+    }
   if (data.reviewStatus === 'review_requested')
-    return { color: '#d29922', icon: GitPullRequest, label: 'In Review' }
+    return { intent: 'info', icon: <Icon name="eye" />, label: 'In review' }
   if (data.reviewStatus === 'approved') {
     const count = data.approvedCount
     const total = data.reviewerCount
     if (count != null && total != null && count < total) {
-      return { color: '#d29922', icon: Check, label: `${count}/${total}` }
+      return {
+        intent: 'info',
+        icon: <Icon name="check" />,
+        label: `${count}/${total}`,
+        hint: `${count} of ${total} approvals`,
+      }
     }
-    return { color: '#3fb950', icon: Check, label: 'Approved' }
+    return { intent: 'ok', icon: <Icon name="check" />, label: 'Approved' }
   }
-  return { color: '#3fb950', icon: GitPullRequest, label: 'Open' }
+  return { intent: 'info', icon: prIcon, label: 'Open' }
+}
+
+/** How far an open PR is behind its base branch: a warn arrow with the count, or a shield when up to date. */
+function behindBase(data: GitHubPrStatus) {
+  if (data.state !== 'open' || data.behindBy == null) return null
+  if (data.behindBy > 0) {
+    return {
+      text: `${data.behindBy} ${data.behindBy === 1 ? 'commit' : 'commits'} behind base`,
+      detail: (
+        <span className="dd-badge__count inline-flex items-center gap-0.5">
+          <Icon name="arrow-down" className="text-warn" />
+          {data.behindBy}
+        </span>
+      ),
+    }
+  }
+  return {
+    text: 'Up to date with base',
+    detail: (
+      <span className="dd-badge__count">
+        <Icon name="shield" className="text-info" />
+      </span>
+    ),
+  }
 }
 
 interface GitHubPrBadgeProps {
@@ -65,144 +105,29 @@ export function GitHubPrBadge({
   const match = url.match(/\/pull\/(\d+)/)
   const prNumber = data?.number ?? (match ? match[1] : '?')
 
-  if (isLoading) {
-    return (
-      <span
-        className={cn(CHIP_BASE)}
-        style={{
-          backgroundColor:
-            'color-mix(in srgb, var(--text-muted) 10%, transparent)',
-          color: 'var(--text-muted)',
-        }}
-      >
-        <Loader2 className="h-3 w-3 animate-spin" />
-        <span className="truncate">#{prNumber}</span>
-      </span>
-    )
-  }
+  if (isLoading) return <IntegrationBadgeLoading reference={prNumber} />
 
   if (isError || !data) {
-    return (
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={(e) => e.stopPropagation()}
-        className={cn(
-          CHIP_BASE,
-          'cursor-pointer no-underline hover:brightness-110',
-        )}
-        style={{
-          backgroundColor:
-            'color-mix(in srgb, var(--text-muted) 10%, transparent)',
-          color: 'var(--text-muted)',
-        }}
-      >
-        <GitPullRequest className="h-3 w-3" />
-        <span className="truncate">#{prNumber}</span>
-      </a>
-    )
+    return <IntegrationBadge url={url} reference={prNumber} icon={prIcon} />
   }
 
   const config = getBadgeConfig(data)
-  const Icon = config.icon
-
-  const chip = (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={(e) => e.stopPropagation()}
-      className={cn(
-        CHIP_BASE,
-        'flex-shrink-0 cursor-pointer no-underline hover:brightness-110',
-      )}
-      style={{
-        backgroundColor: `color-mix(in srgb, ${config.color} 15%, transparent)`,
-        color: config.color,
-      }}
-      title={`${data.title} — ${config.label}`}
-    >
-      <Icon className="h-3 w-3" />
-      <span className="max-w-[7rem] truncate">{config.label}</span>
-      {data.behindBy != null &&
-        data.state === 'open' &&
-        (data.behindBy > 0 ? (
-          <span
-            className="inline-flex shrink-0 items-center gap-px font-semibold"
-            style={{ color: '#d29922' }}
-          >
-            <ArrowDown className="h-2.5 w-2.5" />
-            {data.behindBy}
-          </span>
-        ) : (
-          <ShieldCheck
-            className="h-3 w-3 shrink-0"
-            style={{ color: '#58a6ff' }}
-          />
-        ))}
-      <span className="shrink-0">#{data.number}</span>
-    </a>
+  const behind = behindBase(data)
+  const badge = (
+    <IntegrationBadge
+      url={url}
+      reference={data.number}
+      icon={config.icon}
+      intent={config.intent}
+      label={config.label}
+      detail={behind?.detail}
+      tip={[`${data.title} — ${config.hint ?? config.label}`, behind?.text]
+        .filter(Boolean)
+        .join(' · ')}
+    />
   )
 
-  if (!showTitle) return chip
+  if (!showTitle) return badge
 
-  return (
-    <span className="flex w-full min-w-0 items-center gap-1.5">
-      {chip}
-      <span
-        className="min-w-0 flex-1 truncate text-[10px]"
-        style={{ color: 'var(--text-muted)' }}
-      >
-        {data.title}
-      </span>
-    </span>
-  )
-}
-
-interface GitHubPrRowProps {
-  urls: string[]
-  showTitle?: boolean
-}
-
-export function GitHubPrRow({ urls, showTitle }: GitHubPrRowProps) {
-  const { isLoading, allMergedOrClosed, allMerged } = useGithubPrStatuses(urls)
-
-  let label: string
-  let labelColor: string
-
-  if (isLoading) {
-    label = 'Checking PRs'
-    labelColor = 'var(--text-muted)'
-  } else if (allMerged) {
-    label = 'PRs merged'
-    labelColor = '#a371f7'
-  } else if (allMergedOrClosed) {
-    label = 'PRs closed'
-    labelColor = '#a371f7'
-  } else {
-    label = 'Waiting on'
-    labelColor = 'var(--text-muted)'
-  }
-
-  return (
-    <div
-      className="flex flex-wrap items-center gap-1.5 pt-1.5"
-      style={{
-        borderTop:
-          '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)',
-      }}
-    >
-      <span
-        className="flex items-center gap-1 text-[10px] font-medium"
-        style={{ color: labelColor }}
-      >
-        {allMergedOrClosed && !isLoading && <Check className="h-3 w-3" />}
-        {label}
-      </span>
-      {urls.map((url) => (
-        <GitHubPrBadge key={url} url={url} showTitle={showTitle} />
-      ))}
-    </div>
-  )
+  return <IntegrationTitleRow badge={badge} title={data.title} />
 }

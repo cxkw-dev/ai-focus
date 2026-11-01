@@ -1,54 +1,25 @@
 'use client'
 
-import * as React from 'react'
-import { ChevronDown } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { PRIORITY_MAP } from '@/lib/priority'
-import { STATUS_CONFIG } from '@/lib/status'
+import { Chip } from '@/components/ui/chip'
+import { Icon } from '@/components/ui/icon'
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { PRIORITIES, PRIORITY_MAP } from '@/lib/priority'
+import { STATUS_CONFIG } from '@/lib/status'
+import { cn, cssVars } from '@/lib/utils'
 import type { Label, Priority, Status, Todo } from '@/types/todo'
 
-export const CHIP_BASE =
-  'h-5 px-1.5 rounded text-[10px] font-medium inline-flex items-center gap-1 transition-colors whitespace-nowrap'
+const STATUSES = Object.keys(STATUS_CONFIG) as Status[]
 
-export { STATUS_CONFIG }
+/** Chips on a dense card: the dd chip, a step tighter so a status, a priority and a label share one row. */
+const CARD_CHIP = 'px-1.5 py-1'
 
-export const PRIORITY_CONFIG: Record<
-  Priority,
-  {
-    label: string
-    colorVar: string
-    bgVar: string
-    icon: React.ElementType
-    emphasized?: boolean
-  }
-> = Object.fromEntries(
-  Object.entries(PRIORITY_MAP).map(([key, p]) => [
-    key,
-    {
-      label: p.label,
-      colorVar: p.colorVar,
-      bgVar: p.colorVar,
-      icon: p.icon,
-      ...(key === 'URGENT' ? { emphasized: true } : {}),
-    },
-  ]),
-) as Record<
-  Priority,
-  {
-    label: string
-    colorVar: string
-    bgVar: string
-    icon: React.ElementType
-    emphasized?: boolean
-  }
->
-
+/** Status on a card: its colour, icon and word (never colour alone). */
 export function StatusChip({
   status,
   className,
@@ -57,19 +28,11 @@ export function StatusChip({
   className?: string
 }) {
   const config = STATUS_CONFIG[status]
-  const Icon = config.icon
-
   return (
-    <span
-      className={cn(CHIP_BASE, 'min-w-0', className)}
-      style={{
-        backgroundColor: `color-mix(in srgb, ${config.bgVar} 15%, transparent)`,
-        color: config.colorVar,
-      }}
-    >
-      <Icon className="h-3 w-3 flex-shrink-0" />
-      <span className="truncate">{config.label}</span>
-    </span>
+    <Chip color={config.colorVar} className={cn(CARD_CHIP, className)}>
+      <Icon name={config.icon} />
+      <span>{config.label}</span>
+    </Chip>
   )
 }
 
@@ -80,28 +43,16 @@ export function PriorityChip({
   priority: Priority
   className?: string
 }) {
-  const config = PRIORITY_CONFIG[priority]
-
+  const config = PRIORITY_MAP[priority]
   return (
-    <span
-      className={cn(
-        CHIP_BASE,
-        config.emphasized && 'priority-chip-urgent',
-        className,
-      )}
-      style={{
-        backgroundColor: config.emphasized
-          ? config.colorVar
-          : `color-mix(in srgb, ${config.bgVar} 15%, transparent)`,
-        color: config.emphasized ? 'var(--background)' : config.colorVar,
-        fontWeight: config.emphasized ? 700 : undefined,
-      }}
-    >
-      {config.label}
-    </span>
+    <Chip color={config.colorVar} className={cn(CARD_CHIP, className)}>
+      <Icon name={config.icon} />
+      <span>{config.label}</span>
+    </Chip>
   )
 }
 
+/** A label in its own colour. */
 export function TodoLabelChip({
   label,
   className,
@@ -110,15 +61,9 @@ export function TodoLabelChip({
   className?: string
 }) {
   return (
-    <span
-      className={cn(CHIP_BASE, 'font-semibold', className)}
-      style={{
-        backgroundColor: `color-mix(in srgb, ${label.color} 15%, transparent)`,
-        color: label.color,
-      }}
-    >
-      {label.name}
-    </span>
+    <Chip color={label.color} className={cn(CARD_CHIP, className)}>
+      <span>{label.name}</span>
+    </Chip>
   )
 }
 
@@ -130,65 +75,41 @@ export function StatusDropdown({
   onStatusChange: (id: string, status: Status) => void
 }) {
   const config = STATUS_CONFIG[todo.status]
-  const Icon = config.icon
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className={cn(
-            CHIP_BASE,
-            'min-w-0 cursor-pointer hover:brightness-110',
-          )}
-          style={{
-            backgroundColor: `color-mix(in srgb, ${config.bgVar} 15%, transparent)`,
-            color: config.colorVar,
-          }}
+          type="button"
+          className={cn('dd-chip', CARD_CHIP)}
+          style={cssVars({ '--dd-chip': config.colorVar })}
+          aria-label={`Status: ${config.label}`}
         >
-          <Icon className="h-3 w-3 flex-shrink-0" />
-          <span className="truncate">{config.label}</span>
-          <ChevronDown className="h-2.5 w-2.5 flex-shrink-0 opacity-50" />
+          <Icon name={config.icon} />
+          <span>{config.label}</span>
+          <Icon name="chevron-down" className="opacity-60" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="start"
-        className="border-border/50 min-w-[150px] p-1"
-        style={{ backgroundColor: 'var(--surface-2)' }}
-      >
-        {(Object.keys(STATUS_CONFIG) as Status[]).map((status) => {
-          const statusConfig = STATUS_CONFIG[status]
-          const StatusIcon = statusConfig.icon
-          const isActive = todo.status === status
-          return (
-            <DropdownMenuItem
-              key={status}
-              onClick={() => onStatusChange(todo.id, status)}
-              className={cn(
-                'flex cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-xs transition-colors',
-                isActive
-                  ? 'font-medium'
-                  : 'hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]',
-              )}
-              style={
-                isActive
-                  ? {
-                      backgroundColor: `color-mix(in srgb, ${statusConfig.bgVar} 15%, transparent)`,
-                      color: statusConfig.colorVar,
-                    }
-                  : { color: 'var(--text-muted)' }
-              }
-            >
-              <StatusIcon
-                className="h-3.5 w-3.5"
-                style={{ color: statusConfig.colorVar }}
-              />
-              <span>{statusConfig.label}</span>
-              {isActive && (
-                <span className="ml-auto text-[10px] opacity-60">✓</span>
-              )}
-            </DropdownMenuItem>
-          )
-        })}
+      <DropdownMenuContent align="start" className="min-w-40">
+        <DropdownMenuRadioGroup value={todo.status}>
+          {STATUSES.map((status) => {
+            const option = STATUS_CONFIG[status]
+            return (
+              <DropdownMenuRadioItem
+                key={status}
+                value={status}
+                onSelect={() => onStatusChange(todo.id, status)}
+              >
+                <Icon
+                  name={option.icon}
+                  className="dd-menu__icon"
+                  style={{ color: option.colorVar }}
+                />
+                {option.label}
+              </DropdownMenuRadioItem>
+            )
+          })}
+        </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   )
@@ -201,70 +122,39 @@ export function PriorityDropdown({
   todo: Todo
   onPriorityChange: (id: string, priority: Priority) => void
 }) {
-  const config = PRIORITY_CONFIG[todo.priority]
-  const Icon = config.icon
+  const config = PRIORITY_MAP[todo.priority]
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className={cn(
-            CHIP_BASE,
-            'min-w-0 cursor-pointer hover:brightness-110',
-            config.emphasized && 'priority-chip-urgent',
-          )}
-          style={{
-            backgroundColor: config.emphasized
-              ? config.colorVar
-              : `color-mix(in srgb, ${config.bgVar} 15%, transparent)`,
-            color: config.emphasized ? 'var(--background)' : config.colorVar,
-            fontWeight: config.emphasized ? 700 : undefined,
-          }}
+          type="button"
+          className={cn('dd-chip', CARD_CHIP)}
+          style={cssVars({ '--dd-chip': config.colorVar })}
+          aria-label={`Priority: ${config.label}`}
         >
-          <Icon className="h-3 w-3 flex-shrink-0" />
-          <span className="truncate">{config.label}</span>
-          <ChevronDown className="h-2.5 w-2.5 flex-shrink-0 opacity-50" />
+          <Icon name={config.icon} />
+          <span>{config.label}</span>
+          <Icon name="chevron-down" className="opacity-60" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="start"
-        className="border-border/50 min-w-[130px] p-1"
-        style={{ backgroundColor: 'var(--surface-2)' }}
-      >
-        {(Object.keys(PRIORITY_CONFIG) as Priority[]).map((priority) => {
-          const priorityConfig = PRIORITY_CONFIG[priority]
-          const PriorityIcon = priorityConfig.icon
-          const isActive = todo.priority === priority
-          return (
-            <DropdownMenuItem
-              key={priority}
-              onClick={() => onPriorityChange(todo.id, priority)}
-              className={cn(
-                'flex cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-xs transition-colors',
-                isActive
-                  ? 'font-medium'
-                  : 'hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]',
-              )}
-              style={
-                isActive
-                  ? {
-                      backgroundColor: `color-mix(in srgb, ${priorityConfig.bgVar} 15%, transparent)`,
-                      color: priorityConfig.colorVar,
-                    }
-                  : { color: 'var(--text-muted)' }
-              }
+      <DropdownMenuContent align="start" className="min-w-36">
+        <DropdownMenuRadioGroup value={todo.priority}>
+          {PRIORITIES.map((option) => (
+            <DropdownMenuRadioItem
+              key={option.value}
+              value={option.value}
+              onSelect={() => onPriorityChange(todo.id, option.value)}
             >
-              <PriorityIcon
-                className="h-3.5 w-3.5"
-                style={{ color: priorityConfig.colorVar }}
+              <Icon
+                name={option.icon}
+                className="dd-menu__icon"
+                style={{ color: option.colorVar }}
               />
-              <span>{priorityConfig.label}</span>
-              {isActive && (
-                <span className="ml-auto text-[10px] opacity-60">✓</span>
-              )}
-            </DropdownMenuItem>
-          )
-        })}
+              {option.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   )

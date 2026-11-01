@@ -1,10 +1,13 @@
 'use client'
 
-import type { ElementType } from 'react'
-import { Check, GitPullRequest, CircleDot, CircleDotDashed } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { GitPullRequest } from 'lucide-react'
+import { Icon } from '@/components/ui/icon'
+import { cn } from '@/lib/utils'
 import { GitHubPrBadge } from './github-pr-badge'
 import { GitHubIssueBadge } from './github-issue-badge'
 import { AzureWorkItemBadge } from './azure-workitem-badge'
+import { AzureIcon } from './integration-badge'
 import { useGithubPrStatuses } from '@/hooks/use-github-pr-status'
 import { useGithubIssueStatuses } from '@/hooks/use-github-issue-status'
 import { useAzureWorkItemStatuses } from '@/hooks/use-azure-workitem-status'
@@ -56,39 +59,108 @@ interface PrDependencyTreeProps {
   liveStatus?: boolean
 }
 
-function SectionHeader({
-  icon: Icon,
-  label,
-  statusLabel,
-  statusColor,
-}: {
-  icon: ElementType
-  label: string
-  statusLabel?: string
-  statusColor?: string
-}) {
+/** A resolved summary ("all merged"): a quiet ok badge with a check, so it reads without colour. */
+function ResolvedBadge({ children }: { children: ReactNode }) {
   return (
-    <div className="mb-1 flex min-w-0 flex-wrap items-center gap-1.5">
-      <Icon
-        className="h-3 w-3 flex-shrink-0"
-        style={{ color: 'var(--text-muted)', opacity: 0.6 }}
-      />
-      <span
-        className="text-[10px] font-semibold tracking-wide uppercase"
-        style={{ color: 'var(--text-muted)', opacity: 0.6 }}
-      >
-        {label}
-      </span>
-      {statusLabel && (
-        <span
-          className="flex min-w-0 items-center gap-1 text-[10px] font-medium"
-          style={{ color: statusColor }}
-        >
-          {statusColor !== 'var(--text-muted)' && (
-            <Check className="h-2.5 w-2.5" />
+    <span className="dd-badge dd-badge--ghost dd-badge--ok">
+      <Icon name="check" />
+      {children}
+    </span>
+  )
+}
+
+interface TreeItem {
+  url: string
+  badge: ReactNode
+}
+
+interface TreeSectionProps {
+  icon: ReactNode
+  label: string
+  showHeader: boolean
+  noBorder?: boolean
+  /** The task's own PRs / issues / work item. */
+  own: TreeItem[]
+  /** What the task waits on; drawn as branches under the own items. */
+  deps: TreeItem[]
+  /** Every dependency is loaded and finished. */
+  resolved: boolean
+  /** Header summary once resolved ("all merged"). */
+  headerStatus?: string
+  /** Summary over a dependency-only list once resolved ("PRs merged"). */
+  resolvedLabel: string
+}
+
+function TreeSection({
+  icon,
+  label,
+  showHeader,
+  noBorder,
+  own,
+  deps,
+  resolved,
+  headerStatus,
+  resolvedLabel,
+}: TreeSectionProps) {
+  const hasOwn = own.length > 0
+
+  return (
+    <div className={cn('pt-1.5', !noBorder && 'border-border border-t')}>
+      {showHeader && (
+        <div className="mb-1 flex min-w-0 flex-wrap items-center gap-1.5">
+          <span className="dd-eyebrow inline-flex items-center gap-1">
+            {icon}
+            {label}
+          </span>
+          {headerStatus && deps.length > 0 && (
+            <ResolvedBadge>{headerStatus}</ResolvedBadge>
           )}
-          {statusLabel}
-        </span>
+        </div>
+      )}
+
+      {own.map(({ url, badge }) => (
+        <div key={url} className="flex w-full min-w-0 items-center py-0.5">
+          {badge}
+        </div>
+      ))}
+
+      {deps.length > 0 && (
+        <>
+          {hasOwn ? (
+            <p className="text-muted mt-1.5 pl-2.5 text-xs font-medium">
+              {resolved ? 'Dependencies resolved' : 'Depends on'}
+            </p>
+          ) : (
+            !showHeader && (
+              <div className="mb-0.5 flex">
+                {resolved ? (
+                  <ResolvedBadge>{resolvedLabel}</ResolvedBadge>
+                ) : (
+                  <span className="text-muted text-xs font-medium">
+                    Waiting on
+                  </span>
+                )}
+              </div>
+            )
+          )}
+          <div className={hasOwn ? 'mt-0.5' : undefined}>
+            {deps.map(({ url, badge }, i) => (
+              <div
+                key={url}
+                className={
+                  hasOwn
+                    ? cn(
+                        'app-pr-tree-branch min-w-0',
+                        i === deps.length - 1 && 'app-pr-tree-branch--last',
+                      )
+                    : 'min-w-0 py-0.5'
+                }
+              >
+                {badge}
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   )
@@ -107,8 +179,6 @@ function GitHubSection({
   noBorder?: boolean
   liveStatus: boolean
 }) {
-  const hasMyPrs = myPrUrls.length > 0
-  const hasDeps = githubPrUrls.length > 0
   const allPrUrls = liveStatus ? [...myPrUrls, ...githubPrUrls] : []
   const { statuses: prStatuses, isLoading: isLoadingPrStatuses } =
     useGithubPrStatuses(allPrUrls)
@@ -127,129 +197,38 @@ function GitHubSection({
   const allMerged =
     dependencySummary.allLoaded &&
     dependencySummary.loaded.every((status) => status.state === 'merged')
+  const resolved = allMergedOrClosed && !isLoading
 
-  let statusLabel: string | undefined
-  let statusColor: string | undefined
-
-  if (hasDeps) {
-    if (isLoading) {
-      statusLabel = undefined
-    } else if (allMerged) {
-      statusLabel = 'all merged'
-      statusColor = '#a371f7'
-    } else if (allMergedOrClosed) {
-      statusLabel = 'all resolved'
-      statusColor = '#a371f7'
+  const toItem = (url: string): TreeItem => {
+    const status = prStatusByUrl.get(url)
+    return {
+      url,
+      badge: (
+        <GitHubPrBadge
+          url={url}
+          showTitle
+          status={status}
+          isStatusLoading={isLoadingPrStatuses && !status}
+          fetchStatus={false}
+        />
+      ),
     }
   }
 
   return (
-    <div
-      className="pt-1.5"
-      style={
-        noBorder
-          ? undefined
-          : {
-              borderTop:
-                '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)',
-            }
+    <TreeSection
+      icon={<GitPullRequest className="size-[1.15em]" aria-hidden />}
+      label="GitHub"
+      showHeader={showHeader}
+      noBorder={noBorder}
+      own={myPrUrls.map(toItem)}
+      deps={githubPrUrls.map(toItem)}
+      resolved={resolved}
+      headerStatus={
+        resolved ? (allMerged ? 'all merged' : 'all resolved') : undefined
       }
-    >
-      {showHeader && (
-        <SectionHeader
-          icon={GitPullRequest}
-          label="GitHub"
-          statusLabel={statusLabel}
-          statusColor={statusColor}
-        />
-      )}
-
-      {/* My PRs */}
-      {hasMyPrs &&
-        myPrUrls.map((url) => {
-          const status = prStatusByUrl.get(url)
-          return (
-            <div
-              key={url}
-              className="flex w-full min-w-0 items-center gap-1.5 py-0.5"
-            >
-              <GitHubPrBadge
-                url={url}
-                showTitle
-                status={status}
-                isStatusLoading={isLoadingPrStatuses && !status}
-                fetchStatus={false}
-              />
-            </div>
-          )
-        })}
-
-      {/* Dependency PRs */}
-      {hasDeps && (
-        <>
-          {hasMyPrs && (
-            <div
-              className="mt-1.5 flex items-center gap-1"
-              style={{ paddingLeft: 12 }}
-            >
-              <span
-                className="text-[10px] font-medium"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                {allMergedOrClosed && !isLoading
-                  ? 'Dependencies resolved'
-                  : 'Depends on'}
-              </span>
-            </div>
-          )}
-          {!hasMyPrs && !showHeader && (
-            <div className="mb-0.5 flex items-center gap-1">
-              <span
-                className="flex items-center gap-1 text-[10px] font-medium"
-                style={{
-                  color:
-                    allMergedOrClosed && !isLoading
-                      ? '#a371f7'
-                      : 'var(--text-muted)',
-                }}
-              >
-                {allMergedOrClosed && !isLoading && (
-                  <Check className="h-3 w-3" />
-                )}
-                {allMergedOrClosed && !isLoading
-                  ? allMerged
-                    ? 'PRs merged'
-                    : 'PRs closed'
-                  : 'Waiting on'}
-              </span>
-            </div>
-          )}
-          <div className={hasMyPrs ? 'mt-0.5' : ''}>
-            {githubPrUrls.map((url, i) => {
-              const status = prStatusByUrl.get(url)
-              return (
-                <div
-                  key={url}
-                  className={
-                    hasMyPrs
-                      ? `pr-tree-branch min-w-0${i === githubPrUrls.length - 1 ? 'pr-tree-branch-last' : ''}`
-                      : 'min-w-0 py-0.5'
-                  }
-                >
-                  <GitHubPrBadge
-                    url={url}
-                    showTitle
-                    status={status}
-                    isStatusLoading={isLoadingPrStatuses && !status}
-                    fetchStatus={false}
-                  />
-                </div>
-              )
-            })}
-          </div>
-        </>
-      )}
-    </div>
+      resolvedLabel={allMerged ? 'PRs merged' : 'PRs closed'}
+    />
   )
 }
 
@@ -266,7 +245,6 @@ function AzureSection({
   noBorder?: boolean
   liveStatus: boolean
 }) {
-  const hasAzureDeps = azureDepUrls.length > 0
   const allAzureUrls = liveStatus
     ? azureWorkItemUrl
       ? [azureWorkItemUrl, ...azureDepUrls]
@@ -289,113 +267,36 @@ function AzureSection({
     dependencySummary.loaded.every((status) =>
       AZURE_RESOLVED_STATES.has(status.state),
     )
+  const resolved = allResolved && !isLoading
 
-  let statusLabel: string | undefined
-  let statusColor: string | undefined
-
-  if (hasAzureDeps) {
-    if (isLoading) {
-      statusLabel = undefined
-    } else if (allResolved) {
-      statusLabel = 'all resolved'
-      statusColor = '#3fb950'
+  const toItem = (url: string): TreeItem => {
+    const status = azureStatusByUrl.get(url)
+    return {
+      url,
+      badge: (
+        <AzureWorkItemBadge
+          url={url}
+          showTitle
+          status={status}
+          isStatusLoading={isLoadingAzureStatuses && !status}
+          fetchStatus={false}
+        />
+      ),
     }
   }
 
   return (
-    <div
-      className="pt-1.5"
-      style={
-        noBorder
-          ? undefined
-          : {
-              borderTop:
-                '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)',
-            }
-      }
-    >
-      {showHeader && (
-        <SectionHeader
-          icon={CircleDot}
-          label="Azure DevOps"
-          statusLabel={statusLabel}
-          statusColor={statusColor}
-        />
-      )}
-
-      {/* My work item */}
-      {azureWorkItemUrl && (
-        <div className="flex w-full min-w-0 items-center gap-1.5 py-0.5">
-          <AzureWorkItemBadge
-            url={azureWorkItemUrl}
-            showTitle
-            status={azureStatusByUrl.get(azureWorkItemUrl)}
-            isStatusLoading={
-              isLoadingAzureStatuses && !azureStatusByUrl.get(azureWorkItemUrl)
-            }
-            fetchStatus={false}
-          />
-        </div>
-      )}
-
-      {/* Dependency work items */}
-      {hasAzureDeps && (
-        <>
-          {azureWorkItemUrl && (
-            <div
-              className="mt-1.5 flex items-center gap-1"
-              style={{ paddingLeft: 12 }}
-            >
-              <span
-                className="text-[10px] font-medium"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                {allResolved && !isLoading
-                  ? 'Dependencies resolved'
-                  : 'Depends on'}
-              </span>
-            </div>
-          )}
-          {!azureWorkItemUrl && !showHeader && (
-            <div className="mb-0.5 flex items-center gap-1">
-              <span
-                className="flex items-center gap-1 text-[10px] font-medium"
-                style={{
-                  color:
-                    allResolved && !isLoading ? '#3fb950' : 'var(--text-muted)',
-                }}
-              >
-                {allResolved && !isLoading && <Check className="h-3 w-3" />}
-                {allResolved && !isLoading ? 'All resolved' : 'Waiting on'}
-              </span>
-            </div>
-          )}
-          <div className={azureWorkItemUrl ? 'mt-0.5' : ''}>
-            {azureDepUrls.map((url, i) => {
-              const status = azureStatusByUrl.get(url)
-              return (
-                <div
-                  key={url}
-                  className={
-                    azureWorkItemUrl
-                      ? `pr-tree-branch min-w-0${i === azureDepUrls.length - 1 ? 'pr-tree-branch-last' : ''}`
-                      : 'min-w-0 py-0.5'
-                  }
-                >
-                  <AzureWorkItemBadge
-                    url={url}
-                    showTitle
-                    status={status}
-                    isStatusLoading={isLoadingAzureStatuses && !status}
-                    fetchStatus={false}
-                  />
-                </div>
-              )
-            })}
-          </div>
-        </>
-      )}
-    </div>
+    <TreeSection
+      icon={<AzureIcon />}
+      label="Azure DevOps"
+      showHeader={showHeader}
+      noBorder={noBorder}
+      own={azureWorkItemUrl ? [toItem(azureWorkItemUrl)] : []}
+      deps={azureDepUrls.map(toItem)}
+      resolved={resolved}
+      headerStatus={resolved ? 'all resolved' : undefined}
+      resolvedLabel="All resolved"
+    />
   )
 }
 
@@ -412,8 +313,6 @@ function GitHubIssuesSection({
   noBorder?: boolean
   liveStatus: boolean
 }) {
-  const hasMyIssues = myIssueUrls.length > 0
-  const hasDeps = githubIssueUrls.length > 0
   const allIssueUrls = liveStatus ? [...myIssueUrls, ...githubIssueUrls] : []
   const { statuses: issueStatuses, isLoading: isLoadingIssueStatuses } =
     useGithubIssueStatuses(allIssueUrls)
@@ -430,118 +329,36 @@ function GitHubIssuesSection({
   const allClosed =
     dependencySummary.allLoaded &&
     dependencySummary.loaded.every((status) => status.state === 'closed')
+  const resolved = allClosed && !isLoading
 
-  let statusLabel: string | undefined
-  let statusColor: string | undefined
-
-  if (hasDeps) {
-    if (isLoading) {
-      statusLabel = undefined
-    } else if (allClosed) {
-      statusLabel = 'all closed'
-      statusColor = '#a371f7'
+  const toItem = (url: string): TreeItem => {
+    const status = issueStatusByUrl.get(url)
+    return {
+      url,
+      badge: (
+        <GitHubIssueBadge
+          url={url}
+          showTitle
+          status={status}
+          isStatusLoading={isLoadingIssueStatuses && !status}
+          fetchStatus={false}
+        />
+      ),
     }
   }
 
   return (
-    <div
-      className="pt-1.5"
-      style={
-        noBorder
-          ? undefined
-          : {
-              borderTop:
-                '1px solid color-mix(in srgb, var(--border-color) 40%, transparent)',
-            }
-      }
-    >
-      {showHeader && (
-        <SectionHeader
-          icon={CircleDotDashed}
-          label="Issues"
-          statusLabel={statusLabel}
-          statusColor={statusColor}
-        />
-      )}
-
-      {/* My Issues */}
-      {hasMyIssues &&
-        myIssueUrls.map((url) => {
-          const status = issueStatusByUrl.get(url)
-          return (
-            <div
-              key={url}
-              className="flex w-full min-w-0 items-center gap-1.5 py-0.5"
-            >
-              <GitHubIssueBadge
-                url={url}
-                showTitle
-                status={status}
-                isStatusLoading={isLoadingIssueStatuses && !status}
-                fetchStatus={false}
-              />
-            </div>
-          )
-        })}
-
-      {/* Dependency Issues */}
-      {hasDeps && (
-        <>
-          {hasMyIssues && (
-            <div
-              className="mt-1.5 flex items-center gap-1"
-              style={{ paddingLeft: 12 }}
-            >
-              <span
-                className="text-[10px] font-medium"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                {allClosed && !isLoading
-                  ? 'Dependencies resolved'
-                  : 'Depends on'}
-              </span>
-            </div>
-          )}
-          {!hasMyIssues && !showHeader && (
-            <div className="mb-0.5 flex items-center gap-1">
-              <span
-                className="flex items-center gap-1 text-[10px] font-medium"
-                style={{
-                  color:
-                    allClosed && !isLoading ? '#a371f7' : 'var(--text-muted)',
-                }}
-              >
-                {allClosed && !isLoading && <Check className="h-3 w-3" />}
-                {allClosed && !isLoading ? 'Issues closed' : 'Waiting on'}
-              </span>
-            </div>
-          )}
-          <div className={hasMyIssues ? 'mt-0.5' : ''}>
-            {githubIssueUrls.map((url, i) => {
-              const status = issueStatusByUrl.get(url)
-              return (
-                <div
-                  key={url}
-                  className={
-                    hasMyIssues
-                      ? `pr-tree-branch min-w-0${i === githubIssueUrls.length - 1 ? 'pr-tree-branch-last' : ''}`
-                      : 'min-w-0 py-0.5'
-                  }
-                >
-                  <GitHubIssueBadge
-                    url={url}
-                    showTitle
-                    status={status}
-                    isStatusLoading={isLoadingIssueStatuses && !status}
-                    fetchStatus={false}
-                  />
-                </div>
-              )
-            })}
-          </div>
-        </>
-      )}
-    </div>
+    <TreeSection
+      icon={<Icon name="danger" />}
+      label="Issues"
+      showHeader={showHeader}
+      noBorder={noBorder}
+      own={myIssueUrls.map(toItem)}
+      deps={githubIssueUrls.map(toItem)}
+      resolved={resolved}
+      headerStatus={resolved ? 'all closed' : undefined}
+      resolvedLabel="Issues closed"
+    />
   )
 }
 

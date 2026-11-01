@@ -3,10 +3,30 @@
 import * as React from 'react'
 import { Suspense } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { Users, Palette, Check } from 'lucide-react'
+import { Icon, type IconName } from '@/components/ui/icon'
 import { PeopleManager } from '@/components/settings/people-manager'
 import { usePeople } from '@/hooks/use-people'
-import { useAppTheme } from '@/components/providers/theme-provider'
+import { useThemeChoice, type ThemeChoice } from '@/hooks/use-theme-choice'
+import { cn } from '@/lib/utils'
+
+const THEME_OPTIONS: { id: ThemeChoice; name: string; description: string }[] =
+  [
+    {
+      id: 'dawn',
+      name: 'Dawn',
+      description: 'Light: warm greige paper, ink type',
+    },
+    {
+      id: 'dusk',
+      name: 'Dusk',
+      description: 'Dark: warm charcoal, soft light type',
+    },
+    {
+      id: 'system',
+      name: 'System',
+      description: 'Follow the operating system',
+    },
+  ]
 
 type SettingsTab = 'contacts' | 'appearance'
 
@@ -16,14 +36,77 @@ const TAB_ORDER: SettingsTab[] = ['contacts', 'appearance']
 const isSettingsTab = (value: string | null): value is SettingsTab =>
   value === 'contacts' || value === 'appearance'
 
-function LoadingSpinner() {
+function PageLoader({ label }: { label: string }) {
   return (
-    <div className="flex items-center justify-center py-8">
-      <div
-        className="h-6 w-6 animate-spin rounded-full border-2 border-t-transparent"
-        style={{ borderColor: 'var(--primary)', borderTopColor: 'transparent' }}
-      />
+    <div className="flex justify-center py-12">
+      <span
+        className="dd-loader dd-loader--sun"
+        role="status"
+        aria-label={label}
+      >
+        <span className="dd-loader__sky" aria-hidden="true">
+          <i />
+        </span>
+        <span className="dd-loader__glyph" aria-hidden="true" />
+      </span>
     </div>
+  )
+}
+
+/** A thumbnail of the app drawn from the tokens inside a `data-theme` subtree, so it shows that theme's colours. */
+function MiniApp({
+  theme,
+  className,
+}: {
+  theme: 'dawn' | 'dusk'
+  className?: string
+}) {
+  return (
+    <span
+      data-theme={theme}
+      className={cn('bg-bg flex h-16 gap-1.5 p-2', className)}
+    >
+      <span className="bg-surface rounded-ctl flex w-1/5 flex-col gap-1 p-1">
+        <span className="bg-faint rounded-pill h-1" />
+        <span className="bg-faint rounded-pill h-1 w-2/3" />
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <span className="bg-text rounded-pill h-1.5 w-2/5" />
+        <span className="bg-surface rounded-ctl flex flex-1 flex-col gap-1 p-1.5">
+          <span className="bg-muted rounded-pill h-1 w-3/4" />
+          <span className="mt-auto flex items-center gap-1">
+            <span className="bg-set-1 size-1.5 rounded-full" />
+            <span className="bg-set-5 size-1.5 rounded-full" />
+            <span className="bg-primary rounded-pill ml-auto h-2 w-6" />
+          </span>
+        </span>
+      </span>
+    </span>
+  )
+}
+
+function ThemePreview({ theme }: { theme: ThemeChoice }) {
+  return (
+    <span
+      className="rounded-ctl relative mt-auto block overflow-hidden"
+      aria-hidden="true"
+    >
+      {theme === 'system' ? (
+        // Dawn on the left, dusk on the right of a diagonal; dawn runs a little under dusk so the seam has no gap.
+        <>
+          <MiniApp
+            theme="dawn"
+            className="[clip-path:polygon(-10%_-10%,61%_-10%,42%_110%,-10%_110%)]"
+          />
+          <MiniApp
+            theme="dusk"
+            className="absolute inset-0 [clip-path:polygon(59.6%_-10%,110%_-10%,110%_110%,40.4%_110%)]"
+          />
+        </>
+      ) : (
+        <MiniApp theme={theme} />
+      )}
+    </span>
   )
 }
 
@@ -36,7 +119,7 @@ function SettingsPageContent() {
     handleUpdate: handleUpdatePerson,
     handleDelete: handleDeletePerson,
   } = usePeople()
-  const { theme, setTheme, themes } = useAppTheme()
+  const [themeChoice, setTheme] = useThemeChoice()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -51,313 +134,162 @@ function SettingsPageContent() {
     }
   }, [pathname, queryTab, router, searchParams])
 
-  const tabs = React.useMemo(
-    () => [
-      {
-        id: 'contacts' as const,
-        label: 'Contacts',
-        hint: 'People directory',
-        count: people.length,
-        icon: Users,
-      },
-      {
-        id: 'appearance' as const,
-        label: 'Appearance',
-        hint: 'Theme & colors',
-        count: themes.length,
-        icon: Palette,
-      },
-    ],
-    [people.length, themes.length],
-  )
+  const tabs: {
+    id: SettingsTab
+    label: string
+    icon: IconName
+    count?: number
+  }[] = [
+    { id: 'contacts', label: 'Contacts', icon: 'users', count: people.length },
+    { id: 'appearance', label: 'Appearance', icon: 'sun' },
+  ]
 
-  const changeTab = React.useCallback(
-    (nextTab: SettingsTab) => {
-      const params = new URLSearchParams(searchParams.toString())
-      params.set(TAB_QUERY_KEY, nextTab)
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-    },
-    [pathname, router, searchParams],
-  )
+  const changeTab = (nextTab: SettingsTab) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set(TAB_QUERY_KEY, nextTab)
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }
 
-  const handleTabKeyDown = React.useCallback(
-    (
-      event: React.KeyboardEvent<HTMLButtonElement>,
-      currentTab: SettingsTab,
-    ) => {
-      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
-      event.preventDefault()
-      const currentIndex = TAB_ORDER.indexOf(currentTab)
-      const offset = event.key === 'ArrowRight' ? 1 : -1
-      const nextIndex =
-        (currentIndex + offset + TAB_ORDER.length) % TAB_ORDER.length
-      const nextTab = TAB_ORDER[nextIndex]
-      changeTab(nextTab)
-    },
-    [changeTab],
-  )
+  // Roving focus: arrows move to the previous / next tab and select it, Home / End jump to the ends.
+  const handleTabKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    currentTab: SettingsTab,
+  ) => {
+    const currentIndex = TAB_ORDER.indexOf(currentTab)
+    const last = TAB_ORDER.length - 1
+    let nextIndex: number
+    switch (event.key) {
+      case 'ArrowDown':
+      case 'ArrowRight':
+        nextIndex = currentIndex === last ? 0 : currentIndex + 1
+        break
+      case 'ArrowUp':
+      case 'ArrowLeft':
+        nextIndex = currentIndex === 0 ? last : currentIndex - 1
+        break
+      case 'Home':
+        nextIndex = 0
+        break
+      case 'End':
+        nextIndex = last
+        break
+      default:
+        return
+    }
+    event.preventDefault()
+    const nextTab = TAB_ORDER[nextIndex]
+    document.getElementById(`settings-tab-${nextTab}`)?.focus()
+    changeTab(nextTab)
+  }
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-4">
-      <div
-        className="rounded-xl border p-1.5"
-        style={{
-          borderColor: 'var(--border-color)',
-          backgroundColor:
-            'color-mix(in srgb, var(--surface) 68%, transparent)',
-        }}
-      >
+    <div className="@container mx-auto w-full max-w-5xl pt-2 pb-10">
+      <div className="dd-tabs dd-tabs--vertical">
         <div
-          className="scrollbar-hide flex gap-1 overflow-x-auto"
+          className="dd-tabs__list @max-[859px]:max-w-none @min-[860px]:sticky @min-[860px]:top-6"
           role="tablist"
-          aria-label="Settings sections"
+          aria-label="Settings"
+          aria-orientation="vertical"
         >
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id
-            const Icon = tab.icon
             return (
               <button
                 key={tab.id}
                 type="button"
+                className="dd-tabs__tab"
                 id={`settings-tab-${tab.id}`}
                 role="tab"
                 aria-controls={`settings-panel-${tab.id}`}
                 aria-selected={isActive}
+                tabIndex={isActive ? 0 : -1}
                 onClick={() => changeTab(tab.id)}
                 onKeyDown={(event) => handleTabKeyDown(event, tab.id)}
-                className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left transition-colors sm:px-3"
-                style={{
-                  backgroundColor: isActive
-                    ? 'color-mix(in srgb, var(--primary) 20%, var(--surface-2) 80%)'
-                    : 'transparent',
-                  color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
-                }}
               >
-                <span className="flex min-w-0 items-center gap-2">
-                  <Icon
-                    className="h-4 w-4 shrink-0"
-                    style={{
-                      color: isActive ? 'var(--primary)' : 'var(--text-muted)',
-                    }}
-                  />
-                  <span className="min-w-0 leading-tight">
-                    <span className="block truncate text-sm font-semibold">
-                      {tab.label}
-                    </span>
-                    <span className="hidden text-[11px] sm:block">
-                      {tab.hint}
-                    </span>
-                  </span>
-                </span>
-                <span
-                  className="rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase"
-                  style={{
-                    backgroundColor: isActive
-                      ? 'color-mix(in srgb, var(--primary) 24%, transparent)'
-                      : 'color-mix(in srgb, var(--surface-2) 72%, transparent)',
-                    color: isActive ? 'var(--primary)' : 'var(--text-muted)',
-                  }}
-                >
-                  {tab.count}
-                </span>
+                <Icon name={tab.icon} />
+                <span>{tab.label}</span>
+                {tab.count !== undefined && (
+                  <span className="dd-tabs__count">{tab.count}</span>
+                )}
               </button>
             )
           })}
         </div>
-      </div>
 
-      {/* Contacts Tab Panel */}
-      <section
-        id="settings-panel-contacts"
-        role="tabpanel"
-        aria-labelledby="settings-tab-contacts"
-        hidden={activeTab !== 'contacts'}
-      >
         <div
-          className="overflow-hidden rounded-xl border"
-          style={{
-            borderColor: 'var(--border-color)',
-            backgroundColor:
-              'color-mix(in srgb, var(--surface) 80%, transparent)',
-          }}
+          className="dd-tabs__panel max-w-3xl @max-[859px]:max-w-none @max-[859px]:basis-full"
+          id="settings-panel-contacts"
+          role="tabpanel"
+          aria-labelledby="settings-tab-contacts"
+          hidden={activeTab !== 'contacts'}
         >
-          <div
-            className="border-b px-4 py-4 sm:px-6 sm:py-5"
-            style={{
-              borderColor: 'var(--border-color)',
-              background:
-                'linear-gradient(135deg, color-mix(in srgb, var(--primary) 12%, transparent), color-mix(in srgb, var(--accent) 12%, transparent))',
-            }}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <Users
-                  className="h-5 w-5"
-                  style={{ color: 'var(--primary)' }}
-                />
-                <h2
-                  className="text-lg font-semibold"
-                  style={{ color: 'var(--text-primary)' }}
-                >
-                  Contacts
+          {peopleLoading ? (
+            <PageLoader label="Loading contacts" />
+          ) : (
+            <PeopleManager
+              people={people}
+              onCreatePerson={handleCreatePerson}
+              onUpdatePerson={handleUpdatePerson}
+              onDeletePerson={handleDeletePerson}
+              disabled={peopleMutating}
+            />
+          )}
+        </div>
+
+        <div
+          className="dd-tabs__panel max-w-3xl @max-[859px]:max-w-none @max-[859px]:basis-full"
+          id="settings-panel-appearance"
+          role="tabpanel"
+          aria-labelledby="settings-tab-appearance"
+          hidden={activeTab !== 'appearance'}
+        >
+          <div className="dd-form">
+            <section
+              className="dd-form__section"
+              aria-labelledby="settings-theme-title"
+            >
+              <div className="dd-form__head">
+                <h2 className="dd-form__title" id="settings-theme-title">
+                  Theme
                 </h2>
+                <p className="dd-form__desc">
+                  Applies right away, in every open tab.
+                </p>
               </div>
-              <div
-                className="rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-wide uppercase"
-                style={{
-                  backgroundColor:
-                    'color-mix(in srgb, var(--surface-2) 70%, transparent)',
-                  color: 'var(--text-muted)',
-                }}
-              >
-                {people.length} total
-              </div>
-            </div>
-            <p
-              className="mt-1.5 text-sm"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              Manage your people directory. Use @mentions in task descriptions
-              to reference them.
-            </p>
-          </div>
-
-          <div className="p-4 sm:p-6">
-            {peopleLoading ? (
-              <LoadingSpinner />
-            ) : (
-              <PeopleManager
-                people={people}
-                onCreatePerson={handleCreatePerson}
-                onUpdatePerson={handleUpdatePerson}
-                onDeletePerson={handleDeletePerson}
-                disabled={peopleMutating}
-              />
-            )}
+              <fieldset className="dd-radio-cards">
+                <legend className="dd-visually-hidden">Theme</legend>
+                {THEME_OPTIONS.map((option) => (
+                  <label key={option.id} className="dd-radio-card">
+                    <input
+                      className="dd-radio__input"
+                      type="radio"
+                      name="theme"
+                      value={option.id}
+                      checked={themeChoice === option.id}
+                      onChange={() => setTheme(option.id)}
+                    />
+                    <span className="dd-radio-card__title">{option.name}</span>
+                    <span className="dd-radio-card__desc">
+                      {option.description}
+                    </span>
+                    <ThemePreview theme={option.id} />
+                    <span className="dd-radio-card__mark">
+                      <Icon name="check" />
+                    </span>
+                  </label>
+                ))}
+              </fieldset>
+            </section>
           </div>
         </div>
-      </section>
-
-      {/* Appearance Tab Panel */}
-      <section
-        id="settings-panel-appearance"
-        role="tabpanel"
-        aria-labelledby="settings-tab-appearance"
-        hidden={activeTab !== 'appearance'}
-      >
-        <div
-          className="overflow-hidden rounded-xl border"
-          style={{
-            borderColor: 'var(--border-color)',
-            backgroundColor:
-              'color-mix(in srgb, var(--surface) 80%, transparent)',
-          }}
-        >
-          <div
-            className="border-b px-4 py-4 sm:px-6 sm:py-5"
-            style={{
-              borderColor: 'var(--border-color)',
-              background:
-                'linear-gradient(135deg, color-mix(in srgb, var(--primary) 12%, transparent), color-mix(in srgb, var(--accent) 12%, transparent))',
-            }}
-          >
-            <div className="flex items-center gap-2.5">
-              <Palette
-                className="h-5 w-5"
-                style={{ color: 'var(--primary)' }}
-              />
-              <h2
-                className="text-lg font-semibold"
-                style={{ color: 'var(--text-primary)' }}
-              >
-                Appearance
-              </h2>
-            </div>
-            <p
-              className="mt-1.5 text-sm"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              Choose a color theme for the interface.
-            </p>
-          </div>
-
-          <div className="p-4 sm:p-6">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {themes.map((t) => {
-                const isActive = theme.id === t.id
-                return (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => setTheme(t.id)}
-                    className="flex items-center gap-4 rounded-xl border p-4 text-left transition-all duration-150"
-                    style={{
-                      backgroundColor: isActive
-                        ? 'color-mix(in srgb, var(--primary) 8%, var(--surface-2))'
-                        : 'var(--surface-2)',
-                      borderColor: isActive
-                        ? 'var(--primary)'
-                        : 'var(--border-color)',
-                      boxShadow: isActive ? '0 0 0 1px var(--primary)' : 'none',
-                    }}
-                  >
-                    {/* Color swatch */}
-                    <div
-                      className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg"
-                      style={{
-                        backgroundColor: t.colors.background,
-                        border: `1px solid ${t.colors.border}`,
-                      }}
-                    >
-                      <div className="flex gap-0.5">
-                        <div
-                          className="h-5 w-2.5 rounded-sm"
-                          style={{ backgroundColor: t.colors.primary }}
-                        />
-                        <div
-                          className="h-5 w-2.5 rounded-sm"
-                          style={{ backgroundColor: t.colors.accent }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Info */}
-                    <div className="min-w-0 flex-1">
-                      <div
-                        className="text-sm font-semibold"
-                        style={{ color: 'var(--text-primary)' }}
-                      >
-                        {t.name}
-                      </div>
-                      <div
-                        className="mt-0.5 text-xs"
-                        style={{ color: 'var(--text-muted)' }}
-                      >
-                        {t.description}
-                      </div>
-                    </div>
-
-                    {/* Check */}
-                    {isActive && (
-                      <Check
-                        className="h-4 w-4 shrink-0"
-                        style={{ color: 'var(--primary)' }}
-                      />
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-      </section>
+      </div>
     </div>
   )
 }
 
 export default function SettingsPage() {
   return (
-    <Suspense fallback={<LoadingSpinner />}>
+    <Suspense fallback={<PageLoader label="Loading settings" />}>
       <SettingsPageContent />
     </Suspense>
   )

@@ -15,8 +15,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
-import { ListChecks, Plus } from 'lucide-react'
-import { Label } from '@/components/ui/label'
+import { Icon } from '@/components/ui/icon'
 import { SubtaskMentionInput } from '@/components/ui/subtask-mention-input'
 import { hasMeaningfulText, normalizeSubtaskTitle } from '@/lib/rich-text'
 import {
@@ -56,6 +55,7 @@ export function EditTodoSubtasks({
     useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
     useSensor(KeyboardSensor, KEYBOARD_SENSOR_OPTIONS),
   )
+  const completedCount = subtasks.filter((s) => s.completed).length
 
   const handleAddSubtask = React.useCallback(() => {
     const normalized = normalizeSubtaskTitle(newSubtaskTitle)
@@ -84,23 +84,17 @@ export function EditTodoSubtasks({
   )
 
   return (
-    <div className="space-y-2">
-      <Label
-        className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
-        style={{ color: 'var(--text-muted)' }}
-      >
-        <ListChecks className="h-3.5 w-3.5" />
+    <div className="dd-field dd-field--above">
+      <span className="dd-field__label">
         Subtasks
         {subtasks.length > 0 && (
-          <span
-            className="text-[10px] font-normal"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            {subtasks.filter((s) => s.completed).length}/{subtasks.length}
+          <span className="dd-field__opt dd-num">
+            {' '}
+            · {completedCount}/{subtasks.length}
           </span>
         )}
-      </Label>
-      <div className="space-y-1">
+      </span>
+      <div className="flex flex-col">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -112,35 +106,30 @@ export function EditTodoSubtasks({
             )}
             strategy={verticalListSortingStrategy}
           >
-            <div className="space-y-1">
-              {subtasks.map((subtask, index) => (
-                <SortableEditSubtaskRow
-                  key={editSubtaskDndId(subtask.id, index)}
-                  dndId={editSubtaskDndId(subtask.id, index)}
-                  completed={!!subtask.completed}
-                  title={subtask.title}
-                  onToggle={() => onToggleSubtask(index)}
-                  onTitleChange={(title) => onUpdateSubtaskTitle(index, title)}
-                  onRemove={() => onRemoveSubtask(index)}
-                  mentions={mentions}
-                />
-              ))}
-            </div>
+            {subtasks.map((subtask, index) => (
+              <SortableEditSubtaskRow
+                key={editSubtaskDndId(subtask.id, index)}
+                dndId={editSubtaskDndId(subtask.id, index)}
+                completed={!!subtask.completed}
+                title={subtask.title}
+                onToggle={() => onToggleSubtask(index)}
+                onTitleChange={(title) => onUpdateSubtaskTitle(index, title)}
+                onRemove={() => onRemoveSubtask(index)}
+                mentions={mentions}
+              />
+            ))}
           </SortableContext>
         </DndContext>
-        <div className="flex items-center gap-2">
-          <Plus
-            className="h-4 w-4 flex-shrink-0"
-            style={{ color: 'var(--text-muted)' }}
-          />
+        <div className="rounded-ctl text-quiet ease-gentle focus-within:bg-wash hover:bg-wash flex items-center gap-2 py-1 pr-1.5 pl-1.5 transition-colors duration-[var(--dd-dur-fast)]">
+          <Icon name="plus" />
           <SubtaskMentionInput
             value={newSubtaskTitle}
             onChange={setNewSubtaskTitle}
             onCommit={handleAddSubtask}
             commitOnBlur={false}
             mentions={mentions}
-            placeholder="Add a subtask..."
-            className="flex-1 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
+            placeholder="Add a subtask"
+            className="text-text min-w-0 flex-1 text-sm"
           />
         </div>
       </div>

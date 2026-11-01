@@ -1,9 +1,20 @@
 'use client'
 
 import * as React from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { X, Plus, Users, Trash2 } from 'lucide-react'
+import { Button, IconButton } from '@/components/ui/button'
+import {
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+} from '@/components/ui/drawer'
+import { Icon } from '@/components/ui/icon'
+import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
+import { useToast } from '@/components/ui/use-toast'
 import { useTodoContacts } from '@/hooks/use-todo-contacts'
+import { cn } from '@/lib/utils'
 import type { Person } from '@/types/person'
 
 interface ContactsDrawerProps {
@@ -21,13 +32,19 @@ export function ContactsDrawer({
 }: ContactsDrawerProps) {
   const { contacts, isLoading, addContact, updateContact, removeContact } =
     useTodoContacts(todoId, open)
+  const { toast } = useToast()
   const [selectedPersonId, setSelectedPersonId] = React.useState('')
   const [role, setRole] = React.useState('')
   const [editingContactId, setEditingContactId] = React.useState<string | null>(
     null,
   )
   const [editingRole, setEditingRole] = React.useState('')
-  const drawerRef = React.useRef<HTMLDivElement>(null)
+  const [copiedContactId, setCopiedContactId] = React.useState<string | null>(
+    null,
+  )
+  const copiedTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  )
 
   // People not already assigned to this todo
   const availablePeople = React.useMemo(
@@ -55,20 +72,31 @@ export function ContactsDrawer({
     await removeContact(contactId)
   }
 
-  // Close on click outside
-  React.useEffect(() => {
-    if (!open) return
-    function handleClick(e: MouseEvent) {
-      const target = e.target as HTMLElement
-      // Ignore clicks on the tab button — let its toggle handler manage state
-      if (target.closest('.todo-contacts-tab')) return
-      if (drawerRef.current && !drawerRef.current.contains(target)) {
-        onClose()
-      }
+  const handleCopyEmail = async (contactId: string, email: string) => {
+    try {
+      await navigator.clipboard.writeText(email)
+    } catch {
+      toast({
+        title: 'Couldn’t copy the email',
+        description: email,
+        variant: 'destructive',
+      })
+      return
     }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [open, onClose])
+    setCopiedContactId(contactId)
+    if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current)
+    copiedTimeoutRef.current = setTimeout(() => {
+      setCopiedContactId(null)
+      copiedTimeoutRef.current = null
+    }, 1600)
+  }
+
+  React.useEffect(
+    () => () => {
+      if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current)
+    },
+    [],
+  )
 
   // Reset state when drawer closes (React 19 reset-on-prop pattern).
   const [prevOpen, setPrevOpen] = React.useState(open)
@@ -78,92 +106,54 @@ export function ContactsDrawer({
       setSelectedPersonId('')
       setRole('')
       setEditingContactId(null)
+      setCopiedContactId(null)
     }
   }
 
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          ref={drawerRef}
-          initial={{ width: 0, opacity: 0 }}
-          animate={{ width: '100%', opacity: 1 }}
-          exit={{ width: 0, opacity: 0 }}
-          transition={{ duration: 0.2, ease: 'easeInOut' }}
-          className="absolute inset-y-0 right-0 z-30 overflow-hidden rounded-lg"
-          style={{
-            backgroundColor: 'var(--surface)',
-            boxShadow: '0 0 16px rgba(0,0,0,0.2)',
-            transformOrigin: 'right center',
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="flex h-full w-full flex-col">
-            {/* Header */}
-            <div
-              className="flex shrink-0 items-center justify-between border-b px-3 py-1.5"
-              style={{ borderColor: 'var(--border-color)' }}
-            >
-              <div className="flex items-center gap-1.5">
-                <Users
-                  className="h-3 w-3"
-                  style={{ color: 'var(--status-under-review)' }}
-                />
-                <span
-                  className="text-[10px] font-semibold tracking-wide uppercase"
-                  style={{ color: 'var(--status-under-review)' }}
-                >
-                  Contacts
-                </span>
+    <Drawer
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onClose()
+      }}
+    >
+      <DrawerContent
+        size="sm"
+        onEscapeKeyDown={(event) => {
+          // Esc inside an inline role field cancels that edit, not the drawer.
+          if (event.target instanceof HTMLInputElement) event.preventDefault()
+        }}
+      >
+        <DrawerHeader title="contacts" />
+        <DrawerBody>
+          {isLoading ? (
+            <span className="dd-loading" role="status">
+              <span className="dd-spinner dd-spinner--sm" aria-hidden="true" />
+              Loading contacts
+            </span>
+          ) : contacts.length === 0 ? (
+            <div className="dd-empty-state dd-empty-state--compact">
+              <div className="dd-empty-state__icon">
+                <Icon name="users" />
               </div>
-              <button
-                onClick={onClose}
-                className="rounded p-0.5 transition-colors hover:bg-black/10"
-              >
-                <X className="h-3 w-3" style={{ color: 'var(--text-muted)' }} />
-              </button>
+              <p className="dd-empty-state__title">No contacts yet</p>
+              <p className="dd-empty-state__text">
+                Add the people you work with on this task.
+              </p>
             </div>
-
-            {/* Contact list — single-line rows */}
-            <div className="flex-1 space-y-0.5 overflow-y-auto px-2 py-1.5">
-              {isLoading && (
-                <p
-                  className="px-1 text-[11px]"
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  Loading...
-                </p>
-              )}
-              {!isLoading && contacts.length === 0 && (
-                <p
-                  className="px-1 text-[11px]"
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  No contacts yet.
-                </p>
-              )}
+          ) : (
+            <dl className="dd-description-list dd-description-list--stacked dd-description-list--compact">
               {contacts.map((contact) => (
                 <div
                   key={contact.id}
-                  className="group/contact flex items-center gap-1 rounded px-1.5 py-1 transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]"
-                  title={contact.person.email}
+                  className="dd-description-list__item group/contact"
                 >
-                  {editingContactId === contact.id ? (
-                    <div className="flex min-w-0 flex-1 items-center gap-1">
-                      <span
-                        className="shrink-0 text-[11px] font-medium"
-                        style={{ color: 'var(--text-primary)' }}
-                      >
-                        {contact.person.name.split(' ')[0]}
-                      </span>
-                      <span
-                        className="text-[11px]"
-                        style={{ color: 'var(--text-muted)' }}
-                      >
-                        &middot;
-                      </span>
-                      <input
+                  <dt className="dd-description-list__term">
+                    {editingContactId === contact.id ? (
+                      <Input
+                        size="sm"
                         autoFocus
+                        aria-label={`Role for ${contact.person.name}`}
                         value={editingRole}
                         onChange={(e) => setEditingRole(e.target.value)}
                         onBlur={() => handleRoleSubmit(contact.id)}
@@ -171,116 +161,113 @@ export function ContactsDrawer({
                           if (e.key === 'Enter') handleRoleSubmit(contact.id)
                           if (e.key === 'Escape') setEditingContactId(null)
                         }}
-                        className="min-w-0 flex-1 border-b bg-transparent text-[11px] outline-none"
-                        style={{
-                          color: 'var(--primary)',
-                          borderColor: 'var(--primary)',
-                        }}
                       />
-                    </div>
-                  ) : (
-                    <div className="flex min-w-0 flex-1 items-center gap-1">
+                    ) : (
+                      <button
+                        type="button"
+                        className="dd-link text-left"
+                        onClick={() => {
+                          setEditingContactId(contact.id)
+                          setEditingRole(contact.role)
+                        }}
+                        title="Edit role"
+                      >
+                        {contact.role}
+                      </button>
+                    )}
+                  </dt>
+                  <dd className="dd-description-list__details flex-nowrap">
+                    <span className="flex min-w-0 flex-1 flex-col">
                       <a
                         href={`https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(contact.person.email)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="truncate text-[11px] font-medium hover:underline"
-                        style={{ color: 'var(--text-primary)' }}
+                        className="truncate font-medium"
                         title={`Chat with ${contact.person.name} in Teams`}
                         onClick={(e) => e.stopPropagation()}
                       >
                         {contact.person.name}
                       </a>
-                      <span
-                        className="shrink-0 text-[11px]"
-                        style={{ color: 'var(--text-muted)' }}
-                      >
-                        &middot;
+                      <span className="dd-description-list__muted truncate text-xs">
+                        {contact.person.email}
                       </span>
-                      <button
-                        className="truncate text-[11px] italic hover:underline"
-                        style={{ color: 'var(--primary)' }}
-                        onClick={() => {
-                          setEditingContactId(contact.id)
-                          setEditingRole(contact.role)
-                        }}
-                        title="Click to edit role"
-                      >
-                        {contact.role}
-                      </button>
-                    </div>
-                  )}
-                  <button
-                    onClick={() => handleRemove(contact.id)}
-                    className="shrink-0 rounded p-0.5 opacity-0 transition-opacity group-hover/contact:opacity-100"
-                  >
-                    <Trash2
-                      className="h-2.5 w-2.5"
-                      style={{ color: 'var(--destructive)' }}
+                    </span>
+                    <IconButton
+                      icon={copiedContactId === contact.id ? 'check' : 'copy'}
+                      label={
+                        copiedContactId === contact.id
+                          ? 'Email copied'
+                          : `Copy ${contact.person.name}’s email`
+                      }
+                      size="sm"
+                      className={cn(
+                        'text-sm',
+                        copiedContactId === contact.id && 'text-ok',
+                      )}
+                      onClick={() =>
+                        void handleCopyEmail(contact.id, contact.person.email)
+                      }
                     />
-                  </button>
+                    <IconButton
+                      icon="trash"
+                      label="Remove contact"
+                      size="sm"
+                      className="text-sm opacity-0 group-focus-within/contact:opacity-100 group-hover/contact:opacity-100 focus-visible:opacity-100"
+                      onClick={() => handleRemove(contact.id)}
+                    />
+                  </dd>
                 </div>
               ))}
-            </div>
+            </dl>
+          )}
+        </DrawerBody>
 
-            {/* Always-visible add section */}
-            {availablePeople.length > 0 && (
-              <div
-                className="shrink-0 space-y-1 border-t px-2 py-1.5"
-                style={{ borderColor: 'var(--border-color)' }}
-              >
-                <select
-                  value={selectedPersonId}
-                  onChange={(e) => setSelectedPersonId(e.target.value)}
-                  className="w-full rounded border bg-transparent px-1.5 py-1 text-[11px] outline-none"
-                  style={{
-                    borderColor: 'var(--border-color)',
-                    color: 'var(--text-primary)',
+        {/* Always-visible add section */}
+        {availablePeople.length > 0 && (
+          <DrawerFooter>
+            <Select
+              boxClassName="basis-full"
+              value={selectedPersonId}
+              onChange={(e) => setSelectedPersonId(e.target.value)}
+              aria-label="Add a contact"
+            >
+              <option value="">Add a contact…</option>
+              {availablePeople.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </Select>
+            {selectedPersonId && (
+              <>
+                <Input
+                  autoFocus
+                  boxClassName="min-w-0 flex-1"
+                  aria-label="Role"
+                  placeholder="Role"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleAdd()
+                    if (e.key === 'Escape') {
+                      setSelectedPersonId('')
+                      setRole('')
+                    }
                   }}
+                />
+                <Button
+                  variant="primary"
+                  onClick={handleAdd}
+                  disabled={!role.trim()}
                 >
-                  <option value="">Add contact...</option>
-                  {availablePeople.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-                {selectedPersonId && (
-                  <div className="flex gap-1">
-                    <input
-                      autoFocus
-                      value={role}
-                      onChange={(e) => setRole(e.target.value)}
-                      placeholder="Role"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleAdd()
-                        if (e.key === 'Escape') {
-                          setSelectedPersonId('')
-                          setRole('')
-                        }
-                      }}
-                      className="min-w-0 flex-1 rounded border bg-transparent px-1.5 py-1 text-[11px] outline-none"
-                      style={{
-                        borderColor: 'var(--border-color)',
-                        color: 'var(--text-primary)',
-                      }}
-                    />
-                    <button
-                      onClick={handleAdd}
-                      disabled={!role.trim()}
-                      className="rounded p-1 transition-colors disabled:opacity-40"
-                      style={{ color: 'var(--primary)' }}
-                      title="Add contact"
-                    >
-                      <Plus className="h-3 w-3" />
-                    </button>
-                  </div>
-                )}
-              </div>
+                  <Icon name="plus" />
+                  Add
+                </Button>
+              </>
             )}
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          </DrawerFooter>
+        )}
+      </DrawerContent>
+    </Drawer>
   )
 }

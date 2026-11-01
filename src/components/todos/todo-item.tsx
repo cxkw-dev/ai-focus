@@ -2,10 +2,10 @@
 
 import * as React from 'react'
 import dynamic from 'next/dynamic'
-import { motion } from 'framer-motion'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Calendar, GripVertical } from 'lucide-react'
+import { GripVertical } from 'lucide-react'
+import { Icon } from '@/components/ui/icon'
 import { cn, formatRelativeDate } from '@/lib/utils'
 import { getBillingCodeEntries } from '@/lib/labels'
 import { PrDependencyTree } from './pr-dependency-tree'
@@ -34,10 +34,6 @@ const StatusUpdatesDrawer = dynamic(
     import('./status-updates-drawer').then((mod) => mod.StatusUpdatesDrawer),
   { ssr: false },
 )
-
-const TODO_CARD_BACKGROUND = 'var(--surface-2)'
-const URGENT_TODO_CARD_BACKGROUND =
-  'linear-gradient(135deg, color-mix(in srgb, var(--priority-urgent) 13%, var(--surface-2)) 0%, var(--surface-2) 72%)'
 
 export type ViewMode = 'active' | 'completed' | 'deleted'
 
@@ -83,8 +79,9 @@ function TodoItemContent({
   viewMode = 'active',
 }: TodoItemProps) {
   const isCompleted = todo.status === 'COMPLETED'
-  const isUrgent = todo.priority === 'URGENT' && viewMode === 'active'
   const canInlineEditSubtasks = viewMode === 'active' && !isDragging
+  const overdue =
+    viewMode === 'active' && !!todo.dueDate && isPastDue(todo.dueDate)
   const hasIntegrations =
     (todo.myPrUrls ?? []).length > 0 ||
     (todo.githubPrUrls ?? []).length > 0 ||
@@ -95,65 +92,48 @@ function TodoItemContent({
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-2">
-      <div className="flex min-w-0 items-start gap-2">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-1">
-            <div className="min-w-0 flex-1">
-              <TodoItemMetaRow
-                todo={todo}
-                viewMode={viewMode}
-                onStatusChange={onStatusChange}
-                onPriorityChange={onPriorityChange}
-              />
-            </div>
-            <TodoItemActions
-              todo={todo}
-              viewMode={viewMode}
-              onDelete={onDelete}
-              onEdit={onEdit}
-              onRestore={onRestore}
-              onOpenNote={onOpenNote}
-            />
-          </div>
+      <TodoItemMetaRow
+        todo={todo}
+        viewMode={viewMode}
+        onStatusChange={onStatusChange}
+        onPriorityChange={onPriorityChange}
+        actions={
+          <TodoItemActions
+            todo={todo}
+            viewMode={viewMode}
+            onDelete={onDelete}
+            onEdit={onEdit}
+            onRestore={onRestore}
+            onOpenNote={onOpenNote}
+          />
+        }
+      />
 
-          <div
-            className="relative rounded-md px-2.5 py-2"
-            style={{
-              backgroundColor: isUrgent
-                ? 'color-mix(in srgb, var(--priority-urgent) 7%, var(--background))'
-                : 'color-mix(in srgb, var(--background) 50%, transparent)',
-            }}
-          >
-            <div className="flex items-center gap-2">
-              <h3
-                className={cn(
-                  'text-[13px] leading-snug font-semibold break-words',
-                  isUrgent && 'font-bold',
-                  isCompleted && 'line-through',
-                )}
-                style={{
-                  color: isCompleted
-                    ? 'var(--text-muted)'
-                    : 'var(--text-primary)',
-                }}
-              >
-                {renderTextWithLinks(todo.title)}
-              </h3>
-              {todo.dueDate && (
-                <span
-                  className="inline-flex flex-shrink-0 items-center gap-1 text-[10px]"
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  <Calendar className="h-2.5 w-2.5" />
-                  {formatRelativeDate(todo.dueDate)}
-                </span>
-              )}
-            </div>
-            {todo.description && (
-              <TodoDescriptionPreview description={todo.description} />
+      <div className="min-w-0">
+        <div className="flex items-baseline gap-2">
+          <h3
+            className={cn(
+              'min-w-0 flex-1 text-sm leading-snug font-semibold break-words',
+              isCompleted ? 'text-muted line-through' : 'text-text',
             )}
-          </div>
+          >
+            {renderTextWithLinks(todo.title)}
+          </h3>
+          {todo.dueDate && (
+            <span
+              className={cn(
+                'inline-flex flex-none items-center gap-1 font-mono text-xs',
+                overdue ? 'text-bad' : 'text-muted',
+              )}
+            >
+              <Icon name={overdue ? 'alert' : 'calendar'} />
+              {formatRelativeDate(todo.dueDate)}
+            </span>
+          )}
         </div>
+        {todo.description && (
+          <TodoDescriptionPreview description={todo.description} />
+        )}
       </div>
 
       {/* Integrations */}
@@ -241,72 +221,67 @@ function TodoItemComponent({
     }
   }
 
-  const dropLine = (
-    <div
-      className="mx-1 h-0.5 rounded-full transition-all"
-      style={{ backgroundColor: 'var(--primary)' }}
-    />
-  )
-
-  const shellClassName = cn(
-    'min-w-0 transition-opacity duration-150',
-    !dragging && '[contain-intrinsic-size:0_220px] [content-visibility:auto]',
-    dragging && 'opacity-50',
-  )
+  const dropLine = <div className="rounded-pill bg-accent mx-1 h-0.5" />
 
   const cardBody = (
     <>
       {dropIndicator === 'above' && dropLine}
-      <div className="todo-card-shell flex items-center gap-0.5">
-        {/* Reserve a consistent gutter so the card body stays aligned across filters */}
-        <div className="flex w-[18px] flex-shrink-0 justify-center">
+      <div className="flex items-stretch gap-0.5">
+        {/* A fixed gutter keeps every card body aligned, draggable or not. */}
+        <div className="flex w-4 flex-none items-center justify-center">
           {!isDragDisabled && (
             <button
+              type="button"
+              aria-label="Drag to move"
               {...attributes}
               {...listeners}
               className={cn(
-                'todo-drag-handle cursor-grab touch-none self-center rounded p-0.5 transition-colors',
-                dragging && 'cursor-grabbing',
+                'rounded-ctl text-quiet hover:bg-wash hover:text-text flex touch-none items-center py-1 transition-colors',
+                dragging ? 'cursor-grabbing' : 'cursor-grab',
               )}
             >
-              <GripVertical className="h-3.5 w-3.5" />
+              <GripVertical className="size-[1.15em]" aria-hidden />
             </button>
           )}
         </div>
 
-        {/* Card */}
-        <div
+        <article
           className={cn(
-            'group todo-card relative min-w-0 flex-1 overflow-visible px-3 py-2.5 transition-all duration-150',
-            isUrgent && 'todo-card-urgent',
-            dragging ? 'rounded-lg' : 'rounded-l-lg',
-            dragging && 'z-50 shadow-lg',
-            (isCompleted || viewMode !== 'active') && 'opacity-50',
+            'group rounded-box bg-surface relative flex min-w-0 flex-1 transition-colors hover:bg-[var(--dd-card-hover)]',
+            isUrgent && 'app-urgent-rail',
+            (isCompleted || viewMode !== 'active') && 'opacity-60',
           )}
-          style={{
-            background: isUrgent
-              ? URGENT_TODO_CARD_BACKGROUND
-              : TODO_CARD_BACKGROUND,
-            boxShadow: dragging
-              ? '0 0 0 2px color-mix(in srgb, var(--primary) 30%, transparent)'
-              : undefined,
-          }}
         >
-          <TodoItemContent
-            todo={todo}
-            onStatusChange={onStatusChange}
-            onPriorityChange={onPriorityChange}
-            onDelete={onDelete}
-            onEdit={onEdit}
-            onRestore={onRestore}
-            onToggleSubtask={onToggleSubtask}
-            onUpdateSubtasks={onUpdateSubtasks}
-            onOpenNote={onOpenNote}
-            people={people}
-            subtaskMentions={subtaskMentions}
-            isDragging={dragging}
-            viewMode={viewMode}
-          />
+          <div className="min-w-0 flex-1 px-2.5 py-2">
+            <TodoItemContent
+              todo={todo}
+              onStatusChange={onStatusChange}
+              onPriorityChange={onPriorityChange}
+              onDelete={onDelete}
+              onEdit={onEdit}
+              onRestore={onRestore}
+              onToggleSubtask={onToggleSubtask}
+              onUpdateSubtasks={onUpdateSubtasks}
+              onOpenNote={onOpenNote}
+              people={people}
+              subtaskMentions={subtaskMentions}
+              isDragging={dragging}
+              viewMode={viewMode}
+            />
+          </div>
+
+          {!dragging && (
+            <TodoItemSideTabs
+              hasBillingEntries={hasBillingEntries}
+              billingOpen={billingOpen}
+              contactsOpen={contactsOpen}
+              timelineOpen={timelineOpen}
+              setBillingOpen={setBillingOpen}
+              setContactsOpen={setContactsOpen}
+              setTimelineOpen={setTimelineOpen}
+            />
+          )}
+
           {billingOpen && (
             <BillingCodesDrawer
               entries={billingEntries}
@@ -329,49 +304,27 @@ function TodoItemComponent({
               onClose={() => setTimelineOpen(false)}
             />
           )}
-        </div>
-
-        {/* Side tabs — stacked vertically */}
-        {!dragging && (
-          <TodoItemSideTabs
-            hasBillingEntries={hasBillingEntries}
-            billingOpen={billingOpen}
-            contactsOpen={contactsOpen}
-            timelineOpen={timelineOpen}
-            setBillingOpen={setBillingOpen}
-            setContactsOpen={setContactsOpen}
-            setTimelineOpen={setTimelineOpen}
-          />
-        )}
+        </article>
       </div>
       {dropIndicator === 'below' && dropLine}
     </>
   )
 
-  // A motion.div costs a VisualElement and a projection node per card even when
-  // every animation prop is inert. Boards mount their cards with transitions
-  // off, so give those a plain div and skip the framer machinery entirely.
-  if (!animateTransitions) {
-    return (
-      <div ref={setNodeRef} style={style} className={shellClassName}>
-        {cardBody}
-      </div>
-    )
-  }
-
   return (
-    <motion.div
+    <div
       ref={setNodeRef}
       style={style}
-      layout={!dragging}
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: -12, transition: { duration: 0.16 } }}
-      transition={{ duration: 0.16, ease: 'easeOut' }}
-      className={shellClassName}
+      className={cn(
+        'min-w-0 transition-opacity',
+        // Off-screen cards skip layout and paint until scrolled to.
+        !dragging &&
+          '[contain-intrinsic-size:0_220px] [content-visibility:auto]',
+        dragging && 'opacity-50',
+        animateTransitions && 'animate-fade-in',
+      )}
     >
       {cardBody}
-    </motion.div>
+    </div>
   )
 }
 
@@ -395,24 +348,17 @@ export function TodoItemOverlay({
   const isUrgent = todo.priority === 'URGENT'
 
   return (
-    <div className="flex items-center gap-0.5">
-      <div className="todo-drag-handle flex-shrink-0 p-0.5">
-        <GripVertical className="h-3.5 w-3.5" />
+    <div className="flex items-stretch gap-0.5">
+      <div className="text-text flex w-4 flex-none items-center justify-center">
+        <GripVertical className="size-[1.15em]" aria-hidden />
       </div>
 
-      <div
+      <article
         className={cn(
-          'group todo-card relative flex-1 overflow-visible rounded-lg px-3 py-2.5 shadow-2xl',
-          isUrgent && 'todo-card-urgent',
-          isCompleted && 'opacity-50',
+          'rounded-box bg-surface shadow-float relative min-w-0 flex-1 cursor-grabbing px-2.5 py-2',
+          isUrgent && 'app-urgent-rail',
+          isCompleted && 'opacity-60',
         )}
-        style={{
-          background: isUrgent
-            ? URGENT_TODO_CARD_BACKGROUND
-            : TODO_CARD_BACKGROUND,
-          boxShadow:
-            '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 2px color-mix(in srgb, var(--primary) 30%, transparent)',
-        }}
       >
         <TodoItemContent
           todo={todo}
@@ -424,7 +370,17 @@ export function TodoItemOverlay({
           subtaskMentions={subtaskMentions}
           isDragging={true}
         />
-      </div>
+      </article>
     </div>
+  )
+}
+
+/** Due before today (by calendar day, in local time). */
+function isPastDue(date: string) {
+  const due = new Date(date)
+  const now = new Date()
+  return (
+    new Date(due.getFullYear(), due.getMonth(), due.getDate()) <
+    new Date(now.getFullYear(), now.getMonth(), now.getDate())
   )
 }

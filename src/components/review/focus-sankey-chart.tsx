@@ -1,6 +1,5 @@
 'use client'
 
-import * as React from 'react'
 import {
   ResponsiveContainer,
   Sankey,
@@ -8,32 +7,32 @@ import {
   type SankeyLinkProps,
   type SankeyNodeProps,
 } from 'recharts'
+import { Icon } from '@/components/ui/icon'
+import { seriesColor, type ChartColors } from '@/hooks/use-chart-colors'
+import { cssVars } from '@/lib/utils'
 import type { FocusFlowData, FocusFlowNode } from '@/types/stats'
+import { ChartTip } from './chart-tooltip'
 
 interface FocusSankeyChartProps {
   data: FocusFlowData
-  colors: Record<string, string>
+  colors: ChartColors
 }
+
+/** Resolved colour per node id: labels take the series set in order, Other the chart's Other tone, months stay quiet. */
+type Accents = Map<string, string>
 
 interface FocusTooltipProps {
   active?: boolean
-  payload?: Array<{
-    name?: string
-    value?: number
-    payload?: unknown
-  }>
-  colors: Record<string, string>
-  monthPalette: string[]
+  payload?: Array<{ payload?: unknown }>
+  accents: Accents
 }
 
 interface FocusNodeRendererProps extends SankeyNodeProps {
-  colors: Record<string, string>
-  monthPalette: string[]
+  accents: Accents
 }
 
 interface FocusLinkRendererProps extends SankeyLinkProps {
-  colors: Record<string, string>
-  monthPalette: string[]
+  accents: Accents
 }
 
 function formatFlowValue(value: number) {
@@ -48,35 +47,43 @@ function trimLabel(value: string, maxLength: number) {
   return `${value.slice(0, maxLength - 3).trimEnd()}...`
 }
 
-function mixColor(base: string, blend: string, basePercent: number) {
-  return `color-mix(in srgb, ${base} ${basePercent}%, ${blend})`
-}
-
-function buildMonthPalette(colors: Record<string, string>) {
-  return [
-    colors.primary,
-    colors.accent,
-    colors.statusInProgress,
-    colors.statusDone,
-    colors.priorityHigh,
-    colors.categoryCollaboration,
-    colors.statusWaiting,
-    colors.categoryGrowth,
-  ].filter(Boolean)
-}
-
-function getNodeAccent(
-  node: FocusFlowNode,
-  colors: Record<string, string>,
-  monthPalette: string[],
-) {
-  if (node.kind === 'label' && node.labelColor) return node.labelColor
-  if (node.kind === 'other') return colors.accent || colors.primary
-  if (node.kind === 'unlabeled') return colors.textMuted || colors.primary
-  if (node.kind === 'month' && monthPalette.length > 0) {
-    return monthPalette[(node.month ?? 0) % monthPalette.length]
+function buildAccents(nodes: FocusFlowNode[], colors: ChartColors): Accents {
+  const accents: Accents = new Map()
+  let series = 0
+  for (const node of nodes) {
+    // A label keeps the colour the user gave it, so AMEX is the same colour here as in the side nav and on chips.
+    if (node.kind === 'label')
+      accents.set(node.id, node.labelColor ?? seriesColor(colors, series++))
+    else if (node.kind === 'other') accents.set(node.id, colors.other)
+    else if (node.kind === 'unlabeled') accents.set(node.id, colors.textMuted)
+    else accents.set(node.id, colors.textQuiet)
   }
-  return colors.primary
+  return accents
+}
+
+function isFocusNode(value: unknown): value is FocusFlowNode {
+  return Boolean(
+    value &&
+    typeof value === 'object' &&
+    'id' in value &&
+    'kind' in value &&
+    'name' in value,
+  )
+}
+
+function isFocusLink(value: unknown): value is {
+  source: FocusFlowNode
+  target: FocusFlowNode
+  value: number
+} {
+  return Boolean(
+    value &&
+    typeof value === 'object' &&
+    'source' in value &&
+    'target' in value &&
+    isFocusNode(value.source) &&
+    isFocusNode(value.target),
+  )
 }
 
 function unwrapTooltipPayload(payload: unknown) {
@@ -93,108 +100,58 @@ function unwrapTooltipPayload(payload: unknown) {
   return payload
 }
 
-function isLinkPayload(payload: unknown): payload is {
-  source: FocusFlowNode
-  target: FocusFlowNode
-  value: number
-} {
-  return Boolean(
-    payload &&
-    typeof payload === 'object' &&
-    'source' in payload &&
-    'target' in payload,
-  )
-}
-
-function FocusTooltip({
-  active,
-  payload,
-  colors,
-  monthPalette,
-}: FocusTooltipProps) {
+function FocusTooltip({ active, payload, accents }: FocusTooltipProps) {
   if (!active || !payload?.length) return null
 
-  const entry = payload[0]
-  const rawPayload = unwrapTooltipPayload(entry.payload)
+  const rawPayload = unwrapTooltipPayload(payload[0].payload)
 
-  if (!rawPayload || typeof rawPayload !== 'object') return null
-
-  if (isLinkPayload(rawPayload)) {
-    const accent = getNodeAccent(rawPayload.target, colors, monthPalette)
-
+  if (isFocusLink(rawPayload)) {
     return (
-      <div
-        className="rounded-xl border px-3 py-2.5 text-xs shadow-lg"
-        style={{
-          backgroundColor: colors.surface,
-          borderColor: colors.border,
-          color: colors.textPrimary,
-        }}
-      >
-        <div className="flex items-center gap-2">
-          <span
-            className="inline-block h-2.5 w-2.5 rounded-full"
-            style={{ backgroundColor: accent }}
-          />
-          <p className="font-semibold">
-            {rawPayload.source.name} to {rawPayload.target.name}
-          </p>
-        </div>
-        <p className="mt-1" style={{ color: colors.textMuted }}>
-          {formatFlowValue(rawPayload.value)} completed tasks
-        </p>
-      </div>
+      <ChartTip
+        title={`${rawPayload.source.name} → ${rawPayload.target.name}`}
+        rows={[
+          {
+            label: 'Completed tasks',
+            value: formatFlowValue(rawPayload.value),
+            color: accents.get(rawPayload.target.id),
+          },
+        ]}
+      />
     )
   }
 
-  const node = rawPayload as FocusFlowNode
-  const accent = getNodeAccent(node, colors, monthPalette)
+  if (!isFocusNode(rawPayload)) return null
 
   return (
-    <div
-      className="rounded-xl border px-3 py-2.5 text-xs shadow-lg"
-      style={{
-        backgroundColor: colors.surface,
-        borderColor: colors.border,
-        color: colors.textPrimary,
-      }}
-    >
-      <div className="flex items-center gap-2">
-        <span
-          className="inline-block h-2.5 w-2.5 rounded-full"
-          style={{ backgroundColor: accent }}
-        />
-        <p className="font-semibold">{node.name}</p>
-      </div>
-      <p className="mt-1" style={{ color: colors.textMuted }}>
-        {formatFlowValue(node.total)} completed tasks
-      </p>
-    </div>
+    <ChartTip
+      title={rawPayload.name}
+      rows={[
+        {
+          label: 'Completed tasks',
+          value: formatFlowValue(rawPayload.total),
+          color: accents.get(rawPayload.id),
+        },
+      ]}
+    />
   )
 }
 
+// Month labels sit left of the month nodes in mono; focus-area names sit right of theirs, in the text colour.
 function FocusNodeRenderer({
   x,
   y,
   width,
   height,
   payload,
-  colors,
-  monthPalette,
+  accents,
 }: FocusNodeRendererProps) {
-  const node = payload as unknown as FocusFlowNode
-  const accent = getNodeAccent(node, colors, monthPalette)
+  if (!isFocusNode(payload)) return null
+
+  const isMonthNode = payload.kind === 'month'
   const label = trimLabel(
-    node.shortLabel || node.name,
-    node.kind === 'month' ? 6 : 18,
+    payload.shortLabel || payload.name,
+    isMonthNode ? 6 : 18,
   )
-  const isMonthNode = node.kind === 'month'
-  const textX = isMonthNode ? x + width + 10 : x - 10
-  const textAnchor = isMonthNode ? 'start' : 'end'
-  const stripWidth = Math.min(4, width)
-  const nodeFill = isMonthNode
-    ? mixColor(accent, colors.surface2, 12)
-    : mixColor(accent, colors.surface2, 18)
 
   return (
     <g>
@@ -202,33 +159,23 @@ function FocusNodeRenderer({
         x={x}
         y={y}
         width={width}
-        height={height}
-        rx={6}
-        fill={nodeFill}
-        stroke={accent}
-        strokeOpacity={0.4}
+        height={Math.max(height, 1)}
+        rx={2}
+        fill={accents.get(payload.id)}
       />
-      <rect
-        x={isMonthNode ? x : x + width - stripWidth}
-        y={y}
-        width={stripWidth}
-        height={height}
-        rx={6}
-        fill={accent}
-      />
-      {height >= 12 && (
-        <text
-          x={textX}
-          y={y + height / 2}
-          textAnchor={textAnchor}
-          dominantBaseline="middle"
-          fontSize={11}
-          fontWeight={isMonthNode ? 500 : 600}
-          fill={isMonthNode ? colors.textMuted : colors.textPrimary}
-        >
-          {label}
-        </text>
-      )}
+      <text
+        x={isMonthNode ? x - 6 : x + width + 6}
+        y={y + height / 2}
+        textAnchor={isMonthNode ? 'end' : 'start'}
+        dominantBaseline="middle"
+        className={
+          isMonthNode
+            ? 'fill-muted font-mono text-xs'
+            : 'fill-text text-xs font-semibold'
+        }
+      >
+        {label}
+      </text>
     </g>
   )
 }
@@ -242,186 +189,135 @@ function FocusLinkRenderer({
   targetControlX,
   linkWidth,
   payload,
-  colors,
-  monthPalette,
+  accents,
 }: FocusLinkRendererProps) {
-  const targetNode = payload.target as unknown as FocusFlowNode
-  const accent = getNodeAccent(targetNode, colors, monthPalette)
-  const stroke = mixColor(accent, colors.surface2, 38)
+  const target = payload.target
+  const stroke = isFocusNode(target) ? accents.get(target.id) : undefined
 
   return (
     <path
       d={`M${sourceX},${sourceY}C${sourceControlX},${sourceY} ${targetControlX},${targetY} ${targetX},${targetY}`}
       fill="none"
       stroke={stroke}
-      strokeOpacity={0.18}
+      strokeOpacity={0.3}
       strokeWidth={Math.max(linkWidth, 1)}
       strokeLinecap="butt"
+      className="transition-[stroke-opacity] hover:[stroke-opacity:0.55]"
     />
   )
 }
 
 export function FocusSankeyChart({ data, colors }: FocusSankeyChartProps) {
-  const monthPalette = React.useMemo(() => buildMonthPalette(colors), [colors])
+  const accents = buildAccents(data.nodes, colors)
   const hasFlow = data.links.length > 0
   const totalCompleted = data.nodes
     .filter((node) => node.kind === 'month')
     .reduce((total, node) => total + node.total, 0)
   const focusAreas = data.nodes.filter((node) => node.kind !== 'month')
 
-  if (!colors.primary) return null
-
   return (
     <section
-      className="h-full overflow-hidden rounded-2xl border p-4 sm:p-5"
-      style={{
-        backgroundColor: 'var(--surface)',
-        borderColor: 'var(--border-color)',
-        backgroundImage:
-          'radial-gradient(circle at top left, color-mix(in srgb, var(--primary) 9%, transparent), transparent 34%), radial-gradient(circle at 100% 12%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 28%)',
-      }}
+      aria-labelledby="review-focus-title"
+      className="flex h-full min-w-0 flex-col"
     >
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-2xl space-y-2">
-          <div
-            className="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-[0.18em] uppercase"
-            style={{
-              borderColor:
-                'color-mix(in srgb, var(--primary) 24%, var(--border-color))',
-              color: 'var(--primary)',
-              backgroundColor:
-                'color-mix(in srgb, var(--primary) 8%, var(--surface))',
-            }}
-          >
-            Focus Flow
-          </div>
-          <div>
-            <h2
-              className="text-lg font-semibold"
-              style={{ color: 'var(--text-primary)' }}
-            >
+      <header className="dd-table-header">
+        <h2 className="dd-table-header__title" id="review-focus-title">
+          focus flow
+        </h2>
+      </header>
+
+      <figure className="dd-chart flex-1 [--dd-chart-height:300px]">
+        <figcaption className="dd-chart__head">
+          <div className="max-w-prose min-w-0">
+            <p className="dd-chart__title">
               Where your completed work concentrated
-            </h2>
-            <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
+            </p>
+            <p className="dd-chart__sub">
               Each month flows into the labels that absorbed your attention.
               Tasks with multiple labels are split evenly so the chart stays
               proportional.
             </p>
           </div>
-        </div>
-
-        {hasFlow && (
-          <div className="flex flex-wrap gap-2">
-            <div
-              className="rounded-full border px-3 py-1.5 text-sm"
-              style={{
-                borderColor: 'var(--border-color)',
-                backgroundColor: 'var(--surface-2)',
-                color: 'var(--text-primary)',
-              }}
-            >
-              {formatFlowValue(totalCompleted)} tasks
+          {hasFlow && (
+            <div className="dd-stat-inline-group">
+              <p className="dd-stat dd-stat--inline">
+                <span className="dd-stat__label">Tasks</span>
+                <span className="dd-stat__value">
+                  {formatFlowValue(totalCompleted)}
+                </span>
+              </p>
+              <p className="dd-stat dd-stat--inline">
+                <span className="dd-stat__label">Focus areas</span>
+                <span className="dd-stat__value">{focusAreas.length}</span>
+              </p>
             </div>
-            <div
-              className="rounded-full border px-3 py-1.5 text-sm"
-              style={{
-                borderColor: 'var(--border-color)',
-                backgroundColor: 'var(--surface-2)',
-                color: 'var(--text-primary)',
-              }}
-            >
-              {focusAreas.length} focus areas
+          )}
+        </figcaption>
+
+        {!hasFlow ? (
+          <div className="dd-chart__frame">
+            <div className="dd-chart__plot is-empty">
+              <div className="dd-chart__empty">
+                <Icon name="chart" />
+                <b>No completed-task flow yet</b>
+                <span>
+                  Finish a few labeled tasks and this view will start tracing
+                  where your time went.
+                </span>
+              </div>
             </div>
           </div>
-        )}
-      </div>
-
-      {!hasFlow ? (
-        <div
-          className="mt-5 flex min-h-[280px] items-center justify-center rounded-2xl border border-dashed px-6 text-center"
-          style={{
-            borderColor: 'var(--border-color)',
-            backgroundColor: 'var(--surface-2)',
-          }}
-        >
-          <div>
-            <p
-              className="text-base font-medium"
-              style={{ color: 'var(--text-primary)' }}
-            >
-              No completed-task flow yet
-            </p>
-            <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
-              Finish a few labeled tasks and this view will start tracing where
-              your time went.
-            </p>
-          </div>
-        </div>
-      ) : (
-        <>
-          <div className="mt-5 h-[300px] sm:h-[340px] lg:h-[360px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <Sankey
-                data={data}
-                sort={false}
-                align="justify"
-                verticalAlign="top"
-                linkCurvature={0.42}
-                nodePadding={22}
-                nodeWidth={12}
-                margin={{ top: 6, right: 116, bottom: 6, left: 44 }}
-                node={(props) => (
-                  <FocusNodeRenderer
-                    {...props}
-                    colors={colors}
-                    monthPalette={monthPalette}
-                  />
-                )}
-                link={(props) => (
-                  <FocusLinkRenderer
-                    {...props}
-                    colors={colors}
-                    monthPalette={monthPalette}
-                  />
-                )}
-              >
-                <Tooltip
-                  content={
-                    <FocusTooltip colors={colors} monthPalette={monthPalette} />
-                  }
-                />
-              </Sankey>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            {focusAreas.map((node) => {
-              const accent = getNodeAccent(node, colors, monthPalette)
-
-              return (
-                <div
+        ) : (
+          <>
+            <ul className="dd-chart__legend">
+              {focusAreas.map((node) => (
+                <li
                   key={node.id}
-                  className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs sm:text-sm"
-                  style={{
-                    borderColor: 'var(--border-color)',
-                    backgroundColor: mixColor(accent, colors.surface2, 10),
-                    color: 'var(--text-primary)',
-                  }}
+                  className="dd-chart__key"
+                  style={cssVars({
+                    '--dd-series': accents.get(node.id) ?? colors.other,
+                  })}
                 >
-                  <span
-                    className="inline-block h-2.5 w-2.5 rounded-full"
-                    style={{ backgroundColor: accent }}
-                  />
-                  <span>{node.name}</span>
-                  <span style={{ color: 'var(--text-muted)' }}>
+                  {node.name}
+                  <span className="dd-chart__key-value pl-1.5">
                     {formatFlowValue(node.total)}
                   </span>
-                </div>
-              )
-            })}
-          </div>
-        </>
-      )}
+                </li>
+              ))}
+            </ul>
+
+            {/* Fills the card, so the plot grows to match the pace story beside it; absolute so it never sizes it. */}
+            <div
+              className="relative min-h-64 flex-1 sm:min-h-72"
+              role="img"
+              aria-label={`Completed tasks flowing from each month into ${focusAreas.length} focus areas`}
+            >
+              <div className="absolute inset-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <Sankey
+                    data={data}
+                    sort={false}
+                    align="justify"
+                    verticalAlign="top"
+                    linkCurvature={0.42}
+                    nodePadding={22}
+                    nodeWidth={10}
+                    margin={{ top: 6, right: 124, bottom: 6, left: 32 }}
+                    node={(props) => (
+                      <FocusNodeRenderer {...props} accents={accents} />
+                    )}
+                    link={(props) => (
+                      <FocusLinkRenderer {...props} accents={accents} />
+                    )}
+                  >
+                    <Tooltip content={<FocusTooltip accents={accents} />} />
+                  </Sankey>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </>
+        )}
+      </figure>
     </section>
   )
 }

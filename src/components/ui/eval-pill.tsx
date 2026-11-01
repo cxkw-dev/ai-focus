@@ -1,101 +1,65 @@
 'use client'
 
-import { AnimatePresence, motion } from 'framer-motion'
-import { Check, Loader2, Minus } from 'lucide-react'
+import { Icon } from '@/components/ui/icon'
 import { useEvalEntries, type EvalEntry } from '@/lib/eval-store'
 import { CategoryBadge } from '@/components/review/category-badge'
 
-function ResultCard({ entry }: { entry: EvalEntry }) {
+function PillContent({ entry }: { entry: EvalEntry }) {
+  if (entry.stage === 'analyzing' || entry.stage === 'classifying') {
+    return (
+      <span className="dd-status-dot dd-status-dot--info dd-status-dot--live dd-status-dot--sm">
+        {entry.stage === 'analyzing' ? 'Analyzing task…' : 'Classifying…'}
+      </span>
+    )
+  }
+
   if (entry.outcome?.created && entry.outcome.title && entry.outcome.category) {
     return (
-      <div className="flex w-full items-center gap-2">
-        <Check
-          className="size-3.5 shrink-0"
-          style={{ color: 'var(--status-done)' }}
-        />
+      <>
         <span
-          className="truncate text-xs font-medium"
-          style={{ color: 'var(--text-primary)' }}
-        >
+          className="dd-status-dot dd-status-dot--online dd-status-dot--sm"
+          role="img"
+          aria-label="Added as an accomplishment"
+        />
+        <span className="min-w-0 truncate font-medium">
           {entry.outcome.title}
         </span>
         <CategoryBadge category={entry.outcome.category} />
-      </div>
+      </>
     )
   }
 
   return (
-    <div className="flex w-full items-center gap-2">
-      <Minus className="size-3.5 shrink-0 opacity-60" />
-      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-        Not an accomplishment
-      </span>
-    </div>
+    <span className="dd-status-dot dd-status-dot--offline dd-status-dot--sm dd-status-dot--muted">
+      Not an accomplishment
+    </span>
   )
 }
 
-function CardContent({ entry }: { entry: EvalEntry }) {
-  if (entry.stage === 'analyzing') {
-    return (
-      <div className="flex w-full items-center gap-2">
-        <Loader2
-          className="size-3.5 shrink-0 animate-spin"
-          style={{ color: 'var(--primary)' }}
-        />
-        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          Analyzing task...
-        </span>
-      </div>
-    )
-  }
-
-  if (entry.stage === 'classifying') {
-    return (
-      <div className="flex w-full items-center gap-2">
-        <Loader2
-          className="size-3.5 shrink-0 animate-spin"
-          style={{ color: 'var(--primary)' }}
-        />
-        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          Classifying...
-        </span>
-      </div>
-    )
-  }
-
-  return <ResultCard entry={entry} />
-}
-
+/**
+ * The local-AI accomplishment classifier's progress for the latest completed task: a small floating chip at the
+ * bottom left (toasts own the bottom right) with a status dot for the stage, on the float surface. It holds nothing
+ * to click, so it lets clicks through to whatever it covers.
+ */
 export function EvalStatus() {
   const entries = useEvalEntries()
-  const latest = entries.size > 0 ? Array.from(entries.values()).pop()! : null
+  const latest = Array.from(entries.values()).at(-1)
 
   return (
     <div
-      className="pointer-events-none fixed top-4 right-4 z-50"
-      style={{ maxWidth: '320px' }}
+      role="status"
+      aria-live="polite"
+      className="pointer-events-none fixed bottom-4 left-4 z-(--dd-z-toast) max-w-[min(22rem,calc(100vw-var(--dd-u)*8))]"
     >
-      <AnimatePresence mode="wait">
-        {latest && (
-          <motion.div
-            key={latest.todoId}
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
-            layout
-            className="pointer-events-auto rounded-xl border shadow-xl backdrop-blur-md"
-            style={{
-              backgroundColor:
-                'color-mix(in srgb, var(--surface) 95%, transparent)',
-              borderColor: 'var(--border-color)',
-              padding: '10px 14px',
-            }}
-          >
-            <CardContent entry={latest} />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {latest && (
+        <div
+          key={latest.todoId}
+          className="rounded-pill bg-float shadow-float flex max-w-full animate-[dd-toast-in_var(--dd-dur)_var(--dd-ease)_both] items-center gap-2 py-1.5 pr-3 pl-2.5 text-xs motion-reduce:animate-none"
+        >
+          <Icon name="ai" label="Local AI" className="text-muted shrink-0" />
+          <PillContent entry={latest} />
+        </div>
+      )}
     </div>
   )
 }

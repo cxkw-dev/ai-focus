@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
@@ -49,4 +50,10 @@ export function formatRelativeDate(date: Date | string): string {
   if (days < -1 && days >= -7) return `${Math.abs(days)} days overdue`
   if (days < -7) return `Overdue`
   return formatDate(d)
+}
+
+/** Inline style with CSS custom properties, e.g. `cssVars({ '--dd-chip': color })`. */
+export type CSSVars = CSSProperties & Record<`--${string}`, string>
+export function cssVars(vars: Record<`--${string}`, string>): CSSVars {
+  return vars as CSSVars
 }

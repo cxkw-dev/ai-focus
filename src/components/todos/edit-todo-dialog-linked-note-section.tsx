@@ -1,7 +1,8 @@
 'use client'
 
-import { FileText } from 'lucide-react'
-import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
+import { Icon } from '@/components/ui/icon'
+import { Select } from '@/components/ui/select'
 import type { NotebookNote } from '@/types/notebook'
 import type { Todo } from '@/types/todo'
 
@@ -21,62 +22,37 @@ export function EditTodoDialogLinkedNoteSection({
   onUnlinkNote,
 }: EditTodoDialogLinkedNoteSectionProps) {
   return (
-    <div className="space-y-2">
-      <Label
-        className="flex items-center gap-2 text-xs font-semibold tracking-wide uppercase"
-        style={{ color: 'var(--text-muted)' }}
-      >
-        <FileText className="h-3.5 w-3.5" />
-        Connected Note
-      </Label>
+    <div className="dd-field dd-field--above">
+      <span className="dd-field__label">Connected note</span>
       {todo?.notebookNoteId ? (
-        <div className="flex items-center gap-2">
-          <span
-            className="flex-1 truncate text-[11px]"
-            style={{ color: 'var(--text-primary)' }}
-          >
+        <div className="rounded-ctl bg-wash flex items-center gap-2 py-1 pr-1 pl-2.5">
+          <Icon name="file" className="text-muted" />
+          <span className="text-text min-w-0 flex-1 truncate text-sm">
             {todo.notebookNote?.title || 'Untitled'}
           </span>
-          <button
-            type="button"
-            onClick={onUnlinkNote}
-            className="text-[11px] font-medium underline hover:no-underline"
-            style={{ color: 'var(--destructive)' }}
-          >
+          <Button variant="ghost" size="sm" onClick={onUnlinkNote}>
             Unlink
-          </button>
+          </Button>
         </div>
       ) : (
-        <div className="space-y-1">
-          <button
-            type="button"
-            onClick={onCreateAndLinkNote}
-            className="w-full rounded border px-2 py-1.5 text-left text-[11px] transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]"
-            style={{
-              borderColor: 'var(--border-color)',
-              color: 'var(--text-primary)',
-            }}
-          >
-            + Create new note
-          </button>
+        <div className="flex flex-col gap-1.5">
+          <Button onClick={onCreateAndLinkNote} className="justify-start">
+            <Icon name="plus" />
+            Create note
+          </Button>
           {unlinkedNotes.length > 0 && (
-            <select
+            <Select
               value=""
               onChange={(e) => onLinkExistingNote(e.target.value)}
-              className="w-full rounded border px-1.5 py-1 text-[11px] outline-none"
-              style={{
-                borderColor: 'var(--border-color)',
-                color: 'var(--text-primary)',
-                backgroundColor: 'var(--surface)',
-              }}
+              aria-label="Link an existing note"
             >
-              <option value="">Link existing note...</option>
+              <option value="">Link an existing note…</option>
               {unlinkedNotes.map((note) => (
                 <option key={note.id} value={note.id}>
                   {note.title}
                 </option>
               ))}
-            </select>
+            </Select>
           )}
         </div>
       )}

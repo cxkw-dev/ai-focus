@@ -124,6 +124,9 @@ describe('BillingCodesDrawer', () => {
       />,
     )
 
-    expect(screen.getByText('Copy')).toBeInTheDocument()
+    expect(screen.queryByText('Copied')).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /cus\/00396-0076\.l\.01/i }),
+    ).toBeInTheDocument()
   })
 })

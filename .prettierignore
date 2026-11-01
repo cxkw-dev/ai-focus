@@ -20,3 +20,6 @@ next-env.d.ts
 .env
 .env.*
 package-lock.json
+
+# Vendored dawn & dusk agent skill (installed by its own script; keep byte-identical)
+.claude/skills

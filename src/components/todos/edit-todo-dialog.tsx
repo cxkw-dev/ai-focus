@@ -4,11 +4,10 @@ import * as React from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
+  DialogBody,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
 } from '@/components/ui/dialog'
 import { openLabelsRoute } from '@/lib/labels'
 import { EditTodoLinks } from './edit-todo-links'
@@ -213,34 +212,21 @@ export function EditTodoDialog({
     e.preventDefault()
   }
 
+  const project = todo?.labels?.[0]
+  const eyebrow = todo
+    ? [`#${todo.taskNumber}`, project?.name].filter(Boolean).join(' · ')
+    : undefined
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="flex max-h-[95vh] w-[98vw] max-w-[1320px] flex-col overflow-hidden p-0 sm:max-h-[90vh] sm:w-[96vw]">
-        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-          {/* Header */}
-          <div
-            className="shrink-0 border-b px-4 py-4 pr-12 sm:px-6 sm:py-5 sm:pr-14"
-            style={{
-              borderColor: 'var(--border-color)',
-              background:
-                'linear-gradient(135deg, color-mix(in srgb, var(--primary) 8%, transparent), color-mix(in srgb, var(--accent) 8%, transparent))',
-            }}
-          >
-            <DialogHeader className="min-w-0 space-y-1.5">
-              <DialogTitle className="truncate text-lg sm:text-xl">
-                Edit Task
-              </DialogTitle>
-              <DialogDescription className="text-xs sm:text-sm">
-                Changes are saved when you close this dialog
-              </DialogDescription>
-            </DialogHeader>
-          </div>
+      {/* Two columns need more room than the system's large dialog (680px). */}
+      <DialogContent size="lg" className="[--_w:76rem]">
+        <form className="dd-dialog__form" onSubmit={handleSubmit}>
+          <DialogHeader eyebrow={eyebrow} title="edit task" />
 
-          {/* Content */}
-          <div className="flex-1 overflow-x-hidden overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-0">
-              {/* Left column - Content */}
-              <div className="min-w-0 space-y-4 lg:pr-6">
+          <DialogBody>
+            <div className="grid grid-cols-1 gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
+              <div className="dd-form__body">
                 <EditTodoDialogPrimaryFields
                   form={form}
                   people={people}
@@ -273,11 +259,7 @@ export function EditTodoDialog({
                 />
               </div>
 
-              {/* Right column - Meta */}
-              <div
-                className="min-w-0 space-y-4 border-t pt-4 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6"
-                style={{ borderColor: 'var(--border-color)' }}
-              >
+              <div className="dd-form__body">
                 <EditTodoDialogMetaFields form={form} isLoading={isLoading} />
 
                 <EditTodoDialogLabelsSection
@@ -317,24 +299,13 @@ export function EditTodoDialog({
                 />
               </div>
             </div>
-          </div>
+          </DialogBody>
 
-          {/* Footer */}
-          <div
-            className="shrink-0 border-t px-4 py-3 sm:px-6 sm:py-4"
-            style={{ borderColor: 'var(--border-color)' }}
-          >
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                className="h-10 px-5"
-              >
-                Close
-              </Button>
-            </DialogFooter>
-          </div>
+          <DialogFooter hint="changes save when you close">
+            <Button variant="primary" onClick={handleClose}>
+              Done
+            </Button>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

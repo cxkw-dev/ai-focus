@@ -1,8 +1,14 @@
 'use client'
 
 import * as React from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { X, FileText, Unlink } from 'lucide-react'
+import { IconButton } from '@/components/ui/button'
+import {
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerHeader,
+} from '@/components/ui/drawer'
+import { Icon } from '@/components/ui/icon'
 import { notebookApi } from '@/lib/api'
 import { queryKeys } from '@/lib/query-keys'
 import { RichTextEditor } from '@/components/ui/rich-text-editor'
@@ -110,20 +116,14 @@ function NoteDrawerEditor({ note }: { note: NotebookNote }) {
 
   return (
     <>
-      <div
-        className="border-b px-5 py-3"
-        style={{ borderColor: 'var(--border-color)' }}
-      >
-        <input
-          value={title}
-          onChange={(e) => handleTitleChange(e.target.value)}
-          className="w-full bg-transparent text-sm font-semibold outline-none"
-          style={{ color: 'var(--text-primary)' }}
-          placeholder="Note title..."
-        />
-      </div>
-
-      <div className="flex min-h-0 flex-1 flex-col px-5 py-4">
+      <input
+        value={title}
+        onChange={(e) => handleTitleChange(e.target.value)}
+        className="text-text placeholder:text-quiet w-full flex-none bg-transparent text-lg leading-tight font-semibold outline-none"
+        placeholder="Note title"
+        aria-label="Note title"
+      />
+      <div className="flex min-h-0 flex-1 flex-col">
         <RichTextEditor
           value={content}
           onChange={handleContentChange}
@@ -141,8 +141,6 @@ export function NoteDrawer({
   onClose,
   onUnlink,
 }: NoteDrawerProps) {
-  const drawerRef = React.useRef<HTMLDivElement>(null)
-
   const noteQuery = useQuery({
     queryKey: queryKeys.notebookNote(noteId ?? '__idle__'),
     queryFn: () => notebookApi.get(noteId as string),
@@ -150,100 +148,51 @@ export function NoteDrawer({
   })
   const isInitialLoading = noteQuery.isLoading && !noteQuery.data
 
-  // Close on Escape
-  React.useEffect(() => {
-    if (!open) return
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [open, onClose])
-
   return (
-    <AnimatePresence>
-      {open && noteId && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[60]"
-            style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
-            onClick={onClose}
-          />
-          {/* Drawer panel */}
-          <motion.div
-            ref={drawerRef}
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
-            className="fixed top-0 right-0 bottom-0 z-[61] flex w-[720px] max-w-[90vw] flex-col"
-            style={{
-              backgroundColor: 'var(--surface)',
-              borderLeft: '1px solid var(--border-color)',
-              boxShadow: '-8px 0 32px rgba(0,0,0,0.3)',
-            }}
-          >
-            {/* Header */}
-            <div
-              className="flex shrink-0 items-center justify-between border-b px-5 py-3"
-              style={{ borderColor: 'var(--border-color)' }}
-            >
-              <div className="flex min-w-0 items-center gap-2">
-                <FileText
-                  className="h-4 w-4 shrink-0"
-                  style={{ color: 'var(--primary)' }}
-                />
-                <span
-                  className="truncate text-xs font-semibold"
-                  style={{ color: 'var(--text-primary)' }}
-                >
-                  {todoTitle || 'Note'}
-                </span>
+    <Drawer
+      open={open && Boolean(noteId)}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onClose()
+      }}
+    >
+      <DrawerContent
+        size="lg"
+        onOpenAutoFocus={(event) => {
+          // Start on the panel itself, not on "Unlink note" (its first button).
+          event.preventDefault()
+          if (event.currentTarget instanceof HTMLElement) {
+            event.currentTarget.focus()
+          }
+        }}
+      >
+        <DrawerHeader
+          eyebrow="Linked note"
+          title={<span className="line-clamp-2">{todoTitle || 'note'}</span>}
+          actions={
+            <IconButton icon="link" label="Unlink note" onClick={onUnlink} />
+          }
+        />
+        <DrawerBody className="flex flex-col gap-3">
+          {isInitialLoading ? (
+            <span className="dd-loading" role="status">
+              <span className="dd-spinner" aria-hidden="true" />
+              Loading note
+            </span>
+          ) : noteQuery.data ? (
+            <NoteDrawerEditor key={noteQuery.data.id} note={noteQuery.data} />
+          ) : (
+            <div className="dd-empty-state dd-empty-state--compact">
+              <div className="dd-empty-state__icon">
+                <Icon name="error" />
               </div>
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={onUnlink}
-                  className="rounded-md p-1.5 transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]"
-                  title="Unlink note"
-                >
-                  <Unlink
-                    className="h-3.5 w-3.5"
-                    style={{ color: 'var(--text-muted)' }}
-                  />
-                </button>
-                <button
-                  onClick={onClose}
-                  className="rounded-md p-1.5 transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_6%,transparent)]"
-                >
-                  <X
-                    className="h-3.5 w-3.5"
-                    style={{ color: 'var(--text-muted)' }}
-                  />
-                </button>
-              </div>
+              <p className="dd-empty-state__title">Couldn’t load the note</p>
+              <p className="dd-empty-state__text">
+                Close the drawer and open it again.
+              </p>
             </div>
-
-            {isInitialLoading ? (
-              <div className="flex min-h-0 flex-1 flex-col px-5 py-4">
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  Loading...
-                </p>
-              </div>
-            ) : noteQuery.data ? (
-              <NoteDrawerEditor key={noteQuery.data.id} note={noteQuery.data} />
-            ) : (
-              <div className="flex min-h-0 flex-1 flex-col px-5 py-4">
-                <p className="text-xs text-red-500">Failed to load note.</p>
-              </div>
-            )}
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+          )}
+        </DrawerBody>
+      </DrawerContent>
+    </Drawer>
   )
 }

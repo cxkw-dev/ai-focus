@@ -3,14 +3,9 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import {
-  Archive,
-  ArchiveRestore,
-  ArrowLeft,
-  LayoutGrid,
-  Trash2,
-} from 'lucide-react'
-import { HeaderActions } from '@/components/layout/header-actions-context'
+import { Button } from '@/components/ui/button'
+import { Icon, type IconName } from '@/components/ui/icon'
+import { Tip } from '@/components/ui/tooltip'
 import { ProjectBoard } from '@/components/todos/project-board'
 import { TodoItem } from '@/components/todos/todo-item'
 import { TodoDialogs } from '@/components/todos/todo-dialogs'
@@ -27,8 +22,14 @@ import {
   type BoardColumnKey,
 } from '@/lib/board-columns'
 import { PROJECTS_ROUTE, findProject } from '@/lib/projects'
+import { cn, cssVars } from '@/lib/utils'
 
 type ProjectView = 'board' | 'trash'
+
+const VIEWS: { key: ProjectView; label: string; icon: IconName }[] = [
+  { key: 'board', label: 'Board', icon: 'grid' },
+  { key: 'trash', label: 'Trash', icon: 'trash' },
+]
 
 export default function ProjectPage() {
   const params = useParams<{ id: string }>()
@@ -47,6 +48,30 @@ export default function ProjectPage() {
     useTerminalLaneExpansion()
   const actions = useTodoActions({ withCompleted: anyExpanded })
   const [view, setView] = React.useState<ProjectView>('board')
+  const tabsId = React.useId()
+  const tabRefs = React.useRef<Partial<Record<ProjectView, HTMLButtonElement>>>(
+    {},
+  )
+
+  // The tabs are React-owned (no dd runtime): arrows, Home and End move the
+  // selection and focus together, and only the selected tab is a Tab stop.
+  const handleTabKeyDown = (event: React.KeyboardEvent) => {
+    const index = VIEWS.findIndex((tab) => tab.key === view)
+    const next =
+      event.key === 'ArrowRight'
+        ? VIEWS[(index + 1) % VIEWS.length]
+        : event.key === 'ArrowLeft'
+          ? VIEWS[(index - 1 + VIEWS.length) % VIEWS.length]
+          : event.key === 'Home'
+            ? VIEWS[0]
+            : event.key === 'End'
+              ? VIEWS[VIEWS.length - 1]
+              : null
+    if (!next) return
+    event.preventDefault()
+    setView(next.key)
+    tabRefs.current[next.key]?.focus()
+  }
 
   const noteDrawer = useTodoNoteDrawer({
     todos: actions.todos,
@@ -95,64 +120,107 @@ export default function ProjectPage() {
 
   if (!project) {
     return (
-      <div className="flex h-[calc(100vh-160px)] flex-col items-center justify-center gap-3 text-center">
-        <LayoutGrid
-          className="h-6 w-6"
-          style={{ color: 'var(--text-muted)' }}
-        />
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-          That project no longer exists.
-        </p>
-        <Link
-          href={PROJECTS_ROUTE}
-          className="text-xs font-medium underline underline-offset-4"
-          style={{ color: 'var(--primary)' }}
-        >
-          Back to projects
-        </Link>
+      <div className="dd-empty-state my-auto">
+        <div className="dd-empty-state__icon">
+          <Icon name="grid" />
+        </div>
+        <h2 className="dd-empty-state__title">That project no longer exists</h2>
+        <div className="dd-empty-state__actions">
+          <Link href={PROJECTS_ROUTE} className="dd-btn dd-btn--sm">
+            <Icon name="arrow-left" />
+            <span>Back to projects</span>
+          </Link>
+        </div>
       </div>
     )
   }
 
+  const panelId = (key: ProjectView) => `${tabsId}-${key}-panel`
+  const tabId = (key: ProjectView) => `${tabsId}-${key}-tab`
+
   return (
-    <div className="flex h-[calc(100vh-120px)] flex-col">
-      <HeaderActions>
+    <div className="flex flex-col gap-3 lg:min-h-0 lg:flex-1">
+      {/* Project header */}
+      <div className="flex flex-none flex-wrap items-center gap-x-3 gap-y-2">
+        <Tip label="All projects">
+          <Link
+            href={PROJECTS_ROUTE}
+            className="dd-btn dd-btn--ghost dd-btn--sm dd-btn--icon text-muted"
+            aria-label="All projects"
+          >
+            <Icon name="arrow-left" />
+          </Link>
+        </Tip>
+        <h2 className="dd-h3 flex min-w-0 items-center gap-2.5">
+          <span
+            className="size-3 flex-none rounded-full bg-(--project)"
+            style={cssVars({ '--project': project.color })}
+            aria-hidden="true"
+          />
+          <span className="min-w-0 truncate">{project.name}</span>
+        </h2>
+        {project.archived && (
+          <span className="dd-badge dd-badge--neutral">Archived</span>
+        )}
+        <ul className="dd-page-header__meta">
+          <li>
+            <b>{activeCount}</b> open
+          </li>
+          <li>
+            <b>{doneCount}</b> done
+          </li>
+        </ul>
+        <Tip
+          label={
+            project.archived
+              ? 'Restore project — brings it back to active lists'
+              : 'Archive project — keeps all history, hides it from active lists'
+          }
+        >
+          <Button
+            size="sm"
+            className="ml-auto"
+            onClick={() =>
+              void (project.archived
+                ? handleRestoreProject(project.id)
+                : handleArchiveProject(project.id))
+            }
+            disabled={isProjectMutating}
+          >
+            <Icon name={project.archived ? 'refresh' : 'archive'} />
+            {project.archived ? 'Restore' : 'Archive'}
+          </Button>
+        </Tip>
+      </div>
+
+      <div className="dd-tabs dd-tabs--sm lg:min-h-0 lg:flex-1">
         <div
-          className="flex items-center gap-0.5 rounded-lg p-0.5"
-          style={{
-            backgroundColor: 'var(--surface-2)',
-            border: '1px solid var(--border-color)',
-          }}
+          className="dd-tabs__list flex-none"
           role="tablist"
           aria-label="Project view"
+          onKeyDown={handleTabKeyDown}
         >
-          {(
-            [
-              { key: 'board' as const, label: 'Board', icon: LayoutGrid },
-              { key: 'trash' as const, label: 'Trash', icon: Trash2 },
-            ] as const
-          ).map((tab) => {
-            const Icon = tab.icon
-            const isActive = view === tab.key
+          {VIEWS.map((tab) => {
+            const selected = view === tab.key
             return (
               <button
                 key={tab.key}
+                ref={(element) => {
+                  if (element) tabRefs.current[tab.key] = element
+                }}
+                id={tabId(tab.key)}
                 type="button"
                 role="tab"
-                aria-selected={isActive}
+                className="dd-tabs__tab"
+                aria-selected={selected}
+                aria-controls={panelId(tab.key)}
+                tabIndex={selected ? 0 : -1}
                 onClick={() => setView(tab.key)}
-                className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors"
-                style={{
-                  backgroundColor: isActive
-                    ? 'color-mix(in srgb, var(--primary) 16%, transparent)'
-                    : 'transparent',
-                  color: isActive ? 'var(--primary)' : 'var(--text-muted)',
-                }}
               >
-                <Icon className="h-3 w-3" />
+                <Icon name={tab.icon} />
                 <span>{tab.label}</span>
                 {tab.key === 'trash' && projectDeletedTodos.length > 0 && (
-                  <span className="tabular-nums">
+                  <span className="dd-tabs__count">
                     {projectDeletedTodos.length}
                   </span>
                 )}
@@ -160,131 +228,82 @@ export default function ProjectPage() {
             )
           })}
         </div>
-      </HeaderActions>
 
-      {/* Project header */}
-      <div className="mb-4 flex flex-shrink-0 flex-wrap items-center gap-3">
-        <Link
-          href={PROJECTS_ROUTE}
-          className="flex h-7 w-7 items-center justify-center rounded-lg transition-colors"
-          style={{
-            backgroundColor: 'var(--surface-2)',
-            color: 'var(--text-muted)',
-          }}
-          aria-label="All projects"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-        </Link>
-        <span
-          className="h-3 w-3 rounded-full"
-          style={{
-            backgroundColor: project.color,
-            boxShadow: `0 0 0 4px color-mix(in srgb, ${project.color} 18%, transparent)`,
-          }}
-        />
-        <h1
-          className="text-lg font-semibold"
-          style={{ color: 'var(--text-primary)' }}
-        >
-          {project.name}
-        </h1>
-        {project.archived && (
-          <span
-            className="rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase"
-            style={{
-              backgroundColor: 'var(--surface-2)',
-              color: 'var(--text-muted)',
-            }}
-          >
-            Archived
-          </span>
-        )}
-        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          {activeCount} open · {doneCount} done
-        </span>
-        <button
-          type="button"
-          onClick={() =>
-            void (project.archived
-              ? handleRestoreProject(project.id)
-              : handleArchiveProject(project.id))
-          }
-          disabled={isProjectMutating}
-          className="ml-auto flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-          style={{
-            backgroundColor: 'var(--surface-2)',
-            color: 'var(--text-muted)',
-            border: '1px solid var(--border-color)',
-          }}
-          title={
-            project.archived
-              ? 'Restore project — brings it back to active lists'
-              : 'Archive project — keeps all history, hides it from active lists'
-          }
-        >
-          {project.archived ? (
-            <ArchiveRestore className="h-3.5 w-3.5" />
-          ) : (
-            <Archive className="h-3.5 w-3.5" />
+        <div
+          id={panelId('board')}
+          role="tabpanel"
+          aria-labelledby={tabId('board')}
+          className={cn(
+            'dd-tabs__panel flex-col lg:min-h-0 lg:flex-1',
+            view === 'board' && 'flex',
           )}
-          {project.archived ? 'Restore' : 'Archive'}
-        </button>
-      </div>
-
-      {view === 'board' ? (
-        <ProjectBoard
-          columns={columns}
-          project={project}
-          onMoveToColumn={handleMoveToColumn}
-          onReorder={actions.handleReorder}
-          onCreateTodo={actions.handleCreate}
-          isSaving={actions.isSaving}
-          expandedLanes={expandedLanes}
-          onLaneExpandedChange={setLaneExpanded}
-          isLoadingFinished={anyExpanded && actions.isLoadingCompleted}
-          onEdit={actions.handleEdit}
-          onStatusChange={actions.handleStatusChange}
-          onPriorityChange={actions.handlePriorityChange}
-          onDelete={actions.handleDelete}
-          onPermanentDelete={actions.handlePermanentDelete}
-          onRestore={actions.handleRestore}
-          onToggleSubtask={actions.handleToggleSubtask}
-          onUpdateSubtasks={actions.handleUpdateSubtasks}
-          onOpenNote={noteDrawer.handleOpenNote}
-          people={people}
-          subtaskMentions={subtaskMentions}
-        />
-      ) : (
-        <div className="scrollbar-hide flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
-          {projectDeletedTodos.length === 0 ? (
-            <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
-              <Trash2
-                className="h-5 w-5"
-                style={{ color: 'var(--text-muted)' }}
-              />
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                Nothing deleted in this project
-              </p>
-            </div>
-          ) : (
-            projectDeletedTodos.map((todo) => (
-              <TodoItem
-                key={todo.id}
-                todo={todo}
-                onStatusChange={actions.handleStatusChange}
-                onPriorityChange={actions.handlePriorityChange}
-                onDelete={actions.handlePermanentDelete}
-                onEdit={actions.handleEdit}
-                onRestore={actions.handleRestore}
-                people={people}
-                subtaskMentions={subtaskMentions}
-                viewMode="deleted"
-                animateTransitions={false}
-              />
-            ))
+          hidden={view !== 'board'}
+        >
+          {view === 'board' && (
+            <ProjectBoard
+              columns={columns}
+              project={project}
+              onMoveToColumn={handleMoveToColumn}
+              onReorder={actions.handleReorder}
+              onCreateTodo={actions.handleCreate}
+              isSaving={actions.isSaving}
+              expandedLanes={expandedLanes}
+              onLaneExpandedChange={setLaneExpanded}
+              isLoadingFinished={anyExpanded && actions.isLoadingCompleted}
+              onEdit={actions.handleEdit}
+              onStatusChange={actions.handleStatusChange}
+              onPriorityChange={actions.handlePriorityChange}
+              onDelete={actions.handleDelete}
+              onPermanentDelete={actions.handlePermanentDelete}
+              onRestore={actions.handleRestore}
+              onToggleSubtask={actions.handleToggleSubtask}
+              onUpdateSubtasks={actions.handleUpdateSubtasks}
+              onOpenNote={noteDrawer.handleOpenNote}
+              people={people}
+              subtaskMentions={subtaskMentions}
+            />
           )}
         </div>
-      )}
+
+        <div
+          id={panelId('trash')}
+          role="tabpanel"
+          aria-labelledby={tabId('trash')}
+          className="dd-tabs__panel dd-scroll lg:min-h-0 lg:flex-1"
+          hidden={view !== 'trash'}
+        >
+          {view === 'trash' &&
+            (projectDeletedTodos.length === 0 ? (
+              <div className="dd-empty-state dd-empty-state--compact">
+                <div className="dd-empty-state__icon">
+                  <Icon name="trash" />
+                </div>
+                <h3 className="dd-empty-state__title">Trash is empty</h3>
+                <p className="dd-empty-state__text">
+                  Nothing deleted in this project.
+                </p>
+              </div>
+            ) : (
+              <div className="flex max-w-3xl flex-col gap-1.5">
+                {projectDeletedTodos.map((todo) => (
+                  <TodoItem
+                    key={todo.id}
+                    todo={todo}
+                    onStatusChange={actions.handleStatusChange}
+                    onPriorityChange={actions.handlePriorityChange}
+                    onDelete={actions.handlePermanentDelete}
+                    onEdit={actions.handleEdit}
+                    onRestore={actions.handleRestore}
+                    people={people}
+                    subtaskMentions={subtaskMentions}
+                    viewMode="deleted"
+                    animateTransitions={false}
+                  />
+                ))}
+              </div>
+            ))}
+        </div>
+      </div>
 
       {/* Creating happens inline at the top of Backlog — no floating button. */}
       <TodoDialogs
@@ -305,12 +324,16 @@ function ProjectBoardSkeleton() {
   const lanes = BOARD_COLUMNS.filter((column) => !column.terminal)
 
   return (
-    <div className="flex h-[calc(100vh-120px)] flex-col gap-4 lg:flex-row">
+    <div
+      className="flex flex-col gap-3 lg:min-h-0 lg:flex-1 lg:flex-row"
+      aria-busy="true"
+    >
+      <span className="dd-visually-hidden">Loading the board…</span>
       {lanes.map((column) => (
-        <div
+        <span
           key={column.key}
-          className="flex-1 animate-pulse rounded-xl"
-          style={{ backgroundColor: 'var(--surface-2)' }}
+          className="dd-skeleton h-60 rounded-lg lg:h-auto lg:flex-1"
+          aria-hidden="true"
         />
       ))}
     </div>

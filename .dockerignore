@@ -55,3 +55,6 @@ LICENSE
 
 # MCP server is a separate package, not part of Next build
 mcp-server
+
+# Agent skills (not shipped)
+.claude
