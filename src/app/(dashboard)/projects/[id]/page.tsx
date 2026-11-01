@@ -21,7 +21,7 @@ import {
   statusForBoardColumn,
   type BoardColumnKey,
 } from '@/lib/board-columns'
-import { PROJECTS_ROUTE, findProject } from '@/lib/projects'
+import { findProject } from '@/lib/projects'
 import { cn, cssVars } from '@/lib/utils'
 
 type ProjectView = 'board' | 'trash'
@@ -126,9 +126,9 @@ export default function ProjectPage() {
         </div>
         <h2 className="dd-empty-state__title">That project no longer exists</h2>
         <div className="dd-empty-state__actions">
-          <Link href={PROJECTS_ROUTE} className="dd-btn dd-btn--sm">
+          <Link href="/notes" className="dd-btn dd-btn--sm">
             <Icon name="arrow-left" />
-            <span>Back to projects</span>
+            <span>Back to notes</span>
           </Link>
         </div>
       </div>
@@ -142,15 +142,6 @@ export default function ProjectPage() {
     <div className="flex flex-col gap-3 lg:min-h-0 lg:flex-1">
       {/* Project header */}
       <div className="flex flex-none flex-wrap items-center gap-x-3 gap-y-2">
-        <Tip label="All projects">
-          <Link
-            href={PROJECTS_ROUTE}
-            className="dd-btn dd-btn--ghost dd-btn--sm dd-btn--icon text-muted"
-            aria-label="All projects"
-          >
-            <Icon name="arrow-left" />
-          </Link>
-        </Tip>
         <h2 className="dd-h3 flex min-w-0 items-center gap-2.5">
           <span
             className="size-3 flex-none rounded-full bg-(--project)"
@@ -284,7 +275,7 @@ export default function ProjectPage() {
                 </p>
               </div>
             ) : (
-              <div className="flex max-w-3xl flex-col gap-1.5">
+              <div className="bg-surface flex max-w-3xl flex-col gap-1.5 rounded-lg p-2">
                 {projectDeletedTodos.map((todo) => (
                   <TodoItem
                     key={todo.id}

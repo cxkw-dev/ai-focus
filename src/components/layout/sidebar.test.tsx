@@ -105,15 +105,6 @@ describe('Sidebar projects', () => {
     expect(githubLink).toHaveAttribute('target', '_blank')
     expect(githubLink).toHaveAttribute('rel', 'noopener noreferrer')
   })
-
-  it('links the Projects rail item to the projects index', () => {
-    render(<Sidebar collapsed={false} onCollapse={() => {}} />)
-
-    expect(screen.getByRole('link', { name: 'Projects' })).toHaveAttribute(
-      'href',
-      '/projects',
-    )
-  })
 })
 
 describe('Sidebar timesheet link', () => {

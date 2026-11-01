@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { SidebarProjects } from './sidebar-projects'
@@ -14,8 +15,9 @@ import {
 import { useVpnStatus } from '@/hooks/use-vpn-status'
 import { useLocalAiStatus } from '@/hooks/use-local-ai-status'
 import { useIsClient } from '@/hooks/use-is-client'
-import { PROJECTS_ROUTE } from '@/lib/projects'
-import { cn } from '@/lib/utils'
+import { useProjectNav } from '@/hooks/use-project-nav'
+import { projectHref } from '@/lib/projects'
+import { cn, cssVars } from '@/lib/utils'
 
 interface SidebarProps {
   collapsed: boolean
@@ -32,25 +34,16 @@ interface RailItem {
   title: string
   href: string
   icon: IconName
-  /** Also current on nested routes (e.g. /projects/[id]). */
-  prefix?: boolean
 }
 
 const topItems: RailItem[] = [
   { title: 'Notes', href: '/notes', icon: 'file' },
-  { title: 'Projects', href: PROJECTS_ROUTE, icon: 'folder', prefix: true },
   { title: 'Review', href: '/review', icon: 'chart' },
   { title: 'Labels', href: '/labels', icon: 'tag' },
 ]
 
-function isCurrent(item: RailItem, pathname: string) {
-  return item.prefix
-    ? pathname === item.href || pathname.startsWith(`${item.href}/`)
-    : pathname === item.href
-}
-
 function RailLink({ item, pathname }: { item: RailItem; pathname: string }) {
-  const current = isCurrent(item, pathname)
+  const current = pathname === item.href
   return (
     <Link
       href={item.href}
@@ -176,6 +169,39 @@ function TimesheetRailItem() {
   )
 }
 
+function RailProjects({ pathname }: { pathname: string }) {
+  const { projects } = useProjectNav()
+  if (projects.length === 0) return null
+  return (
+    <>
+      <span className="dd-side-nav__sep" />
+      {projects.map((project) => {
+        const href = projectHref(project.id)
+        const label =
+          project.openCount > 0
+            ? `${project.name} · ${project.openCount} open`
+            : project.name
+        return (
+          <Link
+            key={project.id}
+            href={href}
+            className="dd-side-nav__item"
+            aria-label={label}
+            data-label={label}
+            aria-current={pathname === href ? 'page' : undefined}
+          >
+            <span
+              className="size-2.5 rounded-full bg-(--project)"
+              style={cssVars({ '--project': project.color })}
+              aria-hidden="true"
+            />
+          </Link>
+        )
+      })}
+    </>
+  )
+}
+
 /**
  * dawn & dusk side nav ("icon rail · two-level"): the rail holds the app's sections and live status; the panel holds
  * the projects, the primary way through the app. The chevron folds the panel away; on a narrow shell the whole nav
@@ -217,14 +243,23 @@ export function Sidebar({
         <div className="dd-side-nav__rail">
           <Link
             href="/notes"
-            className="dd-side-nav__logo dd-logo-tile"
+            className="dd-side-nav__logo rounded-box block size-[40px] flex-none overflow-hidden"
             aria-label="ai-focus home"
           >
-            f
+            <Image
+              src="/icon-192.png"
+              alt=""
+              width={40}
+              height={40}
+              priority
+              className="size-full [image-rendering:pixelated]"
+            />
           </Link>
           {topItems.map((item) => (
             <RailLink key={item.href} item={item} pathname={pathname} />
           ))}
+          {/* With the panel folded away, the projects stay one click off as coloured dots on the rail. */}
+          {collapsed && !mobileOpen && <RailProjects pathname={pathname} />}
           <span className="dd-side-nav__spacer" />
           <TimesheetRailItem />
           <LocalAiRailItem />

@@ -306,8 +306,8 @@ function BoardLane({
   return (
     <section
       className={cn(
-        'flex min-w-0 flex-col rounded-lg p-1.5 transition-colors lg:min-h-0 lg:w-0 lg:flex-1',
-        isOver && 'bg-wash',
+        'flex min-w-0 flex-col rounded-lg p-2 transition-colors lg:min-h-0 lg:w-0 lg:flex-1',
+        isOver ? 'bg-[var(--dd-card-hover)]' : 'bg-surface',
       )}
       aria-label={column.title}
     >
@@ -325,7 +325,10 @@ function BoardLane({
 
       {children}
 
-      <div ref={setNodeRef} className="dd-scroll -mr-1.5 flex-1 lg:min-h-0">
+      <div
+        ref={setNodeRef}
+        className="dd-scroll flex-1 [scrollbar-gutter:auto] lg:min-h-0"
+      >
         <SortableContext
           items={visibleTodos.map((todo) => todo.id)}
           strategy={verticalListSortingStrategy}
@@ -440,7 +443,7 @@ function CollapsedLane({
       ref={ref}
       className={cn(
         'flex flex-none rounded-lg transition-colors lg:w-11',
-        isOver ? 'bg-wash-strong' : 'bg-surface',
+        isOver ? 'bg-[var(--dd-card-hover)]' : 'bg-surface',
       )}
       aria-label={column.title}
     >

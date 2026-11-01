@@ -33,7 +33,6 @@ function getSidebarCollapsedSnapshot(): boolean {
 }
 
 const pageTitles: Record<string, string> = {
-  [PROJECTS_ROUTE]: 'projects',
   '/labels': 'labels',
   '/notes': 'notes',
   '/review': 'year in review',
@@ -45,10 +44,7 @@ function useCrumbs(pathname: string): Crumb[] {
   if (pathname.startsWith(`${PROJECTS_ROUTE}/`)) {
     const id = pathname.slice(PROJECTS_ROUTE.length + 1)
     const project = projects.find((p) => p.id === id)
-    return [
-      { label: 'projects', href: PROJECTS_ROUTE },
-      { label: project?.name ?? 'project' },
-    ]
+    return [{ label: 'projects' }, { label: project?.name ?? 'project' }]
   }
   return [{ label: pageTitles[pathname] ?? 'focus' }]
 }
@@ -63,7 +59,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
 /**
  * The dawn & dusk app shell: side nav on the left, top bar and a scrolling content area on the right. The shell is
- * the viewport; under 768px of it the side nav goes off-canvas and the top bar shows its menu button.
+ * the viewport; under 768px of it the side nav goes off-canvas and the top bar shows its menu button. It paints no
+ * plain fill of its own, so the page tone with its grain (as on the style guide) shows through and the tonal
+ * surfaces on it (board lanes, panels) read a step darker in dusk.
  */
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -90,7 +88,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="dd-app-shell">
+    <div className="dd-app-shell bg-transparent [--dd-accordion-hover:inherit] [--dd-card-hover:inherit] [--dd-data-table-grain:inherit]">
       <Sidebar
         collapsed={collapsed}
         onCollapse={handleCollapse}

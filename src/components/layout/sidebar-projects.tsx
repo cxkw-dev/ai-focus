@@ -7,7 +7,7 @@ import { Icon } from '@/components/ui/icon'
 import { Tip } from '@/components/ui/tooltip'
 import { useProjectNav, type ProjectNavItem } from '@/hooks/use-project-nav'
 import { cssVars } from '@/lib/utils'
-import { PROJECTS_ROUTE, projectHref, searchProjects } from '@/lib/projects'
+import { projectHref, searchProjects } from '@/lib/projects'
 
 /** Above this many projects the panel grows a filter box. */
 const FILTER_THRESHOLD = 6
@@ -18,25 +18,12 @@ export function SidebarProjects({ pathname }: { pathname: string }) {
   const [query, setQuery] = React.useState('')
 
   const visibleProjects = searchProjects(projects, query)
-  const openTotal = projects.reduce((sum, p) => sum + p.openCount, 0)
 
   return (
     <div className="dd-side-nav__pane">
       <div className="dd-side-nav__head">
         <span className="dd-side-nav__title">focus</span>
       </div>
-
-      <Link
-        href={PROJECTS_ROUTE}
-        className="dd-side-nav__link"
-        aria-current={pathname === PROJECTS_ROUTE ? 'page' : undefined}
-      >
-        <Icon name="grid" />
-        <span className="dd-side-nav__label">All projects</span>
-        {openTotal > 0 && (
-          <span className="dd-side-nav__count">{openTotal}</span>
-        )}
-      </Link>
 
       <p className="dd-side-nav__section flex items-baseline justify-between">
         <span>Projects</span>

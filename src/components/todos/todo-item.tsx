@@ -226,86 +226,82 @@ function TodoItemComponent({
   const cardBody = (
     <>
       {dropIndicator === 'above' && dropLine}
-      <div className="flex items-stretch gap-0.5">
-        {/* A fixed gutter keeps every card body aligned, draggable or not. */}
-        <div className="flex w-4 flex-none items-center justify-center">
-          {!isDragDisabled && (
-            <button
-              type="button"
-              aria-label="Drag to move"
-              {...attributes}
-              {...listeners}
-              className={cn(
-                'rounded-ctl text-quiet hover:bg-wash hover:text-text flex touch-none items-center py-1 transition-colors',
-                dragging ? 'cursor-grabbing' : 'cursor-grab',
-              )}
-            >
-              <GripVertical className="size-[1.15em]" aria-hidden />
-            </button>
-          )}
+      <article
+        className={cn(
+          'group rounded-box bg-surface-2 hover:bg-surface-3 relative flex min-w-0 transition-colors',
+          isUrgent && 'app-urgent-rail',
+          (isCompleted || viewMode !== 'active') && 'opacity-60',
+        )}
+      >
+        {/* The handle lives in the card's own left padding, so cards keep the
+            lane's edges (header, add-task box) instead of hanging off a gutter. */}
+        {!isDragDisabled && (
+          <button
+            type="button"
+            aria-label="Drag to move"
+            {...attributes}
+            {...listeners}
+            className={cn(
+              'text-quiet hover:text-text absolute inset-y-0 left-0 z-[1] flex w-3.5 touch-none items-center justify-center text-xs opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100',
+              dragging ? 'cursor-grabbing' : 'cursor-grab',
+            )}
+          >
+            <GripVertical className="size-[1.15em]" aria-hidden />
+          </button>
+        )}
+        <div className="min-w-0 flex-1 py-2 pr-2.5 pl-3.5">
+          <TodoItemContent
+            todo={todo}
+            onStatusChange={onStatusChange}
+            onPriorityChange={onPriorityChange}
+            onDelete={onDelete}
+            onEdit={onEdit}
+            onRestore={onRestore}
+            onToggleSubtask={onToggleSubtask}
+            onUpdateSubtasks={onUpdateSubtasks}
+            onOpenNote={onOpenNote}
+            people={people}
+            subtaskMentions={subtaskMentions}
+            isDragging={dragging}
+            viewMode={viewMode}
+          />
         </div>
 
-        <article
-          className={cn(
-            'group rounded-box bg-surface relative flex min-w-0 flex-1 transition-colors hover:bg-[var(--dd-card-hover)]',
-            isUrgent && 'app-urgent-rail',
-            (isCompleted || viewMode !== 'active') && 'opacity-60',
-          )}
-        >
-          <div className="min-w-0 flex-1 px-2.5 py-2">
-            <TodoItemContent
-              todo={todo}
-              onStatusChange={onStatusChange}
-              onPriorityChange={onPriorityChange}
-              onDelete={onDelete}
-              onEdit={onEdit}
-              onRestore={onRestore}
-              onToggleSubtask={onToggleSubtask}
-              onUpdateSubtasks={onUpdateSubtasks}
-              onOpenNote={onOpenNote}
-              people={people}
-              subtaskMentions={subtaskMentions}
-              isDragging={dragging}
-              viewMode={viewMode}
-            />
-          </div>
+        {!dragging && (
+          <TodoItemSideTabs
+            hasBillingEntries={hasBillingEntries}
+            billingOpen={billingOpen}
+            contactsOpen={contactsOpen}
+            timelineOpen={timelineOpen}
+            setBillingOpen={setBillingOpen}
+            setContactsOpen={setContactsOpen}
+            setTimelineOpen={setTimelineOpen}
+          />
+        )}
 
-          {!dragging && (
-            <TodoItemSideTabs
-              hasBillingEntries={hasBillingEntries}
-              billingOpen={billingOpen}
-              contactsOpen={contactsOpen}
-              timelineOpen={timelineOpen}
-              setBillingOpen={setBillingOpen}
-              setContactsOpen={setContactsOpen}
-              setTimelineOpen={setTimelineOpen}
-            />
-          )}
-
-          {billingOpen && (
-            <BillingCodesDrawer
-              entries={billingEntries}
-              open={billingOpen}
-              onClose={() => setBillingOpen(false)}
-            />
-          )}
-          {contactsOpen && (
-            <ContactsDrawer
-              todoId={todo.id}
-              open={contactsOpen}
-              onClose={() => setContactsOpen(false)}
-              people={people}
-            />
-          )}
-          {timelineOpen && (
-            <StatusUpdatesDrawer
-              todoId={todo.id}
-              open={timelineOpen}
-              onClose={() => setTimelineOpen(false)}
-            />
-          )}
-        </article>
-      </div>
+        {billingOpen && (
+          <BillingCodesDrawer
+            entries={billingEntries}
+            open={billingOpen}
+            onClose={() => setBillingOpen(false)}
+          />
+        )}
+        {contactsOpen && (
+          <ContactsDrawer
+            todoId={todo.id}
+            open={contactsOpen}
+            onClose={() => setContactsOpen(false)}
+            people={people}
+          />
+        )}
+        {timelineOpen && (
+          <StatusUpdatesDrawer
+            todoId={todo.id}
+            open={timelineOpen}
+            onClose={() => setTimelineOpen(false)}
+          />
+        )}
+      </article>
       {dropIndicator === 'below' && dropLine}
     </>
   )
@@ -348,30 +344,24 @@ export function TodoItemOverlay({
   const isUrgent = todo.priority === 'URGENT'
 
   return (
-    <div className="flex items-stretch gap-0.5">
-      <div className="text-text flex w-4 flex-none items-center justify-center">
-        <GripVertical className="size-[1.15em]" aria-hidden />
-      </div>
-
-      <article
-        className={cn(
-          'rounded-box bg-surface shadow-float relative min-w-0 flex-1 cursor-grabbing px-2.5 py-2',
-          isUrgent && 'app-urgent-rail',
-          isCompleted && 'opacity-60',
-        )}
-      >
-        <TodoItemContent
-          todo={todo}
-          onStatusChange={onStatusChange}
-          onPriorityChange={onPriorityChange}
-          onDelete={onDelete}
-          onEdit={onEdit}
-          people={people}
-          subtaskMentions={subtaskMentions}
-          isDragging={true}
-        />
-      </article>
-    </div>
+    <article
+      className={cn(
+        'rounded-box bg-surface-3 shadow-float relative min-w-0 cursor-grabbing py-2 pr-2.5 pl-3.5',
+        isUrgent && 'app-urgent-rail',
+        isCompleted && 'opacity-60',
+      )}
+    >
+      <TodoItemContent
+        todo={todo}
+        onStatusChange={onStatusChange}
+        onPriorityChange={onPriorityChange}
+        onDelete={onDelete}
+        onEdit={onEdit}
+        people={people}
+        subtaskMentions={subtaskMentions}
+        isDragging={true}
+      />
+    </article>
   )
 }
 
