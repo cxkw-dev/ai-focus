@@ -1,5 +1,7 @@
 # Focus
 
+> **Retired (November 2026).** I no longer use this app. I've moved to leaner, more optimized ways of working, so ai-focus is no longer deployed, maintained or backed by a database. The code stays here as a reference; the setup steps below are kept for history and may not work as written.
+
 A personal productivity app with todos, notebook, and year-in-review stats. Built with Next.js 16, Prisma 7, PostgreSQL, and Tailwind CSS v4.
 
 ## Features
